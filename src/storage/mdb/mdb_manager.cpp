@@ -154,7 +154,7 @@ namespace tair {
 
   int mdb_manager::clear(int area)
   {
-    TBSYS_LOG(DEBUG, "start clear");
+    TBSYS_LOG(INFO, "start clear : %d",area);
     assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
     for(int i = 0; i < cache->get_slabs_count(); ++i) {
       {
@@ -175,7 +175,7 @@ namespace tair {
       }
       usleep(100);
     }
-    TBSYS_LOG(DEBUG, "end clear");
+    TBSYS_LOG(INFO, "end clear");
     return 0;
   }
   void mdb_manager::begin_scan(md_info & info)
@@ -264,8 +264,12 @@ namespace tair {
 
     int total_size = key.get_size() + data.get_size() + sizeof(mdb_item);
 
-    TBSYS_LOG(DEBUG, "start put: key:%u,value:%u,flag:%d\n", key.get_size(),
-              data.get_size(), data.data_meta.flag);
+    TBSYS_LOG(DEBUG, "start put: key:%u,area:%d,value:%u,flag:%d\n", key.get_size(),key.area,data.get_size(), data.data_meta.flag);
+    if (key.area != KEY_AREA(key.get_data()))
+    {
+      TBSYS_LOG(INFO,"key.area[%d] != KEY_AREA(key.get_data())[%d]",key.area,KEY_AREA(key.get_data()));
+      key.area =KEY_AREA( key.get_data());
+    }
 
 
     uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
@@ -355,14 +359,19 @@ namespace tair {
   int mdb_manager::do_get(data_entry & key, data_entry & data)
   {
 
-    TBSYS_LOG(DEBUG, "start get: area:%d,key size:%u,%s", key.area,
-              key.get_size(), key.get_data() + 2);
+    TBSYS_LOG(DEBUG, "start get: area:%d,key size:%u", key.area,
+              key.get_size());
 
     boost::mutex::scoped_lock guard(mem_locker);
     mdb_item *it = 0;
     int ret = TAIR_RETURN_DATA_NOT_EXIST;
     bool expired = false;
     if(!(expired = remove_if_expired(key, it)) && it != 0) {        //got it
+      if (key.area != ITEM_AREA(it))
+      {
+        TBSYS_LOG(ERROR,"key.area != ITEM_AREA(it),why?");
+        assert(0);
+      }
       data.set_data(ITEM_DATA(it), it->data_len);
       data.set_version(it->version);
       data.data_meta.edate = it->exptime;
@@ -421,6 +430,7 @@ namespace tair {
   }
   void mdb_manager::close_buckets(const vector<int> &buckets)
   {
+    TBSYS_LOG(INFO,"start close_buckets");
     set<int>__buckets(buckets.begin(), buckets.end());
 
     for(int hash_index = 0; hash_index < hashmap->get_bucket_size();
@@ -455,6 +465,7 @@ namespace tair {
         }
       }
     }
+    TBSYS_LOG(INFO,"end close_buckets");
     return;
   }
 
@@ -515,14 +526,15 @@ namespace tair {
     }
     --area_stat[ITEM_AREA(it)]->item_count;
     hashmap->remove(it);
+    CLEAR_FLAGS(it->item_id);        //clear all flag
     cache->free_item(it);
     //clear
-    CLEAR_FLAGS(it->item_id);        //clear all flag
     it->exptime = 0;
     it->data_len = 0;
     it->key_len = 0;
     it->version = 0;
     it->update_time = 0;
+    TBSYS_LOG(DEBUG,"after free item [%p],id [%lu],h_next [%lu] next [%lu],prev[%lu],key_len[%d],data_len[%lu], version[%d]",it,it->item_id,it->h_next,it->next,it->prev,it->key_len,it->data_len,it->version);
   }
 
 

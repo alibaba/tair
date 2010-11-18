@@ -23,11 +23,13 @@ namespace tair {
       item->h_next = hashtable[idx];
       hashtable[idx] = item->item_id;
     ++(hashmng->item_count);
+    TBSYS_LOG(DEBUG,"insert %lu [%p] next[%lu]into hash table[%d]",item->item_id,item,item->h_next,idx);
   }
 
   bool cache_hash_map::remove(mdb_item * item)
   {
     assert(item != 0);
+    //assert(item->item_id != 0);
     int idx = get_bucket_index(item);
     uint64_t pos = hashtable[idx];
     mdb_item *prev = 0;
@@ -46,6 +48,8 @@ namespace tair {
     else {
       hashtable[idx] = prev->h_next;
     }
+    TBSYS_LOG(DEBUG,"remove %lu [%p,%p] from hash table[%d],item->h_next:%lu",item->item_id,prev,item,idx,item->h_next);
+    prev->h_next = 0;
     return true;
   }
 

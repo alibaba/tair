@@ -58,6 +58,7 @@ namespace tair {
     slab_manager *slabmng = get_slabmng(size);
     if(slabmng == 0)
       return 0;
+    TBSYS_LOG(DEBUG,"size:%d,slabmng.slab_size : %d",size,slabmng->slab_size);
     return slabmng->alloc_item(type);
   }
 
@@ -402,7 +403,7 @@ namespace tair {
     uint64_t item_id = 0;
     page_info *info = 0;
 
-    TBSYS_LOG(DEBUG, "%s:alloc an item", __FUNCTION__);
+    TBSYS_LOG(DEBUG, "alloc_new_item,area : %d", area);
     if(partial_pages_no > 0) {
       TBSYS_LOG(DEBUG, "alloc from partial page:%u", get_partial_page_id());
       assert(get_partial_page_id() > 0);
@@ -414,7 +415,6 @@ namespace tair {
 
       item_id = info->free_head;
       unlink_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
-
     }
     else if(free_pages_no > 0) {
       TBSYS_LOG(DEBUG, "alloc from free page : %u", free_pages);
@@ -444,16 +444,17 @@ namespace tair {
       ++partial_pages_no;
     }
 
+    //TODO(maoqi),CLEAR_FLAGS(item_id); 
+
     //page : m_free_pages -> m_partial_pages -> m_full_pages
     //every page will obey this rule,even though the page that has only one item.
 
     --(info->free_nr);
-    TBSYS_LOG(DEBUG, "from page :%u ,now free : %d,", info->id,
-              info->free_nr);
     if(info->free_nr == 0) {
       link_page(info, full_pages);
       ++full_pages_no;
       --partial_pages_no;
+      info->free_head = 0;
     }
     else {
       TBSYS_LOG(DEBUG, "link into partial_pages[%d]",
@@ -461,15 +462,42 @@ namespace tair {
       link_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
     }
 
-    if(item_id > 0) {                /* success */
-      ++item_total_count;
-      item = id_to_item(item_id);
-      assert(item != 0);
-      info->free_head = item->h_next;
-      link_item(item, area);
-      return item;
+    assert(item_id > 0);
+
+    ++item_total_count;
+    item = id_to_item(item_id);
+    assert(item != 0);
+
+   
+    info->free_head = item->h_next;
+    
+    TBSYS_LOG(DEBUG, "from page id:%u,now free:%d,free-head:%lu,id will be use:%lu", info->id, info->free_nr,info->free_head,item_id);
+   
+    link_item(item, area);
+
+    if (item->item_id != item_id)
+    {
+      TBSYS_LOG(ERROR,"why? overwrite? item->item_id [%lu],item_id[%lu]",item->item_id,item_id);
+      assert(0);
     }
-    return 0;
+    
+    if (info->free_nr != 0 && info->free_head == 0)
+    {
+      TBSYS_LOG(ERROR,"the free nr of page is greater than 0,buf the free_head is zero");
+      TBSYS_LOG(ERROR,"item:%p,page:%p",item,info);
+      assert(0);
+    }else if (info->free_nr == 0)
+    {
+      assert(info->free_head == 0);
+    }
+    else
+    {
+      if (PAGE_ID((info->free_head)) != info->id)
+      {
+        TBSYS_LOG(ERROR,"the page id of free_head [%d] != info->id [%d]",PAGE_ID(info->free_head),info->id);
+      }
+    }
+    return item;
   }
 
 /**
@@ -522,6 +550,7 @@ namespace tair {
     //
     mdb_item *it = 0;
     int area = type;
+    TBSYS_LOG(DEBUG,"alloc_item,area:%d",area);
     assert(area < TAIR_MAX_AREA_COUNT);
     bool exceed = cache->is_quota_exceed(area);
 
@@ -591,23 +620,23 @@ namespace tair {
       ++partial_pages_no;
     }
     else {
+      assert(info->free_head != 0);
       unlink_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
     }
-
-    item->h_next = info->free_head;
-    info->free_head = item->item_id;
 
     item->prev = 0;
     item->next = 0;
 
     TBSYS_LOG(DEBUG,
-              "page id:%d,info->free_nr:%d,SLAB_ID(id):%d,PAGE_ID(id):%d",
-              info->id, info->free_nr, SLAB_ID(item->item_id),
-              PAGE_ID(item->item_id));
+              "id:%lu before free:page id:%d,%p,info->free_nr:%d,info->free_head:%lu,SLAB_ID(id):%d,",
+              item->item_id,info->id,info, info->free_nr, info->free_head, SLAB_ID(item->item_id));
+
+    item->h_next = info->free_head;
+    info->free_head = item->item_id;
+    
 
     if(++info->free_nr == per_slab) {
-      TBSYS_LOG(DEBUG, "this page is all free:%d,free_nr:%d", info->id,
-                info->free_nr);
+      TBSYS_LOG(DEBUG, "this page is all free:%d,free_nr:%d", info->id, info->free_nr);
       --partial_pages_no;
       
       if(free_pages_no + full_pages_no + partial_pages_no <= 1) {
@@ -622,6 +651,9 @@ namespace tair {
     else {
       link_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
     }
+ 
+    TBSYS_LOG(DEBUG, "after free:page id:%d,%p,info->free_nr:%d,info->free_head:%lu,SLAB_ID(id):%d,info->free_head->next : %lu",
+        info->id,info,info->free_nr,info->free_head,SLAB_ID(item->item_id),item->h_next);
   }
 
 
@@ -630,8 +662,9 @@ namespace tair {
     uint32_t crrnt_time = time(NULL);
     int times = 50;
     mdb_item *item = 0;
-    TBSYS_LOG(DEBUG, "evict_self,area : %d", type);
     item_list *head = &this_item_list[type];
+    int area = type;
+    TBSYS_LOG(DEBUG, "evict_self,area:%d", type);
     uint64_t pos = head->item_tail;
     TBSYS_LOG(DEBUG, "tail:%lu", pos);
 
@@ -655,8 +688,14 @@ namespace tair {
       type = ALLOC_EVICT_SELF;
       pos = head->item_tail;
       item = id_to_item(pos);
+      if (ITEM_AREA(item) != area)
+      {
+        TBSYS_LOG(ERROR,"item in [%d] list is not my item [%d]",area,ITEM_AREA(item));
+        assert(0);
+      }
       dump_item(item);
     }
+    CLEAR_FLAGS(item->item_id);
     update_item(item, ITEM_AREA(item));
     return item;
   }
@@ -671,6 +710,7 @@ namespace tair {
     if(evict_index >= TAIR_MAX_AREA_COUNT) {
       evict_index = 0;
     }
+    TBSYS_LOG(INFO,"evict any,area:%d",type);
     uint32_t crrnt_time = time(NULL);
     mdb_item *item = 0;
     int times = 0;
@@ -696,6 +736,7 @@ namespace tair {
         assert(false);                //shoudn't be here,just in case
       }
     }
+    CLEAR_FLAGS(item->item_id);
     update_item(item, area);
     return item;
   }
@@ -710,8 +751,8 @@ namespace tair {
     info->free_nr = per_slab;
     info->free_head = ITEM_ID(slab_size, 0, index, slab_id);
 
-    TBSYS_LOG(DEBUG, "new page,slab_size:%d,free_nr:%d,m_id:%d", slab_size,
-              per_slab, index);
+    TBSYS_LOG(DEBUG, "new page:%p,slab_size:%d,free_nr:%d,m_id:%d,free_head:%lu",page ,slab_size,
+              per_slab, index,info->free_head);
 
     char *item_start = page + sizeof(page_info);
     mdb_item *item = 0;
@@ -722,6 +763,12 @@ namespace tair {
       item->h_next = ITEM_ID(slab_size, i + 1, index, slab_id);
     }
     item->h_next = 0;
+
+    for(int i=0; i< per_slab;++i)
+    {
+      item = reinterpret_cast<mdb_item *>(item_start + i * slab_size);
+      TBSYS_LOG(DEBUG,"in page [%d],the %dth item: %lu,h_next :%lu",info->id,i,item->item_id,item->h_next);
+    }
   }
 
   void mem_cache::clear_page(slab_manager * slab_mng, char *page)
@@ -746,6 +793,7 @@ namespace tair {
     assert(item->item_id != 0);
     assert(area < TAIR_MAX_AREA_COUNT);
     item_list *head = &this_item_list[area];
+    TBSYS_LOG(DEBUG,"link_item [%p] [%lu] into [%d] [%p],list",item,item->item_id,area,head);
 
     item->next = head->item_head;
     item->prev = 0;
@@ -770,6 +818,8 @@ namespace tair {
     mdb_item *next = 0;
 
     item_list *head = &this_item_list[ITEM_AREA(item)];
+
+    TBSYS_LOG(DEBUG,"unlink item [%p] [%lu] from [%d] [%p],list",item,item->item_id,ITEM_AREA(item),head);
 
     if(itemid_equal(item->item_id, head->item_head)) {
       head->item_head = item->next;
