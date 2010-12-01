@@ -155,25 +155,37 @@ namespace tair {
   int mdb_manager::clear(int area)
   {
     TBSYS_LOG(INFO, "start clear : %d",area);
-    assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
-    for(int i = 0; i < cache->get_slabs_count(); ++i) {
-      {
-        boost::mutex::scoped_lock guard(mem_locker);
-        uint64_t item_head = cache->get_item_head(i, area);
-        while(item_head != 0) {
-          mdb_item *item = id_to_item(item_head);
-          if(item == 0) {
-            //should not be here
-            break;
-          }
-          item_head = item->next;
-          //if(ITEM_AREA(item) != area){
-          //       continue;
-          //}
-          __remove(item);
-        }
+    if (area == -1){
+      //clear expired item
+      remove_exprd_item();
+    }else if (area == -2){
+      balance_slab();
+      cache->balance_slab_done();
+    }else if (area == -3){ //clear all area
+      for(int i=0; i < TAIR_MAX_AREA_COUNT; ++i){
+        clear(i);
       }
-      usleep(100);
+    }else{
+      assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
+      for(int i = 0; i < cache->get_slabs_count(); ++i) {
+        {
+          boost::mutex::scoped_lock guard(mem_locker);
+          uint64_t item_head = cache->get_item_head(i, area);
+          while(item_head != 0) {
+            mdb_item *item = id_to_item(item_head);
+            if(item == 0) {
+              //should not be here
+              break;
+            }
+            item_head = item->next;
+            //if(ITEM_AREA(item) != area){
+            //       continue;
+            //}
+            __remove(item);
+          }
+        }
+        usleep(100);
+      }
     }
     TBSYS_LOG(INFO, "end clear");
     return 0;
@@ -575,7 +587,9 @@ namespace tair {
 
   void mdb_manager::remove_exprd_item()
   {
-    TBSYS_LOG(DEBUG, "start remove expired mdb_item ...");
+    TBSYS_LOG(INFO, "start remove expired mdb_item ...");
+    int64_t del_count = 0;
+    int64_t release_space = 0;
     for(int i = 0; i < hashmap->get_bucket_size(); ++i) {
       {
         boost::mutex::scoped_lock guard(mem_locker);
@@ -583,16 +597,18 @@ namespace tair {
         uint64_t item_head = *hash_head;
         uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
 
-
         while(item_head != 0) {
           mdb_item *it = id_to_item(item_head);
           item_head = it->h_next;
           if(it->exptime != 0 && it->exptime <= crrnt_time) {
+            ++del_count;
+            release_space += SLAB_SIZE(it->item_id);
             __remove(it);
           }
         }
       }
     }
+    TBSYS_LOG(INFO,"end remove expired item [%ld] [%ld]",del_count,release_space);
   }
 
 
@@ -605,12 +621,12 @@ namespace tair {
     map<int, int> slab_info;
     cache->calc_slab_balance_info(slab_info);
 
-    TBSYS_LOG(WARN, "slabinfo.size():%d", slab_info.size());
+    TBSYS_LOG(INFO, "slabinfo.size():%d", slab_info.size());
 
     for(map<int, int>::iterator it = slab_info.begin();
         it != slab_info.end(); ++it) {
       if(it->second < 0) {
-        TBSYS_LOG(WARN, "from [%d] free  [%d] page(s)", it->first,
+        TBSYS_LOG(INFO, "from [%d] free  [%d] page(s)", it->first,
                   it->second);
         for(int i = 0; i < -it->second; ++i) {
           {

@@ -451,6 +451,25 @@ void sign_handler(int sig)
          PROFILER_SET_STATUS((tbsys::util::Profiler::m_profiler.status + 1) % 2);
          log_error("profiler is %s", (tbsys::util::Profiler::m_profiler.status == 1) ? "enabled" : "disabled");
          break;
+      case 44: //remove expired
+         mutex.lock();
+         if (tair_server != NULL) {
+           tair_server->get_tair_manager()->clear(-1);
+         }
+         mutex.unlock();
+         break;
+      case 45: //balance
+         mutex.lock();
+         if (tair_server != NULL) {
+           tair_server->get_tair_manager()->clear(-2);
+         }
+         mutex.unlock();
+         break;
+      case 46: //clear all
+         mutex.lock();
+         if (tair_server != NULL){
+           tair_server->get_tair_manager()->clear(-3);
+         }
       default:
          log_error("sig: %d", sig);
    }
@@ -570,6 +589,8 @@ int main(int argc, char *argv[])
       signal(41, sign_handler);
       signal(42, sign_handler);
       signal(43, sign_handler); // for switch profiler enable/disable status
+      signal(44, sign_handler); // remove expired item
+      signal(45, sign_handler); // remove all item
 
       log_error("profiler disabled by default, threshold has been set to %d", profiler_threshold);
 

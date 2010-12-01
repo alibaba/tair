@@ -69,8 +69,7 @@ namespace tair {
 
    void tair_client::print_usage(char *prog_name)
    {
-      fprintf(stderr, "%s -s server:port\n OR\n%s -c configserver:port -g groupname\n\n"
-              "    -s, --server           data server,default port:%d\n"
+      fprintf(stderr, "%s -c configserver:port -g groupname\n\n"
               "    -c, --configserver     default port: %d\n"
               "    -g, --groupname        group name\n"
               "    -l, --cmd_line         exec cmd\n"
@@ -78,15 +77,14 @@ namespace tair {
               "    -h, --help             print this message\n"
               "    -v, --verbose          print debug info\n"
               "    -V, --version          print version\n\n",
-              prog_name, prog_name, TAIR_SERVER_DEFAULT_PORT, TAIR_CONFIG_SERVER_DEFAULT_PORT);
+              prog_name, TAIR_CONFIG_SERVER_DEFAULT_PORT);
    }
 
    bool tair_client::parse_cmd_line(int argc, char *const argv[])
    {
       int opt;
-      const char *optstring = "s:c:g:hVvl:q:";
+      const char *optstring = "c:g:hVvl:q:";
       struct option longopts[] = {
-         {"server", 1, NULL, 's'},
          {"configserver", 1, NULL, 'c'},
          {"groupname", 1, NULL, 'g'},
          {"cmd_line", 1, NULL, 'l'},
@@ -112,14 +110,6 @@ namespace tair {
                   slave_server_addr = optarg;
                }
                is_config_server = true;
-            }
-               break;
-            case 's': {
-               if (server_addr != NULL && is_config_server == true) {
-                  return false;
-               }
-               server_addr = optarg;
-               //server_id = tbsys::CNetUtil::strToAddr(optarg, TAIR_SERVER_DEFAULT_PORT);
             }
                break;
             case 'g':
@@ -508,9 +498,6 @@ namespace tair {
          return;
       }
       int area = atoi(param[0]);
-      if(area < 0){
-         return;
-      }
       // remove
       int ret = client_helper.remove_area(area);
       fprintf(stderr, "removeArea: area:%d,%s\n", area,client_helper.get_error_msg(ret));

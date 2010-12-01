@@ -51,6 +51,7 @@ namespace tair {
       bool handleBatchPacket(tbnet::Connection *connection, tbnet::PacketQueue &packetQueue);
       bool handlePacketQueue(tbnet::Packet *packet, void *args);
       tbnet::IPacketHandler::HPRetCode handlePacket(tbnet::Packet *packet, void *args);
+      tair_manager* get_tair_manager(void) {return tair_mgr; }
 
    private:
       int is_stoped;

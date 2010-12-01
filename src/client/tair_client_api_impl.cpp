@@ -508,7 +508,7 @@ namespace tair {
    int tair_client_impl::remove_area(int area)
    {
 
-      if( UNLIKELY(area < 0  || area >= TAIR_MAX_AREA_COUNT)){
+      if( UNLIKELY(area < -4  || area >= TAIR_MAX_AREA_COUNT)){
          return TAIR_RETURN_INVALID_ARGUMENT;
       }
 
