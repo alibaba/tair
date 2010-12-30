@@ -15,6 +15,7 @@
 #include "dump_filter.hpp"
 namespace tair {
   namespace storage {
+    using namespace std;
     dump_filter::dump_filter()
     {
       now = start_time = end_time = 0;

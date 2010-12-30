@@ -29,8 +29,8 @@
 
 namespace tair {
 
-   typedef hash_map<int, vector<uint64_t>, hash<int> > bucket_server_map;
-   typedef hash_map<int, vector<uint64_t>, hash<int> >::iterator bucket_server_map_it;
+   typedef __gnu_cxx::hash_map<int, std::vector<uint64_t>, __gnu_cxx::hash<int> > bucket_server_map;
+   typedef __gnu_cxx::hash_map<int, std::vector<uint64_t>, __gnu_cxx::hash<int> >::iterator bucket_server_map_it;
    using namespace tair::util;
    class table_manager {
    public:
@@ -39,18 +39,18 @@ namespace tair {
 
       bool is_master(int bucket_number, int server_flag) const;
       const uint64_t* get_server_table() const;
-      vector<uint64_t> get_slaves(int bucket_number, bool is_migrating = false) const;
+      std::vector<uint64_t> get_slaves(int bucket_number, bool is_migrating = false) const;
       uint64_t get_migrate_target(int bucket_number) const;
 
-      void init_migrate_done_set(boost::dynamic_bitset<> &migrate_done_set, const vector<uint64_t> &current_state_table);
+      void init_migrate_done_set(boost::dynamic_bitset<> &migrate_done_set, const std::vector<uint64_t> &current_state_table);
 
       /////////////////////////////
       void do_update_table(uint64_t *new_server_table, size_t size, uint32_t table_version, uint32_t copy_count, uint32_t bucket_count);
-      vector<int> get_holding_buckets() const;
-      vector<int> get_padding_buckets() const;
-      vector<int> get_release_buckets() const;
+      std::vector<int> get_holding_buckets() const;
+      std::vector<int> get_padding_buckets() const;
+      std::vector<int> get_release_buckets() const;
       bucket_server_map get_migrates() const;
-      set<uint64_t> get_available_server_ids() const;
+      std::set<uint64_t> get_available_server_ids() const;
       uint32_t get_version() const;
       uint32_t get_copy_count() const;
       uint32_t get_bucket_count() const;
@@ -59,7 +59,7 @@ namespace tair {
       /////////////////////////////////
 
    private:
-      void calculate_release_bucket(vector<int> &newHoldingBucket);
+      void calculate_release_bucket(std::vector<int> &newHoldingBucket);
       void calculate_migrates(uint64_t *table, int index);
 
    private:
@@ -69,10 +69,10 @@ namespace tair {
       uint32_t bucket_count;
       tbsys::CThreadMutex update_mutex;
 
-      vector<int> holding_buckets; // the buckets this server holding
-      vector<int> padding_buckets;
-      vector<int> release_buckets;
-      set<uint64_t> available_server_ids;
+      std::vector<int> holding_buckets; // the buckets this server holding
+      std::vector<int> padding_buckets;
+      std::vector<int> release_buckets;
+      std::set<uint64_t> available_server_ids;
 
       bucket_server_map migrates; // buckets that need to be migrate <bucket number, target server ids>
    };

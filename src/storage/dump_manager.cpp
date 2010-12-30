@@ -17,6 +17,7 @@
 
 namespace tair {
   namespace storage {
+    using namespace std;
     dump_thread::dump_thread(const set<dump_filter> &dumpFilter,
                              const set <uint32_t> &buckets, uint32_t now,
                              storage_manager * p_storage_manager): cancled(false), running(true), buckets(buckets),

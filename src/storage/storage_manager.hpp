@@ -56,11 +56,11 @@ namespace tair {
 
       virtual int clear(int area) = 0;
 
-      virtual bool init_buckets(const vector<int> &buckets) = 0;
+      virtual bool init_buckets(const std::vector<int> &buckets) = 0;
 
-      virtual void close_buckets(const vector<int> &buckets) = 0;
+      virtual void close_buckets(const std::vector<int> &buckets) = 0;
       virtual bool get_next_items(md_info & info,
-                                  vector<item_data_info *> &list) = 0;
+                                  std::vector<item_data_info *> &list) = 0;
       virtual void begin_scan(md_info & info) = 0;
       virtual void end_scan(md_info & info) = 0;
 

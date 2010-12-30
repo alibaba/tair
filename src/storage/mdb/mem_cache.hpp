@@ -248,8 +248,8 @@ namespace tair {
       sizeof(slab_manager) * TAIR_SLAB_LARGEST;
 
 #ifdef TAIR_DEBUG
-    map<int, int> get_slab_size();
-    vector< int> get_area_size();
+    std::map<int, int> get_slab_size();
+    std::vector< int> get_area_size();
 #endif
   private:
     slab_manager * get_slabmng(int size);

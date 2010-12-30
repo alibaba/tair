@@ -66,9 +66,13 @@ namespace tair {
     hashmap = new cache_hash_map(this_mem_pool, mdb_param::hash_shift);
     assert(hashmap != 0);
 
+    if (0 == mdb_param::slab_base_size)
+    {
+      mdb_param::slab_base_size = sizeof(mdb_item) + 16;
+    }
+
     cache =
-      new mem_cache(this_mem_pool, this, TAIR_SLAB_LARGEST,
-                    sizeof(mdb_item) + 16, mdb_param::factor);
+      new mem_cache(this_mem_pool, this, TAIR_SLAB_LARGEST, mdb_param::slab_base_size, mdb_param::factor);
     assert(cache != 0);
 
     for(int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {

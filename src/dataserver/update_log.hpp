@@ -57,7 +57,7 @@ namespace tair {
       void reset();
       bool write_control_file();
    private:
-      static string file_name;
+      static std::string file_name;
       control_file(file_operation *file);
       file_operation *ctrl_file;
       control_file_header *ctrl_file_hdr;
@@ -160,7 +160,7 @@ namespace tair {
       void set_log(update_log *log);
 
    private:
-      vector<log_file *> log_files;
+      std::vector<log_file *> log_files;
       tbsys::CThreadCond  mutex;
       log_file *current_log_file;
       uint32_t file_size;

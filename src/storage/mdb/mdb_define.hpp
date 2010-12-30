@@ -25,6 +25,7 @@ struct mdb_param
 {
   static const char *mdb_path;
   static int64_t size;
+  static int slab_base_size;
   static int page_size;
   static double factor;
   static int hash_shift;

@@ -32,7 +32,9 @@
 #define PRI64_PREFIX "ll"
 #endif
 
+#ifndef UNUSED
 #define UNUSED(a) /*@-noeffect*/if (0) (void)(a)/*@=noeffect*/;
+#endif
 #define LIKELY(x) (__builtin_expect(!!(x),1))
 #define UNLIKELY(x) (__builtin_expect(!!(x),0))
 #define IS_ADDCOUNT_TYPE(flag) (((flag) & TAIR_ITEM_FLAG_ADDCOUNT) == TAIR_ITEM_FLAG_ADDCOUNT)
@@ -96,6 +98,7 @@
 #define TAIR_TASK_QUEUE_SIZE         "task_queue_size"
 //MDB
 #define TAIR_SLAB_MEM_SIZE           "slab_mem_size"
+#define TAIR_SLAB_BASE_SIZE          "slab_base_size"
 #define TAIR_SLAB_FACTOR             "slab_factor"
 #define TAIR_MDB_TYPE                    "mdb_type" //mdb or mdb_shm
 #define TAIR_MDB_SHM_PATH                "mdb_shm_path"

@@ -25,7 +25,7 @@ namespace tair {
       dump_filter();
       dump_filter(const dump_filter &);
       void set_parameter(uint32_t start_time, uint32_t end_time, int32_t area,
-                         const string & dir);
+                         const std::string & dir);
       bool operator <(const dump_filter & rv) const;
 
     private:
@@ -40,10 +40,10 @@ namespace tair {
       uint32_t end_time;
       uint32_t now;
       int32_t area;                //-1 means all
-      string out_data_dir;
+      std::string out_data_dir;
     private:
-        fdb::file_operation file_op;
-      string file_name;
+      fdb::file_operation file_op;
+      std::string file_name;
       friend class dump_thread;
     };
   }

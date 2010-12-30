@@ -16,27 +16,19 @@
 #include <algorithm>
 #include <time.h>
 
-const char *
-  mdb_param::mdb_path = "mdb_shm_path01";
-int64_t
-  mdb_param::size = (1 << 31);
-int
-  mdb_param::page_size = (1 << 20);
-double
-  mdb_param::factor = 1.1;
-int
-  mdb_param::hash_shift = 23;
+const char * mdb_param::mdb_path = "mdb_shm_path01";
+int64_t mdb_param::size = (1 << 31);
+int mdb_param::page_size = (1 << 20);
+double mdb_param::factor = 1.1;
+int mdb_param::hash_shift = 23;
+int mdb_param::slab_base_size = 64;
 
 
-int
-  mdb_param::chkexprd_time_low = 2;
-int
-  mdb_param::chkexprd_time_high = 4;
+int mdb_param::chkexprd_time_low = 2;
+int mdb_param::chkexprd_time_high = 4;
 
-int
-  mdb_param::chkslab_time_low = 5;
-int
-  mdb_param::chkslab_time_high = 7;
+int mdb_param::chkslab_time_low = 5;
+int mdb_param::chkslab_time_high = 7;
 
 
 bool

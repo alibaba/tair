@@ -52,14 +52,14 @@ namespace tair {
     int clear(int area);
 
     void begin_scan(md_info & info);
-    bool get_next_items(md_info & info, vector<item_data_info *>&list);
+    bool get_next_items(md_info & info, std::vector<item_data_info *>&list);
     void end_scan(md_info & info)
     {
     }
 
-    bool init_buckets(const vector<int> &buckets);
+    bool init_buckets(const std::vector<int> &buckets);
 
-    void close_buckets(const vector<int> &buckets);
+    void close_buckets(const std::vector<int> &buckets);
 
     void get_stats(tair_stat * stat);
 
@@ -75,9 +75,9 @@ namespace tair {
     void __remove(mdb_item * it);
 
 #ifdef TAIR_DEBUG
-    map<int, int > get_slab_size();
-    vector<int> get_area_size();
-    vector< int> get_areas();
+    std::map<int, int > get_slab_size();
+    std::vector<int> get_area_size();
+    std::vector< int> get_areas();
 #endif
 
   private:

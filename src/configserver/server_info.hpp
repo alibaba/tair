@@ -50,7 +50,7 @@ namespace tair {
     };
 #pragma pack()
 
-    typedef hash_map<uint64_t, server_info *, hash<int> >server_info_map;
+    typedef __gnu_cxx::hash_map<uint64_t, server_info *, __gnu_cxx::hash<int> >server_info_map;
 
     class node_info
     {
@@ -71,7 +71,7 @@ namespace tair {
       }
     };
 
-    typedef set<node_info *, node_info_compare> node_info_set;
+    typedef std::set<node_info *, node_info_compare> node_info_set;
 
   }
 }

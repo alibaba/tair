@@ -356,9 +356,9 @@ namespace tair
          }
       };
 
-      typedef vector<data_entry *> tair_dataentry_vector;
-      typedef set<data_entry*, data_entry_comparator> tair_dataentry_set;
-      typedef hash_map<data_entry*, data_entry*, data_entry_hash> tair_keyvalue_map;
+      typedef std::vector<data_entry *> tair_dataentry_vector;
+      typedef std::set<data_entry*, data_entry_comparator> tair_dataentry_set;
+      typedef __gnu_cxx::hash_map<data_entry*, data_entry*, data_entry_hash> tair_keyvalue_map;
    }
 }
 

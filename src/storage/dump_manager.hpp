@@ -41,7 +41,7 @@ namespace tair {
     public:
       explicit dump_manager(storage_manager *);
       void do_dump(const std::set<dump_filter> &dump_filters,
-                   const set<uint32_t> &bucket, uint32_t now);
+                   const std::set<uint32_t> &bucket, uint32_t now);
       void cancle_all();
       bool is_all_stoped();
        ~dump_manager();
@@ -50,8 +50,8 @@ namespace tair {
         dump_manager & operator =(const dump_manager &);
       void release_reference();
     private:
-        std::set<dump_thread *>set_thread;
-        tbsys::CThreadMutex mutex;
+      std::set<dump_thread *>set_thread;
+      tbsys::CThreadMutex mutex;
       storage_manager *storage_mgr;
     };
   }

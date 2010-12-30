@@ -27,6 +27,7 @@ namespace tair {
       TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MDB_SHM_PATH,
                              "/mdb_shm_path");
     bool use_share_mem = true;
+    mdb_param::slab_base_size = 0;
     if(is_embedded)
     {
       mdb_param::size = memsize;
@@ -36,6 +37,7 @@ namespace tair {
     {
       mdb_param::size =
         TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_SLAB_MEM_SIZE, 2048);
+      mdb_param::slab_base_size = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION,TAIR_SLAB_BASE_SIZE,64);
     }
     mdb_param::page_size =
       TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_SLAB_PAGE_SIZE, 1048576);

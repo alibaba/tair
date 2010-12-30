@@ -19,6 +19,7 @@
 
 namespace tair {
 
+  using namespace std;
   data_dumpper mem_cache::item_dump;
 
   bool mem_cache::initialize(int max_slab_id, int base_size, float factor)

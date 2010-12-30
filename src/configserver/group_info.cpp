@@ -21,6 +21,8 @@
 
 namespace tair {
   namespace config_server {
+    using namespace std;
+    using namespace __gnu_cxx;
     group_info::group_info(const char *p_group_name,
                            server_info_map * p_server_info_map,
                            tbnet::ConnectionManager * connmgr)

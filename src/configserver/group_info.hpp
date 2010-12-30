@@ -160,26 +160,26 @@ namespace tair {
       map<uint64_t, int>migrate_machine;
       tbnet::ConnectionManager * connmgr;
       bool should_syn_mig_info;
-      set<string> plugins_name_info;
+      std::set<string> plugins_name_info;
       bool group_can_work;
       bool group_is_OK;
       int build_strategy;
       int server_down_time;
       float diff_ratio;
       uint64_t pos_mask;
-      set<uint64_t> available_server;
+      std::set<uint64_t> available_server;
 
-      set<uint64_t> reported_serverid;
-      map<uint32_t, uint64_t> area_capacity_info;        //<area, capacity>
+      std::set<uint64_t> reported_serverid;
+      std::map<uint32_t, uint64_t> area_capacity_info;        //<area, capacity>
 
-      map<uint64_t, node_stat_info> stat_info;        //<server_id, statInfo>
+      std::map<uint64_t, node_stat_info> stat_info;        //<server_id, statInfo>
       mutable tbsys::CRWSimpleLock stat_info_rw_locker;        //node_stat_info has its own lock, this only for the map stat_info
       uint32_t interval_seconds;
 
       tbsys::CThreadMutex hash_table_set_mutex;
 
     };
-    typedef hash_map <const char *, group_info *,
+    typedef __gnu_cxx::hash_map <const char *, group_info *,
       __gnu_cxx::hash <const char *>, tbsys::char_equal> group_info_map;
   }
 }

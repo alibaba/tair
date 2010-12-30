@@ -22,6 +22,8 @@ namespace {
 }
 namespace tair {
 
+  using namespace std;
+
    table_manager::table_manager()
    {
       server_table = NULL;

@@ -17,6 +17,7 @@
 #include <dlfcn.h>
 namespace tair {
    namespace plugin {
+      using namespace std;
       using namespace tair;
       const int WAIT_SECONDS = 30000000;
       const string CREATE_FUNC_NAME = "create";
@@ -83,7 +84,7 @@ namespace tair {
       {
          return instance;
       }
-      bool plugins_manager::add_plugin(const string& dll_name, plugins_root* root)
+      bool plugins_manager::add_plugin(const std::string& dll_name, plugins_root* root)
       {
          if (root == NULL) return false;
          plugin_handler *handler = new plugin_handler(dll_name);
