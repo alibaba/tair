@@ -332,7 +332,7 @@ namespace tair {
       }
       void set_area_capacity(const std::map<uint32_t, uint64_t>& capacity, uint32_t copy_count, uint32_t server_count )
       {
-         uint32_t div = copy_count * server_count;
+         uint32_t div =  server_count;
          if (div) {
             vec_area_capacity_info.reserve(capacity.size());
             for (std::map<uint32_t, uint64_t>::const_iterator it = capacity.begin();

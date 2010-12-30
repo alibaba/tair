@@ -25,7 +25,8 @@ namespace tair {
   namespace storage {
     namespace fdb  {
       using namespace tair::common;
-
+  
+      class locker;
       class fdb_bucket {
       public:
         fdb_bucket();
@@ -52,7 +53,7 @@ namespace tair {
 
       private:
           fdb_item_manager * item_manager;
-        locker *lockers;
+          locker *lockers;
       };
     }
   }

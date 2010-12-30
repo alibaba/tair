@@ -53,9 +53,9 @@ namespace tair {
       void inc_hit_count() { atomic_inc(&hit_count_value); }
       void set_hit_count(int newValue) { atomic_set(&hit_count_value, newValue); }
 
-      uint32_t data_size() { return data_size_value; }
-      uint32_t use_size() { return use_size_value; }
-      uint32_t item_count() { return item_count_value; }
+      uint64_t data_size() { return data_size_value; }
+      uint64_t use_size() { return use_size_value; }
+      uint64_t item_count() { return item_count_value; }
 
    private:
       atomic_t get_count_value;
@@ -82,9 +82,9 @@ namespace tair {
       void add_data_size(uint64_t ds) { data_size_value += ds; }
       void sub_data_size(uint64_t ds) { data_size_value -= ds; }
 
-      int use_size() { return use_size_value; }
+      uint64_t use_size() { return use_size_value; }
       void add_use_size(uint64_t ds) { use_size_value += ds; }
-      void sub_use_size(uint64_t ds) { use_size_value += ds; }
+      void sub_use_size(uint64_t ds) { use_size_value -= ds; }
 
       uint64_t item_count() { return item_count_value; }
       void add_item_count(int c=1) { item_count_value += c; }

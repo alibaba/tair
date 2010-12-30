@@ -75,11 +75,12 @@
 #define TAIRPUBLIC_SECTION           "public"
 #define TAIRSERVER_SECTION           "tairserver"
 #define CONFSERVER_SECTION           "configserver"
-#define TAIRFDB_SECTION                  "fdb"
+#define TAIRFDB_SECTION              "fdb"
+#define TAIRKDB_SECTION              "kdb"  
 // TAIR_SERVER
 #define TAIR_PORT                    "port"
-#define TAIR_HEARTBEAT_PORT                  "heartbeat_port"
-#define TAIR_SENGINE                     "storage_engine"
+#define TAIR_HEARTBEAT_PORT          "heartbeat_port"
+#define TAIR_SENGINE                 "storage_engine"
 #define TAIR_PROFILER_THRESHOLD      "profiler_threshold"
 #define TAIR_PROCESS_THREAD_COUNT    "process_thread_num"
 #define TAIR_LOG_FILE                "log_file"
@@ -91,21 +92,21 @@
 #define TAIR_GROUP_FILE              "group_file"
 #define TAIR_DATA_DIR                "data_dir"
 #define TAIR_EVICT_DATA_PATH         "evict_data_path"
-#define TAIR_STAT_FILE_PATH                  "stat_file_path"
+#define TAIR_STAT_FILE_PATH          "stat_file_path"
 #define TAIR_STAT_DEFAULT_FILEPATH   "tair_stat.dat"
-#define TAIR_DUMP_DIR                        "data_dump_dir"
+#define TAIR_DUMP_DIR                "data_dump_dir"
 #define TAIR_DEFAULT_DUMP_DIR        "dump"
 #define TAIR_TASK_QUEUE_SIZE         "task_queue_size"
 //MDB
 #define TAIR_SLAB_MEM_SIZE           "slab_mem_size"
 #define TAIR_SLAB_BASE_SIZE          "slab_base_size"
 #define TAIR_SLAB_FACTOR             "slab_factor"
-#define TAIR_MDB_TYPE                    "mdb_type" //mdb or mdb_shm
-#define TAIR_MDB_SHM_PATH                "mdb_shm_path"
-#define TAIR_SLAB_PAGE_SIZE              "slab_page_size"
+#define TAIR_MDB_TYPE                "mdb_type" //mdb or mdb_shm
+#define TAIR_MDB_SHM_PATH            "mdb_shm_path"
+#define TAIR_SLAB_PAGE_SIZE          "slab_page_size"
 #define TAIR_MDB_HASH_BUCKET_SHIFT   "mdb_hash_bucket_shift"
-#define TAIR_CHECK_EXPIRED_HOUR_RANGE   "check_expired_hour_range"
-#define TAIR_CHECK_SLAB_HOUR_RANGE          "check_slab_hour_range"
+#define TAIR_CHECK_EXPIRED_HOUR_RANGE "check_expired_hour_range"
+#define TAIR_CHECK_SLAB_HOUR_RANGE    "check_slab_hour_range"
 
 #define TAIR_ULOG_DIR                   "ulog_dir"
 #define TAIR_ULOG_MIGRATE_BASENAME      "ulog_migrate_base_name"
@@ -118,10 +119,22 @@
 #define TAIR_SERVER_DEFAULT_PORT        5191
 #define TAIR_SERVER_DEFAULT_HB_PORT     6191
 
+//KDB
+#define KDB_MAP_SIZE                    "map_size"
+#define KDB_MAP_SIZE_DEFAULT            10 * 1024 * 1024 // 10MB
+#define KDB_BUCKET_SIZE                 "bucket_size"
+#define KDB_BUCKET_SIZE_DEFAULT         1048583ULL
+#define KDB_RECORD_ALIGN                "record_align"
+#define KDB_RECORD_ALIGN_DEFAULT        128
+#define KDB_DATA_DIR                    "data_dir"
+#define KDB_DEFAULT_DATA_DIR            "kdb/data"
+#define LOCKER_SIZE                     128
+
+
 // file storage engine config items
-#define FDB_INDEX_MMAP_SIZE                 "index_mmap_size"
-#define FDB_CACHE_SIZE                      "cache_size"
-#define FDB_BUCKET_SIZE                     "bucket_size"
+#define FDB_INDEX_MMAP_SIZE             "index_mmap_size"
+#define FDB_CACHE_SIZE                  "cache_size"
+#define FDB_BUCKET_SIZE                 "bucket_size"
 #define FDB_FREE_BLOCK_POOL_SIZE        "free_block_pool_size"
 #define FDB_FREE_BLOCK_MAXSIZE          1024
 #define FDB_DATA_DIR                    "data_dir"

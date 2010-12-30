@@ -8,6 +8,8 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     -I${top_srcdir}/src/packets \
 	     -I${top_srcdir}/src/storage/fdb \
 	     -I${top_srcdir}/src/storage/mdb \
+       -I${top_srcdir}/src/storage/kdb \
+       -I${top_srcdir}/src/storage/kdb/kyotocabinet \
 	     -I${top_srcdir}/src/plugin \
 	     @BOOST_CPPFLAGS@
 
@@ -17,6 +19,8 @@ LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
       $(TBLIB_ROOT)/lib/libtbsys.a \
       $(top_builddir)/src/storage/mdb/libmdb.a \
       $(top_builddir)/src/storage/fdb/libfdb.a \
+      $(top_builddir)/src/storage/kdb/libkdb.a \
+      $(top_builddir)/src/storage/kdb/kyotocabinet/libkyotocabinet.a \
       $(top_builddir)/src/plugin/libtair_plugins.a \
       $(top_builddir)/src/packets/libtair_packets.a \
       $(top_builddir)/src/storage/libdump.a \

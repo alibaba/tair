@@ -47,6 +47,8 @@ AC_CONFIG_FILES([\
 		 src/storage/Makefile \
 		 src/storage/fdb/Makefile \
 		 src/storage/mdb/Makefile \
+		 src/storage/kdb/Makefile \
+		 src/storage/kdb/kyotocabinet/Makefile \
 		 src/packets/Makefile \
 		 src/configserver/Makefile \
 		 src/dataserver/Makefile \

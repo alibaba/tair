@@ -549,6 +549,8 @@ int main(int argc, char *argv[])
       if (se_name == NULL || (strcmp(se_name, "mdb") == 0)) {
       } else if (strcmp(se_name, "fdb") == 0){
          sprintf(dir_path, "%s", TBSYS_CONFIG.getString(TAIRFDB_SECTION, FDB_DATA_DIR, FDB_DEFAULT_DATA_DIR));
+      } else if (strcmp(se_name, "kdb") == 0){
+         sprintf(dir_path, "%s", TBSYS_CONFIG.getString(TAIRKDB_SECTION, KDB_DATA_DIR, KDB_DEFAULT_DATA_DIR));
       }
 
       if(!tbsys::CFileUtil::mkdirs(dir_path)) {
