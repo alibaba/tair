@@ -127,7 +127,7 @@
 #define KDB_RECORD_ALIGN                "record_align"
 #define KDB_RECORD_ALIGN_DEFAULT        128
 #define KDB_DATA_DIR                    "data_dir"
-#define KDB_DEFAULT_DATA_DIR            "kdb/data"
+#define KDB_DEFAULT_DATA_DIR            "data/kdb"
 #define LOCKER_SIZE                     128
 
 
@@ -138,7 +138,7 @@
 #define FDB_FREE_BLOCK_POOL_SIZE        "free_block_pool_size"
 #define FDB_FREE_BLOCK_MAXSIZE          1024
 #define FDB_DATA_DIR                    "data_dir"
-#define FDB_DEFAULT_DATA_DIR            "fdb/data"
+#define FDB_DEFAULT_DATA_DIR            "data/fdb"
 
 #define FDB_NAME                        "fdb_name"
 #define FDB_DEFAULT_NAME                "tair_fdb"
