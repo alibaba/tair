@@ -45,12 +45,12 @@ namespace tair {
           int remove(int bucket_number, data_entry & key, bool version_care);
           int clear(int area);
 
-          bool init_buckets(const vector <int>&buckets);
-          void close_buckets(const vector <int>&buckets);
+          bool init_buckets(const std::vector <int>&buckets);
+          void close_buckets(const std::vector <int>&buckets);
 
           void begin_scan(md_info & info);
           void end_scan(md_info & info);
-          bool get_next_items(md_info & info, vector <item_data_info *>&list);
+          bool get_next_items(md_info & info, std::vector <item_data_info *>&list);
 
           void set_area_quota(int area, uint64_t quota);
           void set_area_quota(std::map<int, uint64_t> &quota_map);

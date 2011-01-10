@@ -11,4 +11,16 @@ libkyotocabinet_a_SOURCES= kccompare.cc \
 		  kcplantdb.cc \
 		  kcregex.cc \
 		  kcthread.cc \
-		  kcutil.cc
+		  kcutil.cc \
+		  kccommon.h \
+		  kccompare.h \
+		  kccompress.h \
+		  kcdb.h \
+		  kcfile.h \
+		  kchashdb.h \
+		  kcmap.h \
+		  kcplantdb.h \
+		  kcregex.h \
+		  kcthread.h \
+		  kcutil.h \
+		  myconf.h

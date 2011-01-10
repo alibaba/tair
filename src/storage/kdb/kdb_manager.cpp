@@ -22,6 +22,8 @@ namespace tair {
   namespace storage {
     namespace kdb {
 
+      using namespace std;
+
       kdb_manager::kdb_manager()
       {
         buckets_map = new kdb_buckets_map();
