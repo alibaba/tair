@@ -1,4 +1,8 @@
-SUBDIRS=mdb fdb kdb
+if WITH_KDB 
+	KDB = kdb 
+endif
+SUBDIRS=mdb fdb $(KDB)
+DIST_SUBDIRS=mdb fdb kdb
 AM_CPPFLAGS=-I${top_srcdir}/src -I${top_srcdir}/src/common -I$(TBLIB_ROOT)/include/tbsys -I$(TBLIB_ROOT)/include/tbnet -I$(top_srcdir)/src/storage/mdb -I$(top_srcdir)/src/storage
 LDADD=$(TBLIB_ROOT)/lib/libtbnet.a $(TBLIB_ROOT)/lib/libtbsys.a $(top_builddir)/src/storage/mdb/libmdb.a
 source_list = dump_filter.cpp dump_manager.cpp fdb/file_op.cpp

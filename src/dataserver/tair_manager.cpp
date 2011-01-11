@@ -14,7 +14,9 @@
  *     - initial release
  *
  */
+#ifdef WITH_KDB
 #include "kdb_manager.h"
+#endif
 #include "tair_manager.hpp"
 #include "migrate_manager.hpp"
 #include "define.hpp"
@@ -84,10 +86,14 @@ namespace tair {
       } else if (strcmp(se_name, "fdb") == 0){
          // init fdb
          storage_mgr = new tair::storage::fdb::fdb_manager();
-      } else if (strcmp(se_name, "kdb") == 0){ 
+      }
+#ifdef WITH_KDB
+      else if (strcmp(se_name, "kdb") == 0){ 
          // init kdb
          storage_mgr = new tair::storage::kdb::kdb_manager();
-      } else {
+      }
+#endif 
+      else {
          return false;
       }
 

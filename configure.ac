@@ -36,7 +36,19 @@ else
 	AC_MSG_ERROR([TBLIB_ROOT have not been set])
 	exit 1;
 fi
+
 AM_CONDITIONAL([TEST_OPT],[test "$build_test" = yes])
+AC_ARG_WITH([kdb],
+		AS_HELP_STRING([--with-kdb],
+			[with kdb (default is no)]),
+		[
+		if test "$withval" = "no"; then
+		with_kdb=no
+		fi
+		],
+		[ with_kdb=yes ]
+	   )
+AM_CONDITIONAL([WITH_KDB],[test "$with_kdb" = yes])
 
 AX_BOOST([1.30.0],,exit 1)
 AC_CONFIG_FILES([\
@@ -58,6 +70,4 @@ AC_CONFIG_FILES([\
 		 scripts/Makefile \
 		 share/Makefile
 		 ])
-
-
 AC_OUTPUT
