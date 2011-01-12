@@ -221,6 +221,7 @@ namespace tair {
               ret = false;
               break;
             }
+            break;
           }
         }
 
