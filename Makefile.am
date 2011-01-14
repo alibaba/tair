@@ -1,5 +1,5 @@
 if TEST_OPT
-	TEST = test
+TEST = test
 endif
 SUBDIRS=src scripts share $(TEST)
 DIST_SUBDIRS = src scripts share test

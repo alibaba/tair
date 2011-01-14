@@ -1,5 +1,5 @@
 if WITH_KDB 
-	KDB = kdb 
+KDB=kdb 
 endif
 SUBDIRS=mdb fdb $(KDB)
 DIST_SUBDIRS=mdb fdb kdb

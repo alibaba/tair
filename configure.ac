@@ -40,15 +40,15 @@ fi
 AM_CONDITIONAL([TEST_OPT],[test "$build_test" = yes])
 AC_ARG_WITH([kdb],
 		AS_HELP_STRING([--with-kdb],
-			[with kdb (default is no)]),
+			[with kdb (default is NO)]),
 		[
-		if test "$withval" = "no"; then
-		with_kdb=no
+		if test "$withval" = "yes"; then
+		with_kdb=yes
 		fi
 		],
-		[ with_kdb=yes ]
+		[ with_kdb=no ]
 	   )
-AM_CONDITIONAL([WITH_KDB],[test "$with_kdb" = yes])
+AM_CONDITIONAL([WITH_KDB],[test x$with_kdb = xyes])
 
 AX_BOOST([1.30.0],,exit 1)
 AC_CONFIG_FILES([\
