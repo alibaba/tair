@@ -97,7 +97,8 @@ namespace tair {
         }
         PROFILER_END();
 
-        int stat_data_size = data_size + FDB_ITEM_META_SIZE;
+        int stat_data_size = 0;
+        int stat_use_size = 0;
 
         PROFILER_BEGIN("get item from file");
         int rc = item_manager->get_item(key, item);
@@ -124,16 +125,22 @@ namespace tair {
             PROFILER_BEGIN("free data");
             item_manager->free_data(item);
             PROFILER_END();
-            stat_data_size -= item.meta.size;        // sub free data size
+            stat_data_size = data_size - (item.meta.size - item.data.padsize);  // add new data size and sub free data size
+            stat_use_size = total_size - item.meta.size;  // add new use size and sub free use size
             item.meta.size = total_size;
             PROFILER_BEGIN("new data");
             item_manager->new_data(item, true);
             PROFILER_END();
+          } else {
+            stat_data_size = data_size - (item.meta.size - item.data.padsize);  // add new data size and sub free data size
+            stat_use_size = 0;  // use_size not change
           }
           item.free_value();
         }
         else {
           item.is_new = true;
+          stat_data_size = data_size + FDB_ITEM_META_SIZE;  // add new data size
+          stat_use_size = total_size + FDB_ITEM_META_SIZE;  // add new use size
           item.meta.size = total_size;
           PROFILER_BEGIN("new item");
           item_manager->new_item(item);
@@ -177,7 +184,7 @@ namespace tair {
 
         if(rc == TAIR_RETURN_SUCCESS) {
           item_manager->stat_add(key.area, stat_data_size,
-                                 stat_data_size + psize);
+                                 stat_use_size);
         }
 
         return rc;
