@@ -190,12 +190,13 @@ namespace tair {
       }
 
       data_entry akey = key;
-      akey.decode_area();
+      int area = akey.decode_area();
+      key.area = area;
 
       int bucket_number = get_bucket_number(akey);
       int rc = storage_mgr->put(bucket_number, key, value, false, 0);
 
-      TAIR_STAT.stat_put(akey.area);
+      TAIR_STAT.stat_put(area);
 
       return rc;
    }
