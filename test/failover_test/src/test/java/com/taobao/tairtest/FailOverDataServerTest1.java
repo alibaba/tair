@@ -10,11 +10,10 @@ import junit.framework.Assert;
 
 /**
  * author fanggang
- * dataserver 相关的容灾测试
+ * dataserver testcse
  **/
 public class FailOverDataServerTest1 extends FailOverBaseCase{
 	
-	//在恢复时间内关闭dataserver
 	@Test
 	public void testFailover_01_add_ds_stop_in_time()
 	{
@@ -104,7 +103,6 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 01");
 	}
 	
-    //加入节点不再恢复
 	@Test
     public void testFailover_02_add_one_ds()
     {   
@@ -195,7 +193,6 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 02");
     }
     
-    //在迁移过程中恢复
 	@Test
     public void testFailover_03_add_ds_close_in_migrate()
     { 
@@ -309,7 +306,6 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
       
     }
     
-    //在迁移后恢复
 	@Test
     public void testFailover_04_add_ds_reclose_after_migrate()
     {
@@ -426,7 +422,6 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 04");
     
     }
-  //同时添加两台ds
 	@Test
     public void testFailover_05_add_two_ds()
     {
@@ -3062,7 +3057,6 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		//end test
 		log.error("end DataServer test Failover case 27");
     }
-    //把系统都启动起来
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
@@ -3071,12 +3065,11 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
         
 	}
 	
-	//清理
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-	    clean_tool("local");
-	    reset_cluster(csList,dsList);
+//	    clean_tool("local");
+//	    reset_cluster(csList,dsList);
 		
 	}
 	

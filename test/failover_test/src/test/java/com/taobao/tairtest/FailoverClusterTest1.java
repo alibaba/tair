@@ -178,8 +178,8 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-		clean_tool("local");
-		reset_cluster(csList,dsList);
-		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+//		clean_tool("local");
+//		reset_cluster(csList,dsList);
+//		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
 	}
 }

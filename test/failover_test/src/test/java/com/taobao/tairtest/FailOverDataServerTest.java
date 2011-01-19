@@ -10,7 +10,7 @@ import junit.framework.Assert;
 
 /**
  * author fanggang
- * dataserver 相关的容灾测试
+ * dataserver testcse
  **/
 public class FailOverDataServerTest extends FailOverBaseCase{
 	
@@ -2425,7 +2425,6 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		}
 		log.error("end DataServer test Failover case 25");
     }
-    //把系统都启动起来
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
@@ -2434,12 +2433,11 @@ public class FailOverDataServerTest extends FailOverBaseCase{
         
 	}
 	
-	//清理
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-	    clean_tool("local");
-	    reset_cluster(csList,dsList);
+//	    clean_tool("local");
+//	    reset_cluster(csList,dsList);
 		
 	}
 	
