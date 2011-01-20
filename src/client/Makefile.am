@@ -1,4 +1,4 @@
-AM_CPPFLAGS=-I${top_srcdir}/src \
+AM_CPPFLAGS= -fPIC -I${top_srcdir}/src \
 	    -I$(TBLIB_ROOT)/include/tbsys \
 	    -I$(TBLIB_ROOT)/include/tbnet \
 	    -I${top_srcdir}/src/storage/fdb \
