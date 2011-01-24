@@ -14,5 +14,6 @@ chmod +x bootstrap.sh
 ./bootstrap.sh
 export TBLIB_ROOT=/opt/csr/common
 ./configure
+#make PREFIX=/opt/csr/tair-2.3 rpms
 make rpms
 mv *.rpm rpm/
