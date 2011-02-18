@@ -336,7 +336,7 @@ namespace tair {
          util::string_util::conv_raw_string(key, pdata, size);
          *akey = pdata;
       } else {
-         *size = strlen(key)+1;
+         *size = strlen(key);
       }
 
       return pdata;
