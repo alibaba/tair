@@ -31,7 +31,7 @@ files for developing applications that use the %name package.
 export TBLIB_ROOT=/opt/csr/common
 chmod u+x bootstrap.sh
 ./bootstrap.sh
-./configure --prefix=%{_prefix} --with-release=yes --with-boost=%BOOST_DIR
+./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR
 make %{?_smp_mflags}
 
 %install
@@ -42,6 +42,10 @@ make DESTDIR=$RPM_BUILD_ROOT install
 rm -rf $RPM_BUILD_ROOT
 
 %post
+echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
+/sbin/ldconfig
+
+%post devel
 echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
 /sbin/ldconfig
 
