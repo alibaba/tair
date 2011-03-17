@@ -198,8 +198,7 @@ namespace tair {
             if (it != wait_object_map.end()) {
                if (packet == NULL) {
                   log_error("[%d] packet is null.", id);
-               }
-               if (!it->second->insert_packet(packet)){
+               } else if (!it->second->insert_packet(packet)){
                   log_debug( "[pCode=%d] packet had been ignored", packet->getPCode());
                   if (packet->isRegularPacket()) delete packet;
                }
