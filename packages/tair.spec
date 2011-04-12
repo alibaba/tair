@@ -43,10 +43,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %post
 echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
+echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
 /sbin/ldconfig
 
 %post devel
 echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
+echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
 /sbin/ldconfig
 
 %postun
