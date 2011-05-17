@@ -81,7 +81,7 @@ namespace tair {
           cdate = time(NULL);
           mdate = cdate;
           if(expire_time > 0)
-            edate = mdate + expire_time;
+            edate = expire_time > static_cast<uint32_t>(mdate) ? expire_time : mdate + expire_time;
         }
         else {
           cdate = key.data_meta.cdate;
