@@ -309,7 +309,7 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 		
 		waitto(5);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
+		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==0)fail("Already migration!");
 		//restart ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failed!");
 		log.error("Restart ds successful!");	
@@ -981,7 +981,7 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 		log.error("wait 5 seconds to restart before rebuild ...");
 		waitto(5);
 		
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
+		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)fail("Already migration!");
 		//restart ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failed!");
 		log.error("Restart ds successful!");	
@@ -1660,7 +1660,7 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -2094,8 +2094,8 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-//		clean_tool("local");
+		clean_tool("local");
 //		reset_cluster(csList,dsList);
-//		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
 	}
 }

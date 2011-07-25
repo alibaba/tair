@@ -14,85 +14,6 @@ import junit.framework.Assert;
  **/
 public class FailOverDataServerTest extends FailOverBaseCase{
 	
-	//在恢复时间内启动dataserver
-	@Test
-	public void testFailover_01_restart_in_time()
-	{
-		log.error("start DataServer test Failover case 01");
-		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
-        log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
-		
-		log.error("Start Cluster Successful!");
-		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
-			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))
-			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
-			fail("modify configure file failed");
-
-		//write 100k data to cluster
-		execute_data_verify_tool();
-		
-		//check verify
-		while(check_process("local", "DataDebug")!=2)
-		{
-			waitto(2);
-			if(++waitcnt>150)break;
-		}	
-
-		if(waitcnt>150)fail("put data time out!");
-		waitcnt=0;
-		
-		//save put result
-		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
-		log.error("finish put data!");
-		
-		//wait 5s for duplicate
-		waitto(5);
-		
-		//close one data server
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close data server failed!");
-		
-		log.error("first data server has been closed!");
-		log.error("wait 2 seconds to restart before rebuild ...");
-
-		waitto(2);
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
-		
-		//start the data server again
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("start data server failed!");
-		log.error("Restart ds successful!");
-		
-		//wait 10s for data server start
-		waitto(10);
-		
-		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
-			fail("modify configure file failed");	
-		//read data from cluster
-		execute_data_verify_tool();
-		//check verify
-		while(check_process("local", "DataDebug")!=2)
-		{
-			waitto(2);
-			if(++waitcnt>150)break;
-		}	
-		if(waitcnt>150)fail("Read data time out!");
-		waitcnt=0;
-		log.error("Read data over!");
-		
-		//verify get result
-		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");	
-		
-		//end test
-		log.error("end DataServer test Failover case 01");
-	}
-	
     //在恢复时间外恢复dataserver
 	@Test
     public void testFailover_02_kill_out_time()
@@ -414,7 +335,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
     
     }
     
-    //kill 80%数量dataserver,迁移之前恢复
+    //kill 40% dataserver
 	@Test
     public void testFailover_05_kill_more_servers()
     { 
@@ -455,15 +376,15 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		waitto(10);
 		
 		//close 3 data server
-		List closeList = dsList.subList(0, 3);
+		List closeList = dsList.subList(0, 2);
 		if(!batch_control_ds(closeList, FailOverBaseCase.stop, 0))
-			fail("close 3 data server failed!");
+			fail("close 2 data server failed!");
 		
-		log.error("3 data server has been closed!");
+		log.error("2 data server has been closed!");
 		log.error("wait 2 seconds to restart before rebuild ...");
-		waitto(2);
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
-		//start the  3 data server again
+		waitto(5);
+		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==0)fail("Already migration!");
+		//start the  2 data server again
 		if(!batch_control_ds(closeList, FailOverBaseCase.start, 0)) 
 			fail("start data server failed!");
 		log.error("restart ds successful!");
@@ -664,7 +585,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		log.error("second data server has been closed!");
 		log.error("wait 3 seconds to restart the secord ds  before rebuild ...");
 		waitto(3);
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)fail("Already migration!");
+//		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)fail("Already migration!");
 		
 		//restart second data server
 		if(!control_ds((String) dsList.get(1), FailOverBaseCase.start, 0))fail("start data server failed!");
@@ -1727,7 +1648,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		waitto(FailOverBaseCase.down_time);
 		
 		//wait for migrate start
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==0)
 		{
 			log.debug("check if migration start on cs "+(String)csList.get(0)+" log ");
 			waitto(2);
@@ -1892,92 +1813,12 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		//end test
 		log.error("end DataServer test Failover case 16");
     }
-    
-    //kill all data servers, and restart in time
-	@Test
-    public void testFailover_17_kill_allDataServrs_restart_inTime()
-    {
-    	log.error("start DataServer test Failover case 17");
-		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
-                
-	    log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
-		log.error("Start Cluster Successful!");
-		
-		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
-			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))
-			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
-			fail("modify configure file failed");
-
-		//write 100k data to cluster
-		execute_data_verify_tool();
-		
-		//check verify
-		while(check_process("local", "DataDebug")!=2)
-		{
-			waitto(2);
-			if(++waitcnt>150)break;
-		}		
-
-		if(waitcnt>150)fail("put data time out!");
-		waitcnt=0;
-		
-		//verify get result
-		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
-		log.error("Write data over!");	
-		
-		//wait 5s for duplicate
-		waitto(5);
-		
-		//close all data servers
-		if(!batch_control_ds(dsList, FailOverBaseCase.stop, 0)) fail("close data servers failed!");
-		log.error("data servers has been closed!");
-		
-		waitto(5);
-		
-		//restart all data servers
-		if(!batch_control_ds(dsList, FailOverBaseCase.start, 0))fail("start data servers failed!");
-		log.error("data servers has been started!");
-                
-        //touch the group file
-		//if (touch_file((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf")!= 0)
-		//		fail(" touch group file failed!");
-		//waitto(FailOverBaseCase.down_time);
-				
-		waitto(30);
-		
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
-		//migrate need check data 
-		execute_data_verify_tool();
-		//check verify
-		while(check_process("local", "DataDebug")!=2)
-		{
-			waitto(2);
-			if(++waitcnt>150)break;
-		}
-		log.error("Read data over!");
-		if(waitcnt>150)fail("Read data time out!");
-		waitcnt=0;
-		
-		//verify get result
-		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully verified data!");
-
-		//end test
-		log.error("end DataServer test Failover case 17");
-    }
-    
     //kill all data servers, and restart out time
 	@Test
     public void testFailover_18_kill_allDataServrs_restart_outTime()
     {
-    	log.error("start DataServer test Failover case 18");
-		int waitcnt=0;
+        log.error("start DataServer test Failover case 18");
+        int waitcnt=0;
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
 	    log.error("wait system initialize ...");
@@ -2356,76 +2197,8 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		log.error("end DataServer test Failover case 24");
 	}
-	@Test
-    public  void testFailover_25_kill_oneDataServer_no_rebuild_table()
-    {
-    	//start cluster 
-    	log.error("start DataServer test Failover case 25");
-    	int waitcnt=0;
-		// modify tair config
-		try {
-			if (!modify_config_file((String) csList.get(0), FailOverBaseCase.tair_bin + "etc/group.conf", "_min_data_server_count", "5"))
-				fail("modify configure file failed");
-			if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
-				fail("start cluster failed!");
-			log.error("wait system initialize ...");
-			waitto(FailOverBaseCase.down_time);
-			log.error("Start Cluster Successful!");
-
-			// modify test config
-			if (!modify_config_file("local", FailOverBaseCase.test_bin + "DataDebug.conf", "actiontype", "put"))
-				fail("modify configure file failed");
-			if (!modify_config_file("local", FailOverBaseCase.test_bin + "DataDebug.conf", "datasize", "100000"))
-				fail("modify configure file failed");
-			if (!modify_config_file("local", FailOverBaseCase.test_bin + "DataDebug.conf", "filename", "read.kv"))
-				fail("modify configure file failed");
-			// write 100k data to cluster
-			execute_data_verify_tool();
-			// check verify
-			while (check_process("local", "DataDebug") != 2) {
-				waitto(2);
-				if (++waitcnt > 150)
-					break;
-			}
-			if (waitcnt > 150)
-				fail("put data time out!");
-			waitcnt = 0;
-			// verify get result
-			int datacnt = getVerifySuccessful();
-			log.error("put successful=" + datacnt);
-			assertTrue("put successful rate samll than 90%!", datacnt / 100000.0 > 0.9);
-			log.error("Write data over!");
-
-			// close a DS
-			if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
-				fail("close 1 data server failed!");
-			waitto(FailOverBaseCase.down_time);
-			// modify test config
-			if (!modify_config_file("local", FailOverBaseCase.test_bin + "DataDebug.conf", "actiontype", "get"))
-				fail("modify configure file failed");
-			execute_data_verify_tool();
-			while (check_process("local", "DataDebug") != 2) {
-				waitto(2);
-				if (++waitcnt > 150)
-					break;
-			}
-			if (waitcnt > 150)
-				fail("Read data time out!");
-			waitcnt = 0;
-			log.error("Read data over!");
-			// verify get result
-			log.error(getVerifySuccessful());
-			assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-			log.error("Successfully Verified data!");
-			
-		} finally {
-			// resume tair config
-			if (!modify_config_file((String) csList.get(0), FailOverBaseCase.tair_bin + "etc/group.conf", "_min_data_server_count", "1"))
-				fail("modify configure file failed");
-		}
-		log.error("end DataServer test Failover case 25");
-    }
-	public void setUp()
+	
+    public void setUp()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
@@ -2436,9 +2209,9 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-//	    clean_tool("local");
+	    clean_tool("local");
 //	    reset_cluster(csList,dsList);
-		
+        batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");		
 	}
 	
 }

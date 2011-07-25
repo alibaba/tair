@@ -30,8 +30,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String finish_rebuild = "version changed";
 	// Parameters
 	final static int down_time = 120;
-	final String csarr[] = new String[] { "10.232.4.14", "10.232.4.15" };
-	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18" };
+	final String csarr[] = new String[] { "10.232.4.20", "10.232.4.21" };
+	final String dsarr[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24" };
 	final List csList = Arrays.asList(csarr);
 	final List dsList = Arrays.asList(dsarr);
 
@@ -377,7 +377,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	protected int getVerifySuccessful() {
 		int ret = 0;
 		String verify = "cd " + FailOverBaseCase.test_bin + " && ";
-		verify += "tail -4 datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
+		verify += "tail -10 datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
 		STAFResult result = executeShell(stafhandle, "local", verify);
 		if (result.rc != 0)
 			ret = -1;
