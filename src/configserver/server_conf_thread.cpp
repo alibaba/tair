@@ -541,14 +541,10 @@ namespace tair {
       resp->copy_count = group_info_found->get_copy_count();
 
       resp->config_version = group_info_found->get_client_version();
-      /*
-       * comment out for fixing a bug occurred with JavaClient,
-       * when one or more DS down.
-       */
-      //if(req->config_version == group_info_found->get_client_version()) {
-        //group_info_rw_locker.unlock();
-        //return;
-      //}
+      if(req->config_version == group_info_found->get_client_version()) {
+        group_info_rw_locker.unlock();
+        return;
+      }
 
       resp->config_map = *(group_info_found->get_common_map());
 
