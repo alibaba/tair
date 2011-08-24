@@ -29,8 +29,6 @@ namespace tair {
       }
     public:
       void set_available_server(const set<node_info *>&ava_ser);
-
-    protected:
       int is_this_node_OK(server_id_type node_id, int line_num,
                           size_t node_idx, hash_table_type & hash_table_dest,
                           int option_level, bool node_in_use = false);

@@ -76,7 +76,7 @@
 #define TAIRSERVER_SECTION           "tairserver"
 #define CONFSERVER_SECTION           "configserver"
 #define TAIRFDB_SECTION              "fdb"
-#define TAIRKDB_SECTION              "kdb"  
+#define TAIRKDB_SECTION              "kdb"
 // TAIR_SERVER
 #define TAIR_PORT                    "port"
 #define TAIR_HEARTBEAT_PORT          "heartbeat_port"
@@ -97,6 +97,7 @@
 #define TAIR_DUMP_DIR                "data_dump_dir"
 #define TAIR_DEFAULT_DUMP_DIR        "dump"
 #define TAIR_TASK_QUEUE_SIZE         "task_queue_size"
+
 //MDB
 #define TAIR_SLAB_MEM_SIZE           "slab_mem_size"
 #define TAIR_SLAB_BASE_SIZE          "slab_base_size"
@@ -153,6 +154,7 @@
 #define TAIR_STR_MIN_DATA_SRVER_COUNT   "_min_data_server_count"
 #define TAIR_STR_BUILD_STRATEGY         "_build_strategy"
 #define TAIR_BUILD_STRATEGY             (1)
+#define TAIR_STR_ACCEPT_STRATEGY        "_accept_strategy"  // default is 0, need touch. if 1, accept ds automatically
 #define TAIR_STR_BUILD_DIFF_RATIO       "_build_diff_ratio"
 #define TAIR_BUILD_DIFF_RATIO           "0.6"
 #define TAIR_STR_SERVER_LIST            "_server_list"

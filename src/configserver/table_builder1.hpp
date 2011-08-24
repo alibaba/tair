@@ -23,7 +23,7 @@ namespace tair {
     public:
       table_builder1(uint32_t bucket_count, uint32_t copy_count);
       ~table_builder1();
-    protected:
+
       int is_this_node_OK(server_id_type node_id, int line_num,
                           size_t node_idx, hash_table_type & hash_table_dest,
                           int option_level, bool node_in_use = false);

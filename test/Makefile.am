@@ -23,5 +23,5 @@ LDADD= \
 
 AM_LDFLAGS=-lpthread -lz ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@
 
-bin_PROGRAMS=get
-get_SOURCES=get.cpp
+#bin_PROGRAMS=get
+#get_SOURCES=get.cpp

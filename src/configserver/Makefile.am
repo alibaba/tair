@@ -31,13 +31,15 @@ base_src= stat_info.cpp server_conf_thread.cpp server_info.cpp \
 		  table_builder.hpp	\
 		  tair_cfg_svr.hpp
 
-sbin_PROGRAMS=tair_cfg_svr cst_monitor cst_transfer sif_monitor parameter_printer stat_info_test
+sbin_PROGRAMS=tair_cfg_svr cst_monitor cst_distribution_checker cst_transfer sif_monitor parameter_printer stat_info_test
 
 parameter_printer_SOURCES=const_parameter_pinter.cpp
 
 tair_cfg_svr_SOURCES=tair_cfg_svr.cpp ${base_src}
 
 cst_monitor_SOURCES=conf_server_table_monitor.cpp ${base_src}
+
+cst_distribution_checker_SOURCES=conf_server_table_checker.cpp ${base_src}
 
 cst_transfer_SOURCES=conf_server_table_transfer.cpp  ${base_src}
 

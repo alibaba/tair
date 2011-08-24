@@ -109,7 +109,7 @@ namespace tair {
          heartbeat_packet.set_stat_info(stat_data, stat_size);
 
          for (uint32_t i=0; i<config_server_list.size(); i++) {
-            if ((config_server_list[i] & TAIR_FLAG_CFG_DOWN)) continue;
+            //if ((config_server_list[i] & TAIR_FLAG_CFG_DOWN)) continue;
             request_heartbeat *new_packet = new request_heartbeat(heartbeat_packet);
             if (conn_mgr->sendPacket(config_server_list[i], new_packet, NULL, (void*)((long)i)) == false) {
                delete new_packet;

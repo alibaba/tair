@@ -313,7 +313,12 @@ namespace tair {
           group_info_rw_locker.rdlock();
           for(it = group_info_map_data.begin();
               it != group_info_map_data.end(); ++it) {
+            // for we can't get peer's version from protocol, add 10 to client version and server
+            it->second->inc_version(server_up_inc_step);
             it->second->send_server_table_packet(slave_id);
+            log_warn("config server up and master not changed, version changed. "
+                "group name: %s, client version: %u, server version: %u",
+                it->second->get_group_name(), it->second->get_client_version(), it->second->get_server_version());
           }
           group_info_rw_locker.unlock();
         }
@@ -476,6 +481,9 @@ namespace tair {
           if(server_info_it->status != server_info::ALIVE
              && (loop_count % 30) != 0) {
             down_slave_config_server = server_info_it->server_id;
+            log_debug("local server: %s set down slave config server: %s",
+                tbsys::CNetUtil::addrToString(util::local_server_ip::ip).c_str(),
+                tbsys::CNetUtil::addrToString(down_slave_config_server).c_str());
             continue;
           }
           down_slave_config_server = 0;
@@ -766,9 +774,50 @@ namespace tair {
       }
       server_info *p_server = it->second;
       p_server->last_time = heartbeat_curr_time;
-      if(p_server->status == server_info::DOWN
-         || p_server->status == server_info::FORCE_DOWN) {
-        // this data server should not be in this group
+      if (p_server->status == server_info::DOWN)
+      {
+        if (p_server->group_info_data == NULL ||
+            p_server->group_info_data->get_accept_strategy() == GROUP_DEFAULT_ACCEPT_STRATEGY) //default accept strategy
+        {
+          log_warn("dataserver: %s UP, accept strategy is default, set it to solitary(can not work)",
+              tbsys::CNetUtil::addrToString(req->server_id).c_str());
+          // this data server should not be in this group
+          resp->client_version = resp->server_version = 1;
+          // inc table version and force rebuild table for send server table to slave asynchronously
+          if (p_server->group_info_data != NULL)
+          {
+            p_server->group_info_data->inc_version(server_up_inc_step);
+            p_server->group_info_data->set_force_rebuild();
+            log_warn("ds up, set force rebuild. version changed. group name: %s, client version: %u, server version: %u",
+                p_server->group_info_data->get_group_name(), p_server->group_info_data->get_client_version(),
+                p_server->group_info_data->get_server_version());
+          }
+          server_info_rw_locker.unlock();
+          group_info_rw_locker.unlock();
+          return;
+        }
+        else if (p_server->group_info_data->get_accept_strategy() == GROUP_AUTO_ACCEPT_STRATEGY)
+        {
+          log_warn("dataserver: %s UP, accept strategy is auto, we will rebuild the table.",
+              tbsys::CNetUtil::addrToString(req->server_id).c_str());
+          // accept ds automatically
+          struct timespec tm;
+          assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
+          p_server->last_time = tm.tv_sec;
+          p_server->status = server_info::ALIVE;
+          p_server->group_info_data->set_force_rebuild();
+        }
+        else
+        {
+          log_error("dataserver: %s UP, accept strategy is: %d illegal.",
+              p_server->group_info_data->get_accept_strategy(), tbsys::CNetUtil::addrToString(req->server_id).c_str());
+          server_info_rw_locker.unlock();
+          group_info_rw_locker.unlock();
+          return;
+        }
+      }
+      else if (p_server->status == server_info::FORCE_DOWN)
+      {
         resp->client_version = resp->server_version = 1;
         server_info_rw_locker.unlock();
         group_info_rw_locker.unlock();
@@ -776,9 +825,14 @@ namespace tair {
       }
 
       group_info *group_info_founded = p_server->group_info_data;
-      if(group_info_founded == NULL)
+      if(group_info_founded == NULL) {
+        server_info_rw_locker.unlock();
+        group_info_rw_locker.unlock();
         return;
+      }
       if(group_info_founded->get_group_status() == false) {
+        log_error("group:%s status is abnorm. set ds: %s to solitary(can not work)",
+            group_info_founded->get_group_name(), tbsys::CNetUtil::addrToString(req->server_id).c_str());
         resp->client_version = resp->server_version = 1;
         server_info_rw_locker.unlock();
         group_info_rw_locker.unlock();
@@ -1167,13 +1221,34 @@ namespace tair {
     bool server_conf_thread::
       do_set_server_table_packet(response_get_server_table * packet)
     {
-      if(master_config_server_id == util::local_server_ip::ip) {
-        log_info("master conflict : %s %s",
-                 tbsys::CNetUtil::addrToString(master_config_server_id).
-                 c_str(),
-                 tbsys::CNetUtil::addrToString(util::local_server_ip::ip).
-                 c_str());
+      if (NULL == packet)
+      {
+        log_error("do set server table packet is null");
         return false;
+      }
+
+      // if config server is default master and now is master role, discard this packet.
+      // if config server is not default master and now is master role, accept this packet.
+      if (master_config_server_id == util::local_server_ip::ip)
+      {
+        string peer_ip = tbsys::CNetUtil::addrToString(packet->get_connection()->getPeerId()).c_str();
+        size_t peer_pos = peer_ip.find(":");
+        string default_m_ip = tbsys::CNetUtil::addrToString(config_server_info_list[0]->server_id).c_str();
+        size_t default_m_pos = default_m_ip.find(":");
+        log_warn("master conflict. local id: %s, peer id: %s, pos: %u, ip: %s, default id: %s, pos: %u, ip: %s",
+            tbsys::CNetUtil::addrToString(util::local_server_ip::ip).c_str(),
+            peer_ip.c_str(), peer_pos, peer_ip.substr(0, peer_pos).c_str(),
+            default_m_ip.c_str(), default_m_pos, default_m_ip.substr(0, default_m_pos).c_str());
+        if (peer_ip.substr(0, peer_pos) != default_m_ip.substr(0, default_m_pos))
+        {
+          log_error("master conflict, master ip: %s, local ip: %s, default ip: %s, peer ip: %s,"
+              " this packet is not from default master, discard set server table packet",
+              tbsys::CNetUtil::addrToString(master_config_server_id).c_str(),
+              tbsys::CNetUtil::addrToString(util::local_server_ip::ip).c_str(),
+              tbsys::CNetUtil::addrToString(config_server_info_list[0]->server_id).c_str(),
+              tbsys::CNetUtil::addrToString(packet->get_connection()->getPeerId()).c_str());
+          return false;
+        }
       }
 
       group_info_rw_locker.wrlock();

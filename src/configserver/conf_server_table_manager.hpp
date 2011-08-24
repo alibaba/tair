@@ -65,6 +65,15 @@ namespace tair {
       uint32_t get_dest_data_skip() const;
       bool is_file_opened() const;
 
+      uint64_t * get_hash_table(){
+        return hash_table;
+      }
+      uint64_t * get_m_hash_table(){
+        return m_hash_table;
+      } 
+      uint64_t * get_d_hash_table(){
+        return d_hash_table;
+      }
     private:
         conf_server_table_manager(const conf_server_table_manager &);
         conf_server_table_manager & operator=(const conf_server_table_manager

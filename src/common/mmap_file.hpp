@@ -71,7 +71,7 @@ namespace tair {
          }
 
          if (fd < 0) {
-            log_error("open file : %s failed", file_name);
+            log_error("open file : %s failed, errno: %d", file_name, errno);
             return false;
          }
 

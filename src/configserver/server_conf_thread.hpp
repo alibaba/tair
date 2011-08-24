@@ -129,6 +129,8 @@ namespace tair {
       tair::common::wait_object_manager my_wait_object_manager;
       int heartbeat_curr_time;
       bool is_ready;
+
+      static const uint32_t server_up_inc_step = 100;
     private:
         class table_builder_thread:public tbsys::CDefaultRunnable
       {

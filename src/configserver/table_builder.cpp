@@ -69,7 +69,7 @@ namespace tair {
     }
     void table_builder::print_available_server()
     {
-      log_debug("available server:");
+      log_debug("available server size: %u", available_server.size());
       log_debug("    ");
       for(server_list_type::iterator it = available_server.begin();
           it != available_server.end(); it++) {

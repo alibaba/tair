@@ -85,6 +85,8 @@ namespace tair {
       map<uint32_t, int>pos_count;
       for(set<node_info *>::const_iterator it = ava_server.begin();
           it != ava_server.end(); it++) {
+        log_info("mask %"PRI64_PREFIX"u & %"PRI64_PREFIX"u -->%"PRI64_PREFIX"u",
+            (*it)->server->server_id, pos_mask, (*it)->server->server_id & pos_mask);
         available_server.
           insert(make_pair
                  ((*it)->server->server_id,
@@ -304,7 +306,7 @@ namespace tair {
     }
     int table_builder2::
       rebuild_table(const hash_table_type & hash_table_source,
-                    hash_table_type & hash_table_dest, bool no_quick_tbale)
+                    hash_table_type & hash_table_dest, bool no_quick_table)
     {
       if(!build_stat_normal) {
         int diff_server = available_server.size() - pos_max;
@@ -316,7 +318,7 @@ namespace tair {
 
       }
       return table_builder::rebuild_table(hash_table_source, hash_table_dest,
-                                          no_quick_tbale);
+                                          no_quick_table);
     }
 
   }

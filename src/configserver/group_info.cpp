@@ -17,12 +17,14 @@
 #include "server_info_allocator.hpp"
 #include "table_builder1.hpp"
 #include "table_builder2.hpp"
+//#include "table_builder3.hpp"
 #include "get_server_table_packet.hpp"
 
 namespace tair {
   namespace config_server {
     using namespace std;
     using namespace __gnu_cxx;
+
     group_info::group_info(const char *p_group_name,
                            server_info_map * p_server_info_map,
                            tbnet::ConnectionManager * connmgr)
@@ -39,6 +41,7 @@ namespace tair {
       group_can_work = true;
       group_is_OK = true;
       build_strategy = 1;
+      accept_strategy = GROUP_DEFAULT_ACCEPT_STRATEGY;
       diff_ratio = 0.6;
       pos_mask = TAIR_POS_MASK;
       server_down_time = TAIR_SERVER_DOWNTIME;
@@ -416,6 +419,12 @@ namespace tair {
       build_strategy =
         config.getInt(group_name, TAIR_STR_BUILD_STRATEGY,
                       TAIR_BUILD_STRATEGY);
+
+      //modify accept_strategy: no need to rebulid table
+      accept_strategy =
+        static_cast<GroupAcceptStrategy>(config.getInt(group_name, TAIR_STR_ACCEPT_STRATEGY,
+                      static_cast<int>(GROUP_DEFAULT_ACCEPT_STRATEGY)));
+
       float old_ratio = diff_ratio;
       diff_ratio =
         strtof(config.
@@ -569,14 +578,15 @@ namespace tair {
         node_info *node = (*it);
         // 1 means down, 0 alive, 2 initing, 3 synced
         if(node->server->status != server_info::DOWN) {
-          if(node->server->last_time < now
+          if((node->server->last_time < now && (node->server->status == server_info::ALIVE && !tbnet::ConnectionManager::isAlive(node->server->server_id)))
              || node->server->status == server_info::FORCE_DOWN) {
+            log_info("node: <%s> DOWN",
+                     tbsys::CNetUtil::addrToString(node->server->server_id).c_str());
             node->server->status = server_info::DOWN;
           }
           else {
             log_info("get up node: <%s>",
-                     tbsys::CNetUtil::addrToString(node->server->server_id).
-                     c_str());
+                     tbsys::CNetUtil::addrToString(node->server->server_id).c_str());
             upnode_list.insert(node);
             available_server.insert(node->server->server_id);
           }
@@ -587,21 +597,8 @@ namespace tair {
                              tbsys::CRWSimpleLock * p_grp_locker,
                              tbsys::CRWSimpleLock * p_server_locker)
     {
-      log_warn("start rebuild table of %s", group_name);
+      log_warn("start rebuild table of %s, build_strategy: %d", group_name, build_strategy);
       set<node_info *>upnode_list;
-      table_builder *p_table_builder;
-      if(build_strategy == 1) {
-        p_table_builder =
-          new table_builder1(server_table_manager.get_server_bucket_count(),
-                             server_table_manager.get_copy_count());
-      }
-      else {
-        p_table_builder =
-          new table_builder2(diff_ratio,
-                             server_table_manager.get_server_bucket_count(),
-                             server_table_manager.get_copy_count());
-      }
-      p_table_builder->set_pos_mask(pos_mask);
       table_builder::hash_table_type quick_table_tmp;
       table_builder::hash_table_type hash_table_for_builder_tmp;        // will put rack info to this
       table_builder::hash_table_type dest_hash_table_for_builder_tmp;
@@ -611,7 +608,7 @@ namespace tair {
       get_up_node(upnode_list);
       p_server_locker->unlock();
       int size = upnode_list.size();
-      log_info("[%s] upnodeList.size=%d", group_name, size);
+      log_info("[%s] upnodeList.size = %d", group_name, size);
       for(uint32_t i = 0; i < server_table_manager.get_hash_table_size(); i++) {
         if(server_table_manager.m_hash_table[i])
           first_run = false;
@@ -621,7 +618,7 @@ namespace tair {
           log_error("can not get enough data servers. need %d lef %d ",
                     min_data_server_count, size);
         }
-        delete p_table_builder;
+        //delete p_table_builder;
         inc_version(server_table_manager.client_version);
         inc_version(server_table_manager.server_version);
         send_server_table_packet(slave_server_id);
@@ -629,6 +626,46 @@ namespace tair {
         return;
       }
 
+      table_builder *p_table_builder;
+      if (build_strategy == 1) {
+        p_table_builder =
+          new table_builder1(server_table_manager.get_server_bucket_count(),
+                             server_table_manager.get_copy_count());
+      }
+      else if (build_strategy == 2) {
+        p_table_builder =
+          new table_builder2(diff_ratio,
+                             server_table_manager.get_server_bucket_count(),
+                             server_table_manager.get_copy_count());
+      }
+      else if (build_strategy == 3) {
+        int tmp_strategy = select_build_strategy(upnode_list);
+        if (tmp_strategy == 1)
+        {
+          p_table_builder =
+            new table_builder1(server_table_manager.get_server_bucket_count(),
+                server_table_manager.get_copy_count());
+        }
+        else if (tmp_strategy == 2)
+        {
+          p_table_builder =
+            new table_builder2(diff_ratio,
+                server_table_manager.get_server_bucket_count(),
+                server_table_manager.get_copy_count());
+        }
+        else
+        {
+          log_error("can not find the table_builder object, build strategy: %d, tmp stategy: %d\n", build_strategy, tmp_strategy);
+          return;
+        }
+      }
+      else
+      {
+        log_error("can not find the table_builder object, build strategy: %d\n", build_strategy);
+        return ;
+      }
+
+      p_table_builder->set_pos_mask(pos_mask);
       p_table_builder->set_available_server(upnode_list);
 #ifdef TAIR_DEBUG
       log_debug("print available server");
@@ -699,31 +736,31 @@ namespace tair {
                                           server_table_manager.hash_table);
       }
 #ifdef TAIR_DEBUG
-      log_debug("_confServerTableManager._p_hashTable");
+      log_info("_confServerTableManager._p_hashTable");
       for(uint32_t i = 0;
           i <
           server_table_manager.get_server_bucket_count() *
           server_table_manager.get_copy_count(); i++)
-        log_info("+++ %d => %s",
-                 i % server_table_manager.get_server_bucket_count(),
+        log_info("+++ line: %d bucket: %d => %s",
+                 i / server_table_manager.get_server_bucket_count(), i % server_table_manager.get_server_bucket_count(),
                  tbsys::CNetUtil::addrToString(server_table_manager.
                                                hash_table[i]).c_str());
-      log_debug("_mhashTable");
+      log_info("_mhashTable");
       for(uint32_t i = 0;
           i <
           server_table_manager.get_server_bucket_count() *
           server_table_manager.get_copy_count(); i++)
-        log_info("+++ %d => %s",
-                 i % server_table_manager.get_server_bucket_count(),
+        log_info("+++ line: %d bucket: %d => %s",
+                 i / server_table_manager.get_server_bucket_count(), i % server_table_manager.get_server_bucket_count(),
                  tbsys::CNetUtil::addrToString(server_table_manager.
                                                m_hash_table[i]).c_str());
-      log_debug("_dhashTable");
+      log_info("_dhashTable");
       for(uint32_t i = 0;
           i <
           server_table_manager.get_server_bucket_count() *
           server_table_manager.get_copy_count(); i++)
-        log_info("+++ %d => %s",
-                 i % server_table_manager.get_server_bucket_count(),
+        log_info("+++ line: %d bucket: %d => %s",
+                 i / server_table_manager.get_server_bucket_count(), i % server_table_manager.get_server_bucket_count(),
                  tbsys::CNetUtil::addrToString(server_table_manager.
                                                d_hash_table[i]).c_str());
 #endif
@@ -1024,9 +1061,9 @@ namespace tair {
       }
     }
 
-    void group_info::inc_version(uint32_t * value)
+    void group_info::inc_version(uint32_t* value, const uint32_t inc_step)
     {
-      (*value)++;
+      (*value) += inc_step;
       if(min_config_version > (*value)) {
         (*value) = min_config_version;
       }
@@ -1043,10 +1080,10 @@ namespace tair {
         }
       }
     }
-    void group_info::inc_version()
+    void group_info::inc_version(const uint32_t inc_step)
     {
-      inc_version(server_table_manager.client_version);
-      inc_version(server_table_manager.server_version);
+      inc_version(server_table_manager.client_version, inc_step);
+      inc_version(server_table_manager.server_version, inc_step);
 
     }
     void group_info::set_stat_info(uint64_t server_id,
@@ -1126,5 +1163,60 @@ namespace tair {
 
     }
 
+    int group_info::select_build_strategy(const std::set<node_info*>& ava_server)
+    {
+      int strategy = 2;
+      //choose which strategy to select
+      //serverid in ava_server will not be repeated  
+      map<uint32_t, int> pos_count;
+      pos_count.clear();
+      for(set<node_info *>::const_iterator it = ava_server.begin();
+          it != ava_server.end(); it++) 
+      {
+        log_info("mask %"PRI64_PREFIX"u & %"PRI64_PREFIX"u -->%"PRI64_PREFIX"u",
+            (*it)->server->server_id, pos_mask, (*it)->server->server_id & pos_mask);
+        (pos_count[(*it)->server->server_id & pos_mask])++;
+      }
+
+      if (pos_count.size() <= 1)
+      {
+        log_warn("pos_count size: %u, table builder3 use build_strategy 1", pos_count.size());
+        strategy = 1;
+      }
+      else
+      {
+        int pos_max = 0;
+        for (map<uint32_t, int>::const_iterator it = pos_count.begin();
+            it != pos_count.end(); ++it)
+        {
+          log_info("pos rack: %d count: %d", it->first, it->second);
+          if (it->second > pos_max)
+          {
+            pos_max = it->second;
+          }
+        }
+
+        int diff_server = ava_server.size() - pos_max - pos_max;
+        if (diff_server <= 0)
+          diff_server = 0 - diff_server;
+        float ratio = diff_server / (float) pos_max;
+        if (ratio > diff_ratio || ava_server.size() < server_table_manager.get_copy_count()
+            || ratio > 0.9999)
+        {
+          log_warn("pos_count size: %u, ratio: %f, table builder3 use build_strategy 1", pos_count.size(), ratio);
+          strategy = 1;
+        }
+        else
+        {
+          log_warn("pos_count size: %u, ratio: %f, table builder3 use build_strategy 2", pos_count.size(), ratio);
+          strategy = 2;
+        }
+        log_warn("diff_server = %d ratio = %f diff_ratio=%f",
+            diff_server, ratio, diff_ratio);
+
+      }
+
+      return strategy;
+    }
   }
 }

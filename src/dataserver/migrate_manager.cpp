@@ -59,6 +59,7 @@ namespace tair {
 
    migrate_manager::~migrate_manager()
   {
+      log_warn("migrate_manager destruct");
       this->stop();
       delete conn_mgr;
    }
@@ -435,6 +436,11 @@ namespace tair {
       }
       if (i == 0){
          wait_object_mgr.destroy_wait_object(cwo);
+         // fix bug: if we kill cfg_server before ds when we stop tair cluster, ds will be fall into endless loop here.
+         if (is_stopped || _stop){
+           log_warn("dataserver has receive stop signal, stop finish_migrate_bucket");
+           return;
+         }
          goto _ReSend;
       }
 

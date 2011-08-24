@@ -25,7 +25,12 @@
 
 namespace tair {
   namespace config_server {
-    using namespace std;
+
+    enum GroupAcceptStrategy {
+      GROUP_DEFAULT_ACCEPT_STRATEGY = 0,
+      GROUP_AUTO_ACCEPT_STRATEGY
+    };
+
     class group_info:public tbnet::IPacketHandler {
     public:
       group_info(const char *group_name, server_info_map * serverInfoMap,
@@ -38,7 +43,7 @@ namespace tair {
       uint32_t get_server_version() const;
       uint32_t get_plugins_version() const;
       uint32_t get_area_capacity_version() const;
-      const map<uint32_t, uint64_t> &get_area_capacity_info() const;
+      const std::map<uint32_t, uint64_t> &get_area_capacity_info() const;
       const uint64_t *get_hash_table(int mode = 0) const;
       const char *get_group_name() const;
         tbsys::STR_STR_MAP * get_common_map();
@@ -56,7 +61,7 @@ namespace tair {
       int get_server_down_time() const;
 
       bool load_config(tbsys::CConfig & config, uint32_t version,
-                       set<uint64_t> &server_id_list);
+                       std::set<uint64_t> &server_id_list);
       void correct_server_info(bool is_sync);
       void set_force_rebuild();
       void rebuild(uint64_t slave_server_id,
@@ -73,15 +78,15 @@ namespace tair {
       {
         return plugins_name_info.size();
       }
-      set<string>::const_iterator find_plugin(const string & dll_name) const
+      std::set<std::string>::const_iterator find_plugin(const std::string & dll_name) const
       {
         return plugins_name_info.find(dll_name);
       }
-      set <string>::const_iterator plugin_end() const
+      std::set<std::string>::const_iterator plugin_end() const
       {
         return plugins_name_info.end();
       }
-      set<string> get_plugins_info() const
+      std::set<std::string> get_plugins_info() const
       {
         return plugins_name_info;
       }
@@ -89,6 +94,11 @@ namespace tair {
       int get_data_need_move() const
       {
         return data_need_move;
+      }
+
+      GroupAcceptStrategy get_accept_strategy() const
+      {
+        return accept_strategy;
       }
 
       bool get_group_status() const
@@ -108,7 +118,7 @@ namespace tair {
         group_is_OK = status;
 
       }
-      set<uint64_t> get_available_server_id() const
+      std::set<uint64_t> get_available_server_id() const
       {
         return available_server;
       }
@@ -127,7 +137,7 @@ namespace tair {
 
       void send_server_table_packet(uint64_t slave_server_id);
       void find_available_server();
-      void inc_version();
+      void inc_version(const uint32_t inc_step = 1);
       void do_proxy_report(const request_heartbeat & req);
       void set_stat_info(uint64_t server_id, const node_stat_info &);
       void get_stat_info(uint64_t server_id, node_stat_info &) const;
@@ -138,18 +148,20 @@ namespace tair {
       void deflate_hash_table();
       // parse server list
       void parse_server_list(node_info_set & list, const char *server_list,
-                             set<uint64_t> &server_id_list);
+                             std::set<uint64_t> &server_id_list);
       void parse_plugins_list(vector<const char *>& plugins);
       void parse_area_capacity_list(vector<const char *>&);
-      void get_up_node(set<node_info *>&up_node_list);
+      void get_up_node(std::set<node_info *>&up_node_list);
       void print_server_count();
-      void inc_version(uint32_t * value);
+      void inc_version(uint32_t* value, const uint32_t inc_step = 1);
+      int select_build_strategy(const std::set<node_info*>& ava_server);
     private:
       tbsys::STR_STR_MAP common_map;
       node_info_set node_list;
 
       char *group_name;
       conf_server_table_manager server_table_manager;
+
       server_info_map *server_info_maps;        //  => server
       int need_rebuild_hash_table;
       uint32_t load_config_count;
@@ -157,13 +169,14 @@ namespace tair {
       uint32_t min_config_version;
       uint32_t min_data_server_count;        // if we can not get at lesat min_data_server_count data servers,
       //config server will stop serve this group;
-      map<uint64_t, int>migrate_machine;
+      std::map<uint64_t, int>migrate_machine;
       tbnet::ConnectionManager * connmgr;
       bool should_syn_mig_info;
-      std::set<string> plugins_name_info;
+      std::set<std::string> plugins_name_info;
       bool group_can_work;
       bool group_is_OK;
       int build_strategy;
+      GroupAcceptStrategy accept_strategy;
       int server_down_time;
       float diff_ratio;
       uint64_t pos_mask;
