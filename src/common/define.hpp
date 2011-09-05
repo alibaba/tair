@@ -120,6 +120,7 @@
 #define TAIR_SERVER_DEFAULT_PORT        5191
 #define TAIR_SERVER_DEFAULT_HB_PORT     6191
 
+#define TAIR_MAX_ITEM_COUNT             10000000
 //KDB
 #define KDB_MAP_SIZE                    "map_size"
 #define KDB_MAP_SIZE_DEFAULT            10 * 1024 * 1024 // 10MB

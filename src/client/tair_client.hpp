@@ -34,21 +34,21 @@ namespace tair {
 
 #define CMD_MAX_LEN 4096
 
-   typedef vector<char*> VSTRING;
-   class tair_client;
-   typedef void (tair_client::*cmd_call)(VSTRING &param);
-   typedef map<string, cmd_call> str_cmdcall_map;
-   typedef str_cmdcall_map::iterator str_cmdcall_map_iter;
+  typedef vector<char*> VSTRING;
+  class tair_client;
+  typedef void (tair_client::*cmd_call)(VSTRING &param);
+  typedef map<string, cmd_call> str_cmdcall_map;
+  typedef str_cmdcall_map::iterator str_cmdcall_map_iter;
 
-   class tair_client {
-   public:
+  class tair_client {
+    public:
       tair_client();
       ~tair_client();
       bool parse_cmd_line(int argc, char *const argv[]);
       bool start();
       void cancel();
 
-   private:
+    private:
       void print_usage(char *prog_name);
       uint64_t get_ip_address(char *str, int port);
       cmd_call parse_cmd(char *key, VSTRING &param);
@@ -60,13 +60,15 @@ namespace tair {
       void  do_cmd_put(VSTRING &param);
       void  do_cmd_addcount(VSTRING &param);
       void  do_cmd_get(VSTRING &param);
+      void  do_cmd_mget(VSTRING &param);
       void  do_cmd_remove(VSTRING &param);
+      void  do_cmd_mremove(VSTRING &param);
       void do_cmd_stat(VSTRING &param);
       //void  doCmdAddItems(VSTRING &param);
       void  do_cmd_remove_area(VSTRING &param);
       void  do_cmd_dump_area(VSTRING &param);
 
-   private:
+    private:
       str_cmdcall_map cmd_map;
 
       tair_client_impl client_helper;
@@ -79,7 +81,7 @@ namespace tair {
       bool is_cancel;
       int key_format;
       int default_area;
-   };
+  };
 }
 
 #endif

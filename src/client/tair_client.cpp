@@ -44,7 +44,9 @@ namespace tair {
       cmd_map["put"] = &tair_client::do_cmd_put;
       cmd_map["incr"] = &tair_client::do_cmd_addcount;
       cmd_map["get"] = &tair_client::do_cmd_get;
+      cmd_map["mget"] = &tair_client::do_cmd_mget;
       cmd_map["remove"] = &tair_client::do_cmd_remove;
+      cmd_map["mremove"] = &tair_client::do_cmd_mremove;
       cmd_map["delall"] = &tair_client::do_cmd_remove_area;
       cmd_map["dump"] = &tair_client::do_cmd_dump_area;
       cmd_map["stat"] = &tair_client::do_cmd_stat;
@@ -69,7 +71,8 @@ namespace tair {
 
    void tair_client::print_usage(char *prog_name)
    {
-      fprintf(stderr, "%s -c configserver:port -g groupname\n\n"
+      fprintf(stderr, "%s -s server:port\n OR\n%s -c configserver:port -g groupname\n\n"
+              "    -s, --server           data server,default port:%d\n"
               "    -c, --configserver     default port: %d\n"
               "    -g, --groupname        group name\n"
               "    -l, --cmd_line         exec cmd\n"
@@ -77,14 +80,15 @@ namespace tair {
               "    -h, --help             print this message\n"
               "    -v, --verbose          print debug info\n"
               "    -V, --version          print version\n\n",
-              prog_name, TAIR_CONFIG_SERVER_DEFAULT_PORT);
+              prog_name, prog_name, TAIR_SERVER_DEFAULT_PORT, TAIR_CONFIG_SERVER_DEFAULT_PORT);
    }
 
    bool tair_client::parse_cmd_line(int argc, char *const argv[])
    {
       int opt;
-      const char *optstring = "c:g:hVvl:q:";
+      const char *optstring = "s:c:g:hVvl:q:";
       struct option longopts[] = {
+         {"server", 1, NULL, 's'},
          {"configserver", 1, NULL, 'c'},
          {"groupname", 1, NULL, 'g'},
          {"cmd_line", 1, NULL, 'l'},
@@ -110,6 +114,14 @@ namespace tair {
                   slave_server_addr = optarg;
                }
                is_config_server = true;
+            }
+               break;
+            case 's': {
+               if (server_addr != NULL && is_config_server == true) {
+                  return false;
+               }
+               server_addr = optarg;
+               //server_id = tbsys::CNetUtil::strToAddr(optarg, TAIR_SERVER_DEFAULT_PORT);
             }
                break;
             case 'g':
@@ -277,10 +289,22 @@ namespace tair {
                  "SYNOPSIS   : get key [area]\n"
             );
       }
+      if (cmd == NULL || strcmp(cmd, "mget") == 0) {
+         fprintf(stderr,
+                 "------------------------------------------------\n"
+                 "SYNOPSIS   : mget key1 ... keyn area\n"
+            );
+      }
       if (cmd == NULL || strcmp(cmd, "remove") == 0) {
          fprintf(stderr,
                  "------------------------------------------------\n"
                  "SYNOPSIS   : remove key [area]\n"
+            );
+      }
+      if (cmd == NULL || strcmp(cmd, "mremove") == 0) {
+         fprintf(stderr,
+                 "------------------------------------------------\n"
+                 "SYNOPSIS   : mremove key1 ... keyn area\n"
             );
       }
       if (cmd == NULL || strcmp(cmd, "delall") == 0) {
@@ -336,13 +360,13 @@ namespace tair {
          util::string_util::conv_raw_string(key, pdata, size);
          *akey = pdata;
       } else {
-         *size = strlen(key);
+         *size = strlen(key)+1;
       }
 
       return pdata;
    }
 
-   void tair_client::do_cmd_put(VSTRING &param) 
+   void tair_client::do_cmd_put(VSTRING &param)
    {
       if (param.size() < 2U || param.size() > 4U) {
          print_help("put");
@@ -397,7 +421,7 @@ namespace tair {
       return;
    }
 
-   void tair_client::do_cmd_get(VSTRING &param) 
+   void tair_client::do_cmd_get(VSTRING &param)
    {
       if (param.size() < 1U || param.size() > 2U ) {
          print_help("get");
@@ -424,20 +448,91 @@ namespace tair {
          fprintf(stderr, "get failed: %s.\n",client_helper.get_error_msg(ret));
       } else if (data != NULL) {
          char *p = util::string_util::conv_show_string(data->get_data(), data->get_size());
-         fprintf(stderr, "KEY: %s, LEN: %d\n%s\n", param[0], data->get_size(), p);
+         fprintf(stderr, "KEY: %s, LEN: %d\n raw data: %s, %s\n", param[0], data->get_size(), data->get_data(), p);
          free(p);
          delete data;
       }
       if (akey) free(akey);
       return ;
    }
+
+   void tair_client::do_cmd_mget(VSTRING &param)
+   {
+      if (param.size() < 2U) {
+         print_help("mget");
+         return;
+      }
+      int area = default_area;
+      char *p=param[param.size() -1];
+      if (*p == 'n') {
+        area |= TAIR_FLAG_NOEXP;
+        p ++;
+      }
+      area |= atoi(p);
+      fprintf(stderr, "mget area: %d\n", area);
+
+      vector<data_entry*> keys;
+      for (int i = 0; i < static_cast<int>(param.size() - 1); ++i)
+      {
+        char *akey = NULL;
+        int pkeysize = 0;
+        fprintf(stderr, "mget key index: %u, key: %s\n", i, param[i]);
+        char *pkey = canonical_key(param[i], &akey, &pkeysize);
+        data_entry* key = new data_entry(pkey, pkeysize, false);
+        keys.push_back(key);
+        if (akey) free(akey);
+      }
+      tair_keyvalue_map datas;
+
+      // mget
+      int ret = client_helper.mget(area, keys, datas);
+      if (ret == TAIR_RETURN_SUCCESS || ret == TAIR_RETURN_PARTIAL_SUCCESS)
+      {
+        tair_keyvalue_map::iterator mit = datas.begin();
+        for ( ; mit != datas.end(); ++mit)
+        {
+          char *key = util::string_util::conv_show_string(mit->first->get_data(), mit->first->get_size());
+          char *data = util::string_util::conv_show_string(mit->second->get_data(), mit->second->get_size());
+          fprintf(stderr, "KEY: %s, RAW VALUE: %s, VALUE: %s, LEN: %d\n",
+              key, mit->second->get_data(), data, mit->second->get_size());
+          free(key);
+          free(data);
+        }
+        fprintf(stderr, "get success, ret: %d.\n", ret);
+      }
+      else
+      {
+         fprintf(stderr, "get failed: %s, ret: %d.\n", client_helper.get_error_msg(ret), ret);
+      }
+
+      vector<data_entry*>::iterator vit = keys.begin();
+      for ( ; vit != keys.end(); ++vit)
+      {
+        delete *vit;
+        (*vit) = NULL;
+      }
+      tair_keyvalue_map::iterator kv_mit = datas.begin();
+      for ( ; kv_mit != datas.end(); )
+      {
+        data_entry* key = kv_mit->first;
+        data_entry* value = kv_mit->second;
+        datas.erase(kv_mit++);
+        delete key;
+        key = NULL;
+        delete value;
+        value = NULL;
+      }
+      return ;
+   }
+
 // remove
    void tair_client::do_cmd_remove(VSTRING &param)
    {
-      if (param.size() != 1U && param.size() != 2U ) {
-         print_help("remove");
+      if (param.size() < 2U) {
+         print_help("mremove");
          return;
       }
+
       int area = default_area;
       if (param.size() >= 2U) area = atoi(param[1]);
 
@@ -451,8 +546,46 @@ namespace tair {
       if (akey) free(akey);
       return ;
    }
-   
-   
+
+   void tair_client::do_cmd_mremove(VSTRING &param)
+   {
+      if (param.size() < 2U ) {
+         print_help("mremove");
+         return;
+      }
+      int area = default_area;
+      char *p=param[param.size() -1];
+      if (*p == 'n') {
+        area |= TAIR_FLAG_NOEXP;
+        p ++;
+      }
+      area |= atoi(p);
+      fprintf(stderr, "mremove area: %d\n", area);
+
+      vector<data_entry*> keys;
+      for (int i = 0; i < static_cast<int>(param.size() - 1); ++i)
+      {
+        char *akey = NULL;
+        int pkeysize = 0;
+        fprintf(stderr, "mremove key index: %u, key: %s\n", i, param[i]);
+        char *pkey = canonical_key(param[i], &akey, &pkeysize);
+        data_entry* key = new data_entry(pkey, pkeysize, false);
+        keys.push_back(key);
+        if (akey) free(akey);
+        //todo delete key
+      }
+
+      int ret = client_helper.mdelete(area, keys);
+      fprintf(stderr, "mremove: %s, ret: %d\n", client_helper.get_error_msg(ret), ret);
+      vector<data_entry*>::iterator vit = keys.begin();
+      for ( ; vit != keys.end(); ++vit)
+      {
+        delete *vit;
+        (*vit) = NULL;
+      }
+      return ;
+   }
+
    void tair_client::do_cmd_stat(VSTRING &param) {
 
 	map<string, string> out_info;
@@ -498,6 +631,9 @@ namespace tair {
          return;
       }
       int area = atoi(param[0]);
+      if(area < 0){
+         return;
+      }
       // remove
       int ret = client_helper.remove_area(area);
       fprintf(stderr, "removeArea: area:%d,%s\n", area,client_helper.get_error_msg(ret));
@@ -600,6 +736,7 @@ int main(int argc, char *argv[])
    signal(SIGINT, sign_handler);
    signal(SIGTERM, sign_handler);
 
+   //TBSYS_LOGGER.setLogLevel("DEBUG");
    TBSYS_LOGGER.setLogLevel("ERROR");
    if (_globalClient.parse_cmd_line(argc, argv) == false) {
       return EXIT_FAILURE;

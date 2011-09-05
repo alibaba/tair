@@ -15,15 +15,18 @@
 #ifndef TAIR_CLIENT_API
 #define TAIR_CLIENT_API
 
+#include <vector>
+
 #include "data_entry.hpp"
 namespace tair {
 
-   class tair_client_impl;
-   using namespace tair::common;
+  class tair_client_impl;
+  using namespace std;
+  using namespace tair::common;
 
-   class tair_client_api
-   {
-   public:
+  class tair_client_api
+  {
+    public:
       tair_client_api();
       ~tair_client_api();
 
@@ -69,10 +72,10 @@ namespace tair {
        * @return 0 -- success, otherwise fail,you can use get_error_msg(ret) to get more information.
        */
       int put(int area,
-              const data_entry &key,
-              const data_entry &data,
-              int expire,
-              int version);
+          const data_entry &key,
+          const data_entry &data,
+          int expire,
+          int version);
 
       /**
        * @brief get data from tair cluster
@@ -84,11 +87,24 @@ namespace tair {
        * @return 0 -- success, otherwise fail.
        */
       int get(int area,
-              const data_entry &key,
-              data_entry*& data);
+          const data_entry &key,
+          data_entry*& data);
 
       /**
-       * @brief                 remove data from tair cluster
+       * @brief get multi  data from tair cluster
+       *
+       * @param area    namespace
+       * @param keys    keys list, vector type
+       * @param data    data,data hash map,the caller must release the memory.
+       *
+       * @return 0 -- success, TAIR_RETURN_PARTIAL_SUCCESS -- partly success, otherwise fail.
+       */
+      int mget(int area,
+          vector<data_entry *> &keys,
+          tair_keyvalue_map& data);
+
+      /**
+       * @brief  remove data from tair cluster
        *
        * @param area    namespace
        * @param key     key
@@ -96,9 +112,28 @@ namespace tair {
        * @return  0 -- success, otherwise fail.
        */
       int remove(int area,
-                 const data_entry &key);
+          const data_entry &key);
 
-
+      /**
+       * @brief remove multi  data from tair cluster
+       *
+       * @param area    namespace
+       * @param keys    key list, vector type
+       *
+       * @return  0 -- success, TAIR_RETURN_PARTIAL_SUCCESS partly success, otherwise fail.
+       */
+      int mdelete(int area,
+          vector<data_entry*> &key);
+      /**
+       * @brief invalid multi  data from tair cluster
+       *
+       * @param area    namespace
+       * @param keys    key list, vector type
+       *
+       * @return  0 -- success, TAIR_RETURN_PARTIAL_SUCCESS partly success, otherwise fail.
+       */
+      int minvalid(int area,
+          vector<data_entry*> &key);
       /**
        * @brief incr
        *
@@ -112,18 +147,18 @@ namespace tair {
        * @return 0 -- success, otherwise fail.
        */
       int incr(int area,
-               const data_entry& key,
-               int count,
-               int *ret_count,
-               int init_value = 0,
-               int expire = 0);
+          const data_entry& key,
+          int count,
+          int *ret_count,
+          int init_value = 0,
+          int expire = 0);
       // opposite to incr
       int decr(int area,
-               const data_entry& key,
-               int count,
-               int *ret_count,
-               int init_value = 0,
-               int expire = 0);
+          const data_entry& key,
+          int count,
+          int *ret_count,
+          int init_value = 0,
+          int expire = 0);
 
       /**
        *
@@ -140,10 +175,10 @@ namespace tair {
        * @return  0 -- success ,otherwise fail.
        */
       int add_count(int area,
-                    const data_entry &key,
-                    int count,
-                    int *ret_count,
-                    int init_value = 0);
+          const data_entry &key,
+          int count,
+          int *ret_count,
+          int init_value = 0);
 
       /**
        *
@@ -218,9 +253,9 @@ namespace tair {
        * @return  0 -- success, otherwise -- fail
        */
       int remove_items(int area,
-                       const data_entry &key,
-                       int offset,
-                       int count);
+          const data_entry &key,
+          int offset,
+          int count);
 
       /**
        * @brief get item count
@@ -257,10 +292,10 @@ namespace tair {
 
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const;
 
-   private:
+    private:
 
       tair_client_impl *impl;
 
-   };
+  };
 }
 #endif
