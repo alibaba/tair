@@ -334,11 +334,14 @@ FAIL:
     if(ret != TAIR_RETURN_SUCCESS){
       goto FAIL;
     }
-    assert(resp->data != NULL);
     if (resp->data) {
       data = resp->data;
       resp->data = 0;
       ret = TAIR_RETURN_SUCCESS;
+    } else {
+        ret = TAIR_RETURN_PROXYED_ERROR;
+        TBSYS_LOG(ERROR, "proxyed get error: %d.", ret);
+        goto FAIL;
     }
     TBSYS_LOG(DEBUG,"end get:ret:%d",ret);
 
@@ -349,6 +352,7 @@ FAIL:
 FAIL:
     if(tpacket && tpacket->getPCode() == TAIR_RESP_RETURN_PACKET){
       response_return *r = (response_return *)tpacket;
+      new_config_version = resp->config_version;
       ret = r->get_code();
     }
     if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK){
