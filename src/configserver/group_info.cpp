@@ -31,6 +31,7 @@ namespace tair {
     {
       this->connmgr = connmgr;
       need_rebuild_hash_table = 0;
+      need_send_server_table = 0;
       assert(p_group_name != NULL);
       assert(p_server_info_map != NULL);
       group_name = strdup(p_group_name);

@@ -252,6 +252,14 @@ namespace tair {
       for(it = group_info_map_data.begin(); it != group_info_map_data.end();
           ++it) {
         it->second->check_migrate_complete(slave_server_id);
+
+        // check if send server_table
+        if (1 == it->second->get_send_server_table())
+        {
+          log_warn("group: %s need send server table", it->second->get_group_name());
+          it->second->send_server_table_packet(slave_server_id);
+          it->second->reset_force_send_table();
+        }
       }
 
       if(change_group_info_list.size() == 0U) {
@@ -784,11 +792,11 @@ namespace tair {
           // this data server should not be in this group
           resp->client_version = resp->server_version = 1;
           // inc table version and force rebuild table for send server table to slave asynchronously
-          if (p_server->group_info_data != NULL)
+          if (p_server->group_info_data != NULL && p_server->group_info_data->get_send_server_table() == 0)
           {
             p_server->group_info_data->inc_version(server_up_inc_step);
-            p_server->group_info_data->set_force_rebuild();
-            log_warn("ds up, set force rebuild. version changed. group name: %s, client version: %u, server version: %u",
+            p_server->group_info_data->set_force_send_table();
+            log_warn("ds up, set force send table. version changed. group name: %s, client version: %u, server version: %u",
                 p_server->group_info_data->get_group_name(), p_server->group_info_data->get_client_version(),
                 p_server->group_info_data->get_server_version());
           }

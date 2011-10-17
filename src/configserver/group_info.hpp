@@ -135,6 +135,21 @@ namespace tair {
         need_rebuild_hash_table = 0;
       }
 
+      void set_force_send_table()
+      {
+        need_send_server_table = 1;
+      }
+
+      void reset_force_send_table()
+      {
+        need_send_server_table = 0;
+      }
+
+      int get_send_server_table() const
+      {
+        return need_send_server_table;
+      }
+
       void send_server_table_packet(uint64_t slave_server_id);
       void find_available_server();
       void inc_version(const uint32_t inc_step = 1);
@@ -164,6 +179,7 @@ namespace tair {
 
       server_info_map *server_info_maps;        //  => server
       int need_rebuild_hash_table;
+      int need_send_server_table;
       uint32_t load_config_count;
       int data_need_move;
       uint32_t min_config_version;
