@@ -323,7 +323,6 @@ namespace tair {
 // Main
 ////////////////////////////////////////////////////////////////////////////////////////////////
 tair::config_server::tair_config_server * tair_cfg_svr = NULL;
-tbsys::CThreadMutex gmutex;
 
 void
 sign_handler(int sig)
@@ -331,11 +330,9 @@ sign_handler(int sig)
   switch (sig) {
   case SIGTERM:
   case SIGINT:
-    gmutex.lock();
     if(tair_cfg_svr != NULL) {
       tair_cfg_svr->stop();
     }
-    gmutex.unlock();
     break;
   case 40:
     TBSYS_LOGGER.checkFile();
@@ -469,11 +466,13 @@ main(int argc, char *argv[])
 
     tair_cfg_svr = new tair::config_server::tair_config_server();
     tair_cfg_svr->start();
-    gmutex.lock();
-    delete
-      tair_cfg_svr;
+
+    // ignore signal when destroy, cause sig_handler may use tair_cfg_svr between delete and set it to NULL.
+    signal(SIGINT, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
+
+    delete tair_cfg_svr;
     tair_cfg_svr = NULL;
-    gmutex.unlock();
 
     log_info("exit program.");
   }

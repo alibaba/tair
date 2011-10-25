@@ -29,14 +29,14 @@ namespace tair {
     {
       master_config_server_id = 0;
       struct timespec tm;
-        assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
-        heartbeat_curr_time = tm.tv_sec;
-        stat_interval_time = 5;
-        connmgr = NULL;
-        connmgr_heartbeat = NULL;
-        is_ready = false;
-        down_slave_config_server = 0U;
-        load_config_server();
+      clock_gettime(CLOCK_MONOTONIC, &tm);
+      heartbeat_curr_time = tm.tv_sec;
+      stat_interval_time = 5;
+      connmgr = NULL;
+      connmgr_heartbeat = NULL;
+      is_ready = false;
+      down_slave_config_server = 0U;
+      load_config_server();
     }
 
     server_conf_thread::~server_conf_thread()
@@ -474,13 +474,13 @@ namespace tair {
       tzset();
       int log_rotate_time = (time(NULL) - timezone) % 86400;
       struct timespec tm;
-      assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
+      clock_gettime(CLOCK_MONOTONIC, &tm);
       heartbeat_curr_time = tm.tv_sec;
       is_ready = true;
 
       while(!_stop) {
         struct timespec tm;
-        assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
+        clock_gettime(CLOCK_MONOTONIC, &tm);
         heartbeat_curr_time = tm.tv_sec;
         for(size_t i = 0; i < config_server_info_list.size(); i++) {
           server_info *server_info_it = config_server_info_list[i];
@@ -607,7 +607,7 @@ namespace tair {
       else if(packet->cmd == request_data_server_ctrl::CTRL_UP
               && p_server->status != server_info::ALIVE) {
         struct timespec tm;
-        assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
+        clock_gettime(CLOCK_MONOTONIC, &tm);
         p_server->last_time = tm.tv_sec;
         p_server->status = server_info::ALIVE;
         p_server->group_info_data->set_force_rebuild();
@@ -810,7 +810,7 @@ namespace tair {
               tbsys::CNetUtil::addrToString(req->server_id).c_str());
           // accept ds automatically
           struct timespec tm;
-          assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
+          clock_gettime(CLOCK_MONOTONIC, &tm);
           p_server->last_time = tm.tv_sec;
           p_server->status = server_info::ALIVE;
           p_server->group_info_data->set_force_rebuild();

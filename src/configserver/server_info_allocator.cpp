@@ -48,7 +48,8 @@ namespace tair {
         snprintf(file_name, 256, "%s/server_info.%d", sz_data_dir,
                  use_size / server_info_file_mapper::CELL_COUNT_PER_FILE);
         server_info_file_mapper *psif = new server_info_file_mapper();
-        assert(psif->open(file_name));
+        bool tmp_ret = psif->open(file_name);
+        assert(tmp_ret);
         vec_server_infos.push_back(psif);
       }
       int vecidx = use_size / server_info_file_mapper::CELL_COUNT_PER_FILE;
@@ -68,7 +69,7 @@ namespace tair {
                   tbsys::CNetUtil::addrToString(id).c_str());
         p_server_Info->status = 0;
         struct timespec tm;
-        assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
+        clock_gettime(CLOCK_MONOTONIC, &tm);
         p_server_Info->last_time = tm.tv_sec;
       }
       else {
@@ -76,7 +77,7 @@ namespace tair {
                   tbsys::CNetUtil::addrToString(id).c_str());
         p_server_Info->status = 1;
         struct timespec tm;
-        assert(clock_gettime(CLOCK_MONOTONIC, &tm) == 0);
+        clock_gettime(CLOCK_MONOTONIC, &tm);
         if(group != NULL) {
           p_server_Info->last_time =
             tm.tv_sec - group->get_server_down_time() * 2;
