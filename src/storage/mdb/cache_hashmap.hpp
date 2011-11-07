@@ -38,11 +38,13 @@ namespace tair {
           (hashmng->bucket_size * sizeof(uint64_t) + mdb_param::page_size -
            1) / mdb_param::page_size;
 
-          assert(pool->alloc_page(hashmng->start_page) != 0);        //save the index of the first page of hash table
+        char* tmp_ret = pool->alloc_page(hashmng->start_page);
+        assert(tmp_ret != NULL);        //save the index of the first page of hash table
 
         for(int i = 0; i < hash_table_pages - 1; ++i)
         {
-          assert(pool->alloc_page() != 0);
+          tmp_ret = pool->alloc_page();
+          assert(tmp_ret != NULL);
         }
 
         hashmng->item_count = 0;

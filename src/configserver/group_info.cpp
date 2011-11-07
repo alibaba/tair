@@ -661,12 +661,14 @@ namespace tair {
         else
         {
           log_error("can not find the table_builder object, build strategy: %d, tmp stategy: %d\n", build_strategy, tmp_strategy);
+          p_grp_locker->unlock();
           return;
         }
       }
       else
       {
         log_error("can not find the table_builder object, build strategy: %d\n", build_strategy);
+        p_grp_locker->unlock();
         return ;
       }
 

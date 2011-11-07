@@ -428,12 +428,10 @@ void sign_handler(int sig)
    switch (sig) {
       case SIGTERM:
       case SIGINT:
-         mutex.lock();
          if (tair_server != NULL) {
             log_info("will stop tairserver");
             tair_server->stop();
          }
-         mutex.unlock();
          break;
       case 40:
          TBSYS_LOGGER.checkFile();
@@ -598,10 +596,13 @@ int main(int argc, char *argv[])
 
       tair_server = new tair::tair_server();
       tair_server->start();
-      mutex.lock();
+
+      // ignore signal when destroy, cause sig_handler may use tair_server between delete and set it to NULL.
+      signal(SIGINT, SIG_IGN);
+      signal(SIGTERM, SIG_IGN);
+
       delete tair_server;
       tair_server = NULL;
-      mutex.unlock();
 
       log_info("tair_server exit.");
    }

@@ -1,0 +1,259 @@
+/*
+ * (C) 2007-2010 Alibaba Group Holding Limited
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * mdb memory layout and sorts of format
+ * Version: $Id$
+ *
+ * Authors:
+ *   nayan <nayan@taobao.com>
+ *
+ */
+
+
+ /**************************************************************
+  *  NOTE: The width of cell does NOT indicate real memory size.
+  **************************************************************/
+
+1. Memory Layout
+
+  1.1. Memory is used by page unit once get(share_mem/malloc) from system when boot-up.
+       Bitmap of `mem_pool_impl indexed by page id holds flag that whether page is used or not.
+       Pages for cache meta and hash buckets (PM&PH) are set used.
+
+    +-----------------------+------------------+------------------+
+    |    for cache meta     | for hash buckets |   for slab use   |
+    |         (PM)          |       (PH)       |       (PS)       |
+    +-----+-----+-----+-----+-----+------+-----+------------+-----+
+    | P0  | P1  | ... | Pm  | Ph0 | ...  | Phn |   .....    | Pn  |
+    +-----+-----+-----+-----+-----+------+-----+------------+-----+
+
+
+  1.2. Head of memory is filled with cache meta.
+
+    +---+-----------------------------+
+    |S0 |mem_pool start (0K)          |
+    +---+-----------------------------+
+    |S1 |MEM_HASH_METADATA_START (16K)|
+    +---+-----------------------------+
+    |S2 |MDB_STATINFO_START (32K)     |
+    +---+-----------------------------+
+    |S3 |MEM_POOL_METADATA_LEN (512K) |
+    +---+-----------------------------+
+    |S4 |1<<20 + sizeof(slab_manager) |
+    |   | * TAIR_SLAB_LARGEST         |
+    +---+-----------------------------+
+
+    +------------------------------------------------------------------------------------------------------------------+
+    |                                                        PM                                                        |
+    +------------------------------------------------------------------------------------------------------------------+
+    |S0               S1               S2                      S3                                                   S4 |
+    +---------------+-+--------------+-+---------------------+-+----------------+---------------------------------+-+--+
+    | mem pool impl | | hash manager | |     area stats      | | mdb cache info |  slab managers and each partial | |  |
+    |               | |              | |                     | |                |          pages buckets          | |  |
+    +---------------+-+--------------+-+---------------------+-+----------------+---------------------------------+-+--+
+    | mem_pool_impl | | hash_manager | |stat0|stat1|stat2|...| | mdb_cache_info |sm0|ppb00|ppb01|..|sm1|ppb10|... | |  |
+    +---------------+-+--------------+-+---------------------+-+----------------+---------------------------------+-+--+
+    |sizof          | |sizeof        | |sizeof(mdb_area_stat)| |sizeof          |sizeof(slab_manager)*slabs +     | |  |
+    |(mem_pool_impl)| |(hash_manager)| |* TAIR_MAX_AREA_COUNT| |(mdb_cache_info)|sizeof(uint32_t)*(ppbs0+..+ppbsN)| |  |
+    +---------------+-+--------------+-+---------------------+-+----------------+---------------------------------+-+--+
+
+
+  1.3. Cache meta is followed by hash buckets(item_id buckets). Ph0's index number(id) is held by `hash_manager.
+
+    +--------------------------------------+
+    |                  PH                  |
+    +------------------------------------+-+
+    |            hash buckets            | |
+    +------------------------------------+-+
+    |item_id|item_id|............|item_id| |
+    +------------------------------------+-+
+    |sizof(item_id) * (1 << bucket_shift)| |
+    +------------------------------------+-+
+
+
+  1.4. Pages for slab use (PS) service slab's memory need. Once slab_manager got one page, it cut page into
+       one page_info and various trunks with this slab_manager's slab size(maybe trunk0 had better be alignd?).
+       Each trunk will be filled with only one item.
+
+     +---------------------------------------------------------------------------------------------+
+     |                                             PS                                              |
+     +------------------------------------+-----------+------------------------------------+-------+
+     |             page used              | page free |              page used             |       |
+     +------------------------------------+-----------+------------------------------------+-------+
+     |page_info|trunk0|trunk1|...|trunkN| |           |page_info|trunk0|trunk1|...|trunkN| |  ...  |
+     +------------------------------------+-----------+------------------------------------+-------+
+
+
+
+2. Sorts of Format
+
+  2.1. page_id.
+       Everay page has its index number(id), once you get page id, you get the address of this page:
+           page_addr = S0 + (page_id * page_size)
+       So, page id(uint32_t) can be treated as pointer to page.
+
+
+  2.2. item_id.
+       Every item fills one trunk of this item's fittest slab, saying logically also, it is somewhere in one page.
+       The item_id(uint64_t) contains meta info to get item's position:
+           item_addr = S0 + (page_id * page_size) + sizeof(page_info) + (slab_size * offset_in_page).
+       So, item_id(uint64_t) can be treated as pointer to item.
+
+       +------------------------------------------------------------+
+       |                     item_id (uint64_t)                     |
+       +------------------------------------------------------------+
+       |0              20             36             52        60 64|
+       +---------------+--------------+--------------+---------+----+
+       |   slab size   |offset in page|   page id    | slab id |flag|
+       +---------------+--------------+--------------+---------+----+
+
+
+  2.3. page in slab(`slab_manager).
+       When boot-up, we pre-allocate several pages(now 1) to each slab. Everay slab must owns one page at least.
+       It will ask for one page when there's no free item, and give back the page whose items are all free.
+   
+       struct page_info
+       {
+         uint32_t id;
+         int32_t  free_nr;
+         uint32_t next;
+         uint32_t prev;
+         uint64_t free_head;
+       };
+   
+       Pages in slab are labled three type.
+       1) Free.
+          Free pages have no used item(trunk). Free pages are doubled linked by `next and `prev in `page_info.
+   
+                            (Slab Vision)
+          +------------+    +----+      +----+           +----+
+          | free_pages |--->|page|<---->|page| ... <---->|page|
+          +------------+    +----+      +----+           +----+
+   
+       2) Full.
+          Full pages have no free item(trunk).
+   
+                            (Slab Vision)
+          +------------+    +----+      +----+           +----+
+          | full_pages |--->|page|<---->|page| ... <---->|page|
+          +------------+    +----+      +----+           +----+
+   
+       3) Partial.
+          Not all items are used in partial pages. We want use page uniformly(really need?), so partial pages
+	  are orgnized in bucket way. Pages are hashed by `free_nr(number of free items in page) of `page_info.
+   
+                            (Slab Vision)
+          +---------------+---------------+-----+---------------+
+          |partial_bucket0|partial_bucket1| ... |partial_bucketN|
+          +---------------+---------------+-----+---------------+
+                  |                                     |
+                  v                                     v
+                +----+                                +----+
+                |page|                                |page|
+                +----+                                +----+
+                  .                                     ^
+                  .                                     |
+                                                        v
+                  ^                                   +----+
+                  |                                   |page|
+                  v                                   +----+
+                +----+
+                |page|
+                +----+
+   
+       When allocting a new item in this slab, we check usable partial page by iterating partial buckets at first,
+       if no partial one is found, we check if there's any free page, if still no one is found, we
+       will ask for one page to feed hunger.
+       And obviously, page's type can change based on its free/used items(trunk).
+
+  2.4. mdb_item.
+      struct mdb_item {
+        uint64_t h_next;
+        uint64_t prev;
+        uint64_t next;
+        uint32_t exptime;
+        uint32_t key_len:12;
+        uint32_t data_len:20;
+        uint16_t version;
+        uint32_t update_time;
+        uint64_t item_id;
+        char data[0];
+      };
+
+      Items are linked by three ways:
+       1) Free List (free item)
+          Free items(trunk) in one page are linked with `h_next, and head of the linked list is `free_head of `page_info.
+          We always get/put item over the head of this free item list, so there's no need for each item to link previous
+          one.
+
+                          (Page Vision)
+          +---------+
+          |page_info|
+          |---------|     +----+     +----+     +----+          +----+     +----+
+          |free_head|---->|item|---->|item|---->|item|  ......  |item|---->|item|
+          +---------+     +----+     +----+     +----+          +----+     +----+
+
+       2) Hash List (used item)
+          To lookup item by key, all used items are hashed into buckets (hash buckets), and items in same bucket are
+          linked with `h_next.
+          When lookuping by one key, we hash key to the bucket at first, and iterate the item list to find the exact one.
+          we can reserve grandparent/parent item poiter when doing iteration, so there's no need for each item to link
+          previous one in this hash list(stuff like `h_prev).
+
+                          (Global Vision)
+          +-----------------------------------------+
+          |              hash buckets               |
+          +-------+-------+-------+---------+-------+
+          |bucket0|bucket1|bucket2| ....... |bucketN|
+          +-------+-------+-------+---------+-------+
+              |       |       |                 |
+              v       v       v                 v
+           +----+  +----+  +----+            +----+
+           |item|  |item|  |item|            |item|
+           +----+  +----+  +----+            +----+
+              .               .
+              .               .
+
+              |               |
+              v               v
+           +----+          +----+
+           |item|          |item|
+           +----+          +----+
+
+       3) Area List (used item)
+          To operate item by area(clear all items in one area, control quota of area, etc), used items whth the same area
+          in one slab are also linked by `prev and `next, and the head/tail(tail pointer is used to do LRU evict) of each
+          linked list is held `slab_manager.
+          Item will be moved to list head when inserted or accessed to maintain LRU status, so double linked is obviously needed.
+
+                          (Slab Vision)
+          +---------+---------+------------+---------+
+          |  area0  |  area1  |            |  areaN  |
+          |---------|---------|  ........  |---------|
+          |head|tail|head|tail|            |head|tail|
+          +---------+---------+------------+---------+
+            ^     ^   ^    ^                 ^     ^
+            |     |   |____|                 |     |
+            v     |                          v     |
+          +----+  |                        +----+  |
+          |item|  |                        |item|  |
+          +----+  |                        +----+  |
+            ^     |                          ^     |
+            |     |                          |     |
+            v     |                          v     |
+          +----+  |                        +----+  |
+          |item|  |                        |item|<-
+          +----+  |                        +----+
+            .     |
+            .     |
+                  |
+            ^     |
+            |     |
+            v     |
+          +----+  |
+          |item|<-
+          +----+
