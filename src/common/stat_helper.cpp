@@ -139,7 +139,7 @@ namespace tair {
 
    void stat_helper::do_compress()
    {
-      unsigned long dest_len = STAT_TOTAL_SIZE;
+      unsigned long dest_len = compressBound(STAT_TOTAL_SIZE);
       unsigned char *dest = (unsigned char*) malloc(dest_len);
 
       if (compressed_data != NULL) {

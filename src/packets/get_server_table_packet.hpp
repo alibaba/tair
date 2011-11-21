@@ -55,11 +55,11 @@ namespace tair {
          output->writeString(group_name);
          if (size>0) {
             unsigned long source_len = size;
-            unsigned long dest_len = source_len;
+            unsigned long dest_len = compressBound(source_len);
             unsigned char *dest = (unsigned char*) malloc(dest_len);
             int ret = compress(dest, &dest_len, (unsigned char*)data, source_len);
             if (ret != Z_OK) {
-               log_warn( "compress error");
+               log_warn( "compress error, ret: %d", ret);
             }
 
             if (ret == Z_OK && dest_len>0) {
@@ -72,6 +72,7 @@ namespace tair {
                output->writeBytes(data, size);
             }
             ::free(dest);
+            dest = NULL;
          } else {
             output->writeInt32(size);
             output->writeInt32(0);

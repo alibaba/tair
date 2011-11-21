@@ -177,9 +177,11 @@ namespace tair {
          stats = (tair_stat *)malloc(dest_len);
          memset(stats, 0, dest_len);
 
-         if (uncompress((Bytef*)stats, &dest_len, (const Bytef*)stat_info, src_len) != Z_OK) {
+         int ret = uncompress((Bytef*)stats, &dest_len, (const Bytef*)stat_info, src_len);
+         if (ret != Z_OK) {
             ::free(stats);
-            log_error( "uncompress stat info failed");
+            stats = NULL;
+            log_error( "uncompress stat info failed, ret: %d");
          } else {
             log_debug("uncompress successed");
          }

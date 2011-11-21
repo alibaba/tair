@@ -360,7 +360,7 @@ namespace tair {
 
       // source len
       unsigned long source_len = index * sizeof(uint64_t);
-      unsigned long dest_len = source_len;
+      unsigned long dest_len = compressBound(source_len);
       unsigned char *dest = (unsigned char *) malloc(dest_len);
 
       int ret =
