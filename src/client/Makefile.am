@@ -19,13 +19,14 @@ api_source_list=tair_client_api.cpp tair_client_api_impl.cpp \
 	       	tair_client_api_impl.hpp tair_client_capi.hpp \
 		tair_client.hpp
 
-AM_LDFLAGS=-lpthread -lz ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
+AM_LDFLAGS=-lpthread -lz ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB} 
 
 lib_LTLIBRARIES=libtairclientapi.la libtairclientapi_c.la
 sbin_PROGRAMS=tairclient
 
 tairclient_SOURCES=tair_client.cpp  
 tairclient_LDADD=libtairclientapi.la ${LDADD} 
+tairclient_LDFLAGS= -static
 
 libtairclientapi_la_SOURCES=${api_source_list}
 libtairclientapi_c_la_SOURCES=tair_client_capi.cpp

@@ -8,7 +8,7 @@ utest: check
 
 .PHONY: utest
 EXTRA_DIST=bootstrap.sh \
-	   share/configserver.conf share/dataserver.conf share/group.conf share/Makefile.am \
+	   share/configserver.conf.default share/dataserver.conf.default share/group.conf.default share/Makefile.am \
 	   share/Makefile.in \
 	   scripts/Makefile.am scripts/Makefile.in scripts/mdbshm_reader.py scripts/set_shm.sh \
 	   scripts/tair.sh \
@@ -16,9 +16,9 @@ EXTRA_DIST=bootstrap.sh \
 	   packages/tair.spec 
 
 TMP_DIR:=/tmp/tair-tmp.$(shell echo $$$$)
-PREFIX:=$(shell [ x$(PREFIX) = x ] && PREFIX=/opt/csr/tair-$(VERSION) && echo "$${PREFIX}")
+PREFIX:=$(shell [ x$(PREFIX) = x ] && PREFIX=/home/admin/tair_bin && echo "$${PREFIX}")
 BOOST_DIR:=$(shell [ x$(BOOST_DIR) = x ] && BOOST_DIR=/usr && echo "$${BOOST_DIR}")
-rpms: dist-gzip packages/tair.spec
+rpm: dist-gzip packages/tair.spec
 	mkdir -p $(TMP_DIR)
 	mkdir -p $(TMP_DIR)/BUILD
 	mkdir -p $(TMP_DIR)/RPMS
@@ -38,4 +38,5 @@ rpms: dist-gzip packages/tair.spec
 		-ba $(TMP_DIR)/BUILD/tair-$(VERSION)/packages/tair.spec
 	find $(TMP_DIR)/RPMS/ -name "*.rpm" -exec mv '{}' . \;
 	rm -rf $(TMP_DIR)
+	
 

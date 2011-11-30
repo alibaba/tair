@@ -16,7 +16,7 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     -I${top_srcdir}/src/plugin \
 	     @BOOST_CPPFLAGS@
 
-AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB}
+AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB} ${TCMALLOC_LDFLAGS}
 
 LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
       $(TBLIB_ROOT)/lib/libtbsys.a \

@@ -1,6 +1,6 @@
 Name: %NAME
 Version: %VERSION
-Release: 1%{?dist}
+Release: r29_tcmalloc%{?dist}
 Summary: Taobao key/value storage system
 Group: Application
 URL: http:://yum.corp.alimama.com
@@ -12,6 +12,7 @@ Source:%{NAME}-%{VERSION}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-root
 #BuildRequires: t-csrd-tbnet-devel >= 1.0.4
 #Requires: openssl-devel >= 0.9
+Requires: google-perftools >= 1.8
 
 %description
 Tair is a high performance, distribution key/value storage system.
@@ -28,14 +29,14 @@ files for developing applications that use the %name package.
 %setup
 
 %build
-export TBLIB_ROOT=/opt/csr/common
+#export TBLIB_ROOT=/opt/csr/common
 chmod u+x bootstrap.sh
 ./bootstrap.sh
-./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR
+./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR --with-tcmalloc
 make %{?_smp_mflags}
 
 %install
-rm -rf $RPM_BUILD_ROOT
+#rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
 
 %clean
@@ -43,12 +44,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %post
 echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
-echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
+#echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
 /sbin/ldconfig
 
 %post devel
 echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
-echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
+#echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
 /sbin/ldconfig
 
 %postun
@@ -70,5 +71,7 @@ rm  -f /etc/ld.so.conf.d/tair-%{VERSION}.conf
 
 %changelog
 
+*Thu Nov 28 2011 xinshu<xinshu.wzx@taobao.com>
+-add with-tcmalloc
 *Thu Mar 2 2011 MaoQi <maoqi@taobao.com>
 -add post and config(noreplace)

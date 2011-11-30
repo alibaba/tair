@@ -1,7 +1,8 @@
-AC_INIT(tair, 2.3,ruohai@taobao.com)
+AC_INIT(tair, 2.3.0,ruohai@taobao.com)
 
-AM_INIT_AUTOMAKE(tair, 2.3) 
+AM_INIT_AUTOMAKE(tair, 2.3.0) 
 m4_include([ax_boost.m4])
+m4_include([tcmalloc.m4])
 AC_ARG_WITH([release],
 	    AS_HELP_STRING([--with-release],
 			   [use optimize (default is NO)]),
@@ -51,6 +52,9 @@ AC_ARG_WITH([kdb],
 AM_CONDITIONAL([WITH_KDB],[test x$with_kdb = xyes])
 
 AX_BOOST([1.30.0],,exit 1)
+
+TS_CHECK_TCMALLOC
+
 AC_CONFIG_FILES([\
 		 Makefile \
 		 src/Makefile \
