@@ -1,6 +1,6 @@
 Name: %NAME
 Version: %VERSION
-Release: r29_tcmalloc%{?dist}
+Release: r393_tcmalloc%{?dist}
 Summary: Taobao key/value storage system
 Group: Application
 URL: http:://yum.corp.alimama.com
@@ -32,7 +32,7 @@ files for developing applications that use the %name package.
 #export TBLIB_ROOT=/opt/csr/common
 chmod u+x bootstrap.sh
 ./bootstrap.sh
-./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR --with-tcmalloc
+./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR --with-tcmalloc_minimal
 make %{?_smp_mflags}
 
 %install
