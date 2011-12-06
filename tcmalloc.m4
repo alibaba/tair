@@ -1,60 +1,64 @@
-dnl -------------------------------------------------------- -*- autoconf -*-
-dnl Licensed to the Apache Software Foundation (ASF) under one or more
-dnl contributor license agreements.  See the NOTICE file distributed with
-dnl this work for additional information regarding copyright ownership.
-dnl The ASF licenses this file to You under the Apache License, Version 2.0
-dnl (the "License"); you may not use this file except in compliance with
-dnl the License.  You may obtain a copy of the License at
-dnl
-dnl     http://www.apache.org/licenses/LICENSE-2.0
-dnl
-dnl Unless required by applicable law or agreed to in writing, software
-dnl distributed under the License is distributed on an "AS IS" BASIS,
-dnl WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-dnl See the License for the specific language governing permissions and
-dnl limitations under the License.
-
 dnl
 dnl tcmalloc.m4: tair's tcmalloc autoconf macros
 dnl TCMALLOC_LDFLAGS
 
-dnl This is kinda fugly, but need a way to both specify a directory and which
-dnl of the many tcmalloc libraries to use ...
-AC_DEFUN([TS_CHECK_TCMALLOC], [
-AC_ARG_WITH([tcmalloc],
-  [AS_HELP_STRING([--with-tcmalloc],[specify the tcmalloc library to use [default=tcmalloc]])],
-  [
-  with_tcmalloc_lib="$withval"
-	TCMALLOC_LDFLAGS="-ltcmalloc"
-  has_tcmalloc=1
-  ],[
-  with_tcmalloc_lib="tcmalloc"
-	TCMALLOC_LDFLAGS="-ltcmalloc"
-  has_tcmalloc=1
-  ]
-)
-
-AC_ARG_WITH([tcmalloc-dir], [AC_HELP_STRING([--with-tcmalloc-dir=DIR], [use the tcmalloc library])],
+AC_DEFUN([TS_CHECK_TCMALLOC], 
 [
-  if test "$withval" != "no"; then
-    if test "x${enable_jemalloc}" = "xyes"; then
-      AC_MSG_ERROR([Cannot compile with both tcmalloc and jemalloc])
-    fi
+    AC_ARG_WITH([tcmalloc],
+        AS_HELP_STRING([--with-tcmalloc=DIR],
+                      [use tcmalloc (default is no) specify the root directory for tcmalloc library (optional)]),
+        [
+          if test "$withval" = "no"; then
+              want_tcmalloc="no"
+          elif test "$withval" = "yes"; then
+              want_tcmalloc="yes"
+              ac_tcmalloc_path=""
+          else
+              want_tcmalloc="yes"
+              ac_tcmalloc_path="$withval"
+          fi
+        ],
+        [want_tcmalloc="no"]
+  )
 
-	  AC_SUBST(TCMALLOC_LDFLAGS)
-    tcmalloc_have_libs=0
-    if test "x$withval" != "xyes" && test "x$withval" != "x"; then
-      tcmalloc_ldflags="$withval/lib"
-      #TS_ADDTO(LDFLAGS, [-L${tcmalloc_ldflags}])
-      #TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${tcmalloc_ldflags}])
-	    TCMALLOC_LDFLAGS="-ltcmalloc -L$tcmalloc_ldflags"
-    fi
-    AC_CHECK_LIB(${with_tcmalloc_lib}, tc_cfree , [tcmalloc_have_lib=1])
-    if test "$tcmalloc_have_lib" != "0"; then
-      #TS_ADDTO(LIBS, [-l${with_tcmalloc_lib}])
-      has_tcmalloc=1      
-    fi
-  fi
-])
-AC_SUBST(has_tcmalloc)
+	if test "x$want_tcmalloc" = "xyes"; then
+		if test "$ac_tcmalloc_path" != ""; then
+			ax_tclib="tcmalloc -L$ac_tcmalloc_path/lib"
+		else
+			ax_tclib="tcmalloc"
+	  fi
+    AC_CHECK_LIB($ax_tclib, tc_cfree,TCMALLOC_LDFLAGS="-l$ax_tclib" AC_SUBST(TCMALLOC_LDFLAGS),
+       [AC_MSG_FAILURE([tcmalloc link failed (--without-tcmalloc to disable)])]
+    )
+	fi
+
+
+    AC_ARG_WITH([tcmalloc_minimal],
+        AS_HELP_STRING([--with-tcmalloc_minimal=DIR],
+                      [use tcmalloc_minimal(default is no) specify the root directory for tcmalloc_minimal library (optional)]),
+        [
+          if test "$withval" = "no"; then
+              want_tcmalloc_minimal="no"
+          elif test "$withval" = "yes"; then
+              want_tcmalloc_minimal="yes"
+              ac_tcmalloc_minimal_path=""
+          else
+              want_tcmalloc_minimal="yes"
+              ac_tcmalloc_minimal_path="$withval"
+          fi
+        ],
+        [want_tcmalloc_minimal="no"]
+  )
+
+	if test "x$want_tcmalloc_minimal" = "xyes"; then
+		if test "$ac_tcmalloc_minimal_path" != ""; then
+			ax_tclib="tcmalloc_minimal -L$ac_tcmalloc_minimal_path/lib"
+		else
+			ax_tclib="tcmalloc_minimal"
+	  fi
+    AC_CHECK_LIB($ax_tclib, tc_cfree,TCMALLOC_LDFLAGS="-l$ax_tclib" AC_SUBST(TCMALLOC_LDFLAGS),
+       [AC_MSG_FAILURE([tcmalloc_minimal link failed (--without-tcmalloc_minimal to disable)])]
+    )
+	fi
+
 ])

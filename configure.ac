@@ -51,9 +51,10 @@ AC_ARG_WITH([kdb],
 	   )
 AM_CONDITIONAL([WITH_KDB],[test x$with_kdb = xyes])
 
+TS_CHECK_TCMALLOC
+
 AX_BOOST([1.30.0],,exit 1)
 
-TS_CHECK_TCMALLOC
 
 AC_CONFIG_FILES([\
 		 Makefile \
