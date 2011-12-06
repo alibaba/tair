@@ -97,7 +97,7 @@ namespace tair {
          key_count = input->readInt32();
          if (key_count == 1) {
             key = new data_entry();
-            key->decode(input);
+            if(!key->decode(input)) return false;
          } else if (key_count > 1) {
 
             key_list = new tair_dataentry_set();

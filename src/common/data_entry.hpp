@@ -280,11 +280,12 @@ namespace tair
                output->writeBytes(get_data(), get_size());
             }
          }
-         void decode(tbnet::DataBuffer *input)
+         bool decode(tbnet::DataBuffer *input)
           {
             free_data();
             uint8_t temp_merged = input->readInt8();
-            int area = input->readInt32();
+            int _area = input->readInt32();
+            if(_area<0 || _area>=1024) return false;
             uint16_t flag = input->readInt16();
             data_meta.decode(input);
 
@@ -294,8 +295,9 @@ namespace tair
                input->readBytes(get_data(), size);
             }
             has_merged = temp_merged;
-            area = area;
+            area = _area;
             server_flag = flag;
+            return true;
          }
 
       private:
