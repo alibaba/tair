@@ -10,7 +10,7 @@ import junit.framework.Assert;
 
 /**
  * author fanggang
- * dataserver testcse
+ * dataserver testcase
  **/
 public class FailOverDataServerTest1 extends FailOverBaseCase{
 	
@@ -53,7 +53,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//save put result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("finish put data!");
 		
 		//wait 5s for duplicate
@@ -142,7 +143,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -167,9 +169,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>210)break;
 		}
-		if(waitcnt>210) fail("donw time arrived,but no migration finished!");
+		if(waitcnt>210) fail("down time arrived,but no migration finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -233,7 +235,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/500000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/500000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 30s for duplicate
@@ -257,9 +260,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>150)break;
 		}
 		
-	    if(waitcnt>150) fail("donw time arrived,but no migration start!");
+	    if(waitcnt>150) fail("down time arrived,but no migration start!");
 	    waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -278,9 +281,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>300)break;
 		}
 		
-    	if(waitcnt>300) fail("donw time arrived,but no rebuild finished!");
+    	if(waitcnt>300) fail("down time arrived,but no rebuild finished!");
     	waitcnt=0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		//migrate need check data 
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -345,7 +348,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 10s for duplicate
@@ -372,9 +376,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>150)break;
 		}
 		
-		if(waitcnt>150) fail("donw time arrived,but no migration finished!");
+		if(waitcnt>150) fail("down time arrived,but no migration finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -394,9 +398,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 				break;
 		}
 		if (waitcnt > 150)
-			fail("donw time arrived,but no rebuild finished!");
+			fail("down time arrived,but no rebuild finished!");
 		waitcnt = 0;
-		log.error("donw time arrived,the seccond rebuild finished!");
+		log.error("down time arrived,the seccond rebuild finished!");
 		
 		// check data
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -463,7 +467,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 10s for duplicate
@@ -492,9 +497,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>150)break;
 		}
 		
-		if(waitcnt>150) fail("donw time arrived,but no migration finished!");
+		if(waitcnt>150) fail("down time arrived,but no migration finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		// check data
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -524,7 +529,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_06_add_one_inMigrate_add_another_ds()
     {
-    	log.error("start DataServer test Failover case 06");
+    		log.error("start DataServer test Failover case 06");
 		int waitcnt=0;
 		
 		//modify group configuration
@@ -536,7 +541,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -563,7 +568,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());	
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -592,9 +598,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>150)break;
 		}
 		if (waitcnt > 150)
-			fail("donw time arrived,but no migration started!");
+			fail("down time arrived,but no migration started!");
 		waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -614,9 +620,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>210)break;
 		}
-        if(waitcnt>210) fail("donw time arrived,but no migration finished!");
+        if(waitcnt>210) fail("down time arrived,but no migration finished!");
         waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		//migrate need check data 
 		if (!modify_config_file("local", FailOverBaseCase.test_bin + "DataDebug.conf", "actiontype", "get"))
@@ -646,7 +652,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_07_add_one_inMigrate_inTime()
     {
-    	log.error("start DataServer test Failover case 07");
+    		log.error("start DataServer test Failover case 07");
 		int waitcnt=0;
 		//modify group configuration
 		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(0), "#"))fail("change group.conf failed!");
@@ -657,7 +663,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -684,7 +690,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -711,9 +718,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration started!");
-        waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+        	if(waitcnt>150) fail("down time arrived,but no migration started!");
+        	waitcnt = 0;
+		log.error("down time arrived,migration started!");
 		
 		//uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -740,9 +747,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration finised!");
-        waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+        	if(waitcnt>150) fail("down time arrived,but no migration finised!");
+        	waitcnt=0;
+		log.error("down time arrived,migration finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -770,7 +777,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_08_add_one_inMigrate_reCloseFirst()
     {
-    	log.error("start DataServer test Failover case 08");
+    		log.error("start DataServer test Failover case 08");
 		int waitcnt=0;
 		//modify group configuration
 		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(0), "#"))fail("change group.conf failed!");
@@ -781,7 +788,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -808,7 +815,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -833,9 +841,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration started!");
-        waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+        	if(waitcnt>150) fail("down time arrived,but no migration started!");
+        	waitcnt = 0;
+		log.error("down time arrived,migration started!");
 		
 		///uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -861,11 +869,12 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>210)break;
 		}
-        if(waitcnt>210) fail("donw time arrived,but no rebuild finished!");
-        waitcnt=0;
-		log.error("donw time arrived,rebuild finished!");
+        	if(waitcnt>210) fail("down time arrived,but no rebuild finished!");
+        	waitcnt=0;
+		log.error("down time arrived,rebuild finished!");
 		
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+			fail("modify configure file failed");   
 		//migrate need check data 
 		execute_data_verify_tool();
 		//check verify
@@ -891,7 +900,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_09_add_one_inMigrate_reCloseBoth()
     {
-    	log.error("start DataServer test Failover case 09");
+    		log.error("start DataServer test Failover case 09");
 		int waitcnt=0;
 		//modify group configuration
 		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(0), "#"))fail("change group.conf failed!");
@@ -902,7 +911,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -929,7 +938,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -954,9 +964,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration started!");
-        waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+        	if(waitcnt>150) fail("down time arrived,but no migration started!");
+        	waitcnt = 0;
+		log.error("down time arrived,migration started!");
 		
 		///uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -965,7 +975,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
 		log.error("change group.conf and touch it");
 		log.error("second data server has been start!");
-        waitto(FailOverBaseCase.down_time);
+        	waitto(FailOverBaseCase.down_time);
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -987,11 +997,12 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no rebuild finished!");
-        waitcnt = 0;
-		log.error("donw time arrived,rebuild finished!");
+        	if(waitcnt>150) fail("down time arrived,but no rebuild finished!");
+        	waitcnt = 0;
+		log.error("down time arrived,rebuild finished!");
 		
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+			fail("modify configure file failed");   
 		//migrate need check data 
 		execute_data_verify_tool();
 		//check verify
@@ -1056,7 +1067,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1081,9 +1093,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration finished!");
+        if(waitcnt>150) fail("down time arrived,but no migration finished!");
         waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		///uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -1104,9 +1116,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150) fail("donw time arrived,but no second migration started!");
+		if(waitcnt>150) fail("down time arrived,but no second migration started!");
 		waitcnt = 0;
-		log.error("donw time arrived,the second migration started!");
+		log.error("down time arrived,the second migration started!");
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -1124,9 +1136,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>150)break;
 		}
-	    if(waitcnt>150) fail("donw time arrived,but no second rebuild finished!");
+	    if(waitcnt>150) fail("down time arrived,but no second rebuild finished!");
 	    waitcnt = 0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -1194,7 +1206,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1219,9 +1232,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 		   if(++waitcnt>150)break;
 		}	
-        if(waitcnt>150) fail("donw time arrived,but no migration started!");
+        if(waitcnt>150) fail("down time arrived,but no migration started!");
         waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		///uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -1242,9 +1255,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no second migration started!");
+        if(waitcnt>150) fail("down time arrived,but no second migration started!");
         waitcnt = 0;
-		log.error("donw time arrived, the second migration started!");
+		log.error("down time arrived, the second migration started!");
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -1262,9 +1275,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no second rebuild finished!");
+        if(waitcnt>150) fail("down time arrived,but no second rebuild finished!");
         waitcnt = 0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -1333,7 +1346,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1357,9 +1371,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration started!");
-        waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+        	if(waitcnt>150) fail("down time arrived,but no migration started!");
+        	waitcnt = 0;
+		log.error("down time arrived,migration started!");
 		
 		///uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -1380,9 +1394,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150) fail("donw time arrived,but no second migration started!");
+		if(waitcnt>150) fail("down time arrived,but no second migration started!");
 		waitcnt = 0;
-		log.error("donw time arrived,the second migration started!");
+		log.error("down time arrived,the second migration started!");
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -1405,9 +1419,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150) fail("donw time arrived,but no second rebuild finished!");
+		if(waitcnt>150) fail("down time arrived,but no second rebuild finished!");
 		waitcnt = 0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -1472,7 +1486,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1496,9 +1511,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no second migration started!");
+        if(waitcnt>150) fail("down time arrived,but no second migration started!");
         waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		///uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -1519,9 +1534,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150) fail("donw time arrived,but no first migration finished!");
+		if(waitcnt>150) fail("down time arrived,but no first migration finished!");
 		waitcnt = 0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
 		
@@ -1538,9 +1553,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150) fail("donw time arrived,but no fourth rebuild finished!");
+		if(waitcnt>150) fail("down time arrived,but no fourth rebuild finished!");
 		waitcnt = 0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -1608,7 +1623,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1632,9 +1648,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-	    if(waitcnt>150) fail("donw time arrived,but no migration started!");
+	    if(waitcnt>150) fail("down time arrived,but no migration started!");
 	    waitcnt = 0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		///uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(1), "#"))fail("change group.conf failed!");
@@ -1654,9 +1670,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration finished!");
+        if(waitcnt>150) fail("down time arrived,but no migration finished!");
         waitcnt = 0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
 		
@@ -1679,9 +1695,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 				break;
 		}
 		if (waitcnt > 150)
-			fail("donw time arrived,but no fourth rebuild finished!");
+			fail("down time arrived,but no fourth rebuild finished!");
 		waitcnt = 0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -1746,7 +1762,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 30s for duplicate
@@ -1770,9 +1787,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>150)break;
 		}
 		
-	    if(waitcnt>150) fail("donw time arrived,but no migration start!");
+	    if(waitcnt>150) fail("down time arrived,but no migration start!");
 	    waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -1791,9 +1808,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>300)break;
 		}
 		
-    	if(waitcnt>300) fail("donw time arrived,but no rebuild finished!");
+    	if(waitcnt>300) fail("down time arrived,but no rebuild finished!");
     	waitcnt=0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		//migrate need check data 
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -1859,7 +1876,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 30s for duplicate
@@ -1883,9 +1901,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>150)break;
 		}
 		
-	    if(waitcnt>150) fail("donw time arrived,but no migration start!");
+	    if(waitcnt>150) fail("down time arrived,but no migration start!");
 	    waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//restop ds
 		if(!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))fail("restop another ds failed!");
@@ -1905,9 +1923,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>300)break;
 		}
 		
-    	if(waitcnt>300) fail("donw time arrived,but no migration finished!");
+    	if(waitcnt>300) fail("down time arrived,but no migration finished!");
     	waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		//migrate need check data 
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -1925,9 +1943,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("Read data over!");
 		//verify get result
 		log.error(getVerifySuccessful());
-//		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-        assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
-        log.error("Successfully Verified data!");
+        	assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
+        	log.error("Successfully Verified data!");
 	
 		//end test
 		log.error("end DataServer test Failover case 16");
@@ -1937,11 +1954,11 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_17_kill_one_restart_inTime()
     {
-    	log.error("start DataServer test Failover case 17");
+    		log.error("start DataServer test Failover case 17");
 		int waitcnt=0;
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -1968,7 +1985,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -2004,9 +2022,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		log.error(getVerifySuccessful());
-//		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-        assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
-        log.error("Successfully verified data!");
+        	assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
+        	log.error("Successfully verified data!");
 
 		//end test
 		log.error("end DataServer test Failover case 17");
@@ -2015,11 +2032,11 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_18_kill_one_ds()
     {
-    	log.error("start DataServer test Failover case 18");
+    		log.error("start DataServer test Failover case 18");
 		int waitcnt=0;
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -2046,7 +2063,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -2070,11 +2088,12 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>300)break;
 		}
 		
-    	if(waitcnt>300) fail("donw time arrived,but no rebuild finished!");
-    	waitcnt=0;
-		log.error("donw time arrived,rebuild finished!");
+    		if(waitcnt>300) fail("down time arrived,but no rebuild finished!");
+    		waitcnt=0;
+		log.error("down time arrived,rebuild finished!");
 		
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+			fail("modify configure file failed"); 
 		//migrate need check data 
 		execute_data_verify_tool();
 		//check verify
@@ -2099,7 +2118,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_19_kill_one_add_ds_before_rebuild()
     {
-    	log.error("start DataServer test Failover case 19");
+    		log.error("start DataServer test Failover case 19");
 		int waitcnt=0;
 		//modify group configuration
 		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(0), "#"))fail("change group.conf failed!");
@@ -2108,7 +2127,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -2135,13 +2154,13 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		//wait 5s for duplicate
 		waitto(5);
-		
 
-        int versionCount=check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
+        	int versionCount=check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
 		//close one data server
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.stop, 0))fail("close data server failed!");
 		
@@ -2167,9 +2186,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>300)break;
 		}
 		
-    	if(waitcnt>300) fail("donw time arrived,but no rebuild finished!");
+    	if(waitcnt>300) fail("down time arrived,but no rebuild finished!");
     	waitcnt=0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -2196,7 +2215,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_20_kill_one_add_ds_after_rebuild()
     {
-    	log.error("start DataServer test Failover case 20");
+    		log.error("start DataServer test Failover case 20");
 		int waitcnt=0;
 		//modify group configuration
 		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(1), "#"))fail("change group.conf failed!");
@@ -2204,7 +2223,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("group.conf has been changed!");
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	    	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -2231,7 +2250,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -2271,12 +2291,12 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>300)break;
 		}
 		
-    	if(waitcnt>300) fail("donw time arrived,but no migration finished!");
-    	
-    	waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+    		if(waitcnt>300) fail("down time arrived,but no migration finished!");
+    		waitcnt=0;
+		log.error("down time arrived,migration finished!");
 		
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+			fail("modify configure file failed");   
 		//migrate need check data 
 		execute_data_verify_tool();
 		//check verify
@@ -2301,11 +2321,11 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 	@Test
     public void testFailover_23_kill_one_finishMigrate_restartFirst()
     {
-    	log.error("start DataServer test Failover case 23");
+    		log.error("start DataServer test Failover case 23");
 		int waitcnt=0;
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
                 
-	    log.error("wait system initialize ...");
+	   	log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 		log.error("Start Cluster Successful!");
 		
@@ -2332,7 +2352,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -2357,9 +2378,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-	    if(waitcnt>150) fail("donw time arrived,but no rebuild started!");
+	    if(waitcnt>150) fail("down time arrived,but no rebuild started!");
 	    waitcnt = 0;
-		log.error("donw time arrived,rebuild started!");
+		log.error("down time arrived,rebuild started!");
 		
 		//record the version times
 		versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -2378,9 +2399,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-	    if(waitcnt>150) fail("donw time arrived,but no rebuild started!");
+	    if(waitcnt>150) fail("down time arrived,but no rebuild started!");
 	    waitcnt = 0;
-		log.error("donw time arrived,rebuild started!");
+		log.error("down time arrived,rebuild started!");
 		
 		//restart first data server
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("start first data server failed!");
@@ -2400,9 +2421,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration finished!");
+        if(waitcnt>150) fail("down time arrived,but no migration finished!");
         waitcnt = 0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -2459,7 +2480,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("put data over!");
 		
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
@@ -2648,8 +2670,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		waitcnt=0;
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -2688,10 +2711,10 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			if(++waitcnt>300)break;
 		}
 		
-    	if(waitcnt>300) fail("donw time arrived,but no migration finished!");
+    	if(waitcnt>300) fail("down time arrived,but no migration finished!");
     	
     	waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
 		//migrate need check data 
@@ -2749,7 +2772,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -2802,11 +2826,12 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 			waitto(10);
 			if(++waitcnt>210)break;
 		}
-       if(waitcnt>210) fail("donw time arrived,but no migration finished!");
-       waitcnt = 0;
-       log.error("donw time arrived,migration finished!");
+       		if(waitcnt>210) fail("down time arrived,but no migration finished!");
+       		waitcnt = 0;
+       		log.error("down time arrived,migration finished!");
 		
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))                                     fail("modify configure file failed");   
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+			fail("modify configure file failed");   
 		//migrate need check data 
 		execute_data_verify_tool();
 		//check verify
@@ -2860,7 +2885,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 10s for duplicate
@@ -2900,27 +2926,31 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		
 		//verify get result
 		log.error(getVerifySuccessful());
-//		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-        assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.39);
-        log.error("Successfully Verified data!");
+		assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.39);
+		log.error("Successfully Verified data!");
 		
 		//end test
 		log.error("end DataServer test Failover case 27");
-    }
+	}
+
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList,dsList);
-        
+		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+ 		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
+                        fail("modify configure file failed");
+                if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
+                        fail("modify configure file failed");
 	}
 	
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-	    clean_tool("local");
-//	    reset_cluster(csList,dsList);
-	    batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#"); 		
+		clean_tool("local");
+		reset_cluster(csList,dsList);
+		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#"); 		
 	}
 	
 }

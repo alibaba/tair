@@ -11,7 +11,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 	 */
 	final static int D512B = 448;
 	final static int D1024B = 960;
-	final static int num = 40000;
+	final static int num = 10000;
 
 	public void testExpireEliminate_01_expireDate_eliminated_ontime() {
 		log.error("start expire eliminate test case 01");
@@ -124,7 +124,6 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		reset_cluster(csList, dsList);
 		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", 5, 7));
 		assertTrue(changeHourRange(dsList.get(0).toString(), "expired", 2, 4));
-
 	}
 
 }

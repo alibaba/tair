@@ -49,7 +49,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");		
 		
 
@@ -76,6 +77,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("get data verify failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -136,7 +138,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");		
 		
 		//close slave cs
@@ -162,6 +165,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		log.error("Read data over!");
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -220,7 +224,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");		
 
 		
@@ -302,7 +307,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("finish put data!");
 		
 		//close master cs
@@ -321,18 +327,18 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitto(5);
 		
 //		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)fail("Already migration!");
-        //wait for migrate start
-        waitto(FailOverBaseCase.down_time);
-        while(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
-        {
-                log.debug("check if migration start on cs "+(String)csList.get(1)+" log");
-                waitto(2);
-                if(++waitcnt>150)break;
-        }
+        	//wait for migrate start
+        	waitto(FailOverBaseCase.down_time);
+        	while(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+        	{
+                	log.debug("check if migration start on cs "+(String)csList.get(1)+" log");
+                	waitto(2);
+                	if(++waitcnt>150)break;
+        	}
                        
-        if(waitcnt>150) fail("donw time arrived,but no migration start!");
-        waitcnt=0;
-        log.error("donw time arrived,migration started!");
+        	if(waitcnt>150) fail("down time arrived,but no migration start!");
+        	waitcnt=0;
+        	log.error("down time arrived,migration started!");
                                         
 		//stop ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("stop ds failed!");
@@ -408,7 +414,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");		
 
 		
@@ -434,9 +441,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started!");
+		if(waitcnt>150)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration start!");
+		log.error("down time arrived,migration start!");
 		
 		//restart master cs
 		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failed!");
@@ -452,9 +459,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration finished!");
+		if(waitcnt>150)fail("down time arrived,but no migration finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		//change test tool's configuration
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -473,6 +480,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -524,7 +532,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");		
 		
 		//close master cs
@@ -549,9 +558,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
+		if(waitcnt>150)fail("down time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		//restart master cs
 		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failed!");
@@ -618,7 +627,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");		
 		
 		//close master cs
@@ -644,9 +654,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no rebuild finished!");
+		if(waitcnt>150)fail("down time arrived,but no rebuild finished!");
 		waitcnt=0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		//restart ds
 		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failed!");
@@ -664,9 +674,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started!");
+		if(waitcnt>150)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//restart master cs
 		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failed!");
@@ -733,7 +743,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);		
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);		
 		log.error("Write data over!");		
 		
 		//close master cs
@@ -758,9 +769,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no rebuild started or finished!");
+		if(waitcnt>150)fail("down time arrived,but no rebuild started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,rebuild table finished!");
+		log.error("down time arrived,rebuild table finished!");
 		
 		//restart ds
 		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failed!");
@@ -779,9 +790,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started or stoped!");
+		if(waitcnt>150)fail("down time arrived,but no migration started or stoped!");
 		waitcnt=0;
-		log.error("donw time arrived,migration stoped!");
+		log.error("down time arrived,migration stoped!");
 		
 		//restart master cs
 		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failed!");
@@ -855,7 +866,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);		
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);		
 		log.error("Write data over!");		
 		
 		//close master cs
@@ -881,9 +893,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started!");
+		if(waitcnt>150)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -901,9 +913,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no rebuild started or finished!");
+		if(waitcnt>150)fail("down time arrived,but no rebuild started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,rebuild table finished!");
+		log.error("down time arrived,rebuild table finished!");
 		
 		
 		//restart master cs
@@ -980,7 +992,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);		
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);		
 		log.error("Write data over!");		
 		
 		//close master cs
@@ -1006,9 +1019,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started!");
+		if(waitcnt>150)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
 
@@ -1025,9 +1038,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no rebuild started or finished!");
+		if(waitcnt>150)fail("down time arrived,but no rebuild started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,rebuild table finished!");
+		log.error("down time arrived,rebuild table finished!");
 		
 		waitto(FailOverBaseCase.down_time);
 		
@@ -1103,7 +1116,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("Write data over!");		
 		
 		//close slave cs
@@ -1122,7 +1136,19 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		log.error("wait 5 seconds to restart before rebuild ...");
 		waitto(5);
 		
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)fail("Already migration!");
+		
+		//if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)fail("Already migration!");
+		//check first migration stat
+                while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+                {
+                        log.debug("check if migration start on cs "+(String)csList.get(0)+" log");
+                        waitto(2);
+                        if(++waitcnt>150)break;
+                }
+                if(waitcnt>150)fail("down time arrived,but no migration started!");
+                waitcnt=0;
+                log.error("down time arrived,migration started!");
+
 		//restart ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("restart ds failed!");
 		log.error("Restop ds successful!");	
@@ -1149,9 +1175,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		
 		//verify get result
 		log.error(getVerifySuccessful());
-//		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-        assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
-        log.error("Successfully Verified data!");	
+        	assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
+        	log.error("Successfully Verified data!");	
 
 		//end test
 		log.error("end config test Failover case 11");
@@ -1200,7 +1225,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("Write data over!");		
 
 		
@@ -1226,9 +1252,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>210)break;
 		}
-		if(waitcnt>210)fail("donw time arrived,but no migration started!");
+		if(waitcnt>210)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration start!");
+		log.error("down time arrived,migration start!");
 		
 		//restop slave cs
 		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("restop slave cs failed!");
@@ -1245,9 +1271,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration finished!");
+		if(waitcnt>150)fail("down time arrived,but no migration finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		//change test tool's configuration
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -1266,6 +1292,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		log.error("Read data over!");
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -1313,7 +1340,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("Write data over!");		
 		
 		//close slave cs
@@ -1338,9 +1366,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
+		if(waitcnt>150)fail("down time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.error("down time arrived,migration finished!");
 		
 		//restart slave cs
 		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failed!");
@@ -1367,11 +1395,11 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
 		//end test
-		log.error(getVerifySuccessful());
 		log.error("end config test Failover case 13");
 	}
 	@Test
@@ -1408,7 +1436,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("Write data over!");		
 
 		//close slave cs
@@ -1432,8 +1461,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>210)break;
 		}
-		log.error("donw time arrived,rebuild finished!");
-		if(waitcnt>210)fail("donw time arrived,but no rebuild started or finished!");
+		log.error("down time arrived,rebuild finished!");
+		if(waitcnt>210)fail("down time arrived,but no rebuild started or finished!");
 		waitcnt=0;
 		
 		//restart ds
@@ -1451,9 +1480,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started!");
+		if(waitcnt>150)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//restart slave cs
 		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failed!");
@@ -1524,7 +1553,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("Write data over!");		
 		
 		//close slave cs
@@ -1549,9 +1579,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>210)break;
 		}
-		if(waitcnt>210)fail("donw time arrived,but no rebuild started or finished!");
+		if(waitcnt>210)fail("down time arrived,but no rebuild started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,rebuild finished!");
+		log.error("down time arrived,rebuild finished!");
 		
 		//restart ds
 		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failed!");
@@ -1570,9 +1600,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started or stoped!");
+		if(waitcnt>150)fail("down time arrived,but no migration started or stoped!");
 		waitcnt=0;
-		log.error("donw time arrived,migration stoped!");
+		log.error("down time arrived,migration stoped!");
 		
 		//restart slave cs
 		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failed!");
@@ -1646,7 +1676,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);		
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);		
 		log.error("Write data over!");		
 		
 		//close slave cs
@@ -1672,9 +1703,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>210)break;
 		}
-		if(waitcnt>210)fail("donw time arrived,but no migration started!");
+		if(waitcnt>210)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
 
@@ -1691,9 +1722,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no rebuild started or finished!");
+		if(waitcnt>150)fail("down time arrived,but no rebuild started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,rebuild table finished!");
+		log.error("down time arrived,rebuild table finished!");
 		
 		//restart slave cs
 		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failed!");
@@ -1768,7 +1799,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("Write data over!");		
 		
 		//stop master cs
@@ -1792,9 +1824,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started!");
+		if(waitcnt>150)fail("down time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//restart master cs
 		if(!control_cs((String)csList.get(0),FailOverBaseCase.start,0))fail("restart master cs failed!");
@@ -1814,9 +1846,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 //			waitto(2);
 //			if(++waitcnt>210)break;
 //		}
-//		if(waitcnt>210)fail("donw time arrived,but no migration started or finished!");
+//		if(waitcnt>210)fail("down time arrived,but no migration started or finished!");
 //		waitcnt=0;
-//		log.error("donw time arrived,migration finished!");
+//		log.error("down time arrived,migration finished!");
 		
 		//change test tool's configuration
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
@@ -1835,6 +1867,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 		
@@ -1859,9 +1892,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
+		if(waitcnt>150)fail("down time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.error("down time arrived,migration started!");
 		
 		//stop master cs
 		if(!control_cs((String)csList.get(0), FailOverBaseCase.stop, 0))fail("stop master cs failed!");
@@ -1876,9 +1909,9 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 //			waitto(2);
 //			if(++waitcnt>210)break;
 //		}
-//		if(waitcnt>210)fail("donw time arrived,but no migration started or finished!");
+//		if(waitcnt>210)fail("down time arrived,but no migration started or finished!");
 //		waitcnt=0;
-//		log.error("donw time arrived,migration finished!");
+//		log.error("down time arrived,migration finished!");
 		
 		//restart master cs
 		if(!control_cs((String)csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failed!");
@@ -1938,7 +1971,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("put data over!");
 		//record the version times
 		int versionCount = check_keyword((String)csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
@@ -2035,7 +2069,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result\
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("put data over!");
 		
 		
@@ -2117,7 +2152,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("put data over!");
 		
 		//close slave cs
@@ -2164,7 +2200,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
-		assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.8);
+		log.error(getVerifySuccessful());
+		assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
 		log.error("Successfully Verified data!");
 		
 		log.error("stop config test Failover case 20");
@@ -2206,7 +2243,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("Write data over!");		
 
 		//stop master cs
@@ -2239,6 +2277,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 		
@@ -2266,6 +2305,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -2292,6 +2332,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		log.error("Read data over!");
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -2336,6 +2377,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 		
@@ -2347,12 +2389,16 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		clean_tool("local");
 		reset_cluster(csList,dsList);
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
+                        fail("modify configure file failed");
+                if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
+                        fail("modify configure file failed");
 	}
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
-//		reset_cluster(csList,dsList);
+		reset_cluster(csList,dsList);
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
 	}
 }

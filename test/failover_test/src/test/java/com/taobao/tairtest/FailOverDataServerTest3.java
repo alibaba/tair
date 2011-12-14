@@ -12,7 +12,7 @@ import junit.framework.Assert;
  * author fanggang
  * dataserver testcse
  **/
-public class FailOverDataServerTest extends FailOverBaseCase{
+public class FailOverDataServerTest3 extends FailOverBaseCase{
 	
     //在恢复时间外恢复dataserver
 	@Test
@@ -48,7 +48,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -157,7 +157,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 30s for duplicate
@@ -260,7 +260,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 10s for duplicate
@@ -369,7 +369,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 10s for duplicate
@@ -450,7 +450,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -553,7 +553,8 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+        log.error(getVerifySuccessful());
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -590,16 +591,17 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		//restart second data server
 		if(!control_ds((String) dsList.get(1), FailOverBaseCase.start, 0))fail("start data server failed!");
 		log.error("second data server has been started");
-		
+        if (touch_file((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf")!= 0)
+            fail(" touch group file failed!");
 		waitto(FailOverBaseCase.down_time);
 		
 		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finish on cs "+(String)csList.get(0)+" log");
-			waitto(2);
+			waitto(3);
 			if(++waitcnt>150)break;
 		}
-        if(waitcnt>150) fail("donw time arrived,but no migration finised!");
+        if(waitcnt>450) fail("donw time arrived,but no migration finised!");
         waitcnt=0;
 		log.error("donw time arrived,migration finished!");
 		
@@ -617,6 +619,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		log.error("Read data over!");
 		
 		//verify get result
+        log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully verified data!");
 
@@ -659,7 +662,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");
 		
 		//wait 5s for duplicate
@@ -767,7 +770,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -880,7 +883,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1004,7 +1007,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1129,7 +1132,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1256,7 +1259,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1378,7 +1381,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1501,7 +1504,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1628,7 +1631,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	                   
 		
 		//wait 5s for duplicate
@@ -1741,7 +1744,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -1851,7 +1854,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//close all data servers
@@ -1954,7 +1957,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
 		log.error("Write data over!");	
 		
 		//wait 5s for duplicate
@@ -2032,7 +2035,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-2), "#"))fail("change group.conf failed!");
 		log.error("group.conf has been changed!");
 		
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!control_cluster(csList, dsList.subList(0, dsList.size()-2), FailOverBaseCase.start, 0))fail("start cluster failed!");
 		log.error("start cluster successful!");
 		
 		waitto(FailOverBaseCase.down_time);
@@ -2052,7 +2055,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
 		log.error("put data over!");
 		
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
@@ -2094,7 +2097,7 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data 1!");
 		
-		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
+		if(!control_ds((String) dsList.get(dsList.size()-2), FailOverBaseCase.start, 0))fail("start ds failed!");
 		log.error("start ds2 successful!");
 		
 		//uncomment cs group.conf
@@ -2198,20 +2201,24 @@ public class FailOverDataServerTest extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 24");
 	}
 	
-    public void setUp()
+    	public void setUp()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList,dsList);
-        
+		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
+                        fail("modify configure file failed");
+                if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
+                        fail("modify configure file failed");
 	}
 	
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-	    clean_tool("local");
-//	    reset_cluster(csList,dsList);
-        batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");		
+		clean_tool("local");
+		reset_cluster(csList,dsList);
+		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");		
 	}
 	
 }

@@ -1,14 +1,12 @@
 /**
  * 
  */
-package com.taobao.tairtest;
+package com.taobao.tairtest_touch;
 
 import com.ibm.staf.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
-import com.taobao.gaia.HelpProc;
 
 /**
  * @author dongpo
@@ -562,6 +560,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
+                log.error(ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;

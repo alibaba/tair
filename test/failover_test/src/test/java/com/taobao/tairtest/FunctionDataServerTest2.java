@@ -1,20 +1,13 @@
-/**
- * 
- */
 package com.taobao.tairtest;
-
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.Test;
 
-import com.ibm.staf.STAFResult;
-
 /**
- * @author dongpo
+ * @author ashu.cs
  *
  */
-public class FunctionDataServerTest1 extends FailOverBaseCase {
+
+public class FunctionDataServerTest2 extends FailOverBaseCase {
+
 	@Test
 	public void testFunction_01_add_ds_and_migration()
 	{
@@ -34,7 +27,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		
 		//write verify data to cluster
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failed");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 		
@@ -47,8 +40,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		log.error(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
 		log.error("put data over!");
 		
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
@@ -57,9 +49,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		//uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
-		log.error("change group.conf and touch it");
 		
 		waitto(FailOverBaseCase.down_time);
 		
@@ -87,7 +76,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		log.error("get data over!");
 		
 		//verify get result
-		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -112,7 +100,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		
 		//write verify data to cluster
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failed");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 		
@@ -125,8 +113,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		log.error(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
 		log.error("put data over!");
 		
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
@@ -135,9 +122,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		//uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
-		log.error("change group.conf and touch it");
 		
 		waitto(FailOverBaseCase.down_time);
 		
@@ -165,7 +149,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		datacnt+=getVerifySuccessful();
 		log.error("put data over!");
 		
-		
 		//check migration stat of finish
 		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
 		{
@@ -190,7 +173,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		log.error("get data over!");
 		
 		//verify get result
-		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -215,7 +197,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		
 		//write verify data to cluster
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failed");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 		
@@ -228,8 +210,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		log.error(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
 		log.error("put data over!");
 		
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
@@ -238,9 +219,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		//uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
-		log.error("change group.conf and touch it");
 		
 		waitto(FailOverBaseCase.down_time);
 		
@@ -268,7 +246,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		log.error("get data over!");
 		
 		//verify get result
-		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -293,7 +270,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		
 		//write verify data to cluster
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failed");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 		
@@ -306,8 +283,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		log.error(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
 		log.error("put data over!");
 		
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
@@ -316,9 +292,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		//uncomment cs group.conf
 		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
-		log.error("change group.conf and touch it");
 		
 		waitto(FailOverBaseCase.down_time);
 		
@@ -371,13 +344,12 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		log.error("get data over!");
 		
 		//verify get result
-		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
 		log.error("end function test case 04");
 	}
-	@Test
+/*	@Test
 	public void testFunction_06_recover__ds_before_rebuild_120s_noRebuild()
 	{
 		log.error("start function test case 06");
@@ -393,7 +365,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		//change test tool's configuration
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
 			fail("modify configure file failed");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
@@ -415,15 +387,14 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		log.error(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
 		
 		//close ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failed!");
 		log.error("ds has been closed!");
-		log.error("wait 5 seconds to restart before rebuild ...");
+		log.error("wait to restart before rebuild ...");
 		
-		waitto(5);
+		waitto(FailOverBaseCase.ds_down_time);
 		
 		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
 		//restart ds
@@ -447,8 +418,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		log.error("Read data over!");
 		
 		//verify get result
-		log.error(getVerifySuccessful());
-		assertTrue("verify data failed!",getVerifySuccessful()/100000.0>0.79);
+		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
 		//wait downtime
@@ -458,25 +428,23 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
 		//end test
 		log.error("end function test case 06");
-	}
+	}*/
 	
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList,dsList);
-		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
-		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
-                        fail("modify configure file failed");
-                if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
-                        fail("modify configure file failed");
+		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
+            fail("modify configure file failure");
+        if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
+            fail("modify configure file failure");
 	}
 	
 	public void tearDown()
 	{
+		clean_tool("local");
 		log.error("clean tool and cluster!");
-//		clean_tool("local");
-//		reset_cluster(csList,dsList);
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
 	}
 }

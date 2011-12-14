@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.taobao.tairtest;
+package com.taobao.tairtest_touch;
 
 import junit.framework.TestSuite;
 import junit.framework.Test;

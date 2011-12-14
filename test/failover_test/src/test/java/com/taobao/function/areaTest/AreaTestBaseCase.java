@@ -6,16 +6,16 @@ import java.util.List;
 
 import com.ibm.staf.STAFResult;
 import com.taobao.tairtest.BaseTestCase;
-import com.taobao.tairtest.FailOverBaseCase;
+//import com.taobao.tairtest.AreaTestBaseCase;
 
 
 public class AreaTestBaseCase extends BaseTestCase {
 	//directory
-	final static String tair_bin="/home/admin/tair_bin/";
+	final static String tair_bin="/home/admin/tair_bin_sync/";
 	final static String test_bin="/home/admin/baoni/function/";
 	//mechine
-	final String csarr[]=new String[]{"10.232.4.26","10.232.4.27"};
-	final String dsarr[]=new String[]{"10.232.4.26"};
+	final String csarr[]=new String[]{"10.232.4.14","10.232.4.15"};
+	final String dsarr[]=new String[]{"10.232.4.14"};
 	final List csList=Arrays.asList(csarr);
 	final List dsList=Arrays.asList(dsarr);
 	//Parameters
@@ -257,7 +257,7 @@ public class AreaTestBaseCase extends BaseTestCase {
 	 * @param type 0:normal 1:force
 	 * @return
 	 */
-	public boolean control_ds(String machine,String opID, int type)
+/*	public boolean control_ds(String machine,String opID, int type)
 	{
 		log.debug("control ds:"+machine+" "+opID+" type="+type);
 		boolean ret=false;
@@ -297,7 +297,61 @@ public class AreaTestBaseCase extends BaseTestCase {
 			}
 		}
 		return ret;
-	}
+	}*/
+
+    public boolean control_ds(String machine, String opID, int type) 
+    {
+        log.debug("control ds:" + machine + " " + opID + " type=" + type);
+        boolean ret = false;
+        String cmd = "cd " + tair_bin + " && ";
+        cmd += "./tair.sh " + opID + "_ds ";
+        int expectNum = 0;
+        if (opID.equals(AreaTestBaseCase.stop)) 
+        {
+            expectNum = 2;
+        } 
+        else if (opID.equals(AreaTestBaseCase.start)) 
+        {
+            expectNum = 3;
+        }
+        executeShell(stafhandle, machine, cmd);
+        if (opID.equals(AreaTestBaseCase.stop) && type == 1)
+            cmd = "killall -9 tair_server && sleep 2";
+        STAFResult result = executeShell(stafhandle, machine, cmd);
+        int waittime = 0;
+        cmd = "ps -ef|grep tair_server|wc -l";
+        while (waittime < 110) 
+        {
+            result = executeShell(stafhandle, machine, cmd);
+            if (result.rc != 0) 
+            {
+                log.debug("ds rc!=0");
+                ret = false;
+            } 
+            else 
+            {
+                String stdout = getShellOutput(result);
+                if ((new Integer(stdout.trim())).intValue() == expectNum) 
+                {
+                    log.debug("------------ds ps result--------------" + stdout);
+                    ret = true;
+                    break;
+                }
+                else 
+                {
+                    ret = false;
+                    try
+                    {
+                        Thread.sleep(1000);
+                    }
+                    catch (InterruptedException e) {}
+                    waittime++;
+                }
+            }
+        }
+        return ret;
+    }
+
 	/**
 	 * @param cs_group
 	 * @param opID

@@ -14,7 +14,7 @@ import com.ibm.staf.*;
  * @author dongpo
  *
  */
-public class FailOverConfigServerTest extends FailOverBaseCase {
+public class FailOverConfigServerTest3 extends FailOverBaseCase {
 	@Test
 	public void testFailover_01_restart_master_cs()
 	{
@@ -1570,10 +1570,10 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(1)+" log");
-			waitto(2);
-			if(++waitcnt>150)break;
+			waitto(3);
+			if(++waitcnt>200)break;
 		}
-		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
+		if(waitcnt>200)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
 		log.error("donw time arrived,migration finished!");
 		
@@ -1679,10 +1679,10 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 		//check migration stat of finish
 		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
 		{
-			waitto(2);
-			if(++waitcnt>150)break;
+			waitto(3);
+			if(++waitcnt>200)break;
 		}
-		if(waitcnt>150)fail("check migrate finish time out!");
+		if(waitcnt>200)fail("check migrate finish time out!");
 		waitcnt=0;
 		log.error("check migrate finished!");
 		
@@ -1978,9 +1978,7 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 		
 		log.error("stop config test Failover case 19");
 	}
-	/**
-	 * Failover_20_在添加新节点前发生数据迁移
-	 */
+
 	@Test
 	public void testFailover_20_migrate_before_add_new_ds()
 	{
@@ -2090,12 +2088,16 @@ public class FailOverConfigServerTest extends FailOverBaseCase {
 		clean_tool("local");
 		reset_cluster(csList,dsList);
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
+                        fail("modify configure file failed");
+                if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
+                        fail("modify configure file failed");
 	}
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
-//		reset_cluster(csList,dsList);
+		reset_cluster(csList,dsList);
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
 	}
 }

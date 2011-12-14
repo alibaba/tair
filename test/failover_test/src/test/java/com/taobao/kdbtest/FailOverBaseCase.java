@@ -1,23 +1,23 @@
 /**
  * 
  */
-package com.taobao.tairtest;
+package com.taobao.kdbtest;
 
 import com.ibm.staf.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import com.taobao.gaia.HelpProc;
-
 /**
- * @author dongpo
+ * @author ashu.cs
  * 
  */
 public class FailOverBaseCase extends BaseTestCase {
 	// Directory
-	final static String tair_bin = "/home/admin/tair_bin/";
+	final static String tair_bin = "/home/admin/tair_bin_kdb/";
 	final static String test_bin = "/home/admin/baoni/recovery/";
+	final static String point_bin = "/home/admin/ashu/recovery/";
+	final static String ycsb_bin = "/home/admin/ashu/ycsb/";
 	// Server Operation
 	final static String start = "start";
 	final static String stop = "stop";
@@ -25,6 +25,21 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String put = "put";
 	final static String get = "get";
 	final static String rem = "rem";
+	
+	final static String dat_4 = "dat_4";
+	final static String dat_4_cp1 = "dat_4_cp1";
+	final static String dat_3_cp1 = "dat_3_cp1";
+	final static String dat_3_cp2 = "dat_3_cp2";
+	final static String conf_3 = "conf_3";
+	final static String conf_4 = "conf_4";
+	final static String conf_5 = "conf_5";
+	final static String conf_6 = "conf_6";
+	final static String check_3_cp1 = "check_3_cp1";
+	final static String check_3_cp2 = "check_3_cp2";
+	final static String copy_kv3_cp1 = "copy_kv3_cp1";
+	final static String copy_kv3_cp2 = "copy_kv3_cp2";
+	final static String copy_kv4 = "copy_kv4";
+	final static String copy_kv4_cp1 = "copy_kv4_cp1";
 	// Key Words for log
 	final static String start_migrate = "need migrate,";
 	final static String finish_migrate = "migrate all done";
@@ -36,9 +51,17 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static float put_count_float = 100000.0f;
 	// Server List
 	final String csarr[] = new String[] { "10.232.4.14", "10.232.4.15" };
-	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18" };
+	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17"};
 	final List csList = Arrays.asList(csarr);
-	final List dsList = Arrays.asList(dsarr);
+	final List dsList_4 = Arrays.asList(dsarr);
+	
+	final String dsarr_func[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18"};
+	final List dsList_5 = Arrays.asList(dsarr_func);
+	
+	final String dsarr_kdb[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18", "10.232.4.19"};
+	final List dsList_6 = Arrays.asList(dsarr_kdb);
+	
+	final static String ycsb_client = "10.232.4.18";
 
 	/**
 	 * @param machine
@@ -52,9 +75,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_cs && sleep 5";
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_cfg_svr && sleep 2";
+			cmd = "killall -9 tair_cfg_svr_kdb && sleep 2";
 		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep tair_cfg_svr|wc -l";
+		cmd = "ps -ef|grep tair_cfg_svr_kdb|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
 			log.debug("cs rc!=0");
@@ -93,10 +116,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		executeShell(stafhandle, machine, cmd);
 
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_server && sleep 2";
+			cmd = "killall -9 tair_server_kdb && sleep 2";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		int waittime = 0;
-		cmd = "ps -ef|grep tair_server|wc -l";
+		cmd = "ps -ef|grep tair_server_kdb|wc -l";
 		while (waittime < 110) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {
@@ -201,11 +224,66 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
+	
+	public void clean_point_tool(String machine) {
+		killall_tool_proc();
+		String cmd = "cd " + FailOverBaseCase.point_bin + " && ";
+		cmd += "./clean.sh";
+		STAFResult rst = executeShell(stafhandle, machine, cmd);
+		if (rst.rc != 0)
+			fail("fail to clean log files on " + machine + point_bin);
+		else
+			log.error("clean log files on " + machine + point_bin + " successful!");
+	}
+	
+	public void control_kdb_ycsb(String machine, String opID) {
+		String cmd = "";
+		STAFResult result;
+		if(opID.equals(FailOverBaseCase.start))
+			cmd = "cd " + ycsb_bin + " && ./run.sh workload_kdb kdb &";
+		else if(opID.equals(FailOverBaseCase.stop)) {
+			cmd = "ps -ef|grep workload_kdb |wc -l";
+			result = executeShell(stafhandle, machine, cmd);
+			if (result.rc != 0)
+				fail("execute ps cmd on " + machine + " failed!");
+			else {
+				String stdout = getShellOutput(result);
+				try {
+					int ret = (new Integer(stdout.trim())).intValue();
+					if (ret != 2)
+						cmd = "kill -9 `ps -ef|grep workload_kdb|grep -v grep|awk \'{print $2}\'`";
+				} catch (Exception e) {
+					log.debug("get verify exception: " + stdout);
+					fail("get verify exception: " + stdout);
+				}
+			}
+		}
+		else
+			fail("opID wrong! opID must be start or stop!");
+		result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0)
+			fail("fail to " + opID + " ycsb on " + machine + ycsb_bin);
+		else
+			log.error(opID + " ycsb on " + machine + ycsb_bin + " successful!");
+	}
 
 	public boolean execute_data_verify_tool() {
 		log.debug("start verify tool,run batchData");
 		boolean ret = false;
 		String cmd = "cd " + test_bin + " && ";
+		cmd += "./batchData.sh";
+		STAFResult result = executeShell(stafhandle, "local", cmd);
+		if (result.rc != 0)
+			ret = false;
+		else
+			ret = true;
+		return ret;
+	}
+	
+	public boolean execute_point_data_verify_tool() {
+		log.debug("start point data verify tool,run batchData");
+		boolean ret = false;
+		String cmd = "cd " + point_bin + " && ";
 		cmd += "./batchData.sh";
 		STAFResult result = executeShell(stafhandle, "local", cmd);
 		if (result.rc != 0)
@@ -231,7 +309,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	public boolean killall_tool_proc() {
 		log.debug("force kill all data tool process");
 		boolean ret = false;
-		String cmd = "killall -9 tair3test";
+		String cmd = "killall -9 kdb_tool";
 		STAFResult result = executeShell(stafhandle, "local", cmd);
 		if (result.rc != 0)
 			ret = false;
@@ -249,10 +327,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	public boolean reset_cluster(List csList, List dsList) {
+	public boolean reset_cluster(List csList, List dsList_4) {
 		boolean ret = false;
 		log.debug("stop and clean cluster!");
-		if (control_cluster(csList, dsList, FailOverBaseCase.stop, 1) && batch_clean_data(csList) && batch_clean_data(dsList))
+		if (control_cluster(csList, dsList_6, FailOverBaseCase.stop, 1) && batch_clean_data(csList) && batch_clean_data(dsList_6))
 			ret = true;
 		return ret;
 	}
@@ -287,7 +365,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
-				log.error("time=" + ret);
+				log.error("count=" + ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
@@ -475,17 +553,18 @@ public class FailOverBaseCase extends BaseTestCase {
 		log.error("the count of " + keyword + " on " + machine + " is right!");
 	}
 
-	protected int getVerifySuccessful(String machine) {
+	protected int getPointVerifySuccessful() {
 		int ret = 0;
-		String verify = "tail -10 " + FailOverBaseCase.tair_bin + "tools/" + "datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
-		log.debug("do verify on " + machine);
-		STAFResult result = executeShell(stafhandle, machine, verify);
+		String verify = "tail -10 " + point_bin + "datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
+		log.debug("do point verify on local");
+		STAFResult result = executeShell(stafhandle, "local", verify);
 		if (result.rc != 0)
 			ret = -1;
 		else {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
+				log.error("get successful count on " + point_bin + ": " + ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
@@ -494,10 +573,33 @@ public class FailOverBaseCase extends BaseTestCase {
 		log.error(ret);
 		return ret;
 	}
+	
+	public void execute_copy_tool(String machine, String opID) {
+		log.error("start copy " + opID + " files on dsList!");
+		String cmd = "cd " + point_bin + " && ./ctrl.sh " + opID;
+		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0)
+			fail("execute shell cmd failed!");
+		else {
+			String stdout = getShellOutput(result);
+			try {
+				int ret = (new Integer(stdout.trim())).intValue();
+				if (ret == 0)
+					log.error("copy " + opID + " files on dsList successful!");
+				else {
+					log.error("copy " + opID + " files on dsList failed! ret=" + ret);
+					fail("copy " + opID + " files on dsList failed! ret=" + ret);
+				}
+			} catch (Exception e) {
+				log.debug("execute copy tool exception: " + stdout);
+				fail("get execute copy tool exception: " + stdout);
+			}
+		}
+	}
 
 	//if(!copy_file(csList.get(0), FailOverBaseCase.table_path + "group_1_server_table", local))fail("copy table file failed!");
 	public boolean copy_file(String source_machine, String filename, String target_machine) {
-		log.error("Copy " + filename + " from " + source_machine +" to " + target_machine);
+		log.error("copy " + filename + " from " + source_machine +" to " + target_machine);
 		boolean ret = true;
 		String cmd = "scp " + filename + " " + target_machine + ":" + FailOverBaseCase.test_bin;
 		STAFResult result = executeShell(stafhandle, source_machine, cmd);
@@ -551,7 +653,6 @@ public class FailOverBaseCase extends BaseTestCase {
 		int ret = 0;
 		String verify = "cd " + FailOverBaseCase.test_bin + " && ";
 		verify += " tail -10 datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
-		log.debug("do verify on local");
 		STAFResult result = executeShell(stafhandle, "local", verify);
 		if (result.rc != 0)
 		{
@@ -562,11 +663,13 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
+				log.error("get successful count on " + test_bin + ": " + ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
 			}
 		}
+		log.debug("do verify on local: " + ret);
 		return ret;
 	}
 

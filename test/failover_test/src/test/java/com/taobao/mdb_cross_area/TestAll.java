@@ -1,14 +1,14 @@
 /**
  * 
  */
-package com.taobao.tairtest;
+package com.taobao.mdb_cross_area;
 
 import junit.framework.TestSuite;
 import junit.framework.Test;
 import junit.textui.TestRunner;
 
 /**
- * @author dongpo
+ * @author ashu.cs
  *
  */
 public class TestAll extends TestSuite {

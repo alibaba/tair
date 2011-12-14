@@ -764,8 +764,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
-	    clean_tool("local");
-	    reset_cluster(csList,dsList);
+		clean_tool("local");
+		reset_cluster(csList,dsList);
 		
 	}
 

@@ -1,17 +1,15 @@
 /**
  * 
  */
-package com.taobao.tairtest;
+package com.taobao.mdb_cross_area;
 
 import com.ibm.staf.*;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import com.taobao.gaia.HelpProc;
-
 /**
- * @author dongpo
+ * @author ashu.cs
  * 
  */
 public class FailOverBaseCase extends BaseTestCase {

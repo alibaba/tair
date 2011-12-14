@@ -14,7 +14,8 @@ import com.ibm.staf.STAFResult;
  * @author dongpo
  *
  */
-public class FailoverClusterTest1 extends FailOverBaseCase {
+
+public class FailoverClusterTest3 extends FailOverBaseCase {
 	@Test
 	public void testFailover_01_restart_all_server()
 	{
@@ -29,12 +30,9 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//write data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
-			fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))
-			fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
-			fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("change conf failed!");
 		
 		execute_data_verify_tool();
 		
@@ -47,8 +45,7 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//save put result
 		int datacnt=getVerifySuccessful();
-		log.error(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
+		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
 		log.error("finish put data!");
 		
 		//shut down ds and cs
@@ -63,8 +60,7 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		
 		waitto(FailOverBaseCase.down_time);
 		//verify data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
-			fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("change conf failed!");
 		
 		execute_data_verify_tool();
 		
@@ -78,7 +74,6 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		log.error("finish get data!");
 		
 		//verify get result
-		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
 		log.error("verify data successful!");
 		
@@ -101,12 +96,9 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//write data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
-			fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))
-			fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
-			fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("change conf failed!");
 		
 		execute_data_verify_tool();
 		
@@ -119,8 +111,7 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		waitcnt=0;
 		//save put result
 		int datacnt=getVerifySuccessful();
-		log.error(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/100000.0>0.9);	
+		assertTrue("put successful rate samll than 90%!",datacnt/100000.0>0.9);	
 		log.error("finish put data!");
 
 		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failed!");
@@ -159,8 +150,7 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		
 		waitto(FailOverBaseCase.down_time);
 		//verify data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
-			fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("change conf failed!");
 		
 		execute_data_verify_tool();
 		
@@ -174,7 +164,6 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		log.error("finish get data!");
 		
 		//verify get result
-		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
 		log.error("verify data successful!");
 		
@@ -186,9 +175,9 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		clean_tool("local");
 		reset_cluster(csList,dsList);
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
-                if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
+		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
                         fail("modify configure file failed");
-		if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "1"))
+                if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
                         fail("modify configure file failed");
 	}
 	public void tearDown()
