@@ -126,6 +126,7 @@ namespace tair {
       int get_items_count(int area,const data_entry& key);
 
       void set_timeout(int this_timeout);
+      void set_randread(bool rand_flag);
 
       uint32_t get_bucket_count() const { return bucket_count;}
       uint32_t get_copy_count() const { return copy_count;}
@@ -237,6 +238,8 @@ namespace tair {
       wait_object_manager *this_wait_object_manager;
       uint32_t bucket_count;
       uint32_t copy_count;
+      bool rand_read_flag;
+      atomic_t read_seq;
   };
 
   template< typename IT >

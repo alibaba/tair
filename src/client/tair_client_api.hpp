@@ -275,6 +275,13 @@ namespace tair {
       void set_timeout(int timeout);
 
       /**
+       * @brief set read from random server 
+       *
+       * @param rand_flag: true means read from all replicas.
+       */
+      void set_randread(bool rand_flag);
+
+      /**
        * @brief get bucket count of tair cluster
        *
        * @return  bucket count

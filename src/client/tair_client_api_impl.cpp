@@ -53,12 +53,12 @@ namespace tair {
    *  tair_client_impl
    *-----------------------------------------------------------------------------*/
 
-  tair_client_impl::tair_client_impl():inited(false),is_stop(false),packet_factory(0),streamer(0),\
-                                       transport(0),connmgr(0),timeout(2000),\
-                                                                              config_version(0),new_config_version(0),\
-                                                                                                                       send_fail_count(0),this_wait_object_manager(0),bucket_count(0),\
-                                                                                                                                                                                       copy_count(0)
+  tair_client_impl::tair_client_impl():inited(false),is_stop(false),packet_factory(0),streamer(0),
+                                       transport(0),connmgr(0),timeout(2000),config_version(0),
+                                       new_config_version(0),send_fail_count(0),this_wait_object_manager(0),
+                                       bucket_count(0),copy_count(0),rand_read_flag(false)
   {
+    atomic_set(&read_seq, 0);
   }
 
   tair_client_impl::~tair_client_impl()
@@ -288,8 +288,6 @@ FAIL:
       return -1;
     }
     TBSYS_LOG(DEBUG,"get from server:%s",tbsys::CNetUtil::addrToString(server_list[0]).c_str());
-
-
     wait_object *cwo = 0;
 
     base_packet *tpacket = 0;
@@ -297,41 +295,49 @@ FAIL:
     int ret = TAIR_RETURN_SEND_FAILED;
     int send_success = 0;
 
-    for(vector<uint64_t>::iterator it=server_list.begin(); it != server_list.end(); ++it){
-
+    int s_size = server_list.size();
+    int index = 0;
+    if (rand_read_flag && s_size > 1) {
+      index = atomic_add_return(1, &read_seq) % s_size;
+    }
+    int loop_count = 0;
+    while (loop_count < s_size) {
       request_get *packet = new request_get();
       packet->area = area;
 
       packet->add_key(key.get_data(), key.get_size());
       cwo = this_wait_object_manager->create_wait_object();
 
-      if( send_request(*it,packet,cwo->get_id()) < 0 ){
+      if (send_request(server_list[index],packet,cwo->get_id()) < 0) {
         this_wait_object_manager->destroy_wait_object(cwo);
 
         //need delete packet
         delete packet;
-        continue;
+      } else {
+        if ((ret = get_response(cwo,1,tpacket)) < 0) {
+          this_wait_object_manager->destroy_wait_object(cwo);
+        } else {
+          ++send_success;
+          break;
+        }
       }
-
-      if( (ret = get_response(cwo,1,tpacket)) < 0 ){
-        this_wait_object_manager->destroy_wait_object(cwo);
-        continue;
-      }else{
-        ++send_success;
-        break;
+      ++loop_count;
+      ++index;
+      if (rand_read_flag && s_size > 1) {
+        index %= s_size;
       }
     }
 
-    if( send_success < 1 ){
+    if (send_success < 1) {
       TBSYS_LOG(ERROR,"all requests are failed");
       return ret;
     }
-    if (tpacket == 0 || tpacket->getPCode() != TAIR_RESP_GET_PACKET){
+    if (tpacket == 0 || tpacket->getPCode() != TAIR_RESP_GET_PACKET) {
       goto FAIL;
     }
     resp = (response_get*)tpacket;
     ret = resp->get_code();
-    if(ret != TAIR_RETURN_SUCCESS){
+    if (ret != TAIR_RETURN_SUCCESS) {
       goto FAIL;
     }
     if (resp->data) {
@@ -350,12 +356,12 @@ FAIL:
 
     return ret;
 FAIL:
-    if(tpacket && tpacket->getPCode() == TAIR_RESP_RETURN_PACKET){
+    if (tpacket && tpacket->getPCode() == TAIR_RESP_RETURN_PACKET) {
       response_return *r = (response_return *)tpacket;
       new_config_version = resp->config_version;
       ret = r->get_code();
     }
-    if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK){
+    if (ret == TAIR_RETURN_SERVER_CAN_NOT_WORK) {
       new_config_version = resp->config_version;
       send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
     }

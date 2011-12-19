@@ -204,6 +204,11 @@ namespace tair {
     impl->set_timeout(timeout);
   }
 
+  void tair_client_api::set_randread(bool rand_flag)
+  {
+    impl->set_randread(rand_flag);
+  }
+
   const char *tair_client_api::get_error_msg(int ret)
   {
     return impl->get_error_msg(ret);
