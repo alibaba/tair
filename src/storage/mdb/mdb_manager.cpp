@@ -591,7 +591,7 @@ namespace tair {
 
   void mdb_manager::remove_exprd_item()
   {
-    TBSYS_LOG(INFO, "start remove expired mdb_item ...");
+    TBSYS_LOG(WARN, "start remove expired mdb_item ...");
     int64_t del_count = 0;
     int64_t release_space = 0;
     for(int i = 0; i < hashmap->get_bucket_size(); ++i) {
@@ -612,7 +612,8 @@ namespace tair {
         }
       }
     }
-    TBSYS_LOG(INFO,"end remove expired item [%ld] [%ld]",del_count,release_space);
+    TBSYS_LOG(WARN,"end remove expired item [%ld] [%ld]",del_count,release_space);
+    last_expd_time = static_cast<uint32_t> (time(NULL));
   }
 
 
@@ -662,11 +663,17 @@ namespace tair {
 
   void mdb_manager::run_chkexprd_deleted()
   {
-    while(!stopped) {
+    while (!stopped) {
       TAIR_SLEEP(stopped, 5);
-      if(stopped)
+      if (stopped)
         break;
-      if(!is_chkexprd_time()) {
+      if (!is_chkexprd_time()) {
+        continue;
+      }
+      //avoid to check too often
+      if (last_expd_time != 0
+         && time(NULL) - last_expd_time < (60 * 60 * 6)) {
+        TBSYS_LOG(DEBUG, "don't exprd too often, last_expd_time: %u", last_expd_time);
         continue;
       }
       //if (m_last_traversal_time != 0 && (time(NULL) - m_last_traversal_time > 60)){

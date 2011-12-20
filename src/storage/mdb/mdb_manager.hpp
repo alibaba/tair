@@ -34,7 +34,7 @@ namespace tair {
   {
   public:
     mdb_manager():this_mem_pool(0), cache(0), hashmap(0),
-      last_traversal_time(0), last_balance_time(0), stopped(false)
+      last_traversal_time(0), last_balance_time(0), last_expd_time(0), stopped(false)
     {
     }
     virtual ~ mdb_manager();
@@ -107,6 +107,7 @@ namespace tair {
     //int m_hash_index; //is used to scan
     uint32_t last_traversal_time;        //record the last time of traversal
     uint32_t last_balance_time;
+    uint32_t last_expd_time;
 
     tbsys::CThread chkexprd_thread;
     tbsys::CThread chkslab_thread;
