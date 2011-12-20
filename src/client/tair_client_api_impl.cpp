@@ -1094,6 +1094,10 @@ FAIL:
     timeout = this_timeout;
   }
 
+  void tair_client_impl::set_randread(bool rand_flag)
+  {
+    rand_read_flag = rand_flag;
+  }
   /*-----------------------------------------------------------------------------
    *  tair_client_impl::ErrMsg
    *-----------------------------------------------------------------------------*/
