@@ -1,2 +1,6 @@
 2010-06-30
 * tair opensourced
+
+2011-12-20
+* feature: support read from all replicas in c++ client;
+* fixbug: expire once in one period
