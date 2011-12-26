@@ -10,7 +10,7 @@ Vendor: TaoBao
 Prefix:%{_prefix}
 Source:%{NAME}-%{VERSION}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-root
-#BuildRequires: t-csrd-tbnet-devel >= 1.0.4
+BuildRequires: t-csrd-tbnet-devel >= 1.0.4
 #Requires: openssl-devel >= 0.9
 Requires: google-perftools >= 1.7
 

@@ -3,7 +3,8 @@
 
 2011-12-20
 * feature: 
-* 1. support read from all replicas in c++ client;
+* 1. support read from all replicas in c++ client:
+* tair_handle->set_randread(true)
 * 2. check tmpfs size and slab_mem_size in dataserver.conf when exec tair.sh
 * start_ds 
 * fixbug: 
