@@ -7,5 +7,9 @@
 * tair_handle->set_randread(true)
 * 2. check tmpfs size and slab_mem_size in dataserver.conf when exec tair.sh
 * start_ds 
+* 3. add _accept_strategy in group.conf config item. default value is 0. if
+* it set to 1, configserver will auto accept dataserver when dataserver
+* connect to cs. (no touch group.conf!)
+
 * fixbug: 
 * 1. expire items once in one period
