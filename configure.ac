@@ -1,4 +1,4 @@
-AC_INIT(tair, 2.3.1,ruohai@taobao.com)
+AC_INIT(tair, 2.3.1.1,ruohai@taobao.com)
 
 AM_INIT_AUTOMAKE(tair, 2.3.1.1) 
 m4_include([ax_boost.m4])

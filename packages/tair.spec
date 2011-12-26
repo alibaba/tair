@@ -1,6 +1,6 @@
 Name: %NAME
 Version: %VERSION
-Release: r393_tcmalloc%{?dist}
+Release: r453%{?dist}
 Summary: Taobao key/value storage system
 Group: Application
 URL: http:://yum.corp.alimama.com
