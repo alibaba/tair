@@ -12,7 +12,7 @@ Source:%{NAME}-%{VERSION}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-root
 #BuildRequires: t-csrd-tbnet-devel >= 1.0.4
 #Requires: openssl-devel >= 0.9
-Requires: google-perftools >= 1.8
+Requires: google-perftools >= 1.7
 
 %description
 Tair is a high performance, distribution key/value storage system.
@@ -32,6 +32,7 @@ files for developing applications that use the %name package.
 #export TBLIB_ROOT=/opt/csr/common
 chmod u+x bootstrap.sh
 ./bootstrap.sh
+#./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR --without-tcmalloc_minimal
 ./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR --with-tcmalloc_minimal
 make %{?_smp_mflags}
 

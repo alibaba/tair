@@ -16,7 +16,8 @@ EXTRA_DIST=bootstrap.sh \
 	   packages/tair.spec 
 
 TMP_DIR:=/tmp/tair-tmp.$(shell echo $$$$)
-PREFIX:=$(shell [ x$(PREFIX) = x ] && PREFIX=/home/admin/tair_bin && echo "$${PREFIX}")
+#PREFIX:=$(shell [ x$(PREFIX) = x ] && PREFIX=/home/admin/tair && echo "$${PREFIX}")
+PREFIX:=$(shell [ x$(PREFIX) = x ] && PREFIX=/usr/local/tair-$(VERSION) && echo "$${PREFIX}")
 BOOST_DIR:=$(shell [ x$(BOOST_DIR) = x ] && BOOST_DIR=/usr && echo "$${BOOST_DIR}")
 rpms: dist-gzip packages/tair.spec
 	mkdir -p $(TMP_DIR)
