@@ -2,5 +2,9 @@
 * tair opensourced
 
 2011-12-20
-* feature: support read from all replicas in c++ client;
-* fixbug: expire once in one period
+* feature: 
+* 1. support read from all replicas in c++ client;
+* 2. check tmpfs size and slab_mem_size in dataserver.conf when exec tair.sh
+* start_ds 
+* fixbug: 
+* 1. expire items once in one period

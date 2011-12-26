@@ -1,6 +1,6 @@
-AC_INIT(tair, 2.3.0,ruohai@taobao.com)
+AC_INIT(tair, 2.3.1,ruohai@taobao.com)
 
-AM_INIT_AUTOMAKE(tair, 2.3.0) 
+AM_INIT_AUTOMAKE(tair, 2.3.1.1) 
 m4_include([ax_boost.m4])
 m4_include([tcmalloc.m4])
 AC_ARG_WITH([release],
