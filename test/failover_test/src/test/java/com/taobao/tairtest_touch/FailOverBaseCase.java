@@ -9,13 +9,13 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * @author dongpo
+ * @author ashu
  * 
  */
 public class FailOverBaseCase extends BaseTestCase {
 	// Directory
-	final static String tair_bin = "/home/admin/tair_bin/";
-	final static String test_bin = "/home/admin/baoni/recovery/";
+	final static String tair_bin = "/home/admin/tair_bin_mdb/";
+	final static String test_bin = "/home/admin/ashu/recovery/";
 	// Server Operation
 	final static String start = "start";
 	final static String stop = "stop";
@@ -50,9 +50,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_cs && sleep 5";
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_cfg_svr && sleep 2";
+			cmd = "killall -9 tair_cfg_svr_mdb && sleep 2";
 		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep tair_cfg_svr|wc -l";
+		cmd = "ps -ef|grep tair_cfg_svr_mdb|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
 			log.debug("cs rc!=0");
@@ -91,10 +91,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		executeShell(stafhandle, machine, cmd);
 
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_server && sleep 2";
+			cmd = "killall -9 tair_server_mdb && sleep 2";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		int waittime = 0;
-		cmd = "ps -ef|grep tair_server|wc -l";
+		cmd = "ps -ef|grep tair_server_mdb|wc -l";
 		while (waittime < 110) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {
@@ -229,7 +229,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	public boolean killall_tool_proc() {
 		log.debug("force kill all data tool process");
 		boolean ret = false;
-		String cmd = "killall -9 tair3test";
+		String cmd = "killall -9 mdb_tool";
 		STAFResult result = executeShell(stafhandle, "local", cmd);
 		if (result.rc != 0)
 			ret = false;

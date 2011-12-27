@@ -1908,7 +1908,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase{
 	////////////////////////////////////
 	/////// cross different rack ///////
 	////////////////////////////////////
-	@Test
+/*	@Test
 	public void testFailover_05_kill_more_servers_on_master_rack()
 	{ 
 		log.error("start DataServer test Failover case 05");
@@ -2259,7 +2259,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase{
 
 		//end test
 		log.error("end DataServer test Failover case 27");
-	}
+	}*/
 
 	public void setUp()
 	{

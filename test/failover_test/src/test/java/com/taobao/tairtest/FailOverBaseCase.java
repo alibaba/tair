@@ -4,11 +4,11 @@
 package com.taobao.tairtest;
 
 import com.ibm.staf.*;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
-import com.taobao.gaia.HelpProc;
 
 /**
  * @author dongpo
@@ -17,7 +17,7 @@ import com.taobao.gaia.HelpProc;
 public class FailOverBaseCase extends BaseTestCase {
 	// Directory
 	final static String tair_bin = "/home/admin/tair_bin/";
-	final static String test_bin = "/home/admin/baoni/recovery/";
+	final static String test_bin = "/home/admin/ashu/recovery/";
 	// Server Operation
 	final static String start = "start";
 	final static String stop = "stop";
@@ -35,11 +35,11 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String put_count = "100000";
 	final static float put_count_float = 100000.0f;
 	// Server List
-	final String csarr[] = new String[] { "10.232.4.14", "10.232.4.15" };
-	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18" };
+	final String csarr[] = new String[] { "10.232.4.20", "10.232.4.21" };
+	final String dsarr[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.23", "10.232.4.24", "10.232.4.25" };
 	final List csList = Arrays.asList(csarr);
 	final List dsList = Arrays.asList(dsarr);
-
+	
 	/**
 	 * @param machine
 	 * @param opID
@@ -52,9 +52,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_cs && sleep 5";
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_cfg_svr && sleep 2";
+			cmd = "killall -9 tair_cfg_svr_hudson && sleep 2";
 		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep tair_cfg_svr|wc -l";
+		cmd = "ps -ef|grep tair_cfg_svr_hudson|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
 			log.debug("cs rc!=0");
@@ -93,10 +93,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		executeShell(stafhandle, machine, cmd);
 
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_server && sleep 2";
+			cmd = "killall -9 tair_server_hudson && sleep 2";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		int waittime = 0;
-		cmd = "ps -ef|grep tair_server|wc -l";
+		cmd = "ps -ef|grep tair_server_hudson|wc -l";
 		while (waittime < 110) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {

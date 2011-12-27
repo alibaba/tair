@@ -2033,7 +2033,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	////////////////////////////////////
 	/////// cross different rack ///////
 	////////////////////////////////////
-	@Test
+/*	@Test
 	public void testFailover_21_kill_master_cs_and_one_ds_on_master_rack()
 	{ 
 		log.error("start config test Failover case 21");
