@@ -25,7 +25,9 @@ base_src=data_dumpper.cpp	\
 	 stat_helper.hpp	\
 	 stat_info.hpp	\
 	 util.hpp	\
-	 wait_object.hpp	
+	 wait_object.hpp	 \
+   file_op.cpp \
+   file_list_factory.hpp
 
 noinst_LIBRARIES=libtair_common.a
 

@@ -37,10 +37,10 @@ namespace tair {
       table_manager();
       ~table_manager();
 
-      bool is_master(int bucket_number, int server_flag) const;
-      const uint64_t* get_server_table() const;
-      std::vector<uint64_t> get_slaves(int bucket_number, bool is_migrating = false) const;
-      uint64_t get_migrate_target(int bucket_number) const;
+      bool is_master(int bucket_number, int server_flag) ;
+      const uint64_t* get_server_table() ;
+      std::vector<uint64_t> get_slaves(int bucket_number, bool is_migrating = false) ;
+      uint64_t get_migrate_target(int bucket_number) ;
 
       void init_migrate_done_set(boost::dynamic_bitset<> &migrate_done_set, const std::vector<uint64_t> &current_state_table);
 
@@ -67,7 +67,8 @@ namespace tair {
       uint32_t table_version;
       uint32_t copy_count;
       uint32_t bucket_count;
-      tbsys::CThreadMutex update_mutex;
+      //tbsys::CThreadMutex update_mutex;
+      pthread_rwlock_t    m_mutex;
 
       std::vector<int> holding_buckets; // the buckets this server holding
       std::vector<int> padding_buckets;

@@ -121,8 +121,7 @@ namespace tair{
    }
 
 
-   duplicate_sender_manager::duplicate_sender_manager( tbnet::Transport *transport,
-                                                       tbnet::DefaultPacketStreamer *streamer, table_manager* table_mgr)
+   duplicate_sender_manager::duplicate_sender_manager(tbnet::Transport *transport,tbnet::DefaultPacketStreamer *streamer, table_manager* table_mgr)
    {
       this->table_mgr = table_mgr;
       conn_mgr = new tbnet::ConnectionManager(transport, streamer, this);
@@ -131,6 +130,7 @@ namespace tair{
       max_queue_size = 0;
       this->start();
    }
+
    duplicate_sender_manager::~duplicate_sender_manager()
    {
       this->stop();
@@ -178,10 +178,10 @@ namespace tair{
 
    }
    
-   void duplicate_sender_manager::duplicate_data(int area, const data_entry* key, const data_entry* value,
-                                                 int bucket_number, const vector<uint64_t>& des_server_ids)
+   int duplicate_sender_manager::duplicate_data(int area, const data_entry* key, const data_entry* value,int expire_time,
+                                                 int bucket_number, const vector<uint64_t>& des_server_ids,base_packet *,int)
    {
-      if (des_server_ids.empty()) return;
+      if (des_server_ids.empty()) return 0;
       bucket_waiting_queue::request_duplicate_packet tmp_packet(new request_duplicate());
       tmp_packet->area = area;
       tmp_packet->key = *key;
@@ -225,8 +225,15 @@ namespace tair{
       }
       have_data_to_send = 1;
       packages_mgr_mutex.unlock();
-      return ;
+      return 0;
    }
+
+  int duplicate_sender_manager::direct_send(int area, const data_entry* key, const data_entry* value,int  expire_time,
+            int bucket_number, const vector<uint64_t>& des_server_ids,uint32_t max_packet_id)
+  {
+     return duplicate_data(area,key,value,expire_time,bucket_number,des_server_ids,NULL,0);
+  }
+
    bool duplicate_sender_manager::has_bucket_duplicate_done(int bucketNumber)
    {
       while(packages_mgr_mutex.rdlock()) {

@@ -72,11 +72,13 @@ namespace tair {
    class stat_helper;
    class tair_pstat {
    public:
-      tair_pstat() {
-         data_size_value = 0;
-         use_size_value = 0;
-         item_count_value = 0;
-      }
+     tair_pstat() { reset(); }
+     void reset()
+     {
+        data_size_value = 0;
+        use_size_value = 0;
+        item_count_value = 0;
+     }
 
       uint64_t data_size() { return data_size_value; }
       void add_data_size(uint64_t ds) { data_size_value += ds; }

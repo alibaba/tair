@@ -17,18 +17,17 @@
 #ifdef WITH_KDB
 #include "kdb_manager.h"
 #endif
+#ifdef WITH_LDB
+#include "ldb_manager.hpp"
+#endif
 #include "tair_manager.hpp"
 #include "migrate_manager.hpp"
 #include "define.hpp"
 #include "mdb_factory.hpp"
-#include "item_manager.hpp"
 #include "fdb_manager.hpp"
-namespace {
-   const int TAIR_OPERATION_VERSION   = 1;
-   const int TAIR_OPERATION_DUPLICATE = 2;
-   const int TAIR_OPERATION_REMOTE    = 4;
-   const int TAIR_DUPLICATE_BUSY_RETRY_COUNT = 10;
-}
+#include "item_manager.hpp"
+#include "duplicate_manager.hpp"
+#include "dup_sync_manager.hpp"
 
 namespace tair {
    tair_manager::tair_manager() : migrate_done_set(0)
@@ -44,6 +43,7 @@ namespace tair {
 
    tair_manager::~tair_manager()
    {
+      tbsys::CThreadGuard update_table_guard(&update_server_table_mutex);
       if (migrate_mgr != NULL) {
          delete migrate_mgr;
          migrate_mgr = NULL;
@@ -82,7 +82,7 @@ namespace tair {
       const char *se_name = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_SENGINE, NULL);
       if (se_name == NULL || (strcmp(se_name, "mdb") == 0)) {
          // init mdb
-         storage_mgr = mdb_factory::create_mdb_manager(false);
+         storage_mgr = mdb_factory::create_mdb_manager();
       } else if (strcmp(se_name, "fdb") == 0){
          // init fdb
          storage_mgr = new tair::storage::fdb::fdb_manager();
@@ -93,8 +93,14 @@ namespace tair {
          storage_mgr = new tair::storage::kdb::kdb_manager();
       }
 #endif 
+#ifdef WITH_LDB
+      else if (strcmp(se_name, "ldb") == 0) {
+        log_info("init storage engine ldb");
+        storage_mgr = new tair::storage::ldb::LdbManager();
+      }
+#endif
       else {
-         return false;
+        storage_mgr = NULL;
       }
 
       if (storage_mgr == NULL) {
@@ -104,13 +110,24 @@ namespace tair {
 
       // init the storage manager for stat helper
       TAIR_STAT.set_storage_manager(storage_mgr);
+      // is allow dec to negative?
+      uint32_t _allow_negative= TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_COUNT_NEGATIVE, TAIR_COUNT_NEGATIVE_MODE);
+      not_allow_count_negative= (0==_allow_negative);
 
       // init dupicator
-      base_duplicator* dup;
-      duplicator = new duplicate_sender_manager(transport, streamer, table_mgr);
-      dup = duplicator;
+      int32_t dup_sync_mode= TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_DUP_SYNC, TAIR_DUP_SYNC_MODE);
+      if(0==dup_sync_mode)
+      {
+        duplicator = new duplicate_sender_manager(transport, streamer, table_mgr);
+      }
+      else
+      {
+        log_info("run duplicator with sync mode ");
+        duplicator = new dup_sync_sender_manager(transport, streamer, table_mgr);
+      }
 
-      migrate_mgr = new migrate_manager(transport, streamer, dup, this, storage_mgr);
+
+      migrate_mgr = new migrate_manager(transport, streamer, duplicator, this, storage_mgr);
 
       dump_mgr = new tair::storage::dump_manager(storage_mgr);
 
@@ -119,7 +136,7 @@ namespace tair {
       return true;
    }
 
-   int tair_manager::put(int area, data_entry &key, data_entry &value, int expire_time)
+   int tair_manager::put(int area, data_entry &key, data_entry &value, int expire_time,base_packet *request,int heart_vesion)
    {
       if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
          return TAIR_RETURN_ITEMSIZE_ERROR;
@@ -156,17 +173,18 @@ namespace tair {
       PROFILER_END();
 
       if (rc == TAIR_RETURN_SUCCESS ) {
-         key.data_meta = mkey.data_meta;
-         if (op_flag & TAIR_OPERATION_DUPLICATE) {
-            vector<uint64_t> slaves;
-            get_slaves(key.server_flag, bucket_number, slaves);
-            if (slaves.empty() == false) {
-               PROFILER_BEGIN("do duplicate");
-               duplicator->duplicate_data(area, &key, &value, bucket_number, slaves);
-               PROFILER_END();
-            }
-         }
-
+        key.data_meta = mkey.data_meta;
+        if (op_flag & TAIR_OPERATION_DUPLICATE) {
+          vector<uint64_t> slaves;
+          get_slaves(key.server_flag, bucket_number, slaves);
+          if (slaves.empty() == false) {
+            PROFILER_BEGIN("do duplicate");
+            //duplicator->(area, &key, &value, bucket_number, slaves);
+            if (request)
+              rc=duplicator->duplicate_data(area, &key, &value, expire_time,bucket_number, slaves,(base_packet *)request,heart_vesion);
+            PROFILER_END();
+          }
+        }
          if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
             PROFILER_BEGIN("do migrate log");
             migrate_log->log(SN_PUT, mkey, value, bucket_number);
@@ -222,7 +240,7 @@ namespace tair {
       return rc;
    }
 
-   int tair_manager::add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time)
+   int tair_manager::add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,request_inc_dec * request,int heart_version)
    {
       if (status != STATUS_CAN_WORK) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
@@ -235,19 +253,38 @@ namespace tair {
       if (area < 0 || area >= TAIR_MAX_AREA_COUNT) {
          return TAIR_RETURN_INVALID_ARGUMENT;
       }
+      //check if it's support add_count or it's a mdb enginer.
+      data_entry mkey = key;
+      mkey.merge_area(area);
+      int bucket_number = get_bucket_number(key);
+      int rc=storage_mgr->add_count(bucket_number,mkey,count,init_value,not_allow_count_negative,expire_time,*result_value);
+      if(TAIR_RETURN_NOT_SUPORTED!=rc) return rc;
 
       tbsys::CThreadGuard guard(&counter_mutex[get_mutex_index(key)]);
       // get from storage engine
       data_entry old_value;
       PROFILER_BEGIN("get from storage");
-      int rc = get(area, key, old_value);
+      rc = get(area, key, old_value);
       PROFILER_END();
       log_debug("get result: %d, flag: %d", rc, key.data_meta.flag);
       key.data_meta.log_self();
-      if (rc == TAIR_RETURN_SUCCESS && IS_ADDCOUNT_TYPE(key.data_meta.flag)) {
+      if (rc == TAIR_RETURN_SUCCESS && storage_mgr->test_flag(key.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT)) {
          // old value exist
          int32_t *v = (int32_t *)(old_value.get_data() + ITEM_HEAD_LENGTH);
          log_debug("old count: %d, new count: %d, init value: %d", (*v), count, init_value);
+        if(not_allow_count_negative)
+        {
+         if(0>=(*v) && count<0)
+         {
+           return  TAIR_RETURN_DEC_ZERO;
+         }
+
+         if(0>((*v)+count))
+         {
+           *result_value = *v;
+           return  TAIR_RETURN_DEC_BOUNDS;
+         }
+        }
          *v += count;
          *result_value = *v;
       } else if(rc == TAIR_RETURN_SUCCESS){
@@ -255,18 +292,26 @@ namespace tair {
          log_debug("cann't override old value");
          return TAIR_RETURN_CANNOT_OVERRIDE;
       }else {
+        if(not_allow_count_negative)
+        {
+         if(0>count && 0>=init_value )
+         {
+           //not allowed to add a negative number to new a key.
+           return TAIR_RETURN_DEC_NOTFOUND;
+         }
+         if(0>(init_value + count)) return  TAIR_RETURN_DEC_BOUNDS;
+        }
          // old value not exist
-         char fv[6]; // 2 + sizeof(int)
-         *((short *)fv) = 0x1600; // for java header
+         char fv[INCR_DATA_SIZE];
          *result_value = init_value + count;
-         *((int32_t *)(fv + 2)) = *result_value;
-         old_value.set_data(fv, 6);
+         SET_INCR_DATA_COUNT(fv, *result_value);
+         old_value.set_data(fv, INCR_DATA_SIZE);
       }
 
-      old_value.data_meta.flag |= TAIR_ITEM_FLAG_ADDCOUNT;
+      storage_mgr->set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT);
       log_debug("before put flag: %d", old_value.data_meta.flag);
       PROFILER_BEGIN("save count into storage");
-      int result = put(area, key, old_value, expire_time);
+      int result = put(area, key, old_value, expire_time,request,heart_version);
       PROFILER_END();
       return result;
    }
@@ -298,7 +343,7 @@ namespace tair {
       return rc;
    }
 
-   int tair_manager::remove(int area, data_entry &key)
+   int tair_manager::remove(int area, data_entry &key,request_remove *request,int heart_version)
    {
       if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
          return TAIR_RETURN_ITEMSIZE_ERROR;
@@ -333,7 +378,9 @@ namespace tair {
             get_slaves(key.server_flag, bucket_number, slaves);
             if (slaves.empty() == false) {
                PROFILER_BEGIN("do duplicate");
-               duplicator->duplicate_data(area, &key, NULL, bucket_number, slaves);
+               int rc1=duplicator->duplicate_data(area, &key,NULL,0,bucket_number, slaves,
+                   (rc == TAIR_RETURN_DATA_NOT_EXIST)?NULL:(base_packet *)request,heart_version);
+               if(TAIR_RETURN_SUCCESS==rc) rc=rc1;
                PROFILER_END();
             }
          }
@@ -350,6 +397,97 @@ namespace tair {
       return rc;
    }
 
+  int tair_manager::batch_remove(int area, const tair_dataentry_set * key_list,request_remove *request,int heart_version)
+  {
+    if (area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    int rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+
+    set<data_entry*, data_entry_comparator>::iterator it;
+    //check param first, one fail,all fail.
+    for (it = key_list->begin(); it != key_list->end(); ++it) 
+    {
+      uint64_t target_server_id = 0;
+
+      data_entry *pkey = (*it);
+      data_entry key=*pkey; //for same code.
+      key.server_flag = request->server_flag;
+
+      if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
+        return TAIR_RETURN_ITEMSIZE_ERROR;
+      }
+
+      if (should_proxy(key, target_server_id))
+      {
+        // proxyed, we will not touch it
+        // the previon assume it as a EXIT_FAILURE;
+        log_error("batch remove,but have key not proxy.");
+        return TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+      }
+      //if (count != request->key_list->size()) rc = EXIT_FAILURE;
+
+      data_entry mkey = key;
+      mkey.merge_area(area);
+      int bucket_number = get_bucket_number(key);
+
+      int op_flag = get_op_flag(bucket_number, key.server_flag);
+
+      int rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      if (should_write_local(bucket_number, key.server_flag, op_flag, rc) == false) {
+        return TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+      }
+
+    }
+
+    //the storage_mgr should has batch interface
+    for (it = key_list->begin(); it != key_list->end(); ++it) 
+    {
+      data_entry *pkey = (*it);
+      data_entry key=*pkey; //for same code.
+      key.server_flag = request->server_flag;
+
+      data_entry mkey = key;
+      mkey.merge_area(area);
+
+      int bucket_number = get_bucket_number(key);
+      int op_flag = get_op_flag(bucket_number, key.server_flag);
+
+      bool version_care =  op_flag & TAIR_OPERATION_VERSION;
+      rc = storage_mgr->remove(bucket_number, mkey, version_care);
+
+      if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_DATA_NOT_EXIST) 
+      {
+        if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
+          migrate_log->log(SN_REMOVE, mkey, mkey, bucket_number);
+        }
+        if (op_flag & TAIR_OPERATION_DUPLICATE) {
+          vector<uint64_t> slaves;
+          get_slaves(key.server_flag, bucket_number, slaves);
+          if (slaves.empty() == false) 
+          {
+            //for batch delete,don't wait response,let's retry it.
+            rc=duplicator->direct_send(area, &key, NULL, 0,bucket_number, slaves,0);
+            if(TAIR_RETURN_SUCCESS != rc)
+            {
+              return rc;
+            }
+          }
+        }
+      }
+      else
+      {
+        //one fail,all fail
+        return TAIR_RETURN_REMOVE_ONE_FAILED;
+      }
+      TAIR_STAT.stat_remove(area);
+    }
+
+    //if(_need_dup)
+    return rc;
+  }
+
    int tair_manager::clear(int area)
    {
       if (status != STATUS_CAN_WORK) {
@@ -358,6 +496,11 @@ namespace tair {
 
       return storage_mgr->clear(area);
    }
+
+#ifndef NOT_FIXED_ITEM_FUNC 
+#define  NOT_FIXED_ITEM_FUNC return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+#endif
+
 
    int tair_manager::add_items(int area,
                                data_entry& key,
@@ -379,7 +522,6 @@ namespace tair {
          return TAIR_RETURN_INVALID_ARGUMENT;
       }
 
-      key.data_meta.flag |= TAIR_ITEM_FLAG_ITEM;
       tbsys::CThreadGuard guard(&item_mutex[get_mutex_index(key)]);
       return json::item_manager::add_items(this,area,key,value,max_count,expire_time);
    }
@@ -457,8 +599,71 @@ namespace tair {
       return json::item_manager::get_and_remove(this,area,key,offset,count,value,type);
    }
 
+
+  int tair_manager::lock(int area, LockType lock_type, data_entry &key, base_packet *request, int heart_version)
+   {
+      if (status != STATUS_CAN_WORK) {
+         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      }
+
+      if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
+         return TAIR_RETURN_ITEMSIZE_ERROR;
+      }
+
+      if (area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+         return TAIR_RETURN_INVALID_ARGUMENT;
+      }
+
+      tbsys::CThreadGuard guard(&counter_mutex[get_mutex_index(key)]);
+      // get from storage engine
+      data_entry old_value;
+      PROFILER_BEGIN("lock::get");
+      int rc = get(area, key, old_value);
+      PROFILER_END();
+      log_debug("lock::get result: %d, flag: %d", rc, key.data_meta.flag);
+      key.data_meta.log_self();
+
+      if (rc == TAIR_RETURN_SUCCESS) {
+        rc = storage_mgr->test_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_LOCKED) ?
+          TAIR_RETURN_LOCK_EXIST : TAIR_RETURN_LOCK_NOT_EXIST;
+        switch (lock_type) {
+        case LOCK_STATUS:
+          break;
+        case LOCK_VALUE:
+          if (rc != TAIR_RETURN_LOCK_EXIST) {
+            storage_mgr->set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_LOCKED);
+            rc = TAIR_RETURN_SUCCESS;
+          }
+          break;
+        case UNLOCK_VALUE:
+          if (rc != TAIR_RETURN_LOCK_NOT_EXIST) {
+            storage_mgr->clear_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_LOCKED);
+            // unlock operation will skip lock flag check when put.
+            // little ugly..
+            old_value.server_flag |= TAIR_OPERATION_UNLOCK;
+            rc = TAIR_RETURN_SUCCESS;
+          }
+          break;
+        case PUT_AND_LOCK_VALUE: // TODO: put_and_lock
+        default:
+          log_debug("invalid lock type: %d", lock_type);
+          rc = TAIR_RETURN_FAILED;
+          break;
+        }
+      } // TODO: else if (put_and_lock)
+
+      if (TAIR_RETURN_SUCCESS == rc) {
+        PROFILER_BEGIN("lock::put");
+        rc = put(area, key, old_value, old_value.data_meta.edate, request, heart_version);
+        PROFILER_END();
+      }
+
+      return rc;
+   }
+
    void tair_manager::do_dump(set<dump_meta_info> dump_meta_infos)
    {
+      return;// NOT_FIXED_ITEM_FUNC 
       log_debug("receive dump request, size: %d", dump_meta_infos.size());
       if (dump_meta_infos.size() == 0) return;
 
@@ -497,6 +702,11 @@ namespace tair {
       return migrate_mgr->is_migrating();
    }
 
+   bool tair_manager::is_local(data_entry &key)
+   {
+     int bucket_number = get_bucket_number(key);
+     return table_mgr->is_master(bucket_number, TAIR_SERVERFLAG_CLIENT);
+   }
    bool tair_manager::should_proxy(data_entry &key, uint64_t &target_server_id)
    {
       if (key.server_flag == TAIR_SERVERFLAG_PROXY)
@@ -568,6 +778,7 @@ namespace tair {
 
       // clear dump task
       dump_mgr->cancle_all();
+      assert (migrate_mgr != NULL);
       migrate_mgr->do_server_list_changed();
 
       bucket_server_map migrates (table_mgr->get_migrates());
@@ -625,7 +836,9 @@ namespace tair {
          rc = TAIR_RETURN_WRITE_NOT_ON_MASTER;
          return false;
       }
-
+      //not need check  duplicate's list size any more.
+      return true;
+      
       if (op_flag & TAIR_OPERATION_DUPLICATE) {
          bool is_available = false;
          for (int i=0; i<TAIR_DUPLICATE_BUSY_RETRY_COUNT; ++i) {

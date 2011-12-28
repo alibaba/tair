@@ -25,6 +25,8 @@
 #include "stat_info.hpp"
 
 namespace tair {
+const int ITEM_HEAD_LENGTH = 2;
+
   typedef struct _migrate_dump_index
   {
     uint32_t hash_index;
@@ -53,6 +55,11 @@ namespace tair {
 
       virtual int remove(int bucket_number, data_entry & key,
                          bool version_care) = 0;
+      virtual int add_count(int bucket_num,data_entry &key, int count, int init_value,
+                bool allow_negative,int expire_time,int &result_value)
+      {
+          return TAIR_RETURN_NOT_SUPORTED;
+      }
 
       virtual int clear(int area) = 0;
 
@@ -68,6 +75,26 @@ namespace tair {
 
       virtual void set_area_quota(int area, uint64_t quota) = 0;
       virtual void set_area_quota(std::map<int, uint64_t> &quota_map) = 0;
+
+      // Different storage engine reserve different amount of bits for value flag,
+      // we don't want to depend on the shortest bucket, so storage engine should
+      // implement its flag operation(may use some trick etc.) based on own bit resource.
+      // If one engine allocs too few bits to hold all flags, it is just deserved that this engine
+      // can not support all storage feature.
+
+      // use bit operation default
+      virtual bool test_flag(uint8_t meta, int flag)
+      {
+        return (meta & flag) != 0;
+      }
+      virtual void set_flag(uint8_t& meta, int flag)
+      {
+        meta |= flag;
+      }
+      virtual void clear_flag(uint8_t& meta, int flag)
+      {
+        meta &= ~flag;
+      }
 
       void set_bucket_count(uint32_t bucket_count)
       {

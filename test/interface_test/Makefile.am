@@ -33,7 +33,9 @@ source_list=${base_source} \
 			CTAIRCLIENTAPI_08_x_getItems_Test.cpp \
 			CTAIRCLIENTAPI_07_x_addItems_Test.cpp \
 			CTAIRCLIENTAPI_07_x_addItems_otherfunction_Test.cpp \
-			CTAIRCLIENTAPI_09_x_getAndRemove_Test.cpp
+			CTAIRCLIENTAPI_09_x_getAndRemove_Test.cpp \
+			CTAIRCLIENTAPI_15_x_set_count_Test.cpp \
+			CTAIRCLIENTAPI_16_x_lock_Test.cpp
 
 AM_LDFLAGS=-lpthread -lgtest  -lz -lrt ${BOOST_LDFLAGS} ${GCOV_LIB}  @BOOST_THREAD_LIB@
 

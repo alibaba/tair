@@ -27,6 +27,7 @@
 #include "common/data_entry.hpp"
 #include "common/stat_info.hpp"
 #include "storage/storage_manager.hpp"
+#include "storage/mdb/mdb_factory.hpp"
 
 namespace tair {
   namespace storage {
@@ -63,6 +64,7 @@ namespace tair {
         private:
           kdb_buckets_map* buckets_map;
           tbsys::CThreadMutex lock;
+          //storage_manager *memory_cache;
 
           kdb_bucket* scan_kdb;
       };

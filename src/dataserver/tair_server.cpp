@@ -16,6 +16,8 @@
  */
 #include "tair_server.hpp"
 
+char g_tair_home[129];
+
 namespace tair {
 
    tair_server::tair_server()
@@ -136,7 +138,18 @@ namespace tair {
 
       heartbeat.set_thread_parameter(this, &streamer, tair_mgr);
 
-      req_processor = new request_processor(tair_mgr, &heartbeat, conn_manager);
+      //new a remote sync manager if wee need it.
+      remote_sync_manager  *remote_mgr=NULL;
+#if 0
+      remote_mgr=new remote_sync_manager(tair_mgr,g_tair_home);
+      if(!remote_mgr->init())
+      {
+        log_error("remote_mgr init failed with base_home= %s", g_tair_home);
+      }
+#endif
+
+      req_processor = new request_processor(tair_mgr, &heartbeat, conn_manager,remote_mgr);
+
       return true;
    }
 
@@ -206,7 +219,7 @@ namespace tair {
       }
 
       if (thread_count == 0) {
-         handlePacketQueue(bp, NULL);
+         if(handlePacketQueue(bp, NULL))
          delete packet;
       } else {
          int pcode = packet->getPCode();
@@ -266,6 +279,12 @@ namespace tair {
             }
             break;
          }
+         case TAIR_REQ_LOCK_PACKET:
+         {
+            request_lock *npacket = (request_lock*)packet;
+            ret = req_processor->process(npacket, send_return);
+            break;
+         }
          case TAIR_REQ_PING_PACKET:
          {
             ret = ((request_ping*)packet)->value;
@@ -295,7 +314,6 @@ namespace tair {
          {
             request_inc_dec *npacket = (request_inc_dec*)packet;
             ret = req_processor->process(npacket, send_return);
-            //if (ret != TAIR_RETURN_FAILED) sendRet = false;
             break;
          }
          case TAIR_REQ_DUPLICATE_PACKET:
@@ -350,10 +368,12 @@ namespace tair {
          }
       }
 
-      if (ret == TAIR_RETURN_PROXYED) {
-         // request is proxyed
-         return false;
-      }
+      if (ret == TAIR_RETURN_PROXYED ||TAIR_DUP_WAIT_RSP==ret)
+	  {
+		// request is proxyed
+		//or wait dup_response,don't rsp to client unlit dup_rsp arrive or timeout.
+		return false;
+	  }
 
       if (send_return && packet->get_direction() == DIRECTION_RECEIVE) {
          log_debug("send return packet, return code: %d", ret);
@@ -518,6 +538,21 @@ int main(int argc, char *argv[])
       print_usage(argv[0]);
       return EXIT_FAILURE;
    }
+
+   char *pathName=getenv("TAIR_HOME");
+   if(pathName!=NULL)
+   {
+     strncpy(g_tair_home,pathName,128);
+   }
+   else
+   {
+#ifdef TAIR_DEBUG
+     strcpy(g_tair_home,"./");
+#else
+     strcpy(g_tair_home,"/home/admin/tair_bin/");
+#endif
+   }
+
 
    if (TBSYS_CONFIG.load(config_file)) {
       fprintf(stderr, "load config file (%s) failed\n", config_file);

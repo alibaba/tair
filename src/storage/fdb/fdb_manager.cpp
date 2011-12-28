@@ -24,11 +24,11 @@ namespace tair {
 
       fdb_manager::fdb_manager()
       {
-        int cache_size =
-          TBSYS_CONFIG.getInt(TAIRFDB_SECTION, FDB_CACHE_SIZE, 256);
-        // mdb share memory engine requires 256MB memory at least
-          assert(cache_size >= 256);
-          memory_cache = mdb_factory::create_embedded_mdb(cache_size, 1.2);
+        // int cache_size =
+        //   TBSYS_CONFIG.getInt(TAIRFDB_SECTION, FDB_CACHE_SIZE, 256);
+        // // mdb share memory engine requires 256MB memory at least
+        //   assert(cache_size >= 256);
+          memory_cache = mdb_factory::create_embedded_mdb();
           mreader = NULL;
           dreader = NULL;
           buckets_map = new fdb_buckets_map();

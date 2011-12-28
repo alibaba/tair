@@ -21,6 +21,7 @@
 #include <tbsys.h>
 #include <tbnet.h>
 #include "base_packet.hpp"
+#include "BlockQueueEx.hpp"
 
 using namespace std;
 using namespace __gnu_cxx;
@@ -29,6 +30,8 @@ namespace tair {
    namespace common {
       typedef int tbnet_pcode_type;
       const tbnet_pcode_type null_pcode = -1;
+
+
       class wait_object {
       public:
          friend class wait_object_manager;
@@ -45,6 +48,15 @@ namespace tair {
             :except_pcode_set(except_set)
          {
             init();
+         }
+
+         wait_object (int _cmd,void (*_func)(int retcode, void* parg),void *parg)
+         {
+           init();
+           m_callback_func=_func;
+           //m_argnum=1;
+           m_args=parg;
+           m_cmd=_cmd;
          }
          ~wait_object()
          {
@@ -126,6 +138,16 @@ namespace tair {
             resp = NULL;
             resp_list = NULL;
          }
+         bool is_async() { return NULL!=m_callback_func; }
+         int do_async_response(int error_code)
+         {
+           if(m_callback_func)
+           {
+             m_callback_func(error_code,m_args);
+           }
+           return 0;
+         }
+          int get_cmd(){return m_cmd;}
       private:
          int id;
          void init(){
@@ -134,6 +156,11 @@ namespace tair {
             resp = NULL;
             resp_list = NULL;
             except_pcode = null_pcode;
+
+            m_callback_func=NULL;
+            //m_argnum=0;
+            m_args=NULL;
+            m_cmd=0;
          }
          void done() {
             cond.lock();
@@ -150,21 +177,76 @@ namespace tair {
          vector<base_packet*> *resp_list;
          tbsys::CThreadCond cond;
          int done_count;
+       private: //below is callback function
+         void (*m_callback_func)(int retcode, void* parg);
+         //unsigned short m_argnum;
+         void* m_args;
+         int m_cmd;
       };
 
-      class wait_object_manager {
+#ifndef __PACKET_TIME_OUT_HINT
+#define __PACKET_TIME_OUT_HINT
+      class CPacket_Timeout_hint
+      {
+        public:
+          uint32_t packet_id; 
+          time_t expired;
+      };
+      typedef BlockQueueEx<CPacket_Timeout_hint * > CWaitPacketQueue;
+#endif
+
+      class wait_object_manager : public tbsys::Runnable{
+      public:
+      //@override Runnable
+      void run(tbsys::CThread *thread, void *arg)
+      {
+        UNUSED(thread);
+        UNUSED(arg);
+        while (!_stop) 
+        {
+          try 
+          {   
+            CPacket_Timeout_hint * _pkg=dup_wait_queue.get(2000); //2s
+            if(!_pkg) continue;
+            handle_timeout_packet(_pkg);
+            delete _pkg;
+          }   
+          catch(...)
+          {   
+            log_warn("unknow error! get timeoutqueue error!");
+          } 
+        }
+      }
       public:
          wait_object_manager()
-          {
-            wait_object_seq_id = 1;
+         {
+           wait_object_seq_id = 1;
+           handle_async_wait_object=NULL;
+           m_callback_arg =NULL;
+           _stop=true;
+           is_async=false;
+           //need't start the timeout thread.
          }
+
+         wait_object_manager(int (*_call_func)(void* arg,wait_object *cwo),void *_caller)
+         {
+           wait_object_seq_id = 1;
+           handle_async_wait_object=_call_func;
+           m_callback_arg=_caller;
+           _stop=false;
+           is_async=true;
+           timeout_thread.start(this, NULL);
+         }
+
          ~wait_object_manager()
-          {
-            tbsys::CThreadGuard guard(&mutex);
-            hash_map<int, wait_object*>::iterator it;
-            for (it=wait_object_map.begin(); it!=wait_object_map.end(); ++it) {
-               delete it->second;
-            }
+         {
+           _stop=true;
+           timeout_thread.join();
+           tbsys::CThreadGuard guard(&mutex);
+           hash_map<int, wait_object*>::iterator it;
+           for (it=wait_object_map.begin(); it!=wait_object_map.end(); ++it) {
+             delete it->second;
+           }
          }
          wait_object* create_wait_object()
           {
@@ -184,6 +266,22 @@ namespace tair {
             add_new_wait_object(cwo);
             return cwo;
          }
+         wait_object* create_wait_object(int cmd,void (*_pfunc)(int retcode, void* parg),void *parg,int timeout=0)
+         {
+           wait_object *cwo = new wait_object(cmd,_pfunc,parg);
+           add_new_wait_object(cwo);
+           //log_debug("add new [%d] waitobj", cwo->id);
+           //keep it in timewait.
+
+           CPacket_Timeout_hint  *phint=new CPacket_Timeout_hint();
+           phint->packet_id=cwo->id;
+           phint->expired=(timeout>TAIR_MAX_CLIENT_OP_TIME||0==timeout)?TAIR_CLIENT_OP_TIME:timeout;
+           phint->expired+=time(NULL);
+           dup_wait_queue.put(phint);
+
+           return cwo;
+         }
+
          void destroy_wait_object(wait_object *cwo)
           {
             tbsys::CThreadGuard guard(&mutex);
@@ -195,16 +293,30 @@ namespace tair {
             tbsys::CThreadGuard guard(&mutex);
             hash_map<int, wait_object*>::iterator it;
             it = wait_object_map.find(id);
-            if (it != wait_object_map.end()) {
-               if (packet == NULL) {
-                  log_error("[%d] packet is null.", id);
-               } else if (!it->second->insert_packet(packet)){
-                  log_debug( "[pCode=%d] packet had been ignored", packet->getPCode());
-                  if (packet->isRegularPacket()) delete packet;
-               }
+            if (it != wait_object_map.end()) 
+            {
+              //now check the object need a async callback.so we just call the obejct's handler.
+              wait_object *cwo=it->second;
+              if (packet == NULL) 
+              {
+                log_error("[%d] packet is null.", id);
+              } else if (!cwo->insert_packet(packet))
+              {
+                log_debug( "[pCode=%d] packet had been ignored", packet->getPCode());
+                if (packet->isRegularPacket()) delete packet;
+              }
+
+              if(cwo->is_async() &&handle_async_wait_object)
+              {
+                wait_object_map.erase(cwo->id);
+                log_debug("async wakeup object packet,id=%d\n",id);
+                handle_async_wait_object(m_callback_arg,cwo);
+                return;
+              }
+              log_debug("sync wakeup object packet,id=%d\n",id);
             } else {
                if (packet != NULL && packet->isRegularPacket()) delete packet;
-               log_error("[%d] waitobj not found.", id);
+               log_debug("[%d] waitobj not found.", id);
             }
          }
 
@@ -217,9 +329,30 @@ namespace tair {
             cwo->id = wait_object_seq_id;;
             wait_object_map[cwo->id] = cwo;
          }
+        void handle_timeout_packet(CPacket_Timeout_hint  * phint)
+        {
+          time_t _now=time(NULL);
+          int _left=phint->expired-_now;
+          if(_left>0)
+          {
+            sleep(_left>TAIR_SERVER_OP_TIME?TAIR_SERVER_OP_TIME:_left);
+          }
+          //no it's timeout.
+          wakeup_wait_object(phint->packet_id,NULL);
+          usleep(300);
+        }
+      private:
          hash_map<int, wait_object*> wait_object_map;
          int wait_object_seq_id;
          tbsys::CThreadMutex mutex;
+      private:
+         //atomic_t packet_id_creater;
+         bool _stop;
+         bool is_async;
+         tbsys::CThread timeout_thread;
+	       CWaitPacketQueue dup_wait_queue;
+         int (*handle_async_wait_object)(void * phandler,wait_object * obj);
+         void *m_callback_arg ;
       };
    }
 

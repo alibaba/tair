@@ -17,11 +17,12 @@
 #include "request_processor.hpp"
 
 namespace tair {
-   request_processor::request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr)
+   request_processor::request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr,remote_sync_manager  *remote_mgr)
    {
       this->tair_mgr = tair_mgr;
       this->heart_beat = heart_beat;
       this->connection_mgr = connection_mgr;
+      this->remote_mgr=remote_mgr;
    }
 
    request_processor::~request_processor()
@@ -65,7 +66,7 @@ namespace tair {
       }
       else {
          PROFILER_BEGIN("do put");
-         rc = tair_mgr->put(request->area, request->key, request->data, request->expired);
+         rc = tair_mgr->put(request->area, request->key, request->data, request->expired,request,heart_beat->get_client_version());
          PROFILER_END();
 
          PROFILER_BEGIN("do response plugin");
@@ -77,6 +78,11 @@ namespace tair {
       PROFILER_DUMP();
       PROFILER_STOP();
 
+      //now we will do remote sync.
+      //if (TAIR_RETURN_SUCCESS==rc|| TAIR_DUP_WAIT_RSP==rc && remote_mgr)
+      //{
+      //  remote_mgr->sync_put_data(request->area, request->key, request->data, request->expired,request->version);
+      //}
       return rc;
    }
 
@@ -206,47 +212,15 @@ namespace tair {
       }
 
       int rc = 0;
-      set<data_entry*, data_entry_comparator>::iterator it;
-      uint32_t count = 0;
       plugin::plugins_root* plugin_root = NULL;
       uint64_t target_server_id = 0;
       send_return = true;
 
       if (request->key_list != NULL) {
-         PROFILER_START("batch remove operation start");
-         for (it = request->key_list->begin(); it != request->key_list->end(); ++it) {
-            PROFILER_BEGIN("sub remove operation in batch begin");
-            data_entry *key = (*it);
-            key->server_flag = request->server_flag;
 
-            if (tair_mgr->should_proxy(*key, target_server_id))
-            {
-               // proxyed, we will not touch it
-               continue;
-            }
+         log_info("bo batch remove,area=%d,size=%d",request->area,request->key_list->size());
+         return tair_mgr->batch_remove(request->area,request->key_list,request,heart_beat->get_client_version());
 
-            PROFILER_BEGIN("do request plugin");
-            int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-                                                                          TAIR_REQ_REMOVE_PACKET, request->area, key, NULL, plugin_root);
-            PROFILER_END();
-            if (plugin_ret < 0) {
-               log_debug("plugin return %d, skip excute", plugin_ret);
-               continue;
-            }
-            PROFILER_BEGIN("do remove");
-            int rev = tair_mgr->remove(request->area, *key);
-            PROFILER_END();
-
-            PROFILER_BEGIN("do response plugin");
-            tair_mgr->plugins_manager.do_response_plugins(rev, plugin::PLUGIN_TYPE_SYSTEM,
-                                                          TAIR_REQ_REMOVE_PACKET, request->area, key, NULL, plugin_root);
-            PROFILER_END();
-            if (rev == TAIR_RETURN_SUCCESS) {
-               count ++;
-            }
-            PROFILER_END();
-         }
-         if (count != request->key_list->size()) rc = EXIT_FAILURE;
       } else if (request->key != NULL) {
          PROFILER_START("remove operation start");
          request->key->server_flag = request->server_flag;
@@ -263,11 +237,11 @@ namespace tair {
                                                                        TAIR_REQ_REMOVE_PACKET, request->area, request->key, NULL, plugin_root);
          PROFILER_END();
          if (plugin_ret < 0) {
-            log_debug("plugin return %d, skip excute", plugin_ret);
+            log_error("plugin return %d, skip excute", plugin_ret);
             rc = TAIR_RETURN_PLUGIN_ERROR;
          }else {
             PROFILER_BEGIN("do remove");
-            rc = tair_mgr->remove(request->area, *(request->key));
+            rc = tair_mgr->remove(request->area, *(request->key),request,heart_beat->get_client_version());
             PROFILER_END();
 
             PROFILER_BEGIN("do response plugin");
@@ -279,6 +253,12 @@ namespace tair {
       }
       PROFILER_DUMP();
       PROFILER_STOP();
+
+      //now we will do remote sync.
+      //if (TAIR_RETURN_SUCCESS==rc|| TAIR_DUP_WAIT_RSP==rc && remote_mgr)
+      //{
+      //  remote_mgr->sync_remove_data(request->area, *request->key);
+      //}
 
       return rc;
    }
@@ -314,7 +294,7 @@ namespace tair {
       } else {
          PROFILER_BEGIN("do addCount");
          rc = tair_mgr->add_count(request->area, request->key,
-                                  request->add_count, request->init_value, &ret_value,request->expired);
+                                  request->add_count, request->init_value, &ret_value,request->expired,request,heart_beat->get_client_version());
          PROFILER_END();
 
          PROFILER_BEGIN("do response plugins");
@@ -323,6 +303,7 @@ namespace tair {
          PROFILER_END();
 
          if (rc != TAIR_RETURN_SUCCESS) {
+           //if copy_count>1 ,it will return TAIR_DUP_WAIT_RSP;
             send_return = true;
          } else {
             response_inc_dec *resp = new response_inc_dec();
@@ -636,41 +617,86 @@ namespace tair {
 
    int request_processor::process(request_mupdate *request,bool &send_return)
    {
-      if (tair_mgr->is_working() == false) {
-         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-      }
+     if (tair_mgr->is_working() == false) {
+       return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+     }
 
-      tair_operc_vector::iterator it;
+     tair_operc_vector::iterator it;
 
-      if (request->server_flag != TAIR_SERVERFLAG_MIGRATE) {
-         log_warn("requestMUpdatePacket have no MIGRATE flag");
-         return TAIR_RETURN_INVALID_ARGUMENT;
-      }
+     if (request->server_flag != TAIR_SERVERFLAG_MIGRATE) {
+       log_warn("requestMUpdatePacket have no MIGRATE flag");
+       return TAIR_RETURN_INVALID_ARGUMENT;
+     }
 
-      int rc = TAIR_RETURN_SUCCESS;
-      if (request->key_and_values != NULL) {
-         for (it = request->key_and_values->begin(); it != request->key_and_values->end(); ++it) {
-            operation_record *oprec = (*it);
-            if (oprec->operation_type == 1) {
-               // put
-               rc = tair_mgr->direct_put(*oprec->key, *oprec->value);
-            } else if (oprec->operation_type == 2) {
-               // remove
-               rc = tair_mgr->direct_remove(*oprec->key);
-            } else {
-               rc = TAIR_RETURN_INVALID_ARGUMENT;
-               break;
-            }
-
-            if (rc != TAIR_RETURN_SUCCESS) {
-               log_debug("do migrate operation failed, rc: %d", rc);
-               break;
-            }
+     int rc = TAIR_RETURN_SUCCESS;
+     if (request->key_and_values != NULL) {
+       for (it = request->key_and_values->begin(); it != request->key_and_values->end(); ++it) {
+         operation_record *oprec = (*it);
+         if (oprec->operation_type == 1) {
+           // put
+           rc = tair_mgr->direct_put(*oprec->key, *oprec->value);
+         } else if (oprec->operation_type == 2) {
+           // remove
+           rc = tair_mgr->direct_remove(*oprec->key);
+         } else {
+           rc = TAIR_RETURN_INVALID_ARGUMENT;
+           break;
          }
-      }
 
-      return rc;
+         if (rc != TAIR_RETURN_SUCCESS) {
+           log_debug("do migrate operation failed, rc: %d", rc);
+           break;
+         }
+       }
+     }
+
+     return rc;
    }
+
+  int request_processor::process(request_lock *request, bool &send_return)
+  {
+    send_return = true;
+
+    if (tair_mgr->is_working() == false) {
+      return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+    }
+
+    int rc = TAIR_RETURN_FAILED;
+
+    uint64_t target_server_id = 0;
+    if (tair_mgr->should_proxy(request->key, target_server_id)) {
+      base_packet *proxy_packet = new request_lock(*(request_lock*)request);
+      return do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+    }
+
+    PROFILER_START("local lock operation start"); 
+
+    plugin::plugins_root* plugin_root = NULL;
+    PROFILER_BEGIN("do request plugin");
+    int plugin_ret = tair_mgr->plugins_manager.
+      do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                         TAIR_REQ_LOCK_PACKET, request->area, &request->key, NULL, plugin_root);
+    PROFILER_END();
+    if (plugin_ret < 0) {
+      log_debug("plugin return %d, skip excute", plugin_ret);
+      return rc;
+    }
+
+    PROFILER_BEGIN("do lock");
+    rc = tair_mgr->lock(request->area, request->lock_type, request->key,
+                        request, heart_beat->get_client_version());
+    PROFILER_END();
+
+    PROFILER_BEGIN("do response plugin");
+    tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                                                  TAIR_REQ_LOCK_PACKET, request->area, &request->key, NULL, plugin_root);
+    PROFILER_END();
+
+    PROFILER_DUMP();
+    PROFILER_STOP();
+
+    return rc;
+  }
 
    bool request_processor::do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet)
    {

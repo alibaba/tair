@@ -29,7 +29,7 @@ test()
   storage::storage_manager * manager = NULL;
   TAIR_STAT.start();
 
-  manager = tair::mdb_factory::create_mdb_manager(false);
+  manager = tair::mdb_factory::create_mdb_manager();
   manager->clear(0);
   manager->clear(1);
   manager->clear(2);

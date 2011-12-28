@@ -25,11 +25,13 @@
 #include "duplicate_packet.hpp"
 #include "items_packet.hpp"
 #include "mupdate_packet.hpp"
+#include "remote_sync_manager.hpp"
+#include "lock_packet.hpp"
 
 namespace tair {
    class request_processor {
    public:
-      request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr);
+      request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr,remote_sync_manager  *remote_mgr);
       ~request_processor();
 
       int process(request_put *request, bool &send_return);
@@ -43,13 +45,15 @@ namespace tair {
       int process(request_get_and_remove_items *request, bool &send_return);
       int process(request_get_items_count *request,bool &send_return);
       int process(request_mupdate *request,bool &send_return);
+      int process(request_lock* request, bool &send_return);
 
    private:
       bool do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet);
-
+ 
    private:
       tair_manager *tair_mgr;
       heartbeat_thread *heart_beat;
       tbnet::ConnectionManager *connection_mgr;
+      remote_sync_manager  *remote_mgr;
    };
 }

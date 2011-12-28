@@ -1174,11 +1174,11 @@ namespace tair {
     {
       int strategy = 2;
       //choose which strategy to select
-      //serverid in ava_server will not be repeated  
+      //serverid in ava_server will not be repeated
       map<uint32_t, int> pos_count;
       pos_count.clear();
       for(set<node_info *>::const_iterator it = ava_server.begin();
-          it != ava_server.end(); it++) 
+          it != ava_server.end(); it++)
       {
         log_info("mask %"PRI64_PREFIX"u & %"PRI64_PREFIX"u -->%"PRI64_PREFIX"u",
             (*it)->server->server_id, pos_mask, (*it)->server->server_id & pos_mask);

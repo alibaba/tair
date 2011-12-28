@@ -48,7 +48,22 @@ namespace tair {
     int get(int bucket_num, data_entry & key, data_entry & value);
 
     int remove(int bucket_num, data_entry & key, bool version_care);
+    int add_count(int bucket_num,data_entry &key, int count, int init_value,
+            bool allow_negative,int expire_time,int &result_value);
 
+    // raw put/get/remove for embedded cache use
+    // Not consider any meta, just key ==> value, cause operating those stuff is up to cache-user.
+  public:
+    int raw_put(const char* key, int32_t key_len, const char* value, int32_t value_len, int flag, uint32_t expired);
+    int raw_get(const char* key, int32_t key_len, std::string& value, bool update);
+    int raw_remove(const char* key, int32_t key_len);
+    void raw_get_stats(mdb_area_stat* stat);
+
+  private:
+    bool raw_remove_if_exists(const char* key, int32_t key_len);
+    bool raw_remove_if_expired(const char* key, int32_t key_len, mdb_item*& item);
+
+  public:
     int clear(int area);
 
     void begin_scan(md_info & info);
@@ -69,6 +84,17 @@ namespace tair {
     uint64_t get_area_quota(int area);
     int get_area_quota(std::map<int, uint64_t> &quota_map);
 
+    // mdb manager reserve only 4 bits for flag, and
+    // may use trick here when other flag is added.
+    // Current flag:
+    // TAIR_ITEM_FLAG_ADDCOUNT = 1,
+    // TAIR_ITEM_FLAG_DELETED = 2,
+    // TAIR_ITEM_FLAG_ITEM = 4,
+    // TAIR_ITEM_FLAG_LOCKED=8
+    // ADDCOUNT/ITEM/DELETED are mutexed flag, can use equal operation
+    // to check, LOCKED can exist with other flag, so can check with bit
+    // operation.
+
     bool is_quota_exceed(int area);
   public:
     void run(tbsys::CThread * thread, void *arg);
@@ -82,10 +108,13 @@ namespace tair {
 
   private:
 
+    //do_put,do_get,do_remove should lock first.
     int do_put(data_entry & key, data_entry & data, bool version_care,
                int expired);
     int do_get(data_entry & key, data_entry & data);
     int do_remove(data_entry & key, bool version_care);
+    int do_add_count(data_entry &key, int count, int init_value,
+            bool not_negative,int expired ,int &result_value);
 
     char *open_shared_mem(const char *path, int64_t size);
     bool remove_if_exists(data_entry & key);

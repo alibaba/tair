@@ -140,7 +140,7 @@ namespace tair {
    void update_log::log(sn_operation_type operation_type, data_entry &key, data_entry &value, uint16_t db_id)
    {
       uint key_size = key.get_size();
-      if (key.data_meta.keysize == 0){
+      if (key.data_meta.keysize == 0) {
          key.data_meta.keysize = key_size;
       }
 

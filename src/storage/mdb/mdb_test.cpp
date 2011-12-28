@@ -255,8 +255,8 @@ main(int argc, char *argv[])
   //mdb_param::m_size = size;
   //mdb_param::m_page_size = 1048576;
 
-  //manager = mdb_factory::create_mdb_manager(false);
-  manager = mdb_factory::create_mdb_manager(true, 2048L, 1.1);
+  //manager = mdb_factory::create_mdb_manager();
+  manager = mdb_factory::create_mdb_manager();
 
   if(*operation == 's') {
     sleep(600);

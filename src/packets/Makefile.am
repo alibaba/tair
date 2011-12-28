@@ -42,4 +42,5 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
 			  remove_packet.hpp	\
 			  response_return_packet.hpp	\
 			  server_hash_table_packet.hpp	\
-			  set_master_packet.hpp
+			  set_master_packet.hpp \
+			  lock_packet.hpp

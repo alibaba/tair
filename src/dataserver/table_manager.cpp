@@ -17,6 +17,8 @@
 #include <algorithm>
 #include "table_manager.hpp"
 #include "log.hpp"
+#include "scoped_wrlock.hpp"
+
 namespace {
    const int MISECONDS_ASSURANCE_TIME = 30;
 }
@@ -30,6 +32,7 @@ namespace tair {
       table_version = 0u;
       copy_count = 0u;
       bucket_count = 0u;
+     pthread_rwlock_init(&m_mutex, 0);
    }
 
    table_manager::~table_manager()
@@ -38,10 +41,12 @@ namespace tair {
          delete [] server_table;
          server_table = NULL;
       }
+     pthread_rwlock_destroy(&m_mutex);
    }
 
-   bool table_manager::is_master(int bucket_number, int server_flag) const
+   bool table_manager::is_master(int bucket_number, int server_flag) 
    {
+      tair::common::CScopedRwLock __scoped_lock(&m_mutex,false);
       assert (server_table != NULL);
       int index = bucket_number;
       if (server_flag == TAIR_SERVERFLAG_PROXY)
@@ -64,6 +69,7 @@ namespace tair {
       uint64_t *temp_table = new uint64_t[size];
       memcpy(temp_table, new_table, size * sizeof(uint64_t));
 
+      tair::common::CScopedRwLock __scoped_lock(&m_mutex,true);
       uint64_t *old_table = server_table;
       server_table = temp_table;
       if (old_table != NULL) {
@@ -121,8 +127,9 @@ namespace tair {
 #endif
    }
 
-   vector<uint64_t> table_manager::get_slaves(int bucket_number, bool is_migrating) const
+   vector<uint64_t> table_manager::get_slaves(int bucket_number, bool is_migrating) 
    {
+      tair::common::CScopedRwLock __scoped_lock(&m_mutex,false);
       assert (server_table != NULL);
 
       vector<uint64_t> slaves;
@@ -152,8 +159,9 @@ namespace tair {
       return slaves;
    }
 
-   uint64_t table_manager::get_migrate_target(int bucket_number) const
+   uint64_t table_manager::get_migrate_target(int bucket_number) 
    {
+      tair::common::CScopedRwLock __scoped_lock(&m_mutex,false);
       assert (server_table != NULL);
 
       return server_table[bucket_number + get_hash_table_size()];
@@ -201,6 +209,7 @@ namespace tair {
 
    void table_manager::init_migrate_done_set(boost::dynamic_bitset<> &migrate_done_set, const vector<uint64_t> &current_state_table)
    {
+      tair::common::CScopedRwLock __scoped_lock(&m_mutex,false);
       int bucket_number = 0;
       for (size_t i=0; i<current_state_table.size(); i+=this->copy_count) {
          bucket_number = (int)current_state_table[i++]; // skip the bucket_number
@@ -218,11 +227,13 @@ namespace tair {
       }
    }
 
+   /**
    const uint64_t* table_manager::get_server_table() const
    {
       assert (server_table != NULL);
       return server_table;
    }
+   **/
 
    vector<int> table_manager::get_holding_buckets() const
    {

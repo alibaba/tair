@@ -28,11 +28,15 @@
 #include "dump_manager.hpp"
 #include "dump_filter.hpp"
 #include "table_manager.hpp"
-#include "duplicate_manager.hpp"
-//#include "fdb_manager.hpp"
+#include "duplicate_base.hpp"
 #include "update_log.hpp"
 #include "stat_helper.hpp"
 #include "plugin_manager.hpp"
+#include "put_packet.hpp"
+#include "get_packet.hpp"
+#include "remove_packet.hpp"
+#include "lock_packet.hpp"
+#include "inc_dec_packet.hpp"
 
 namespace tair {
    enum {
@@ -43,7 +47,6 @@ namespace tair {
       ELEMENT_TYPE_INVALID,
    };
    using namespace tair::common;
-   const int ITEM_HEAD_LENGTH = 2;
    class migrate_manager;
    class tair_manager {
       enum {
@@ -60,10 +63,12 @@ namespace tair {
 
       bool initialize(tbnet::Transport *transport, tbnet::DefaultPacketStreamer *streamer);
 
-      int put(int area, data_entry &key, data_entry &value, int expire_time);
-      int add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time = 0);
+      int put(int area, data_entry &key, data_entry &value, int expire_time,base_packet *request=NULL,int version=0);
+      //int put(int area, data_entry &key, data_entry &value, int expire_time,request_put *request,int version);
+      int add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,request_inc_dec * request,int version);
       int get(int area, data_entry &key, data_entry &value);
-      int remove(int area, data_entry &key);
+      int remove(int area, data_entry &key,request_remove *request=NULL,int version=0);
+      int batch_remove(int area, const tair_dataentry_set * key_list,request_remove *request,int version);
       int clear(int area);
 
       int direct_put(data_entry &key, data_entry &value);
@@ -88,9 +93,11 @@ namespace tair {
                          int offset, int count, data_entry& value /*out*/,
                          int type = ELEMENT_TYPE_INVALID);
 
+     int lock(int area, LockType lock_type, data_entry& key, base_packet *request = NULL, int heart_version = 0);
 
       bool is_migrating();
       bool should_proxy(data_entry &key, uint64_t &targetServerId);
+      bool is_local(data_entry &key);
       void set_migrate_done(int bucketNumber);
       void set_area_quota(int area,uint64_t quota) {
          storage_mgr->set_area_quota(area,quota);
@@ -107,6 +114,7 @@ namespace tair {
       void do_dump(set<dump_meta_info> dump_meta_infos);
 
       plugin::plugins_manager plugins_manager;
+      tair::storage::storage_manager *get_storage_manager() { return storage_mgr; }
 
    private:
       tair::storage::storage_manager *get_storage_manager(data_entry &key);
@@ -119,13 +127,14 @@ namespace tair {
 
    private:
       int status;
+      bool not_allow_count_negative;
       tbsys::CThreadMutex counter_mutex[mutex_array_size];
       tbsys::CThreadMutex item_mutex[mutex_array_size];
 
       tbsys::CThreadMutex update_server_table_mutex;
       tair::storage::storage_manager *storage_mgr;
       table_manager *table_mgr;
-      duplicate_sender_manager *duplicator;
+      base_duplicator *duplicator;
       migrate_manager *migrate_mgr;
       boost::dynamic_bitset<> migrate_done_set;
       update_log *migrate_log;

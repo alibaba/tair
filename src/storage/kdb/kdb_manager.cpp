@@ -27,6 +27,10 @@ namespace tair {
       kdb_manager::kdb_manager()
       {
         buckets_map = new kdb_buckets_map();
+        // mdb share memory engine requires 256MB memory at least
+        //int cache_size = TBSYS_CONFIG.getInt(TAIRKDB_SECTION, KDB_CACHE_SIZE, 256);
+        //assert(cache_size >= 256);
+        //memory_cache = mdb_factory::create_embedded_mdb(cache_size, 1.2);
       }
 
       kdb_manager::~kdb_manager()
@@ -39,6 +43,9 @@ namespace tair {
 
         delete buckets_map;
         buckets_map = NULL;
+
+        //delete memory_cache;
+        //memory_cache = NULL;
       }
 
       int kdb_manager::put(int bucket_number, data_entry & key, data_entry & value, bool version_care, int expire_time)
@@ -53,6 +60,8 @@ namespace tair {
 
         if (rc == TAIR_RETURN_SUCCESS)
         {
+          //remove from cache anyway.
+          //memory_cache->remove(bucket_number, key, false);
           rc = bucket->put(key, value, version_care, expire_time);
         }
 
@@ -71,7 +80,28 @@ namespace tair {
 
         if (rc == TAIR_RETURN_SUCCESS)
         {
+          //get from cache first.
+          /**
+          //if(memory_cache->get(bucket_number, key, value) == 0) 
+          {
+            log_debug("get value from cache mdb, size: %d", value.get_size());
+            //value.decode_meta(true);
+            //key.data_meta = value.data_meta;
+            //key.data_meta.log_self();
+            return rc;
+          }
+          **/
           rc = bucket->get(key, value);
+          /**
+          if(TAIR_RETURN_SUCCESS==rc)
+          {
+            //set it into cache.
+            data_entry temp_value = value;
+            temp_value.merge_meta();
+            log_debug("put value to cache mdb, size: %d", value.get_size());
+            memory_cache->put(bucket_number, key, temp_value, false,key.data_meta.edate);
+          }
+          **/
         }
         
         return rc;
@@ -89,6 +119,7 @@ namespace tair {
 
         if (rc == TAIR_RETURN_SUCCESS)
         {
+          //memory_cache->remove(bucket_number, key, false);
           rc = bucket->remove(key, version_care);
         }
         

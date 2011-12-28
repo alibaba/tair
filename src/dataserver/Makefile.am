@@ -2,6 +2,13 @@ if WITH_KDB
 KDB_CPPFLAGS= -DWITH_KDB -I${top_srcdir}/src/storage/kdb -I${top_srcdir}/src/storage/kdb/kyotocabinet 
 KDB_LDFLAGS= $(top_builddir)/src/storage/kdb/libkdb.a $(top_builddir)/src/storage/kdb/kyotocabinet/libkyotocabinet.a 
 endif
+if WITH_LDB
+LDB_CPPFLAGS= -DWITH_LDB -I${top_srcdir}/src/storage/ldb
+LDB_LDFLAGS= $(top_builddir)/src/storage/ldb/libldb.a \
+             $(top_builddir)/src/storage/ldb/leveldb/libleveldb.a \
+             $(top_builddir)/src/storage/ldb/leveldb/libsnappy.a
+endif
+
 AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     -I$(TBLIB_ROOT)/include/tbnet \
 	     -I${top_srcdir}/src \
@@ -13,7 +20,9 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     -I${top_srcdir}/src/storage/fdb \
 	     -I${top_srcdir}/src/storage/mdb \
 	     $(KDB_CPPFLAGS) \
+	     $(LDB_CPPFLAGS) \
 	     -I${top_srcdir}/src/plugin \
+	     -I${top_srcdir}/src/client\
 	     @BOOST_CPPFLAGS@
 
 AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB} ${TCMALLOC_LDFLAGS}
@@ -23,25 +32,29 @@ LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
       $(top_builddir)/src/storage/mdb/libmdb.a \
       $(top_builddir)/src/storage/fdb/libfdb.a \
       $(KDB_LDFLAGS) \
+      $(LDB_LDFLAGS) \
       $(top_builddir)/src/plugin/libtair_plugins.a \
       $(top_builddir)/src/packets/libtair_packets.a \
       $(top_builddir)/src/storage/libdump.a \
+      $(top_builddir)/src/client/.libs/libtairclientapi.a \
+      $(top_builddir)/src/common/libtair_common.a \
       -lz -lrt -lpthread \
       -ldl \
       @BOOST_THREAD_LIB@
 
 
-sbin_PROGRAMS=tair_server
+sbin_PROGRAMS=tair_server synctest
 
 include_HEADERS=item_manager.hpp tair_manager.hpp table_manager.hpp duplicate_manager.hpp duplicate_base.hpp \
- 		update_log.hpp tinyjson.hpp
+ 		update_log.hpp tinyjson.hpp remote_sync_manager.hpp 
 
 tair_server_SOURCES=duplicate_manager.cpp item_manager.cpp request_processor.cpp tair_manager.cpp update_log.cpp \
 		    heartbeat_thread.cpp migrate_manager.cpp table_manager.cpp tair_server.cpp \
-		    $(top_builddir)/src/common/stat_helper.cpp	\
+		    $(top_builddir)/src/common/stat_helper.cpp \
 		    base_migrate.hpp	\
 		    base_tair_manager.hpp	\
 		    duplicate_base.hpp	\
+        dup_sync_manager.cpp \
 		    duplicate_manager.hpp	\
 		    heartbeat_thread.hpp	\
 		    item_manager.hpp	\
@@ -51,4 +64,10 @@ tair_server_SOURCES=duplicate_manager.cpp item_manager.cpp request_processor.cpp
 		    tair_manager.hpp	\
 		    tair_server.hpp	\
 		    tinyjson.hpp	\
-		    update_log.hpp
+		    update_log.hpp \
+		    sync_packet_list.cpp 
+
+synctest_SOURCES=synctest.cpp   sync_packet_list.cpp 
+synctest_LDADD=${LDADD} 
+synctest_LDFLAGS= -static
+

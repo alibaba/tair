@@ -21,7 +21,7 @@
 #include <vector>
 #include <tbsys.h>
 #include "data_entry.hpp"
-#include "file_op.hpp"
+#include "fdb/file_op.hpp"
 
 namespace tair {
    using namespace tair::storage::fdb;

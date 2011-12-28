@@ -80,7 +80,7 @@ namespace tair {
           }
 
           if (ret) {
-            uint32_t mode = kyotocabinet::HashDB::OWRITER | kyotocabinet::HashDB::OCREATE;
+            uint32_t mode = kyotocabinet::HashDB::OWRITER | kyotocabinet::HashDB::OCREATE |kyotocabinet::HashDB::ONOREPAIR;
             ret = db.open(filename, mode);
             if (!ret) {
               print_db_error("open kdb failed");
@@ -362,6 +362,7 @@ namespace tair {
             data->header.keysize = key_size;
             data->header.version = item.meta.version;
             data->header.valsize = item.value_size;
+            data->header.flag = item.meta.flag;
             data->header.cdate = item.meta.cdate;
             data->header.mdate = item.meta.mdate;
             data->header.edate = item.meta.edate;

@@ -25,7 +25,7 @@ namespace tair {
       uint16_t version;
       uint32_t padsize; // padding size: 64KB
       uint32_t valsize : 24; // value size
-      uint32_t flag : 8; // for extends
+      uint8_t flag; // for extends
       uint32_t cdate; // item create time
       uint32_t mdate; // item last modified time
       uint32_t edate; // expire date

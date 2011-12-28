@@ -30,7 +30,7 @@ test()
   uint16_t area = 0;
   storage::storage_manager * manager = NULL;
 
-  manager = tair::mdb_factory::create_mdb_manager(false);
+  manager = tair::mdb_factory::create_mdb_manager();
   manager->clear(0);
   manager->clear(1);
   manager->clear(2);

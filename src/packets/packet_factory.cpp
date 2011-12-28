@@ -33,6 +33,7 @@
 #include "mupdate_packet.hpp"
 #include "ping_packet.hpp"
 #include "put_packet.hpp"
+#include "lock_packet.hpp"
 #include "query_info_packet.hpp"
 #include "remove_area_packet.hpp"
 #include "remove_packet.hpp"
@@ -52,6 +53,9 @@ namespace tair {
             break;
          case TAIR_REQ_GET_PACKET:
             packet = new request_get();
+            break;
+         case TAIR_REQ_LOCK_PACKET:
+            packet = new request_lock();
             break;
          case TAIR_REQ_QUERY_INFO_PACKET:
             packet = new request_query_info();
@@ -166,8 +170,21 @@ namespace tair {
    {
       response_return *return_packet = new response_return(packet->getChannelId(), code, msg);
       return_packet->config_version = version;
-      if (packet->get_connection()->postPacket(return_packet) == false) {
+      tbnet::Connection *conn=packet->get_connection();
+      if (!conn || conn->postPacket(return_packet) == false) {
          log_warn("send ReturnPacket failure, request pcode: %d", packet->getPCode());
+         delete return_packet;
+      }
+      return EXIT_SUCCESS;
+   }
+   int tair_packet_factory::set_return_packet(tbnet::Connection *conn,uint32_t chid,int cmd_id,
+        int code,const char *msg,uint32_t version)
+   {
+      response_return *return_packet = new response_return(chid,code, msg);
+      return_packet->config_version = version;
+      if (!conn || conn->postPacket(return_packet) == false) 
+      {
+         log_warn("send ReturnPacket failure, request pcode: %d", cmd_id);
          delete return_packet;
       }
       return EXIT_SUCCESS;
@@ -175,3 +192,4 @@ namespace tair {
 
 
 }
+

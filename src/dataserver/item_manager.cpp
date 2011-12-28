@@ -41,7 +41,8 @@ namespace tair {
          data_entry old_value;
          log_debug("start add_items");
          if( tair_mgr->get(area,key,old_value) != TAIR_RETURN_SUCCESS){ // is new
-            value.data_meta.flag |= TAIR_ITEM_FLAG_ITEM;
+            tair_mgr->get_storage_manager()->set_flag(value.data_meta.flag, TAIR_ITEM_FLAG_ITEM);
+            // value.data_meta.flag |= TAIR_ITEM_FLAG_ITEM;
             uint32_t _new_attr = get_attribute(value);
             string _new_result(reinterpret_cast<char *>(&_new_attr),sizeof(_new_attr)); //just reserve space
             int _new_items_no = new_items(value,VAL_TYPE(_new_attr),max_count,_new_result);
@@ -65,7 +66,8 @@ namespace tair {
          }
 
          uint8_t old_flag = 0;
-         if (IS_DELETED(old_value.data_meta.flag)){ // in migrate
+         if (tair_mgr->get_storage_manager()->test_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_DELETED)) {
+         // if (IS_DELETED(old_value.data_meta.flag)){ // in migrate
             old_flag = TAIR_ITEM_FLAG_DELETED;
          }
 
@@ -91,7 +93,8 @@ namespace tair {
          data_entry final_value;
          final_value.set_data(result.data(),result.size(),true);
          final_value.set_version(version);
-         final_value.data_meta.flag |= (TAIR_ITEM_FLAG_ITEM | old_flag);
+         tair_mgr->get_storage_manager()->set_flag(final_value.data_meta.flag, TAIR_ITEM_FLAG_ITEM);
+         tair_mgr->get_storage_manager()->set_flag(final_value.data_meta.flag, old_flag);
 
          log_debug("final_value:%s",get_items_addr(final_value));
 
@@ -150,7 +153,8 @@ namespace tair {
          if( (ret = tair_mgr->get(area,key,value)) != TAIR_RETURN_SUCCESS ){
             return ret;
          }
-         if( !IS_ITEM_TYPE(value.data_meta.flag) ){
+         if (!tair_mgr->get_storage_manager()->test_flag(value.data_meta.flag, TAIR_ITEM_FLAG_ITEM)) {
+         // if( !IS_ITEM_TYPE(value.data_meta.flag) ){
             return TAIR_RETURN_TYPE_NOT_MATCH;
          }
          uint32_t attr = get_attribute(value);
@@ -240,7 +244,8 @@ namespace tair {
 
          data_entry final_value;
          final_value.set_data(result.data(),result.size(),true);
-         final_value.data_meta.flag |= TAIR_ITEM_FLAG_ITEM;
+         tair_mgr->get_storage_manager()->set_flag(final_value.data_meta.flag, TAIR_ITEM_FLAG_ITEM);
+         // final_value.data_meta.flag |= TAIR_ITEM_FLAG_ITEM;
          set_attribute(final_value,result_attr);
          log_debug("remain data:%s",get_items_addr(final_value));
          return tair_mgr->put(area,key,final_value,0); //TODO expire
@@ -326,7 +331,7 @@ namespace tair {
          if( (ret = tair_mgr->get(area,key,value)) != TAIR_RETURN_SUCCESS ){
             return ret;
          }
-         if( !IS_ITEM_TYPE(value.data_meta.flag) ){
+         if (!tair_mgr->get_storage_manager()->test_flag(value.data_meta.flag, TAIR_ITEM_FLAG_ITEM)) {
             log_debug("is not items type,flag:%d",value.data_meta.flag);
             return TAIR_RETURN_TYPE_NOT_MATCH;
          }

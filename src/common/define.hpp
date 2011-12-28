@@ -40,6 +40,7 @@
 #define IS_ADDCOUNT_TYPE(flag) (((flag) & TAIR_ITEM_FLAG_ADDCOUNT) == TAIR_ITEM_FLAG_ADDCOUNT)
 #define IS_ITEM_TYPE(flag) ( ((flag) & TAIR_ITEM_FLAG_ITEM) )
 #define IS_DELETED(flag) ( ((flag) & TAIR_ITEM_FLAG_DELETED) )
+// #define IS_LOCKED(flag) ( ((flag) & TAIR_ITEM_FLAG_LOCKED) )
 
 #define CAN_OVERRIDE(old_flag,new_flag)         \
    ({                                           \
@@ -49,11 +50,24 @@
       ret;                                      \
    })
 
+#define INCR_DATA_SIZE 6
+// add JavaClient header, little-endian encode INT
+#define SET_INCR_DATA_COUNT(buf, count)         \
+  do {                                          \
+     (buf)[0] = '\0';                           \
+     (buf)[1] = '\026';                         \
+     (buf)[2] = (count) & 0xFF;                 \
+     (buf)[3] = ((count) >> 8) & 0xFF;          \
+     (buf)[4] = ((count) >> 16) & 0xFF;         \
+     (buf)[5] = ((count) >> 24) & 0xFF;         \
+  } while (0)
+
 #define TAIR_SLEEP(stop, interval) ({int count=interval*5; while(count-->0 && !stop) usleep(200000);})
 
 #define TAIR_MAX_KEY_SIZE            1024
 #define TAIR_MAX_DATA_SIZE           1000000
 #define TAIR_MAX_AREA_COUNT          1024
+#define TAIR_MAX_DUP_MAP_SIZE        102400
 #define TAIR_PACKET_FLAG             0x6D426454
 #define TAIR_DTM_VERSION             0x31766256
 #define TAIR_HTM_VERSION             0x31766257
@@ -77,6 +91,10 @@
 #define CONFSERVER_SECTION           "configserver"
 #define TAIRFDB_SECTION              "fdb"
 #define TAIRKDB_SECTION              "kdb"
+#define TAIRLDB_SECTION              "ldb"
+#define REMOTE_TAIRSERVER_SECTION    "remote"
+#define LOCAL_TAIRSERVER_SECTION      "local"
+
 // TAIR_SERVER
 #define TAIR_PORT                    "port"
 #define TAIR_HEARTBEAT_PORT          "heartbeat_port"
@@ -88,6 +106,8 @@
 #define TAIR_PID_FILE                "pid_file"
 #define TAIR_LOG_LEVEL               "log_level"
 #define TAIR_DEV_NAME                "dev_name"
+#define TAIR_DUP_SYNC                "dup_sync"
+#define TAIR_COUNT_NEGATIVE          "allow_count_negative"
 
 #define TAIR_GROUP_FILE              "group_file"
 #define TAIR_DATA_DIR                "data_dir"
@@ -116,6 +136,9 @@
 #define TAIR_ULOG_DEFAULT_FILENUM       3
 #define TAIR_ULOG_FILESIZE              "ulog_file_size"
 #define TAIR_ULOG_DEFAULT_FILESIZE      64// 64MB
+#define TAIR_DUP_SYNC_MODE              0 
+#define TAIR_COUNT_NEGATIVE_MODE        1 //default is allow count negative
+
 
 #define TAIR_SERVER_DEFAULT_PORT        5191
 #define TAIR_SERVER_DEFAULT_HB_PORT     6191
@@ -130,8 +153,36 @@
 #define KDB_RECORD_ALIGN_DEFAULT        128
 #define KDB_DATA_DIR                    "data_dir"
 #define KDB_DEFAULT_DATA_DIR            "data/kdb"
+#define KDB_CACHE_SIZE                  "cache_size"
 #define LOCKER_SIZE                     128
 
+// LDB
+#define LDB_DATA_DIR                    "data_dir"
+#define LDB_DEFAULT_DATA_DIR            "data/ldb"
+#define LDB_DB_INSTANCE_COUNT           "ldb_db_instance_count"
+#define LDB_DB_VERSION_CARE             "ldb_db_version_care"
+#define LDB_CACHE_STAT_FILE_SIZE        "ldb_cache_stat_file_size"
+#define LDB_COMPACT_RANGE               "ldb_compact_range"
+#define LDB_CHECK_COMPACT_INTERVAL      "ldb_check_compact_interval"
+#define LDB_USE_CACHE                   "ldb_use_cache"
+#define LDB_PUT_FILL_CACHE              "ldb_put_fill_cache"
+#define LDB_MIGRATE_BATCH_COUNT         "ldb_migrate_batch_count"
+#define LDB_MIGRATE_BATCH_SIZE          "ldb_migrate_batch_size"
+
+#define LDB_PARANOID_CHECK              "ldb_paranoid_check"
+#define LDB_MAX_OPEN_FILES              "ldb_max_open_files"
+#define LDB_WRITE_BUFFER_SIZE           "ldb_write_buffer_size"
+#define LDB_TARGET_FILE_SIZE            "ldb_target_file_size"
+#define LDB_BLOCK_SIZE                  "ldb_block_size"
+#define LDB_BLOCK_RESTART_INTERVAL      "ldb_block_restart_interval"
+#define LDB_COMPRESSION                 "ldb_compression"
+#define LDB_L0_COMPACTION_TRIGGER       "ldb_l0_compaction_trigger"
+#define LDB_L0_SLOWDOWN_WRITE_TRIGGER   "ldb_l0_slowdown_write_trigger"
+#define LDB_L0_STOP_WRITE_TRIGGER       "ldb_l0_stop_write_trigger"
+#define LDB_MAX_MEMCOMPACT_LEVEL        "ldb_max_memcompact_level"
+#define LDB_BASE_LEVEL_SIZE             "ldb_base_level_size"
+#define LDB_READ_VERIFY_CHECKSUMS       "ldb_read_verify_checksums"
+#define LDB_WRITE_SYNC                  "ldb_write_sync"
 
 // file storage engine config items
 #define FDB_INDEX_MMAP_SIZE             "index_mmap_size"
@@ -170,17 +221,32 @@
 #define TAIR_DEFAULT_BUCKET_NUMBER      (1023)
 #define TAIR_STR_REPORT_INTERVAL        "_report_interval"
 #define TAIR_DEFAULT_REPORT_INTERVAL    (5)       //means 5 seconds
+
+#define TAIR_SERVER_OP_TIME             (4)
+#define TAIR_CLIENT_OP_TIME             (2)
+#define TAIR_MAX_CLIENT_OP_TIME             (5)
+
+//REMOTE_TAIRSERVER_SECTION    
+#define TAIR_MASTER_NAME                "master"
+#define TAIR_SLAVE_NAME                 "slaver"
+#define TAIR_GROUP_NAME                "group"
+#define REMOTE_DATA_DIR                 "data_dir"
+#define REMOTE_DEFAULT_DATA_DIR         "data/remote"
+
 //////////////////////////////////////////////
 enum {
    TAIR_ITEM_FLAG_ADDCOUNT = 1,
    TAIR_ITEM_FLAG_DELETED = 2,
    TAIR_ITEM_FLAG_ITEM = 4,
+   TAIR_ITEM_FLAG_LOCKED=8,
    TAIR_ITEM_FLAG_SET,
 };
 
 enum {
    TAIR_RETURN_SUCCESS = 0,
+   TAIR_DUP_WAIT_RSP = 133,
 
+   TAIR_RETURN_NOT_SUPORTED= -4001,
    TAIR_RETURN_PROXYED = -4000,
    TAIR_RETURN_FAILED = -3999,
    TAIR_RETURN_DATA_NOT_EXIST = -3998,
@@ -205,7 +271,34 @@ enum {
    TAIR_RETURN_PARTIAL_SUCCESS = -3983,
    TAIR_RETURN_INVALID_ARGUMENT = -3982,
    TAIR_RETURN_CANNOT_OVERRIDE = -3981,
-   TAIR_RETURN_PROXYED_ERROR = -3980,
+
+   TAIR_RETURN_DEC_BOUNDS= -3980,
+   TAIR_RETURN_DEC_ZERO= -3979,
+   TAIR_RETURN_DEC_NOTFOUND= -3978,
+
+   TAIR_RETURN_PROXYED_ERROR = -3977,
+
+   // for lock
+   TAIR_RETURN_LOCK_EXIST = -3975,
+   TAIR_RETURN_LOCK_NOT_EXIST = -3974,
+
+   TAIR_RETURN_REMOVE_NOT_ON_MASTER= -4101,
+   TAIR_RETURN_REMOVE_ONE_FAILED= -4102,
+
+   TAIR_RETURN_DUPLICATE_IDMIXED= -5001,
+   TAIR_RETURN_DUPLICATE_DELAY= -5002,
+   TAIR_RETURN_DUPLICATE_REACK= -5003,
+   TAIR_RETURN_DUPLICATE_ACK_WAIT= -5004,
+   TAIR_RETURN_DUPLICATE_ACK_TIMEOUT= -5005,
+   TAIR_RETURN_DUPLICATE_SEND_ERROR= -5006,
+
+   TAIR_RETURN_REMOTE_NOTINITED= -5106,
+   TAIR_RETURN_REMOTE_SLOW= -5107,
+   TAIR_RETURN_REMOTE_NOTINIT= -5108,
+   TAIR_RETURN_REMOTE_DISKSAVE_FAILED=-5109,
+   TAIR_RETURN_REMOTE_MISS=-5110,
+   TAIR_RETURN_REMOTE_RSP_FAILED=-5111,
+   TAIR_RETURN_REMOTE_NOLOCAL=-5112,
 };
 
 enum {
@@ -214,5 +307,14 @@ enum {
    TAIR_SERVERFLAG_MIGRATE,
    TAIR_SERVERFLAG_PROXY,
 };
+
+namespace {
+   const int TAIR_OPERATION_VERSION   = 1;
+   const int TAIR_OPERATION_DUPLICATE = 2;
+   const int TAIR_OPERATION_REMOTE    = 4;
+   const int TAIR_OPERATION_UNLOCK    = 8;
+   const int TAIR_DUPLICATE_BUSY_RETRY_COUNT = 10;
+}
+
 #endif
 /////////////

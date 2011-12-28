@@ -61,6 +61,11 @@ namespace tair {
   {
       log_warn("migrate_manager destruct");
       this->stop();
+      int i=0;
+      while(is_running && i++<9)
+      {
+        sleep(1);
+      }
       delete conn_mgr;
    }
 
@@ -153,7 +158,7 @@ namespace tair {
       bucket_server_map_it  it = temp_servers.begin();
       for(; it != temp_servers.end() && !is_stopped; it++){
          int bucket_number = it->first;
-         log_debug("begin migrate bucket: %d", bucket_number);
+         log_warn("begin migrate bucket: %d", bucket_number);
          vector<uint64_t> servers = it->second;
          if(servers.empty()){
             current_locked_bucket = bucket_number;
@@ -169,7 +174,7 @@ namespace tair {
             log_debug("----to server:%s",  tbsys::CNetUtil::addrToString(servers[i]).c_str());
          }
          do_migrate_one_bucket(bucket_number, servers);
-         log_debug("finish %d bucket migrate",  bucket_number);
+         log_warn("finish %d bucket migrate",  bucket_number);
       }
    }
 
@@ -221,7 +226,7 @@ namespace tair {
          return;
       } else {
          while(!(duplicator->has_bucket_duplicate_done(bucket_number))) {
-            usleep(5000);
+            usleep(1000);
             if (is_stopped || _stop){
                current_migrating_bucket = -1;
                current_locked_bucket = -1;
@@ -239,7 +244,7 @@ namespace tair {
       bool flag = true;
       bool ret;
      _Reput:
-      for(vector<uint64_t>::iterator it = dest_servers.begin(); it < dest_servers.end();){
+      for(vector<uint64_t>::iterator it = dest_servers.begin(); it < dest_servers.end()&& !is_stopped;){
          ret = true;
          uint64_t server_id = *it;
          request_mupdate *temp_packet = new request_mupdate(*packet);

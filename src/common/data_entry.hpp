@@ -117,42 +117,66 @@ namespace tair
 
          ~data_entry()
           {
-            free_data();
+            if (m_true_data&& alloc) {
+               free(m_true_data);
+            }
+            //free_data();
          }
 
-         void merge_area(int area)
-          {
-            if(has_merged) {
-               return;
-            }
-            if(size > 0) {
-               char new_data[size + 2];
-               memset(new_data, 0, size+2);
-               new_data[0] = (area & 0xFF);
-               new_data[1] = ((area >> 8) & 0xFF);
-               memcpy(new_data+2, data, size);
-               set_data(new_data, size+2);
-               this->area = area;
-               has_merged = true;
-            }
+         void merge_area(int _area)
+         {
+           if(has_merged) {
+             return;
+           }
+           if(size < 0) return;
+           //now should check is alloc by me. I have 2 extra head.
+           if(m_true_size==size+2)
+           {
+             m_true_data[0]=(_area & 0xFF);
+             m_true_data[1]=((_area >> 8) & 0xFF);
+             size=m_true_size;
+             data=m_true_data;
+           }
+           else
+           {
+             //data set by  set_alloced_data or alloc=false,should realloc
+             m_true_size=size+2;
+             m_true_data=(char *)malloc(m_true_size+1); 
+
+             //memset(m_true_data, 0, m_true_size+1);
+             m_true_data[0] = (_area & 0xFF);
+             m_true_data[1] = ((_area >> 8) & 0xFF);
+
+             memcpy(m_true_data+2, data, size);
+             *(m_true_data+m_true_size+1) = '\0';
+
+             if(alloc) {free(data);data=NULL;}
+             //reset flags;
+             hashcode = 0;
+             data=m_true_data;
+             size=m_true_size;
+           }
+           this->area = _area;
+           has_merged = true;
          }
 
          int decode_area()
-          {
-            int target_area = area;
-            if(has_merged) {
-               assert(size > 2);
-               target_area = data[1];
-               target_area <<= 8;
-               target_area |= data[0];
-               char new_data[size -2];
-               memset(new_data, 0, size-2);
-               memcpy(new_data, data+2, size-2);
-               set_data(new_data, size -2);
-               area = target_area;
-               has_merged =false;
-            }
-            return target_area;
+         {
+           int target_area = area;
+           if(has_merged) 
+           {
+             assert(size > 2);
+             target_area = data[1]&0xFF;
+             target_area <<= 8;
+             target_area |= data[0]&0xFF;
+
+             area = target_area;
+             has_merged =false;
+
+             data=m_true_data+2;
+             size=m_true_size-2;
+           }
+           return target_area;
          }
 
          void merge_meta()
@@ -197,40 +221,48 @@ namespace tair
          void set_alloced_data(const char *data, int size)
          {
             free_data();
-            this->data = (char *) data;
-            this->size = size;
+            this->data = this->m_true_data=(char *) data;
+            this->size = this->m_true_size=size;
             alloc = true;
          }
 
-         void set_data(const char *new_data, int new_size, bool alloc = true)
-          {
-            free_data();
-            if(alloc) {
-               if(new_size > 0) {
-                  data = (char *)malloc(new_size + 1);
-                  assert(data != NULL);
-                  this->alloc = true;
-                  size = new_size;
-                  if(new_data) {
-                     memcpy(data, new_data, size);
-                  }else{
-                     memset(data, 0, size);
-                  }
-                  *(data + size) = '\0';
+         void set_data(const char *new_data, int new_size, bool _need_alloc = true)
+         {
+           free_data();
+           if(_need_alloc) 
+           {
+             if(new_size > 0) 
+             {
+               m_true_size=new_size+2;//add area
+               m_true_data=(char *)malloc(m_true_size+1); 
+               assert(m_true_data!= NULL);
+               this->alloc = true;
+               data=m_true_data+2;
+               size = m_true_size-2;
+
+               if(new_data) 
+               {
+                 memcpy(data, new_data, size);
+               }else
+               {
+                 memset(data, 0, size);
                }
-            } else {
-               data = (char *) new_data;
-               size = new_size;
-            }
+               m_true_data[0]=m_true_data[1]=0xFF;
+               *(data + size) = '\0';
+             }
+           } else {
+             m_true_data=data = (char *) new_data;
+             m_true_size=size = new_size;
+           }
          }
 
-         char *get_data() const
-          {
+         inline char *get_data() const
+         {
             return data;
          }
 
 
-         int get_size() const
+         inline int get_size() const
           {
             return size;
          }
@@ -265,7 +297,7 @@ namespace tair
           {
             data_meta.cdate = cdate;
          }
-         bool is_alloc() const {
+         inline bool is_alloc() const {
             return alloc;
          }
          void encode(tbnet::DataBuffer *output) const
@@ -304,8 +336,8 @@ namespace tair
          void init()
           {
             alloc = false;
-            size = 0;
-            data = NULL;
+            size = m_true_size = 0;
+            data = m_true_data = NULL;
 
             has_merged = false;
             has_meta_merged = false;
@@ -316,16 +348,17 @@ namespace tair
          }
 
          inline void free_data()
-          {
-            if (data && alloc) {
-               free(data);
-            }
-            data = NULL;
-            alloc = false;
-            size = 0;
-            hashcode = 0;
-            has_merged = false;
-            area = 0;
+         {
+           if (m_true_data&& alloc) {
+             free(m_true_data);
+           }
+           data = NULL;
+           m_true_data = NULL;
+           alloc = false;
+           size = m_true_size = 0;
+           hashcode = 0;
+           has_merged = false;
+           area = 0;
          }
 
       private:
@@ -333,6 +366,9 @@ namespace tair
          char *data;
          bool alloc;
          uint64_t hashcode;
+
+         int m_true_size;  //if has_merged ,or m_true_size=size+2
+         char *m_true_data; //if has_merged arae,same as data,or data=m_true_data+2;
       public:
          bool has_merged;
          bool has_meta_merged;

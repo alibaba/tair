@@ -63,6 +63,43 @@ namespace tair {
   class mdb_area_stat
   {
   public:
+    mdb_area_stat() { reset(); }
+
+    void reset()
+    {
+      memset(this, 0, sizeof(mdb_area_stat));
+    }
+    void add(mdb_area_stat* stat, bool size_care = false)
+    {
+      if (size_care)
+      {
+        quota += stat->quota;
+        data_size += stat->data_size;
+        space_usage += stat->space_usage;
+        item_count += stat->item_count;
+      }
+      hit_count += stat->hit_count;
+      get_count += stat->get_count;
+      put_count += stat->put_count;
+      remove_count += stat->remove_count;
+      evict_count += stat->evict_count;
+    }
+    void sub(mdb_area_stat* stat, bool size_care = false)
+    {
+      if (size_care)
+      {
+        quota -= stat->quota;
+        data_size -= stat->data_size;
+        space_usage -= stat->space_usage;
+        item_count -= stat->item_count;
+      }
+      hit_count -= stat->hit_count;
+      get_count -= stat->get_count;
+      put_count -= stat->put_count;
+      remove_count -= stat->remove_count;
+      evict_count -= stat->evict_count;
+    }
+
     uint64_t quota;
     uint64_t data_size;
     uint64_t space_usage;
