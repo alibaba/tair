@@ -384,7 +384,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		waitto(FailOverBaseCase.ds_down_time);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==0)
 			fail("down time arrived,but no migration started!");
 		log.error("migration start!");
 		
@@ -682,7 +682,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		waitto(FailOverBaseCase.ds_down_time);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=2)
+		if(check_keyword((String)csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")==0)
 			fail("version changed failed!");
 		
 		//check migration stat
@@ -959,7 +959,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		log.error("wait less than ds down time before rebuild ...");
-		waitto(FailOverBaseCase.ds_down_time/2);
 		
 		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==1)
 			fail("Already migration!");

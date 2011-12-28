@@ -427,7 +427,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase{
 		if(!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
 			fail("close data server failed!");
 		log.error("second data server has been closed!");
-        waitto(FailOverBaseCase.ds_down_time/2);
 		
 		//wait for migrate start
 		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==2)
@@ -1732,9 +1731,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase{
 		log.error("group.conf has been changed!");
 
 		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("start ds failed");
-		if(!control_ds((String)dsList.get(2), FailOverBaseCase.start, 0))fail("start ds failed");
-		if(!control_ds((String)dsList.get(4), FailOverBaseCase.start, 0))fail("start ds failed");
-		if(!control_ds((String)dsList.get(5), FailOverBaseCase.start, 0))fail("start ds failed");
+		if(!control_ds((String)dsList.get(1), FailOverBaseCase.start, 0))fail("start ds failed");
+		if(!control_ds((String)dsList.get(3), FailOverBaseCase.start, 0))fail("start ds failed");
 		waitto(FailOverBaseCase.down_time);
 		if(!batch_control_cs(csList, FailOverBaseCase.start, 0))fail("batch start cs failed!");	
 		log.error("start cluster successful!");
