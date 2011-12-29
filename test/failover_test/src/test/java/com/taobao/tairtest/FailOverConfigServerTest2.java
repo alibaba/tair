@@ -960,8 +960,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("ds has been closed!");
 		log.error("wait less than ds down time before rebuild ...");
 		
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==1)
-			fail("Already migration!");
+//		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==1)
+//			fail("Already migration!");
 		//restart ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
 		log.error("Restart ds successful!");	
