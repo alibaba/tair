@@ -138,11 +138,15 @@ namespace tair {
          log_error("ControlPacket, cmd:%d", cp->getCommand());
          return tbnet::IPacketHandler::FREE_CHANNEL;
       }
-      int pcode = packet->getPCode();
-      int server_index = (int)((long)args);
 
-      switch (pcode) {
-         case TAIR_RESP_HEARTBEAT_PACKET: {
+      if (_stop) {
+         log_warn("thread is stop, but receive packet. pcode :%d", packet->getPCode());
+      } else {
+        int pcode = packet->getPCode();
+        int server_index = (int)((long)args);
+
+        switch (pcode) {
+          case TAIR_RESP_HEARTBEAT_PACKET: {
             response_heartbeat *resp = (response_heartbeat*) packet;
             bool need_set = true;
             if (server_index == 1 && config_server_list.size() == 2U &&
@@ -221,6 +225,7 @@ namespace tair {
          }
          default:
             log_warn("unknow packet, pcode: %d", pcode);
+        }
       }
       packet->free();
 
