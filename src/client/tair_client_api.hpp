@@ -17,7 +17,10 @@
 
 #include <vector>
 
+#include "common/define.hpp"
 #include "data_entry.hpp"
+#include "data_entry_local_cache.h"
+
 namespace tair {
 
   class tair_client_impl;
@@ -29,6 +32,16 @@ namespace tair {
     public:
       tair_client_api();
       ~tair_client_api();
+
+      // capability, cache size
+      // expire, entry expire time, unit ms
+      // now, just support cache read
+      void setup_cache(int area, size_t capability, int64_t expire);
+
+      data_entry_local_cache* get_local_cache(int area)
+      {
+        return cache_impl[area];
+      }
 
       static const int MAX_ITEMS = 65535;
       static const int ALL_ITEMS = MAX_ITEMS + 1;
@@ -300,9 +313,11 @@ namespace tair {
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const;
 
     private:
-
+      void invalid_local_cache(int area, const std::vector<data_entry*> &key);
+      
+      typedef data_entry_local_cache cache_type;
       tair_client_impl *impl;
-
+      cache_type *cache_impl[TAIR_MAX_AREA_COUNT]; 
   };
 }
 #endif

@@ -77,6 +77,22 @@ namespace tair
             return *this;
          }
 
+         bool operator==(const data_entry &entry) const
+         {
+            if (entry.size != size) 
+              return false;
+            if (has_merged != entry.has_merged)
+              return false;
+            if (!has_merged && area != entry.area)
+              return false;
+
+            if (data == entry.data)
+              return true;
+            if (data == NULL || entry.data == NULL)
+              return false;
+
+            return memcmp(data, entry.data, size) == 0;
+         }
 
          bool operator<(const data_entry &entry) const
          {
@@ -394,9 +410,16 @@ namespace tair
          }
       };
 
+      struct data_entry_equal_to {
+         bool operator()(const data_entry *a, const data_entry *b) const
+         {
+           return *a == *b;
+         }
+      };
       typedef std::vector<data_entry *> tair_dataentry_vector;
       typedef std::set<data_entry*, data_entry_comparator> tair_dataentry_set;
-      typedef __gnu_cxx::hash_map<data_entry*, data_entry*, data_entry_hash> tair_keyvalue_map;
+      typedef __gnu_cxx::hash_map<data_entry*, data_entry*, 
+                        data_entry_hash, data_entry_equal_to> tair_keyvalue_map;
    }
 }
 

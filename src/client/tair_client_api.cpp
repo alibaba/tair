@@ -29,10 +29,21 @@ namespace tair {
   tair_client_api::~tair_client_api()
   {
     delete impl;
+    for (int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
+      if (cache_impl[i] != NULL)
+        delete cache_impl[i];
+    }
+  }
+
+  void tair_client_api::setup_cache(int area, size_t capability, int64_t expire)
+  {
+    if (cache_impl[area] == NULL)
+      cache_impl[area] = new data_entry_local_cache(capability, expire);
   }
 
   bool tair_client_api::startup(const char *master_addr,const char *slave_addr,const char *group_name)
   {
+    memset(cache_impl, 0, sizeof(cache_impl));
     return impl->startup(master_addr,slave_addr,group_name);
   }
 
@@ -47,39 +58,119 @@ namespace tair {
       int expire,
       int version)
   {
-    return impl->put(area,key,data,expire,version);
+    int ret = impl->put(area,key,data,expire,version);
+    if (TAIR_RETURN_SUCCESS == ret) {
+      cache_type *cache = cache_impl[area];
+      if (cache != NULL) {
+        cache->put(key, data);
+      }
+    }
+    return ret;
   }
 
   int tair_client_api::get(int area,
       const data_entry &key,
       data_entry*& data)
   {
-    return impl->get(area,key,data);
+    cache_type *cache = cache_impl[area];
+    if (cache != NULL) {
+      // find first
+      data = new data_entry();; 
+      cache_type::result result = cache->get(key, *data);
+      if (cache_type::HIT == result) {
+        return TAIR_RETURN_SUCCESS; 
+      } else {
+        delete data;
+        data = NULL;
+      }
+    }
+    int ret = impl->get(area,key,data);
+    if (cache != NULL) {
+      // update cache
+      if (TAIR_RETURN_SUCCESS == ret) {
+        cache->put(key, *data);
+      } else if (TAIR_RETURN_DATA_EXPIRED == ret ||
+            TAIR_RETURN_DATA_NOT_EXIST == ret) {
+        cache->remove(key);
+      }
+    }
+    return ret;
   }
 
   int tair_client_api::mget(int area,
       vector<data_entry *> &keys,
       tair_keyvalue_map& data)
   {
+    cache_type *cache = cache_impl[area];
+    if (cache != NULL) {
+      vector<data_entry *> cached_keys;
+      vector<data_entry *> not_hit_keys;
+
+      for (size_t i = 0; i < keys.size(); ++i) {
+        data_entry *value = new data_entry();
+        cache_type::result res = cache->get(*keys[i], *value);
+        if (res == cache_type::HIT) {
+          data.insert(std::make_pair(keys[i], value));
+          cached_keys.push_back(keys[i]);
+        } else {
+          not_hit_keys.push_back(keys[i]);
+          delete value;
+        }
+      }
+      if (not_hit_keys.empty())
+        return TAIR_RETURN_SUCCESS;
+
+      tair_keyvalue_map temp_data;
+      int ret = impl->mget(area, not_hit_keys, temp_data);
+      // update local cache
+      tair_keyvalue_map::iterator iter = temp_data.begin();
+      for(; iter != temp_data.end(); ++iter) {
+        cache->put(*(iter->first), *(iter->second));
+      }
+      data.insert(temp_data.begin(), temp_data.end()); 
+      return ret;
+    }
     return impl->mget(area,keys,data);
   }
 
   int tair_client_api::remove(int area,
       const data_entry &key)
   {
-    return impl->remove(area,key);
+    int ret = impl->remove(area,key); 
+    if (TAIR_RETURN_SUCCESS == ret ||
+        TAIR_RETURN_DATA_NOT_EXIST == ret) {
+      cache_type *cache = cache_impl[area];
+      if (cache != NULL) {
+        cache->remove(key);
+      }
+    }
+    return ret;
+  }
+
+  void tair_client_api::invalid_local_cache(int area, const vector<data_entry *> &keys)
+  {
+    cache_type *cache = cache_impl[area];
+    if (cache == NULL) 
+      return;
+    for (size_t i = 0; i < keys.size(); ++i) 
+      cache->remove(*(keys[i]));
   }
 
   int tair_client_api::mdelete(int area,
       vector<data_entry *> &keys)
   {
-    return impl->mdelete(area,keys);
+    int ret = impl->mdelete(area,keys);
+    if (TAIR_RETURN_SUCCESS == ret ||
+        TAIR_RETURN_PARTIAL_SUCCESS == ret) {
+      invalid_local_cache(area, keys);
+    }
+    return ret;
   }
 
   int tair_client_api::minvalid(int area,
       vector<data_entry *> &keys)
   {
-    return impl->mdelete(area,keys);
+    return mdelete(area, keys);
   }
 
 

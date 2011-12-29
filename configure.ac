@@ -93,6 +93,7 @@ AC_CONFIG_FILES([\
 		 src/client/Makefile \
 		 test/Makefile \
 		 test/interface_test/Makefile \
+		 test/unit_test/Makefile \
 		 scripts/Makefile \
 		 share/Makefile
 		 ])
