@@ -1,11 +1,9 @@
 /**
  * 
  */
-package com.taobao.tairtest;
+package com.taobao.ldbtest;
 
 import com.ibm.staf.*;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -16,8 +14,8 @@ import java.util.List;
  */
 public class FailOverBaseCase extends BaseTestCase {
 	// Directory
-	final static String tair_bin = "/home/admin/tair_bin/";
-	final static String test_bin = "/home/admin/ashu/recovery/";
+	final static String tair_bin = "/home/admin/tair_bin_ldb/";
+	final static String test_bin = "/home/admin/xiaxun/recovery/";
 	// Server Operation
 	final static String start = "start";
 	final static String stop = "stop";
@@ -32,17 +30,23 @@ public class FailOverBaseCase extends BaseTestCase {
 	// Parameters
 	final static int down_time = 10;
 	final static int ds_down_time = 10;
-	final static String put_count = "100000";
-	final static float put_count_float = 100000.0f;
+	final static String put_count = "30000";
+	final static float put_count_float = 30000.0f;
 	// Server List
-	final String csarr[] = new String[] { "10.232.4.20", "10.232.4.21" };
-	final String dsarr[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24" };
-	final String dsarr2[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24", "10.232.4.25" };
+	final String csarr[] = new String[] { "10.232.4.14", "10.232.4.15" };
+	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17" };
 	final List csList = Arrays.asList(csarr);
 	final List dsList = Arrays.asList(dsarr);
-	final List dsList2 = Arrays.asList(dsarr2);
 
-	/**
+    final static String ycsb_path = "/home/admin/xiaxun/ycsb/";
+    final static String ycsb_workload_path = "/home/admin/xiaxun/ycsb/workload_ldb";
+    final static String ycsb_tools_path = "/home/admin/xiaxun/tools/";
+    final static String ycsb_log_path ="/home/admin/xiaxun/ycsb/out/1.res";
+    final static String ycsb_end_str ="YCSB_WORKLOAD_FILE_END";
+    final static String ycsb_move_path ="/home/admin/xiaxun/ycsb/ycsb_log/";
+    final static String tair_bin_dataconf = "/home/admin/tair_bin_ldb/etc/dataserver.conf";
+
+    /**
 	 * @param machine
 	 * @param opID
 	 * @param type
@@ -54,9 +58,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_cs && sleep 5";
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_cfg_svr_hudson && sleep 2";
+			cmd = "killall -9 tair_cfg_svr_ldb && sleep 2";
 		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep tair_cfg_svr_hudson|wc -l";
+		cmd = "ps -ef|grep tair_cfg_svr_ldb|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
 			log.debug("cs rc!=0");
@@ -95,10 +99,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		executeShell(stafhandle, machine, cmd);
 
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_server_hudson && sleep 2";
+			cmd = "killall -9 tair_server_ldb && sleep 2";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		int waittime = 0;
-		cmd = "ps -ef|grep tair_server_hudson|wc -l";
+		cmd = "ps -ef|grep tair_server_ldb|wc -l";
 		while (waittime < 110) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {
@@ -191,6 +195,89 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
+   public boolean ycsb_clean_data(String machine) {
+        boolean ret = false;
+        String cmd = "cd " + FailOverBaseCase.ycsb_tools_path + " && ./deploy.sh clean";
+        STAFResult rst = executeShell(stafhandle, machine, cmd);
+        if (rst.rc != 0)
+            ret = false;
+        else
+            ret = true;
+        return ret;
+    }
+
+
+   public boolean ldb_delete_namespace(String machine) {
+       boolean ret = false;
+       String cmd = "cd " + FailOverBaseCase.tair_bin + " && sbin/tairclient -c localhost:5198 -g group_count -l 'delall 0'";
+       log.debug(cmd);
+       STAFResult rst = executeShell(stafhandle, machine, cmd);
+       if (rst.rc != 0)
+          ret = false;
+       else
+          ret = true;
+       return ret;
+    }
+
+
+   public boolean ycsb_delete_log(String machine) {
+       boolean ret = false;
+       String cmd = "rm -f  " + ycsb_log_path;
+       STAFResult rst = executeShell(stafhandle, machine, cmd);
+       if (rst.rc != 0)
+          ret = false;
+      else
+          ret = true;
+      return ret;
+  } 
+
+    public boolean ycsb_move_log(String machine,String log_name) {
+        boolean ret = false;
+        String cmd = "cp " + FailOverBaseCase.ycsb_log_path + " " + FailOverBaseCase.ycsb_move_path + log_name;
+        log.debug(cmd);
+        STAFResult rst = executeShell(stafhandle, machine, cmd);
+        if (rst.rc != 0)
+           ret = false;
+        else
+           ret = true;
+        return ret;
+     }
+
+
+   public boolean ycsb_start_group(String machine) {
+       boolean ret = false;
+       String cmd = "cd " + FailOverBaseCase.ycsb_tools_path + " && ./deploy.sh start";
+       STAFResult rst = executeShell(stafhandle, machine, cmd);
+       if (rst.rc != 0)
+           ret = false;
+       else
+           ret = true;
+       return ret;
+    }
+
+   public boolean ycsb_stop_group(String machine) {
+        boolean ret = false;
+        String cmd = "cd " + FailOverBaseCase.ycsb_tools_path + " && ./deploy.sh stop";
+        STAFResult rst = executeShell(stafhandle, machine, cmd);
+        if (rst.rc != 0)
+            ret = false;
+        else
+            ret = true;
+            return ret;
+    }
+
+
+     public boolean ycsb_write_data(String machine) {
+        boolean ret = false;
+        String cmd = "cd " + FailOverBaseCase.ycsb_path + " && ./stress.sh start";
+        STAFResult rst = executeShell(stafhandle, machine, cmd);
+        if (rst.rc != 0)
+            ret = false;
+        else
+            ret = true;
+        return ret;
+      }
+
 	public boolean clean_tool(String machine) {
 		boolean ret = false;
 		killall_tool_proc();
@@ -258,7 +345,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-
+	
 	public int check_process(String machine, String prname) {
 		log.debug("check process " + prname + " on " + machine);
 		int ret = 0;
@@ -335,7 +422,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-	///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 	public boolean batch_modify(List machines, String confname, String key, String value) {
 		boolean ret = true;
 		for (Iterator it = machines.iterator(); it.hasNext();) {
@@ -346,90 +433,52 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-
+	
 	public void shutoff_net(String machine1, String machine2) {
 		log.debug("shut off net between " + machine1 + " and " + machine2);
 		boolean ret1 = false;
 		boolean ret2 = false;
-		boolean ret3 = false;
-		boolean ret4 = false;
 		String cmd = "ssh root@localhost " + "\"/sbin/iptables -A OUTPUT -d " + machine2 +" -j DROP\"";
 		STAFResult result = executeShell(stafhandle, machine1, cmd);
 		if (result.rc != 0) {
 			ret1 = false;
-			//			return ret1;
+//			return ret1;
 		}
 		else {
 			cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
 			result = executeShell(stafhandle, machine1, cmd);
 			if (result.rc != 0) {
 				ret1 = false;
-				//				return ret1;
+//				return ret1;
 			}
 			else {
 				ret1 = true;
-				//				return ret1;
+//				return ret1;
 			}
 		}
 		cmd = "ssh root@localhost " + "\"/sbin/iptables -A OUTPUT -d " + machine1 +" -j DROP\"";
 		result = executeShell(stafhandle, machine2, cmd);
 		if (result.rc != 0) {
 			ret2 = false;
-			//			return ret2;
+//			return ret2;
 		}
 		else {
 			cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
 			result = executeShell(stafhandle, machine2, cmd);
 			if (result.rc != 0) {
 				ret2 = false;
-				//				return ret2;
+//				return ret2;
 			}
 			else {
 				ret2 = true;
-				//				return ret2;
-			}
-		}
-		cmd = "ssh root@localhost " + "\"/sbin/iptables -A INPUT -s " + machine2 +" -j DROP\"";
-		result = executeShell(stafhandle, machine1, cmd);
-		if (result.rc != 0) {
-			ret3 = false;
-			//			return ret3;
-		}
-		else {
-			cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
-			result = executeShell(stafhandle, machine1, cmd);
-			if (result.rc != 0) {
-				ret3 = false;
-				//				return ret3;
-			}
-			else {
-				ret3 = true;
-				//				return ret3;
-			}
-		}
-		cmd = "ssh root@localhost " + "\"/sbin/iptables -A INPUT -s " + machine1 +" -j DROP\"";
-		result = executeShell(stafhandle, machine2, cmd);
-		if (result.rc != 0) {
-			ret4 = false;
-			//			return ret4;
-		}
-		else {
-			cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
-			result = executeShell(stafhandle, machine2, cmd);
-			if (result.rc != 0) {
-				ret4 = false;
-				//				return ret4;
-			}
-			else {
-				ret4 = true;
-				//				return ret4;
+//				return ret2;
 			}
 		}
 		if(!ret1 || !ret2)
 			fail("shut off net between " + machine1 + " and " + machine2 + " failure!");
 		log.error("shut off net between " + machine1 + " and " + machine2 + " successful!");
 	}
-
+	
 	public boolean recover_net(String machine) {
 		log.debug("recover net on " + machine);
 		boolean ret = true;
@@ -439,7 +488,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = false;
 		return ret;
 	}
-
+	
 	public boolean batch_recover_net(List machines) {
 		boolean ret = true;
 		for (Iterator it = machines.iterator(); it.hasNext();) {
@@ -450,7 +499,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-
+	
 	public boolean execute_tool_on_mac(String machine, String option) {
 		log.debug("start " + option + " on " + machine);
 		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "actiontype", option))
@@ -459,7 +508,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			fail("modify configure file failed");
 		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
-
+		
 		boolean ret = true;
 		String cmd = "cd " + FailOverBaseCase.tair_bin+ "tools/" + "&& ./batchData.sh";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
@@ -467,7 +516,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = false;
 		return ret;
 	}
-
+	
 	public void wait_tool_on_mac(String machine)
 	{
 		log.error("start wait on " + machine);
@@ -480,17 +529,17 @@ public class FailOverBaseCase extends BaseTestCase {
 		if(count>150)fail("wait time out on " + machine + "!");
 		log.error("wait success on " + machine);
 	}
-
+	
 	public boolean execute_clean_on_cs(String machine) {
 		log.debug("clean kv and log files on " + machine);
 		boolean ret = true;
-		String cmd = "cd " + FailOverBaseCase.tair_bin + "tools/" + "&& ./clean.sh";
-		STAFResult result = executeShell(stafhandle, machine, cmd);
-		if (result.rc != 0)
-			ret = false;
-		return ret;
+                String cmd = "cd " + FailOverBaseCase.tair_bin + "tools/" + "&& ./clean.sh";
+                STAFResult result = executeShell(stafhandle, machine, cmd);
+                if (result.rc != 0)
+                        ret = false;
+                return ret;
 	}
-
+	
 	public void wait_keyword_equal(String machine, String keyword, int expect_count)
 	{
 		int count=0;
@@ -502,7 +551,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		if(count>10)fail("wish the count of " + keyword + " on " + machine + " not change, but changed!");
 		log.error("the count of " + keyword + " on " + machine + " is right!");
 	}
-
+	
 	public void wait_keyword_change(String machine, String keyword, int base_count)
 	{
 		int count=0;
@@ -517,7 +566,7 @@ public class FailOverBaseCase extends BaseTestCase {
 
 	protected int getVerifySuccessful(String machine) {
 		int ret = 0;
-		String verify = "tail -10 " + FailOverBaseCase.tair_bin + "tools/" + "datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
+		String verify = "tail -10 " + FailOverBaseCase.test_bin + "datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
 		log.debug("do verify on " + machine);
 		STAFResult result = executeShell(stafhandle, machine, verify);
 		if (result.rc != 0)
@@ -526,6 +575,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
+                log.error("the ret value:" + ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
@@ -545,17 +595,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = false;
 		return ret;
 	}
-	
-	public boolean execute_shift_tool(String machine, String opID) {
-		log.error("Copy " + opID + " files on " + machine);
-		boolean ret = true;
-		String cmd = "cd " + FailOverBaseCase.test_bin + " && ./shift.sh " + opID;
-		STAFResult result = executeShell(stafhandle, machine, cmd);
-		if (result.rc != 0)
-			ret = false;
-		return ret;
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 	public boolean comment_line(String machine, String file, String keyword, String comment) {
 		boolean ret = false;
 		String cmd = "sed -i \'s/.*" + keyword + "/" + comment + "&/\' " + file;

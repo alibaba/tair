@@ -2087,6 +2087,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList,dsList);
+		execute_shift_tool("local", "conf5");
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
 		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
 			fail("modify configure file failed");

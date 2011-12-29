@@ -1,4 +1,4 @@
-package com.taobao.tairtest;
+package com.taobao.ldbtest;
 import org.junit.Test;
 
 /**
@@ -7,53 +7,55 @@ import org.junit.Test;
  */
 
 public class FailOverConfigServerTest2 extends FailOverBaseCase {
-
 	@Test
 	public void testFailover_01_restart_master_cs()
 	{
 		log.error("start config test Failover case 01");
 		int waitcnt=0;
 		//start cluster
+        //###########################################################
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
-
 		log.error("Start Cluster Successful!");
-		
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
-
-		//change test tool's configuration
+        //###########################################################
+        
+        //change test tool's configuration
+        //###########################################################
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
 			fail("modify configure file failure");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
+        //###########################################################
 
 		//write 100k data to cluster
+        //###########################################################
 		execute_data_verify_tool();
-		
 		//check verify
 		while(check_process("local", "DataDebug")!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+        log.error("datacnt:"+ datacnt);
+		assertTrue("put successful rate small than 90%!",datacnt/(FailOverBaseCase.put_count_float*3)>0.9);
 		log.error("Write data over!");		
-		
+		//############################################################
 
 		//close master cs
+        //############################################################
 		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))fail("close master cs failure!");
-		
 		log.error("master cs has been closed!");
-
 		waitto(FailOverBaseCase.down_time);
-		
-		//change test tool's configuration
+		//############################################################
+
+		//red the data
+        //############################################################
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		//read data from cluster
@@ -67,18 +69,24 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
-		
+		//###########################################################
+
 		//verify get result
+        //###########################################################
+        log.error("datacnt:" + datacnt + ";and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("get data verify failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
-		
-		//restart master cs
+		//###########################################################
+	
+        //restart master cs
+        //###########################################################
 		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
-		
 		waitto(FailOverBaseCase.down_time);
-		
+		//###########################################################
+
 		//read data from cluster
+        //###########################################################
 		execute_data_verify_tool();
 		//check verify
 		while(check_process("local", "DataDebug")!=2)
@@ -89,12 +97,16 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
-		
+		//#############################################################
+
 		//verify get result
+        //#############################################################
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("get data verify failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully verified data!");
 		//end test
 		log.error("end config test Failover case 01");
+        //#############################################################
 	}
 	@Test
 	public void testFailover_02_restart_slave_cs()
@@ -102,13 +114,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 02");
 		int waitcnt=0;
 		//start cluster
+        //#############################################################
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
 		log.error("Start Cluster Successful!");
-		
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 
 		//change test tool's configuration
+        //#############################################################
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
@@ -117,8 +130,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
+        //##############################################################
 		execute_data_verify_tool();
-		
 		//check verify
 		while(check_process("local", "DataDebug")!=2)
 		{
@@ -128,16 +141,20 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
+        log.error("datacnt:" + datacnt + ";and put_count_float:" + put_count_float);
 		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
 		log.error("Write data over!");		
-		
-		//close slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
-		
-		log.error("slave cs has been closed!");
+		//################################################################
 
+		//close slave cs
+        //################################################################
+		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
+		log.error("slave cs has been closed!");
 		waitto(FailOverBaseCase.down_time);
-		
+		//#################################################################
+
+        //get the data
+        //#################################################################
 		//change test tool's configuration
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
@@ -152,16 +169,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
 		log.error("Read data over!");
-		
+		//###################################################################
+
 		//verify get result
+        //###################################################################
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");
-		
+		//###################################################################
+
 		//restart slave cs
+        //###################################################################
 		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
 		log.error("Restart slave cs successful!");
-		
+		//###################################################################
+
 		//read data from cluster
+        //###################################################################
 		execute_data_verify_tool();
 		//check verify
 		while(check_process("local", "DataDebug")!=2)
@@ -172,10 +196,15 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
-		
+		//###################################################################
+
 		//verify get result
+        //###################################################################
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully verified data!");
+        //###################################################################
+
 		//end test
 		log.error("end config test Failover case 02");
 	}
@@ -191,7 +220,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
 
-		//change test tool's configuration
+		//change test tool's configurnation
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
@@ -243,6 +272,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("verify data failure", datacnt, getVerifySuccessful());
 		log.error("Successfully verified data!");
 		//end test
@@ -286,6 +316,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
 		log.error("finish put data!");
 		
@@ -328,6 +359,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Read data over!");
 		
 		//verify get result
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -369,6 +401,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		//verify get result
 		int datacnt=getVerifySuccessful();
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
+        log.error("the datacnt must biger than put_count_float");
 		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
 		log.error("Write data over!");		
 
@@ -384,10 +418,10 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		waitto(FailOverBaseCase.ds_down_time);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==0)
+		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
 			fail("down time arrived,but no migration started!");
 		log.error("migration start!");
-		
+	    int key_time=check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");	
 		//restart master cs
 		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
@@ -396,7 +430,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=key_time)
 		{
 			log.debug("check if migration finish on cs "+(String)csList.get(0)+" log");
 			waitto(3);
@@ -423,6 +457,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -467,6 +502,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
 		log.error("Write data over!");		
 		
@@ -519,6 +555,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+        log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -627,16 +664,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Read data over!");
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
 		//end test
 		log.error("end config test Failover case 07");
 	}
-	@Test
+    @Test
 	public void testFailover_08_recover_master_cs_after_ds_down_and_rebuild_then_ds_join_again_generate_second_rebuild()
 	{
-		log.error("start config test Failover case 08");
+        log.error("start config test Failover case 08");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
@@ -682,7 +720,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		waitto(FailOverBaseCase.ds_down_time);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")==0)
+		if(check_keyword((String)csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=2)
 			fail("version changed failed!");
 		
 		//check migration stat
@@ -738,7 +776,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
-		assertEquals("verify data failure!", datacnt,getVerifySuccessful());
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
+        assertEquals("verify data failure!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
 		//end test
@@ -762,7 +801,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
 			fail("modify configure file failure");
 		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
-			fail("modify configure file failure");
+		fail("modify configure file failure");
 
 		//write 100k data to cluster
 		execute_data_verify_tool();
@@ -959,9 +998,10 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		log.error("wait less than ds down time before rebuild ...");
+		waitto(FailOverBaseCase.ds_down_time/2);
 		
-//		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==1)
-//			fail("Already migration!");
+		//if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==1)
+		//	fail("Already migration!");
 		//restart ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
 		log.error("Restart ds successful!");	
@@ -987,6 +1027,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -1284,6 +1325,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;	
 		log.error("Read data over!");
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -1340,7 +1382,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.ds_down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(0)+" log");
 			waitto(2);
@@ -1350,15 +1392,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		log.error("down time arrived,migration finished!");
 		
+         int key_check=check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		//restart ds
 		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
 		log.error("restart ds successful!");
 		
 		waitto(FailOverBaseCase.down_time);
-		
+       
+		key_check=key_check+1;
 		//check second migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=2)
-		{
+		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<key_check)
+        {
 			log.debug("check if migration stop on cs "+(String)csList.get(0)+" log");
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -1392,6 +1436,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt,getVerifySuccessful());
 		log.error("Successfully Verified data!");	
 
@@ -1445,7 +1490,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.ds_down_time);
 		
 		//check migration stat
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
 			fail("no migration started!");
 		log.error("migration started!");
 		
@@ -1461,11 +1506,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+        int keyword_check=0;
+		while(keyword_check<1)
 		{
+            keyword_check=check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 			log.debug("check if migration finished on cs "+(String)csList.get(0)+" log");
 			waitto(3);
-			if(++waitcnt>200)break;
+			if(++waitcnt>20) keyword_check=keyword_check+1;
 		}
 		if(waitcnt>200)fail("down time arrived,but no migration started or finished!");
 		waitcnt=0;
@@ -1503,7 +1550,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
 		{
 			log.debug("check if migration started on cs "+(String)csList.get(0)+" log");
 			waitto(2);
@@ -1520,7 +1567,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(1)+" log");
 			waitto(2);
@@ -1553,6 +1600,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;	
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -1654,6 +1702,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -1739,6 +1788,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -1834,6 +1884,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -1920,6 +1971,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -1968,12 +2020,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.ds_down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
-		{
+		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
+        {
 			waitto(3);
 			if(++waitcnt>200)break;
 		}
 		if(waitcnt>200)fail("check migrate start time out!");
+        int keyword_check=check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		waitcnt=0;
 		log.error("check migrate finished!");
 		
@@ -1991,6 +2044,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
@@ -2001,7 +2055,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.ds_down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=2)
+		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=keyword_check)
 		{
 			waitto(3);
 			if(++waitcnt>200)break;
@@ -2023,6 +2077,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		
 		//verify get result
+        log.error("datacnt value:" + datacnt + " getVerifySuccessful value:" + getVerifySuccessful());
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 
@@ -2421,7 +2476,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("end config test Failover case 24");
 	}
 	
-/*	@Test
+	@Test
 	public void testFailover_25_kill_master_rack_and_one_ds_on_slave_rack()
 	{ 
 		log.error("start config test Failover case 25");
@@ -2792,7 +2847,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//end test
 		log.error("end config test Failover case 27");
-	}*/
+	}
 	
 	@Test
 	public void testFailover_28_accept_add_ds_without_touch()
@@ -2885,14 +2940,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	
 		//end test
 		log.error("end config test Failover case 28");
-	}
+	}*/
 
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList,dsList);
-		execute_shift_tool("local", "conf5");
 		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
             fail("modify configure file failure");
         if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))

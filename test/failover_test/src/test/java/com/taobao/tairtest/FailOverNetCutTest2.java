@@ -6,7 +6,7 @@ import org.junit.Test;
  * 
  */
 
-public class NetCutTest2 extends FailOverBaseCase{
+public class FailOverNetCutTest2 extends FailOverBaseCase{
 
 	@Test
 	public void testFailover_01_cutoff_a1b1_a1b2_b1a2()
@@ -15,7 +15,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int datacnt1, datacnt2, datacnt3;
 
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -84,7 +84,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -94,9 +94,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -154,7 +154,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int datacnt1, datacnt2, datacnt3;
 
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -184,7 +184,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -194,9 +194,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -254,7 +254,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int datacnt1, datacnt2, datacnt3;
 
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -274,7 +274,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -294,9 +294,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -351,7 +351,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	public void testFailover_04_cutoff_a1b2_b1a2_a1b1()
 	{
 		log.error("start netcut test Failover case 04");
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -372,7 +372,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -381,7 +381,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a2b1
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -391,10 +391,10 @@ public class NetCutTest2 extends FailOverBaseCase{
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
 		shutoff_net((String)csList.get(0), (String)csList.get(1));
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));		
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));		
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_change((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -444,7 +444,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	public void testFailover_05_cutoff_b1a2_a1b1_a1b2()
 	{
 		log.error("start netcut test Failover case 05");
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -465,7 +465,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -483,7 +483,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -492,9 +492,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));		
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));		
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_change((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -544,7 +544,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	public void testFailover_06_cutoff_b1a2_a1b2_a1b1()
 	{
 		log.error("start netcut test Failover case 06");
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -565,7 +565,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -574,7 +574,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -593,10 +593,10 @@ public class NetCutTest2 extends FailOverBaseCase{
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
 		shutoff_net((String)csList.get(0), (String)csList.get(1));
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));		
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));		
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_change((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -649,7 +649,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int datacnt1, datacnt2, datacnt3;
 
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -679,7 +679,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -689,9 +689,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -791,7 +791,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: a1b2
-		recover_net((String)dsList.get(3));
+		recover_net((String)dsList2.get(3));
 		waitto(FailOverBaseCase.down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -801,9 +801,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: b1a2
-		recover_net((String)dsList.get(2));
-		recover_net((String)dsList.get(4));
-		recover_net((String)dsList.get(5));
+		recover_net((String)dsList2.get(2));
+		recover_net((String)dsList2.get(4));
+		recover_net((String)dsList2.get(5));
 		waitto(FailOverBaseCase.down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -851,7 +851,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int datacnt1, datacnt2, datacnt3;
 
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -871,7 +871,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -891,9 +891,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -975,7 +975,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: b1a2
-		recover_net((String)dsList.get(2));
+		recover_net((String)dsList2.get(2));
 		waitto(FailOverBaseCase.down_time);
 
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -985,9 +985,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: a1b2
-		recover_net((String)dsList.get(3));
-		recover_net((String)dsList.get(4));
-		recover_net((String)dsList.get(5));
+		recover_net((String)dsList2.get(3));
+		recover_net((String)dsList2.get(4));
+		recover_net((String)dsList2.get(5));
 		waitto(FailOverBaseCase.down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -1030,7 +1030,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	{
 		log.error("start netcut test Failover case 09");
 
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -1051,7 +1051,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1060,7 +1060,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a2b1
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1070,10 +1070,10 @@ public class NetCutTest2 extends FailOverBaseCase{
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
 		shutoff_net((String)csList.get(0), (String)csList.get(1));
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));		
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));		
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_change((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1125,7 +1125,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int migrateCount2 = check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		//recover net: a1b2
 		recover_net((String)csList.get(0));
-		recover_net((String)dsList.get(3));
+		recover_net((String)dsList2.get(3));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 		//slave cs will receive a few package from master cs
@@ -1147,7 +1147,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: b1a2
 		recover_net((String)csList.get(1));
-		recover_net((String)dsList.get(2));
+		recover_net((String)dsList2.get(2));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 		wait_keyword_equal((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1156,8 +1156,8 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: all
-		recover_net((String)dsList.get(4));
-		recover_net((String)dsList.get(5));
+		recover_net((String)dsList2.get(4));
+		recover_net((String)dsList2.get(5));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 		wait_keyword_equal((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1198,7 +1198,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	{
 		log.error("start netcut test Failover case 10");
 		
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -1219,7 +1219,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1237,7 +1237,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_change((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1246,9 +1246,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));		
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));		
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_change((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1300,7 +1300,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int migrateCount2 = check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		//recover net: a1b2
 		recover_net((String)csList.get(0));
-		recover_net((String)dsList.get(3));
+		recover_net((String)dsList2.get(3));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 //		wait_keyword_equal((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1309,7 +1309,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		//recover net: b1a2
 		recover_net((String)csList.get(1));
-		recover_net((String)dsList.get(2));
+		recover_net((String)dsList2.get(2));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 //		wait_keyword_change((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1317,8 +1317,8 @@ public class NetCutTest2 extends FailOverBaseCase{
 		migrateCount2=check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");	
 
 		//recover all
-		recover_net((String)dsList.get(4));
-		recover_net((String)dsList.get(5));
+		recover_net((String)dsList2.get(4));
+		recover_net((String)dsList2.get(5));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 		wait_keyword_equal((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1359,7 +1359,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	{
 		log.error("start netcut test Failover case 11");
 
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -1380,7 +1380,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1389,7 +1389,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1408,10 +1408,10 @@ public class NetCutTest2 extends FailOverBaseCase{
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
 		shutoff_net((String)csList.get(0), (String)csList.get(1));
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));		
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));		
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);	
 		wait_keyword_change((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_change((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
@@ -1463,7 +1463,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int migrateCount2 = check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		//recover net: b1a2
 		recover_net((String)csList.get(1));
-		recover_net((String)dsList.get(2));
+		recover_net((String)dsList2.get(2));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 		wait_keyword_change((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1483,7 +1483,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		/////////////////////////////////////////////////////////////////////
 		//recover net: a1b2
 		recover_net((String)csList.get(0));
-		recover_net((String)dsList.get(3));
+		recover_net((String)dsList2.get(3));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 		wait_keyword_equal((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1491,8 +1491,8 @@ public class NetCutTest2 extends FailOverBaseCase{
 		migrateCount2=check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");           
 
 		//recover all
-		recover_net((String)dsList.get(4));
-		recover_net((String)dsList.get(5));
+		recover_net((String)dsList2.get(4));
+		recover_net((String)dsList2.get(5));
 		waitto(FailOverBaseCase.down_time);
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
 		wait_keyword_equal((String)csList.get(1), FailOverBaseCase.start_migrate, migrateCount2);
@@ -1535,7 +1535,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		int datacnt1, datacnt2, datacnt3;
 
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -1565,7 +1565,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -1575,9 +1575,9 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		waitto(FailOverBaseCase.ds_down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -1600,7 +1600,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: b1a2
 		recover_net((String)csList.get(1));
-		recover_net((String)dsList.get(2));
+		recover_net((String)dsList2.get(2));
 		waitto(FailOverBaseCase.down_time);
 
 		wait_keyword_equal((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -1655,7 +1655,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: a1b2
 		recover_net((String)csList.get(0));
-		recover_net((String)dsList.get(3));
+		recover_net((String)dsList2.get(3));
 		waitto(FailOverBaseCase.down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -1665,8 +1665,8 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//recover net: a1b1 and all
-		recover_net((String)dsList.get(4));
-		recover_net((String)dsList.get(5));
+		recover_net((String)dsList2.get(4));
+		recover_net((String)dsList2.get(5));
 		waitto(FailOverBaseCase.down_time);
 
 		wait_keyword_change((String)csList.get(0), FailOverBaseCase.start_migrate, migrateCount1);
@@ -1712,7 +1712,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	{
 		log.error("start netcut test Failover case 13");
 		
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -1732,7 +1732,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		waitto(10);
 		
 		//shut off: a1b2
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
 //		waitto(FailOverBaseCase.ds_down_time/4);
 		
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1);
@@ -1740,7 +1740,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 		
 		//recover_net:a1b2
 		recover_net((String)csList.get(0));
-		recover_net((String)dsList.get(3));
+		recover_net((String)dsList2.get(3));
 		wait_keyword_equal((String)csList.get(0),FailOverBaseCase.start_migrate, init_migrateCount1 );
 		wait_keyword_equal((String)csList.get(1),FailOverBaseCase.start_migrate, init_migrateCount2 );
 		waitto(FailOverBaseCase.down_time);
@@ -1761,7 +1761,7 @@ public class NetCutTest2 extends FailOverBaseCase{
 	{
 		log.error("start netcut test Failover case 14");
 		
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if(!control_cluster(csList, dsList2, FailOverBaseCase.start, 0))
 			fail("start cluster failure!");
 		log.error("wait system initialize ...");
 		waitto(FailOverBaseCase.down_time);
@@ -1782,10 +1782,10 @@ public class NetCutTest2 extends FailOverBaseCase{
 
 		//shut off: all
 		shutoff_net((String)csList.get(0), (String)csList.get(1));
-		shutoff_net((String)csList.get(0), (String)dsList.get(3));
-		shutoff_net((String)csList.get(0), (String)dsList.get(5));
-		shutoff_net((String)csList.get(1), (String)dsList.get(2));
-		shutoff_net((String)csList.get(1), (String)dsList.get(4));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(3));
+		shutoff_net((String)csList.get(0), (String)dsList2.get(5));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(2));
+		shutoff_net((String)csList.get(1), (String)dsList2.get(4));
 		
 		waitto(FailOverBaseCase.ds_down_time);
 		
@@ -1810,10 +1810,11 @@ public class NetCutTest2 extends FailOverBaseCase{
 		clean_tool((String)csList.get(0));
 		clean_tool((String)csList.get(1));
 		clean_tool("local");
-		reset_cluster(csList,dsList);
+		reset_cluster(csList,dsList2);
+		execute_shift_tool("local", "conf6");
 		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
 			fail("modify configure file failure");
-		if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
+		if(!batch_modify(dsList2, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
 			fail("modify configure file failure");
 	}
 
@@ -1822,10 +1823,10 @@ public class NetCutTest2 extends FailOverBaseCase{
 		clean_tool((String)csList.get(0));
 		clean_tool((String)csList.get(1));
 		clean_tool("local");
-		reset_cluster(csList,dsList);
+		reset_cluster(csList,dsList2);
 		log.error("clean tool and cluster!");
-		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
-		if(!batch_recover_net(dsList))
+		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList2, "#");
+		if(!batch_recover_net(dsList2))
 			fail("recover net failure");
 	}
 }
