@@ -29,8 +29,8 @@ struct data_entry_equal_to
   
 typedef local_cache<tair::common::data_entry,
                     tair::common::data_entry,
-                    data_entry_hash,
-                    data_entry_equal_to > data_entry_local_cache;
+                    tair::data_entry_hash,
+                    tair::data_entry_equal_to > data_entry_local_cache;
 };
 
 
