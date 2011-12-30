@@ -1615,7 +1615,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=versionCount+1)
+		while(check_keyword((String) csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")==versionCount)
 		{
 			waitto(2);
 			if(++waitcnt>10)break;
@@ -1712,10 +1712,10 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		//check migration stat of start
 		while(check_keyword((String) csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
 		{
-			waitto(2);
-			if(++waitcnt>150)break;
+			waitto(3);
+			if(++waitcnt>200)break;
 		}
-		if(waitcnt>150)fail("check migrate start time out!");
+		if(waitcnt>200)fail("check migrate start time out!");
 		waitcnt=0;
 		log.error("check migrate finished!");
 		
