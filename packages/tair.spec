@@ -32,7 +32,7 @@ files for developing applications that use the %name package.
 #export TBLIB_ROOT=/opt/csr/common
 chmod u+x bootstrap.sh
 ./bootstrap.sh
-./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-boost=%BOOST_DIR --with-tcmalloc_minimal
+./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-ldb=yes --with-boost=%BOOST_DIR --with-tcmalloc_minimal
 make %{?_smp_mflags}
 
 %install

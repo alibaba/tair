@@ -1,4 +1,4 @@
-SUBDIRS=interface_test
+SUBDIRS=interface_test unit_test
 AM_CPPFLAGS= @BOOST_CPPFLAGS@ -I$(TBLIB_ROOT)/include/tbsys \
 			 -I$(TBLIB_ROOT)/include/tbnet \
 			 -I${top_srcdir}/src/common \
