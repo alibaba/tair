@@ -192,6 +192,7 @@ namespace tair {
       bool group_can_work;
       bool group_is_OK;
       int build_strategy;
+      DataLostToleranceFlag lost_tolerance_flag;
       GroupAcceptStrategy accept_strategy;
       int server_down_time;
       float diff_ratio;

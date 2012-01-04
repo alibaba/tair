@@ -43,7 +43,6 @@ namespace tair {
                         hash_table_type & hash_table_dest,
                         bool no_quick_table = false);
     private:
-      //
       bool build_stat_normal;
       float stat_change_ratio;
       int pos_max;                // max (count in each rack)

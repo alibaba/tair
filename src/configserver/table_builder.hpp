@@ -44,7 +44,12 @@ namespace tair {
     const int BUILD_ERROR = 0;
     const int BUILD_OK = 1;
     const int BUILD_QUICK = 2;
-    using namespace std;
+
+    enum DataLostToleranceFlag {
+      NO_DATA_LOST_FLAG = 0,
+      ALLOW_DATA_LOST_FALG
+    };
+
     class table_builder {
       public:
         table_builder(uint32_t bucket_c,
@@ -52,12 +57,14 @@ namespace tair {
         copy_count(copy_c)
       {
         pos_mask = TAIR_POS_MASK;
+        d_lost_flag = NO_DATA_LOST_FLAG;
       }
         virtual ~ table_builder();
         typedef pair<uint64_t, uint32_t> server_id_type;
 
         typedef vector<server_id_type> hash_table_line_type;
 
+        // map<copy_id, vector<server_id, pos_mask_id> >  : vector's sequence number means bucket number
         typedef map<int, hash_table_line_type> hash_table_type;
         typedef set<server_id_type> server_list_type;
         typedef map<server_id_type, int>server_capable_type;
@@ -72,6 +79,10 @@ namespace tair {
           pos_mask = m;
         }
 
+        void set_data_lost_flag(const DataLostToleranceFlag data_lost_flag)
+        {
+          d_lost_flag = data_lost_flag;
+        }
       public:
         virtual int rebuild_table(const hash_table_type & hash_table_source,
             hash_table_type & hash_table_dest,
@@ -127,15 +138,19 @@ namespace tair {
             server_capable_type & server_capable,
             bool minus = true);
       protected:
-        map <server_id_type, int>tokens_count_in_node;
+        map <server_id_type, int> tokens_count_in_node;
         int max_count_now;
 
-        map<server_id_type, int>tokens_count_in_node_now;
+        // count of buckets the server hold
+        map<server_id_type, int> tokens_count_in_node_now;
         map<int, server_list_type> count_server;
 
-        map<server_id_type, int>mtokens_count_in_node;
+        // count of master buckets the server hold
+        map<server_id_type, int> mtokens_count_in_node;
+        // map<master bucket count, server>
         map<int, server_list_type> mcount_server;
 
+        // map<(now_count - capable_count), server>
         map<int, server_list_type> scandidate_node;
         map<int, server_list_type> mcandidate_node;
 
@@ -147,6 +162,7 @@ namespace tair {
         uint32_t bucket_count;
         uint32_t copy_count;
 
+        DataLostToleranceFlag d_lost_flag;
     };
   }
 }

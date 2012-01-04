@@ -44,12 +44,12 @@ namespace tair {
           return TOOMANY_MASTER;
         }
       }
-      else if(option_level == CONSIDER_ALL) {
+      else if(option_level == CONSIDER_ALL) { //line_num != 0
         if(tokens_count_in_node[node_id] >= server_capable[node_id] + turn) {
           return TOOMANY_BUCKET;
         }
       }
-      else {
+      else { //line_num != 0 && option_level != CONSIDER_ALL
         if(option_level != CONSIDER_FORCE &&
            tokens_count_in_node_now[node_id] >= tokens_per_node_min + turn &&
            max_count_now >= tokens_per_node_max_count + turn) {
@@ -64,7 +64,7 @@ namespace tair {
           if(hash_table_dest[i][node_idx].first == node_id.first) {
             return SAME_NODE;
           }
-          if(option_level < CONSIDER_BASE) {
+          if(option_level < CONSIDER_BASE) { //CONSIDER_ALL
             if(hash_table_dest[i][node_idx].second == node_id.second) {
               return SAME_POS;
             }
@@ -87,6 +87,12 @@ namespace tair {
       master_tokens_per_node_max_count =
         bucket_count - master_tokens_per_node_min * S;
       master_tokens_per_node_min_count = S - master_tokens_per_node_max_count;
+
+      log_debug("bucket_count: %u\n copy_count: %u\n tokens_per_node_min: %d\n tokens_per_node_max_count: %d\n "
+          "tokens_per_node_min_count: %d\n master_tokens_per_node_min: %d\n master_tokens_per_node_max_count: %d\n "
+          "master_tokens_per_node_min_count: %d\n",
+          bucket_count, copy_count, tokens_per_node_min, tokens_per_node_max_count, tokens_per_node_min_count,
+          master_tokens_per_node_min, master_tokens_per_node_max_count, master_tokens_per_node_min_count);
 
       server_capable.clear();
       master_server_capable.clear();
@@ -122,10 +128,15 @@ namespace tair {
         pre_mnode_count_min = sum / size;
       }
 
+      log_debug("pre_node_count_min: %d, pre_mnode_count_min: %d",
+          pre_node_count_min, pre_mnode_count_min);
+
       for(server_list_type::const_iterator it = available_server.begin();
           it != available_server.end(); it++) {
         int last_node_count = tokens_count_in_node[*it];
-        //log_debug("will caculate server %d last token is %d ", it->first, last_node_count);
+        //log_debug("will caculate server %s:%d last token is %d ",
+        //    tbsys::CNetUtil::addrToString(it->first).c_str(), it->first, last_node_count);
+
         //log_debug("pre_node_count_min = %d pre_mnode_count_min=%d",pre_node_count_min, pre_mnode_count_min);
         if(last_node_count <= pre_node_count_min) {        //try my best to make every data sever handle tokenPerNode_min buckets.
           //log_debug("try to make ist min");

@@ -42,6 +42,7 @@ namespace tair {
       group_can_work = true;
       group_is_OK = true;
       build_strategy = 1;
+      lost_tolerance_flag = NO_DATA_LOST_FLAG;
       accept_strategy = GROUP_DEFAULT_ACCEPT_STRATEGY;
       diff_ratio = 0.6;
       pos_mask = TAIR_POS_MASK;
@@ -424,10 +425,16 @@ namespace tair {
         config.getInt(group_name, TAIR_STR_BUILD_STRATEGY,
                       TAIR_BUILD_STRATEGY);
 
-      //modify accept_strategy: no need to rebulid table
+      //modify accept_strategy & lost_tolerance_flag : no need to rebulid table
       accept_strategy =
         static_cast<GroupAcceptStrategy>(config.getInt(group_name, TAIR_STR_ACCEPT_STRATEGY,
                       static_cast<int>(GROUP_DEFAULT_ACCEPT_STRATEGY)));
+      lost_tolerance_flag =
+        static_cast<DataLostToleranceFlag>(config.getInt(group_name, TAIR_STR_DATALOST_FLAG,
+                      static_cast<int>(NO_DATA_LOST_FLAG)));
+
+      log_info("build_strategy: %d, accept_strategy: %d, lost_tolerance_flag: %d",
+          build_strategy, static_cast<int>(accept_strategy), static_cast<int>(lost_tolerance_flag));
 
       float old_ratio = diff_ratio;
       diff_ratio =
@@ -674,10 +681,12 @@ namespace tair {
 
       p_table_builder->set_pos_mask(pos_mask);
       p_table_builder->set_available_server(upnode_list);
+      p_table_builder->set_data_lost_flag(lost_tolerance_flag);
 #ifdef TAIR_DEBUG
       log_debug("print available server");
       p_table_builder->print_available_server();
 #endif
+      // use current mhash table
       p_table_builder->load_hash_table(hash_table_for_builder_tmp,
                                        server_table_manager.m_hash_table);
       quick_table_tmp = hash_table_for_builder_tmp;
@@ -686,7 +695,6 @@ namespace tair {
          && first_run == false) {
         log_debug("will build quick table");
         if(p_table_builder->build_quick_table(quick_table_tmp) == false) {
-          //setGroupStatus(false);
           set_group_is_OK(false);
           delete p_table_builder;
           inc_version(server_table_manager.client_version);
@@ -703,6 +711,7 @@ namespace tair {
                                        dest_hash_table_for_builder_tmp, true);
       p_grp_locker->wrlock();
       if(ret == 0) {
+        log_error("build table fail. fatal error.");
         set_group_status(false);
         set_group_is_OK(false);
         delete p_table_builder;
@@ -731,6 +740,22 @@ namespace tair {
               server_table_manager.m_hash_table[i] =
                 server_table_manager.hash_table[i] =
                 server_table_manager.d_hash_table[i];
+            }
+          }
+        }
+        else if (lost_tolerance_flag == ALLOW_DATA_LOST_FALG) {
+          for (uint32_t i = 0; i < server_table_manager.get_server_bucket_count(); ++i) {
+            // if master bucket is not available, use d_hash_table to fill m_hash_table
+            if (available_server.find(server_table_manager.m_hash_table[i]) == available_server.end()) {
+              log_info("index %u:%s in m_hash_table is invalid, use d_hash_table: %s",
+                  i, tbsys::CNetUtil::addrToString(server_table_manager.m_hash_table[i]).c_str(),
+                  tbsys::CNetUtil::addrToString(server_table_manager.d_hash_table[i]).c_str());
+              for (uint32_t j = 0; j < server_table_manager.get_copy_count(); ++j) {
+                uint32_t bucket_index = i + j * server_table_manager.get_server_bucket_count();
+                server_table_manager.m_hash_table[bucket_index] =
+                  server_table_manager.hash_table[bucket_index] =
+                  server_table_manager.d_hash_table[bucket_index];
+              }
             }
           }
         }
@@ -853,15 +878,17 @@ namespace tair {
          tbsys::CNetUtil::addrToString(server_id).c_str(), server_version,
          *server_table_manager.server_version);
       if(server_version != *server_table_manager.server_version) {
+        log_error("migrate version conflict, ds version: %d, cs version: %d", server_version,
+            *server_table_manager.server_version);
         return false;
       }
       bool ret_code = true;        //migrate ok
       if(ret_code) {
         set_migrating_hashtable(bucket_id, server_id);
       }
-      else {
-        set_force_rebuild();
-      }
+      //else {
+      //  set_force_rebuild();
+      //}
       return true;
     }
     bool group_info::check_migrate_complete(uint64_t slave_server_id)
@@ -1021,7 +1048,9 @@ namespace tair {
          || is_migrating() == false)
         return;
       if(server_table_manager.m_hash_table[bucket_id] != server_id) {
-        log_error("where you god this ? old hashtable?");
+        log_error("where you god this ? old hashtable? bucket_id: %u, m_server: %s, server: %s",
+            bucket_id, tbsys::CNetUtil::addrToString(server_table_manager.m_hash_table[bucket_id]).c_str(),
+            tbsys::CNetUtil::addrToString(server_id).c_str());
         return;
       }
       tbsys::CThreadGuard guard(&hash_table_set_mutex);
@@ -1044,7 +1073,7 @@ namespace tair {
         if(it->second == 0) {
           migrate_machine.erase(it);
         }
-        log_info("setMigratingHashtable bucketNo %d serverId %s ",
+        log_info("setMigratingHashtable bucketNo %d serverId %s, finish migrate this bucket.",
                  bucket_id, tbsys::CNetUtil::addrToString(server_id).c_str());
         should_syn_mig_info = true;
       }
@@ -1162,6 +1191,8 @@ namespace tair {
         set<uint64_t>::iterator it = reported_serverid.find(req.server_id);
         if(it == reported_serverid.end()) {
           reported_serverid.insert(req.server_id);        //this will clear when migrate complete.
+          log_info("insert reported server: %s, bucket_count: %u",
+              tbsys::CNetUtil::addrToString(req.server_id).c_str(), req.vec_bucket_no.size());
           for(size_t i = 0; i < req.vec_bucket_no.size(); i++) {
             set_migrating_hashtable(req.vec_bucket_no[i], req.server_id);
           }
@@ -1180,8 +1211,9 @@ namespace tair {
       for(set<node_info *>::const_iterator it = ava_server.begin();
           it != ava_server.end(); it++)
       {
-        log_info("mask %"PRI64_PREFIX"u & %"PRI64_PREFIX"u -->%"PRI64_PREFIX"u",
-            (*it)->server->server_id, pos_mask, (*it)->server->server_id & pos_mask);
+        log_info("mask %"PRI64_PREFIX"u:%s & %"PRI64_PREFIX"u -->%"PRI64_PREFIX"u",
+            (*it)->server->server_id, tbsys::CNetUtil::addrToString((*it)->server->server_id).c_str(),
+            pos_mask, (*it)->server->server_id & pos_mask);
         (pos_count[(*it)->server->server_id & pos_mask])++;
       }
 

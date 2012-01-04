@@ -30,20 +30,20 @@ namespace tair {
       for(it = tokens_count_in_node.begin(); it != tokens_count_in_node.end();
           it++)
       {
-        log_debug("S(%lld,%d)=%d ", it->first.first, it->first.second,
+        log_debug("S(%s:%"PRI64_PREFIX"d,%d)=%d ", tbsys::CNetUtil::addrToString(it->first.first).c_str(), it->first.first, it->first.second,
                   it->second);
       }
       log_debug("tokens_now");
       for(it = tokens_count_in_node_now.begin();
           it != tokens_count_in_node_now.end(); it++) {
-        log_debug("S(%lld,%d)=%d ", it->first.first, it->first.second,
+        log_debug("S(%s:%"PRI64_PREFIX"d,%d)=%d ", tbsys::CNetUtil::addrToString(it->first.first).c_str(), it->first.first, it->first.second,
                   it->second);
       }
       log_debug("mtokes:");
 
       for(it = mtokens_count_in_node.begin();
           it != mtokens_count_in_node.end(); it++) {
-        log_debug("S(%lld,%d)=%d ", it->first.first, it->first.second,
+        log_debug("S(%s:%"PRI64_PREFIX"d,%d)=%d ", tbsys::CNetUtil::addrToString(it->first.first).c_str(), it->first.first, it->first.second,
                   it->second);
       }
     }
@@ -55,7 +55,7 @@ namespace tair {
         log_debug("%d:   ", it->first);
         for(server_list_type::iterator it2 = it->second.begin();
             it2 != it->second.end(); it2++) {
-          log_debug("%lld,%d  ", it2->first, it2->second);
+          log_debug("%"PRI64_PREFIX"d,%d  ", it2->first, it2->second);
         }
       }
       log_debug("mcount:");
@@ -63,7 +63,7 @@ namespace tair {
         log_debug("%d:   ", it->first);
         for(server_list_type::iterator it2 = it->second.begin();
             it2 != it->second.end(); it2++) {
-          log_debug("%lld,%d  ", it2->first, it2->second);
+          log_debug("%"PRI64_PREFIX"d,%d  ", it2->first, it2->second);
         }
       }
     }
@@ -103,13 +103,13 @@ namespace tair {
       server_capable_type::iterator it;
       log_debug("server capabale:");
       for(it = server_capable.begin(); it != server_capable.end(); it++) {
-        log_debug("%lld,%d %d   ", it->first.first, it->first.second,
-                  it->second);
+        log_debug("%s:%"PRI64_PREFIX"d,%d %d   ", tbsys::CNetUtil::addrToString(it->first.first).c_str(),
+            it->first.first, it->first.second, it->second);
       }
       for(it = master_server_capable.begin();
           it != master_server_capable.end(); it++) {
-        log_debug("%lld,%d %d   ", it->first.first, it->first.second,
-                  it->second);
+        log_debug("%s:%"PRI64_PREFIX"d,%d %d   ", tbsys::CNetUtil::addrToString(it->first.first).c_str(),
+            it->first.first, it->first.second, it->second);
       }
     }
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,13 +154,14 @@ namespace tair {
 
 
     void table_builder::change_tokens_count_in_node(map<server_id_type, int>&count_in_node,
-                                                    const server_id_type &node_id, 
+                                                    const server_id_type &node_id,
                                                     map<int, server_list_type > &count_server_map,
                                                     map<int, server_list_type> &candidate_node_info,
                                                     server_capable_type & server_capable_info,
                                                     bool minus)
     {
 
+      // master bucket count the node hold
       int &token_count_in_node = count_in_node[node_id];
       count_server_map[token_count_in_node].erase(node_id);
       candidate_node_info[token_count_in_node -
@@ -194,13 +195,14 @@ namespace tair {
       hash_table_data[line_num][node_idx].first = INVALID_FLAG;
     }
     bool table_builder::change_master_node(size_t idx,
-                                           hash_table_type & hash_tble_dest,
+                                           hash_table_type & hash_table_dest,
                                            bool force_flag)
     {
       int chosen_line_num = -1;
       int min_node_count = -1;
+      // choose the server which hold min count of master bucket
       for(size_t next_line = 1; next_line < copy_count; next_line++) {
-        server_id_type node_id = hash_tble_dest[next_line][idx];
+        server_id_type node_id = hash_table_dest[next_line][idx];
         if(is_node_availble(node_id)) {
           int &mtoken_count_in_node = mtokens_count_in_node[node_id];
           if(min_node_count == -1 || min_node_count > mtoken_count_in_node) {
@@ -209,21 +211,23 @@ namespace tair {
           }
         }
       }
+      // no availble node
       if(min_node_count == -1) {
         return false;                // we lost all copys of this bucket
       }
-      server_id_type & choosen_node_id = hash_tble_dest[chosen_line_num][idx];
+      server_id_type & choosen_node_id = hash_table_dest[chosen_line_num][idx];
       if(force_flag == false) {
         if(mtokens_count_in_node[choosen_node_id] >=
            master_server_capable[choosen_node_id]) {
           return false;
         }
       }
-      server_id_type org_node_id = hash_tble_dest[0][idx];
+      server_id_type org_node_id = hash_table_dest[0][idx];
       server_id_type new_master_node = choosen_node_id;
-      // master of this bucket is chaned, so we must turn the stat info
-      hash_tble_dest[0][idx] = new_master_node;
+      // master of this bucket is chanegd, so we must turn the stat info
+      hash_table_dest[0][idx] = new_master_node;
       tokens_count_in_node_now[new_master_node]++;
+      // change token count in mtoken, mcount_server
       change_tokens_count_in_node(mtokens_count_in_node, new_master_node,
                                   mcount_server, mcandidate_node,
                                   master_server_capable, false);
@@ -329,7 +333,10 @@ namespace tair {
             log_error
               ("bucket %d lost all of its duplicate so can not find out a master for it quick build failed",
                idx);
-            return false;
+            //for session tair: if we lost all duplicate, we just go on. d_lost_flag == ALLOW_DATA_LOST_FALG
+            if (d_lost_flag != ALLOW_DATA_LOST_FALG) {
+              return false;
+            }
           }
         }
       }
@@ -345,7 +352,7 @@ namespace tair {
       return true;
     }
 
-    //return value 0 buidl error  1 ok 2 quick build ok
+    //return value 0 build error  1 ok 2 quick build ok
     int table_builder::
       rebuild_table(const hash_table_type & hash_table_source,
                     hash_table_type & hash_table_result, bool no_quick_table)
@@ -358,6 +365,7 @@ namespace tair {
 
       bool need_build_quick_table = false;
 
+      // compute node count: tokens_count_in_node, mtokens_count_in_node
       for(hash_table_type::const_iterator it = hash_table_source.begin();
           it != hash_table_source.end(); it++) {
         const hash_table_line_type & line = it->second;
@@ -372,14 +380,17 @@ namespace tair {
         }
       }
 
+      //init count_server, mcount_server
       build_index(tokens_count_in_node, count_server);
       build_index(mtokens_count_in_node, mcount_server);
 
       caculate_capable();
 
+      //init mcandidate_node, scandidate_node
       init_candidate(mcandidate_node, &master_server_capable, &mcount_server);
       init_candidate(scandidate_node, &server_capable, &count_server);
       hash_table_result = hash_table_source;
+      // no_quick_table is always true, will not reach this branch
       if(need_build_quick_table && !no_quick_table) {
         if(build_quick_table(hash_table_result)) {
           return BUILD_QUICK;
@@ -460,6 +471,9 @@ namespace tair {
             if(++tokens_count_in_node_now[node_id] == token_per_node_min + 1) {
               max_count_now++;
             }
+            log_debug("token_per_node_min: %d, max_count_now: %d, tokens_count_in_node_now[%s]: %d\n",
+                token_per_node_min, max_count_now,
+                tbsys::CNetUtil::addrToString(node_id.first).c_str(), tokens_count_in_node_now[node_id]);
           }
         }
         if(it == hash_table_result.begin()) {

@@ -173,6 +173,7 @@ namespace tair {
       PROFILER_END();
 
       if (rc == TAIR_RETURN_SUCCESS ) {
+//<<<<<<< .working
         key.data_meta = mkey.data_meta;
         if (op_flag & TAIR_OPERATION_DUPLICATE) {
           vector<uint64_t> slaves;
@@ -185,6 +186,26 @@ namespace tair {
             PROFILER_END();
           }
         }
+//=======
+//         key.data_meta = mkey.data_meta;
+//         if (op_flag & TAIR_OPERATION_DUPLICATE) {
+//            vector<uint64_t> slaves;
+//            get_slaves(key.server_flag, bucket_number, slaves);
+//            if (slaves.empty() == false) {
+//               PROFILER_BEGIN("do duplicate");
+//               if(duplicator->is_bucket_available(bucket_number))
+//               {
+//                 duplicator->duplicate_data(area, &key, &value, bucket_number, slaves);
+//               }
+//               else
+//               {
+//                 log_error("bucket is not avaliable, duplicate busy, ignore it");
+//               }
+//               PROFILER_END();
+//            }
+//         }
+//
+//>>>>>>> .merge-right.r495
          if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
             PROFILER_BEGIN("do migrate log");
             migrate_log->log(SN_PUT, mkey, value, bucket_number);
@@ -378,9 +399,20 @@ namespace tair {
             get_slaves(key.server_flag, bucket_number, slaves);
             if (slaves.empty() == false) {
                PROFILER_BEGIN("do duplicate");
+//<<<<<<< .working
                int rc1=duplicator->duplicate_data(area, &key,NULL,0,bucket_number, slaves,
                    (rc == TAIR_RETURN_DATA_NOT_EXIST)?NULL:(base_packet *)request,heart_version);
                if(TAIR_RETURN_SUCCESS==rc) rc=rc1;
+//=======
+//               if(duplicator->is_bucket_available(bucket_number))
+//               {
+//                 duplicator->duplicate_data(area, &key, NULL, bucket_number, slaves);
+//               }
+//               else
+//               {
+//                 log_error("bucket is not avaliable, duplicate busy, ignore it.");
+//               }
+//>>>>>>> .merge-right.r495
                PROFILER_END();
             }
          }
@@ -740,7 +772,7 @@ namespace tair {
 
       log_debug("updateServerTable, size: %d", server_table_size);
       table_mgr->do_update_table(server_table, server_table_size, server_table_version, copy_count, bucket_count);
-      duplicator->set_max_queue_size((table_mgr->get_copy_count() - 1) * 3);
+      duplicator->set_max_queue_size(10 * ((table_mgr->get_copy_count() - 1) * 3 * 3 + 1));
       storage_mgr->set_bucket_count(table_mgr->get_bucket_count());
 
       migrate_done_set.resize(table_mgr->get_bucket_count());
@@ -839,24 +871,25 @@ namespace tair {
       //not need check  duplicate's list size any more.
       return true;
       
-      if (op_flag & TAIR_OPERATION_DUPLICATE) {
-         bool is_available = false;
-         for (int i=0; i<TAIR_DUPLICATE_BUSY_RETRY_COUNT; ++i) {
-            is_available = duplicator->is_bucket_available(bucket_number);
-            if (is_available)
-               break;
-
-            usleep(1000);
-         }
-
-         if (is_available == false) {
-            log_debug("bucket is not avaliable, reject request");
-            rc = TAIR_RETURN_DUPLICATE_BUSY;
-            return false;
-         }
-      }
-
       return true;
+
+      //if (op_flag & TAIR_OPERATION_DUPLICATE) {
+      //   bool is_available = false;
+      //   for (int i=0; i<TAIR_DUPLICATE_BUSY_RETRY_COUNT; ++i) {
+      //      is_available = duplicator->is_bucket_available(bucket_number);
+      //      if (is_available)
+      //         break;
+
+      //      usleep(1000);
+      //   }
+      //   if (is_available == false) {
+      //      log_debug("bucket is not avaliable, reject request");
+      //      rc = TAIR_RETURN_DUPLICATE_BUSY;
+      //      return false;
+      //   }
+      //}
+
+      //return true;
    }
 
    void tair_manager::init_migrate_log()

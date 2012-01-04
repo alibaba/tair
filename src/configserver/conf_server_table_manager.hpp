@@ -70,7 +70,7 @@ namespace tair {
       }
       uint64_t * get_m_hash_table(){
         return m_hash_table;
-      } 
+      }
       uint64_t * get_d_hash_table(){
         return d_hash_table;
       }
