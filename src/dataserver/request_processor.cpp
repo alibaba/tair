@@ -66,7 +66,7 @@ namespace tair {
       }
       else {
          PROFILER_BEGIN("do put");
-         rc = tair_mgr->put(request->area, request->key, request->data, request->expired,request,heart_beat->get_client_version());
+         rc = tair_mgr->put(request->area, request->key, request->data, request->expired, request, heart_beat->get_client_version());
          PROFILER_END();
 
          PROFILER_BEGIN("do response plugin");
@@ -515,7 +515,7 @@ namespace tair {
       return ret;
    }
 
-   int request_processor::process(request_get_and_remove_items *request, bool &send_return) 
+   int request_processor::process(request_get_and_remove_items *request, bool &send_return)
    {
       int ret = 0;
       if (tair_mgr->is_working() == false) {
@@ -669,7 +669,7 @@ namespace tair {
       return do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
     }
 
-    PROFILER_START("local lock operation start"); 
+    PROFILER_START("local lock operation start");
 
     plugin::plugins_root* plugin_root = NULL;
     PROFILER_BEGIN("do request plugin");

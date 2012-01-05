@@ -33,6 +33,7 @@ namespace tair {
    tair_manager::tair_manager() : migrate_done_set(0)
    {
       status = STATUS_NOT_INITED;
+      not_allow_count_negative = false;
       storage_mgr = NULL;
       table_mgr = new table_manager();
       duplicator = NULL;
@@ -88,11 +89,11 @@ namespace tair {
          storage_mgr = new tair::storage::fdb::fdb_manager();
       }
 #ifdef WITH_KDB
-      else if (strcmp(se_name, "kdb") == 0){ 
+      else if (strcmp(se_name, "kdb") == 0){
          // init kdb
          storage_mgr = new tair::storage::kdb::kdb_manager();
       }
-#endif 
+#endif
 #ifdef WITH_LDB
       else if (strcmp(se_name, "ldb") == 0) {
         log_info("init storage engine ldb");
@@ -111,12 +112,12 @@ namespace tair {
       // init the storage manager for stat helper
       TAIR_STAT.set_storage_manager(storage_mgr);
       // is allow dec to negative?
-      uint32_t _allow_negative= TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_COUNT_NEGATIVE, TAIR_COUNT_NEGATIVE_MODE);
-      not_allow_count_negative= (0==_allow_negative);
+      uint32_t _allow_negative = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_COUNT_NEGATIVE, TAIR_COUNT_NEGATIVE_MODE);
+      not_allow_count_negative = (0 == _allow_negative);
 
       // init dupicator
-      int32_t dup_sync_mode= TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_DUP_SYNC, TAIR_DUP_SYNC_MODE);
-      if(0==dup_sync_mode)
+      int dup_sync_mode = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_DUP_SYNC, TAIR_DUP_SYNC_MODE);
+      if (0 == dup_sync_mode)
       {
         duplicator = new duplicate_sender_manager(transport, streamer, table_mgr);
       }
@@ -125,7 +126,6 @@ namespace tair {
         log_info("run duplicator with sync mode ");
         duplicator = new dup_sync_sender_manager(transport, streamer, table_mgr);
       }
-
 
       migrate_mgr = new migrate_manager(transport, streamer, duplicator, this, storage_mgr);
 
@@ -173,44 +173,24 @@ namespace tair {
       PROFILER_END();
 
       if (rc == TAIR_RETURN_SUCCESS ) {
-//<<<<<<< .working
         key.data_meta = mkey.data_meta;
         if (op_flag & TAIR_OPERATION_DUPLICATE) {
           vector<uint64_t> slaves;
           get_slaves(key.server_flag, bucket_number, slaves);
           if (slaves.empty() == false) {
             PROFILER_BEGIN("do duplicate");
-            //duplicator->(area, &key, &value, bucket_number, slaves);
             if (request)
-              rc=duplicator->duplicate_data(area, &key, &value, expire_time,bucket_number, slaves,(base_packet *)request,heart_vesion);
+              rc = duplicator->duplicate_data(area, &key, &value, expire_time, bucket_number,
+                  slaves, (base_packet *)request, heart_vesion);
             PROFILER_END();
           }
         }
-//=======
-//         key.data_meta = mkey.data_meta;
-//         if (op_flag & TAIR_OPERATION_DUPLICATE) {
-//            vector<uint64_t> slaves;
-//            get_slaves(key.server_flag, bucket_number, slaves);
-//            if (slaves.empty() == false) {
-//               PROFILER_BEGIN("do duplicate");
-//               if(duplicator->is_bucket_available(bucket_number))
-//               {
-//                 duplicator->duplicate_data(area, &key, &value, bucket_number, slaves);
-//               }
-//               else
-//               {
-//                 log_error("bucket is not avaliable, duplicate busy, ignore it");
-//               }
-//               PROFILER_END();
-//            }
-//         }
-//
-//>>>>>>> .merge-right.r495
-         if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
-            PROFILER_BEGIN("do migrate log");
-            migrate_log->log(SN_PUT, mkey, value, bucket_number);
-            PROFILER_END();
-         }
+
+        if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
+          PROFILER_BEGIN("do migrate log");
+          migrate_log->log(SN_PUT, mkey, value, bucket_number);
+          PROFILER_END();
+        }
 
       }
       TAIR_STAT.stat_put(area);
@@ -399,20 +379,9 @@ namespace tair {
             get_slaves(key.server_flag, bucket_number, slaves);
             if (slaves.empty() == false) {
                PROFILER_BEGIN("do duplicate");
-//<<<<<<< .working
-               int rc1=duplicator->duplicate_data(area, &key,NULL,0,bucket_number, slaves,
-                   (rc == TAIR_RETURN_DATA_NOT_EXIST)?NULL:(base_packet *)request,heart_version);
-               if(TAIR_RETURN_SUCCESS==rc) rc=rc1;
-//=======
-//               if(duplicator->is_bucket_available(bucket_number))
-//               {
-//                 duplicator->duplicate_data(area, &key, NULL, bucket_number, slaves);
-//               }
-//               else
-//               {
-//                 log_error("bucket is not avaliable, duplicate busy, ignore it.");
-//               }
-//>>>>>>> .merge-right.r495
+               int rc1 = duplicator->duplicate_data(area, &key, NULL, 0, bucket_number, slaves,
+                   (rc == TAIR_RETURN_DATA_NOT_EXIST) ? NULL : (base_packet *)request, heart_version);
+               if (TAIR_RETURN_SUCCESS == rc) rc = rc1;
                PROFILER_END();
             }
          }
@@ -439,7 +408,7 @@ namespace tair {
 
     set<data_entry*, data_entry_comparator>::iterator it;
     //check param first, one fail,all fail.
-    for (it = key_list->begin(); it != key_list->end(); ++it) 
+    for (it = key_list->begin(); it != key_list->end(); ++it)
     {
       uint64_t target_server_id = 0;
 
@@ -474,7 +443,7 @@ namespace tair {
     }
 
     //the storage_mgr should has batch interface
-    for (it = key_list->begin(); it != key_list->end(); ++it) 
+    for (it = key_list->begin(); it != key_list->end(); ++it)
     {
       data_entry *pkey = (*it);
       data_entry key=*pkey; //for same code.
@@ -489,7 +458,7 @@ namespace tair {
       bool version_care =  op_flag & TAIR_OPERATION_VERSION;
       rc = storage_mgr->remove(bucket_number, mkey, version_care);
 
-      if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_DATA_NOT_EXIST) 
+      if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_DATA_NOT_EXIST)
       {
         if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
           migrate_log->log(SN_REMOVE, mkey, mkey, bucket_number);
@@ -497,7 +466,7 @@ namespace tair {
         if (op_flag & TAIR_OPERATION_DUPLICATE) {
           vector<uint64_t> slaves;
           get_slaves(key.server_flag, bucket_number, slaves);
-          if (slaves.empty() == false) 
+          if (slaves.empty() == false)
           {
             //for batch delete,don't wait response,let's retry it.
             rc=duplicator->direct_send(area, &key, NULL, 0,bucket_number, slaves,0);
@@ -529,7 +498,7 @@ namespace tair {
       return storage_mgr->clear(area);
    }
 
-#ifndef NOT_FIXED_ITEM_FUNC 
+#ifndef NOT_FIXED_ITEM_FUNC
 #define  NOT_FIXED_ITEM_FUNC return TAIR_RETURN_SERVER_CAN_NOT_WORK;
 #endif
 
@@ -695,7 +664,7 @@ namespace tair {
 
    void tair_manager::do_dump(set<dump_meta_info> dump_meta_infos)
    {
-      return;// NOT_FIXED_ITEM_FUNC 
+      return;// NOT_FIXED_ITEM_FUNC
       log_debug("receive dump request, size: %d", dump_meta_infos.size());
       if (dump_meta_infos.size() == 0) return;
 
@@ -870,8 +839,8 @@ namespace tair {
       }
       //not need check  duplicate's list size any more.
       return true;
-      
-      return true;
+
+      //return true;
 
       //if (op_flag & TAIR_OPERATION_DUPLICATE) {
       //   bool is_available = false;

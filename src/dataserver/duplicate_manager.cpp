@@ -177,10 +177,16 @@ namespace tair{
       return res;
 
    }
-   
-   int duplicate_sender_manager::duplicate_data(int area, const data_entry* key, const data_entry* value,int expire_time,
-                                                 int bucket_number, const vector<uint64_t>& des_server_ids,base_packet *,int)
+
+   int duplicate_sender_manager::duplicate_data(int area, const data_entry* key, const data_entry* value, int expire_time,
+                                                 int bucket_number, const vector<uint64_t>& des_server_ids, base_packet *, int)
    {
+      if (!is_bucket_available(bucket_number))
+      {
+        log_error("bucket:%d is not avaliable, duplicate busy, ignore it", bucket_number);
+        return 0;
+      }
+
       if (des_server_ids.empty()) return 0;
       bucket_waiting_queue::request_duplicate_packet tmp_packet(new request_duplicate());
       tmp_packet->area = area;
@@ -228,8 +234,8 @@ namespace tair{
       return 0;
    }
 
-  int duplicate_sender_manager::direct_send(int area, const data_entry* key, const data_entry* value,int  expire_time,
-            int bucket_number, const vector<uint64_t>& des_server_ids,uint32_t max_packet_id)
+  int duplicate_sender_manager::direct_send(int area, const data_entry* key, const data_entry* value, int expire_time,
+            int bucket_number, const vector<uint64_t>& des_server_ids, uint32_t max_packet_id)
   {
      return duplicate_data(area,key,value,expire_time,bucket_number,des_server_ids,NULL,0);
   }
