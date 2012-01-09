@@ -1807,9 +1807,9 @@ public class FailOverNetCutTest2 extends FailOverBaseCase{
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
-		clean_tool((String)csList.get(0));
-		clean_tool((String)csList.get(1));
-		clean_tool("local");
+		clean_bin_tool((String)csList.get(0));
+		clean_bin_tool((String)csList.get(1));
+		clean_bin_tool("local");
 		reset_cluster(csList,dsList2);
 		execute_shift_tool("local", "conf6");
 		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
@@ -1820,9 +1820,9 @@ public class FailOverNetCutTest2 extends FailOverBaseCase{
 
 	public void tearDown()
 	{
-		clean_tool((String)csList.get(0));
-		clean_tool((String)csList.get(1));
-		clean_tool("local");
+		clean_bin_tool((String)csList.get(0));
+		clean_bin_tool((String)csList.get(1));
+		clean_bin_tool("local");
 		reset_cluster(csList,dsList2);
 		log.error("clean tool and cluster!");
 		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList2, "#");

@@ -203,6 +203,19 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
+	
+	public boolean clean_bin_tool(String machine) {
+		boolean ret = false;
+		killall_tool_proc();
+		String cmd = "cd " + FailOverBaseCase.tair_bin + "tools/" + " && ";
+		cmd += "./clean.sh";
+		STAFResult rst = executeShell(stafhandle, machine, cmd);
+		if (rst.rc != 0)
+			ret = false;
+		else
+			ret = true;
+		return ret;
+	}
 
 	public boolean execute_data_verify_tool() {
 		log.debug("start verify tool,run batchData");
@@ -555,6 +568,16 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = false;
 		return ret;
 	}
+	
+//	public boolean control_netcut_sh(String machine, String opID) {
+//		log.error("Copy " + opID + " files on " + machine);
+//		boolean ret = true;
+//		String cmd = "cd " + FailOverBaseCase.test_bin + " && ./shift.sh " + opID;
+//		STAFResult result = executeShell(stafhandle, machine, cmd);
+//		if (result.rc != 0)
+//			ret = false;
+//		return ret;
+//	}
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	public boolean comment_line(String machine, String file, String keyword, String comment) {
 		boolean ret = false;
