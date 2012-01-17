@@ -304,17 +304,39 @@ namespace tair {
             pcandidate_node->begin();
             it != pcandidate_node->end() && s < i + 1
             && suitable_node.first == INVALID_FLAG; it++) {
-          for(server_list_type::iterator server_it = it->second.begin();
-              server_it != it->second.end(); server_it++) {
-            server_id_type server_id = *server_it;
-            if(is_this_node_OK
-               (server_id, line_num, node_idx, hash_table_dest,
-                i) == NODE_OK) {
-              suitable_node = server_id;
-              if(suitable_node.first == original_node.first)
-                break;
+          int candidate_size = it->second.size();
+          if (0 != candidate_size) {
+            server_list_type::const_iterator server_it = it->second.begin();
+            // force buckets are not one to one correspondence in ds
+            if (0 != b_place_flag) {
+              int start_index = random() % candidate_size;
+              for (int i = 0; i < start_index; ++i) {
+                if (server_it != it->second.end()) {
+                  ++server_it;
+                }
+                if (server_it == it->second.end()) {
+                  server_it = it->second.begin();
+                }
+              }
+            }
+
+            for (int i = 0; i < candidate_size; ++i) {
+              server_id_type server_id = *server_it;
+              if(is_this_node_OK
+                  (server_id, line_num, node_idx, hash_table_dest,
+                   i) == NODE_OK) {
+                suitable_node = server_id;
+                if(suitable_node.first == original_node.first)
+                  break;
+              }
+
+              ++server_it;
+              if (server_it == it->second.end()) {
+                server_it = it->second.begin();
+              }
             }
           }
+
           if(i < CONSIDER_BASE)
             s++;
         }

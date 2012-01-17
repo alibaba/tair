@@ -208,6 +208,7 @@
 #define TAIR_BUILD_STRATEGY             (1)
 #define TAIR_STR_ACCEPT_STRATEGY        "_accept_strategy"  // default is 0, need touch. if 1, accept ds automatically
 #define TAIR_STR_DATALOST_FLAG          "_allow_lost_flag"  // default is 0, not allow data lost. if 1: if one bucket lost all of copies, configserver will force rebuild table, and assign this bucket to alive dataservers
+#define TAIR_STR_BUCKET_DISTRI_FLAG     "_bucket_placement_flag" // default is 0, if 1: force buckets are not one to one correspondence in ds at first run
 #define TAIR_STR_BUILD_DIFF_RATIO       "_build_diff_ratio"
 #define TAIR_BUILD_DIFF_RATIO           "0.6"
 #define TAIR_STR_SERVER_LIST            "_server_list"

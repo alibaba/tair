@@ -194,6 +194,7 @@ namespace tair {
       int build_strategy;
       DataLostToleranceFlag lost_tolerance_flag;
       GroupAcceptStrategy accept_strategy;
+      int bucket_place_flag;
       int server_down_time;
       float diff_ratio;
       uint64_t pos_mask;

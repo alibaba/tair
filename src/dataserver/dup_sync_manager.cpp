@@ -135,13 +135,13 @@ namespace tair{
     else
     {
       //already timeout.
-      log_error("resonse packet %d, but not found", max_packet_id);
+      log_error("resonse packet %u, but not found", max_packet_id);
       request = NULL;
       return TAIR_RETURN_DUPLICATE_DELAY;
     }
   }
 
-  int CPacket_wait_manager::doTimeout( uint32_t max_packet_id, time_t _expired,base_packet *& request)
+  int CPacket_wait_manager::doTimeout(uint32_t max_packet_id, time_t _expired, base_packet *& request)
   {
     //CRwLock m_lock(m_mutex,WLOCK);
     int index = get_map_index(max_packet_id);
@@ -157,7 +157,7 @@ namespace tair{
     if (itr == m_PkgWaitMap[index].end())
     {
       //already response it.
-      log_info("2 find:packet %d, not found, ignore it", max_packet_id);
+      log_info("2 find:packet %u, not found, ignore it", max_packet_id);
       return 0;
     }
     else
@@ -167,7 +167,7 @@ namespace tair{
       changeBucketCount(pNode->bucket_number, -1);
       m_PkgWaitMap[index].erase(itr);
       delete pNode; pNode = NULL;
-      log_info("packet %d, timeout = %d, remove it", max_packet_id, _expired);
+      log_info("packet %u, timeout: %d, remove it", max_packet_id, _expired);
       return TAIR_RETURN_DUPLICATE_ACK_TIMEOUT;
     }
   }
@@ -266,7 +266,7 @@ namespace tair{
       //put to queue error,should remove the map node.
       delete phint;
       packets_mgr.clear_waitnode(max_packet_id);
-      log_error("timeout wait packet full ,ignore packet=", max_packet_id);
+      log_error("timeout wait packet full, ignore packet: %u", max_packet_id);
       return TAIR_RETURN_DUPLICATE_BUSY;
     }
     return TAIR_DUP_WAIT_RSP;

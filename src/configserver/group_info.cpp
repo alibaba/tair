@@ -44,6 +44,7 @@ namespace tair {
       build_strategy = 1;
       lost_tolerance_flag = NO_DATA_LOST_FLAG;
       accept_strategy = GROUP_DEFAULT_ACCEPT_STRATEGY;
+      bucket_place_flag = 0;
       diff_ratio = 0.6;
       pos_mask = TAIR_POS_MASK;
       server_down_time = TAIR_SERVER_DOWNTIME;
@@ -65,7 +66,9 @@ namespace tair {
         }
         deflate_hash_table();
       }
+
     }
+
     int group_info::fill_migrate_machine()
     {
       int migrate_count = 0;
@@ -433,8 +436,12 @@ namespace tair {
         static_cast<DataLostToleranceFlag>(config.getInt(group_name, TAIR_STR_DATALOST_FLAG,
                       static_cast<int>(NO_DATA_LOST_FLAG)));
 
-      log_info("build_strategy: %d, accept_strategy: %d, lost_tolerance_flag: %d",
-          build_strategy, static_cast<int>(accept_strategy), static_cast<int>(lost_tolerance_flag));
+      bucket_place_flag =
+        config.getInt(group_name, TAIR_STR_BUCKET_DISTRI_FLAG,
+                      0);
+
+      log_info("build_strategy: %d, accept_strategy: %d, lost_tolerance_flag: %d, bucket_place_flag: %d",
+          build_strategy, static_cast<int>(accept_strategy), static_cast<int>(lost_tolerance_flag), bucket_place_flag);
 
       float old_ratio = diff_ratio;
       diff_ratio =
@@ -630,7 +637,6 @@ namespace tair {
           log_error("can not get enough data servers. need %d lef %d ",
                     min_data_server_count, size);
         }
-        //delete p_table_builder;
         inc_version(server_table_manager.client_version);
         inc_version(server_table_manager.server_version);
         send_server_table_packet(slave_server_id);
@@ -680,6 +686,7 @@ namespace tair {
       }
 
       p_table_builder->set_pos_mask(pos_mask);
+      p_table_builder->set_bucket_place_flag(bucket_place_flag);
       p_table_builder->set_available_server(upnode_list);
       p_table_builder->set_data_lost_flag(lost_tolerance_flag);
 #ifdef TAIR_DEBUG

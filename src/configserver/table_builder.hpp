@@ -58,6 +58,7 @@ namespace tair {
       {
         pos_mask = TAIR_POS_MASK;
         d_lost_flag = NO_DATA_LOST_FLAG;
+        b_place_flag = 0;
       }
         virtual ~ table_builder();
         typedef pair<uint64_t, uint32_t> server_id_type;
@@ -82,6 +83,15 @@ namespace tair {
         void set_data_lost_flag(const DataLostToleranceFlag data_lost_flag)
         {
           d_lost_flag = data_lost_flag;
+        }
+
+        void set_bucket_place_flag(int bucket_place_flag)
+        {
+          b_place_flag = bucket_place_flag;
+          if (0 != b_place_flag)
+          {
+            srandom(time(NULL));
+          }
         }
       public:
         virtual int rebuild_table(const hash_table_type & hash_table_source,
@@ -163,6 +173,7 @@ namespace tair {
         uint32_t copy_count;
 
         DataLostToleranceFlag d_lost_flag;
+        int b_place_flag;
     };
   }
 }
