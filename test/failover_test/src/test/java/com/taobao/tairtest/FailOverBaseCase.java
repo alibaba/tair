@@ -38,9 +38,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	final String csarr[] = new String[] { "10.232.4.20", "10.232.4.21" };
 	final String dsarr[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24" };
 	final String dsarr2[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24", "10.232.4.25" };
-	final List csList = Arrays.asList(csarr);
-	final List dsList = Arrays.asList(dsarr);
-	final List dsList2 = Arrays.asList(dsarr2);
+	final List<String> csList = Arrays.asList(csarr);
+	final List<String> dsList = Arrays.asList(dsarr);
+	final List<String> dsList2 = Arrays.asList(dsarr2);
 
 	/**
 	 * @param machine
