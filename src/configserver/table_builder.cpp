@@ -320,7 +320,7 @@ namespace tair {
               }
             }
 
-            for (int i = 0; i < candidate_size; ++i) {
+            for (int j = 0; j < candidate_size; ++j) {
               server_id_type server_id = *server_it;
               if(is_this_node_OK
                   (server_id, line_num, node_idx, hash_table_dest,
@@ -417,9 +417,11 @@ namespace tair {
         if(build_quick_table(hash_table_result)) {
           return BUILD_QUICK;
         }
+        log_error("build quick table fail");
         return BUILD_ERROR;
       }
       if(available_server.size() < copy_count) {
+        log_error("rebuild table fail, available size: %u, copy count: %u", available_server.size(), copy_count);
         return BUILD_ERROR;
       }
       //
@@ -476,7 +478,7 @@ namespace tair {
                 get_suitable_node(line_num, node_idx, hash_table_result,
                                   old_node);
               if(suitable_node.first == INVALID_FLAG) {
-                log_debug("I am give up, why this happend?\n");
+                log_error("I am give up, why this happend?\n");
                 return BUILD_ERROR;
               }
               update_node(line_num, node_idx, suitable_node,
