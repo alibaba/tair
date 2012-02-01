@@ -2305,7 +2305,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase{
 		//restart some ds
 		if(!batch_control_ds(dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))
 			fail("close master cs failure!");
-		log.error("some ds has been closed, only one alive!");
+		log.error("closed ds has been started!");
 		waitto(FailOverBaseCase.down_time);
 		
 		execute_data_verify_tool();
