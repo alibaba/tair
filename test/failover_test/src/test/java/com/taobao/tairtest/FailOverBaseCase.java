@@ -438,7 +438,7 @@ public class FailOverBaseCase extends BaseTestCase {
 				//				return ret4;
 			}
 		}
-		if(!ret1 || !ret2)
+		if(!ret1 || !ret2 || !ret3 || !ret4)
 			fail("shut off net between " + machine1 + " and " + machine2 + " failure!");
 		log.error("shut off net between " + machine1 + " and " + machine2 + " successful!");
 	}
