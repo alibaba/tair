@@ -128,6 +128,7 @@ namespace tair {
          tair_stat *cs = curr_stat + i;
          cs->set_get_count(cs->get_count() / interval);
          cs->set_put_count(cs->put_count() / interval);
+         cs->set_evict_count(cs->evict_count() / interval);
          cs->set_remove_count(cs->remove_count() / interval);
          cs->set_hit_count(cs->hit_count() / interval);
       }
