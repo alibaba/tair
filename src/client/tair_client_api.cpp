@@ -75,10 +75,10 @@ namespace tair {
     cache_type *cache = cache_impl[area];
     if (cache != NULL) {
       // find first
-      data = new data_entry();; 
+      data = new data_entry();;
       cache_type::result result = cache->get(key, *data);
       if (cache_type::HIT == result) {
-        return TAIR_RETURN_SUCCESS; 
+        return TAIR_RETURN_SUCCESS;
       } else {
         delete data;
         data = NULL;
@@ -127,7 +127,7 @@ namespace tair {
       for(; iter != temp_data.end(); ++iter) {
         cache->put(*(iter->first), *(iter->second));
       }
-      data.insert(temp_data.begin(), temp_data.end()); 
+      data.insert(temp_data.begin(), temp_data.end());
       return ret;
     }
     return impl->mget(area,keys,data);
@@ -136,7 +136,7 @@ namespace tair {
   int tair_client_api::remove(int area,
       const data_entry &key)
   {
-    int ret = impl->remove(area,key); 
+    int ret = impl->remove(area,key);
     if (TAIR_RETURN_SUCCESS == ret ||
         TAIR_RETURN_DATA_NOT_EXIST == ret) {
       cache_type *cache = cache_impl[area];
@@ -150,9 +150,9 @@ namespace tair {
   void tair_client_api::invalid_local_cache(int area, const vector<data_entry *> &keys)
   {
     cache_type *cache = cache_impl[area];
-    if (cache == NULL) 
+    if (cache == NULL)
       return;
-    for (size_t i = 0; i < keys.size(); ++i) 
+    for (size_t i = 0; i < keys.size(); ++i)
       cache->remove(*(keys[i]));
   }
 
@@ -316,5 +316,9 @@ namespace tair {
   void tair_client_api::get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const
   {
     return impl->get_server_with_key(key,servers);
+  }
+  int64_t tair_client_api::ping(uint64_t server_id)
+  {
+      return impl->ping(server_id);
   }
 } /* tair */

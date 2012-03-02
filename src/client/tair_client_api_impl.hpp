@@ -138,6 +138,7 @@ namespace tair {
       static std::map<int,string> init_errmsg();
       const char *get_error_msg(int ret);
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers);
+      void get_servers(std::set<uint64_t> &servers);
 
       //@override IPacketHandler
       tbnet::IPacketHandler::HPRetCode handlePacket(tbnet::Packet *packet, void *args);
@@ -154,6 +155,7 @@ namespace tair {
       void force_change_dataserver_status(uint64_t server_id, int cmd);
       void get_migrate_status(uint64_t server_id,vector<pair<uint64_t,uint32_t> >& result);
       void query_from_configserver(uint32_t query_type, const string group_name, map<string, string>&, uint64_t server_id = 0);
+      int64_t ping(uint64_t server_id);
 
 #if  0     /* ----- #if 0 : If0Label_1 ----- */
       bool dumpKey(int area, char *file_name, int timeout = 0);

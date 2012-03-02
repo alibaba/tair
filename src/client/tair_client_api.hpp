@@ -288,7 +288,7 @@ namespace tair {
       void set_timeout(int timeout);
 
       /**
-       * @brief set read from random server 
+       * @brief set read from random server
        *
        * @param rand_flag: true means read from all replicas.
        */
@@ -311,13 +311,14 @@ namespace tair {
       const char *get_error_msg(int ret);
 
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const;
+      int64_t ping(uint64_t server_id);
 
     private:
       void invalid_local_cache(int area, const std::vector<data_entry*> &key);
-      
+
       typedef data_entry_local_cache cache_type;
       tair_client_impl *impl;
-      cache_type *cache_impl[TAIR_MAX_AREA_COUNT]; 
+      cache_type *cache_impl[TAIR_MAX_AREA_COUNT];
   };
 }
 #endif

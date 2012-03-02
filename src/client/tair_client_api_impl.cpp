@@ -1156,6 +1156,11 @@ FAIL:
     return;
   }
 
+  void tair_client_impl::get_servers(std::set<uint64_t> &servers)
+  {
+    set<uint64_t> tmp(my_server_list.begin(), my_server_list.end());
+    servers.swap(tmp);
+  }
 
 
   // @override IPacketHandler
@@ -1357,6 +1362,48 @@ FAIL:
     TBSYS_LOG(DEBUG,"query from config server failed:%s",get_error_msg(ret));
     this_wait_object_manager->destroy_wait_object(cwo);
 
+  }
+
+  int64_t tair_client_impl::ping(uint64_t server_id)
+  {
+    if (!inited) {
+      if (!startup(server_id))
+        return 0;
+    }
+
+    request_ping *req = new request_ping();
+    req->value = 0;
+    base_packet *bp = NULL;
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+
+    struct timeval tm_beg;
+    struct timeval tm_end;
+    gettimeofday(&tm_beg, NULL);
+    bool ret = true;
+    do {
+      if (send_request(server_id, req, cwo->get_id()) != 0) {
+        log_error("send ping packet failed.");
+        ret = false;
+        delete req;
+        break;
+      }
+
+      if (get_response(cwo, 1, bp) != 0) {
+        log_error("get ping packet timeout.");
+        ret = false;
+        break;
+      }
+      if (bp == NULL || bp->getPCode() != TAIR_RESP_RETURN_PACKET) {
+        log_error("got bad packet.");
+        ret = false;
+        break;
+      }
+    } while (false);
+    gettimeofday(&tm_end, NULL);
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return static_cast<int64_t>((tm_end.tv_sec-tm_beg.tv_sec) * 1000000
+        + (tm_end.tv_usec - tm_beg.tv_usec));
   }
 
   bool tair_client_impl::retrieve_server_addr()

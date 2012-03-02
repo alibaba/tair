@@ -261,6 +261,15 @@ namespace tair {
    }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+   int64_t tair_client::ping(uint64_t server_id)
+   {
+     int ping_count = 10;
+     int64_t total = 0;
+     for (int i = 0; i < ping_count; ++i) {
+       total += client_helper.ping(server_id);
+     }
+     return total / ping_count;
+   }
    void tair_client::do_cmd_quit(VSTRING &param)
    {
       return ;
@@ -603,13 +612,22 @@ namespace tair {
 	for (it=out_info.begin(); it != out_info.end(); it++) {
 		fprintf(stderr,"%20s %20s\n", it->first.c_str(), it->second.c_str());
 	}
+	fprintf(stderr,"\n");
 
+	fprintf(stderr,"%20s %20s\n","server","ping");
+    set<uint64_t> servers;
+    client_helper.get_servers(servers);
+    for (set<uint64_t>::iterator it = servers.begin(); it != servers.end(); ++it) {
+      int64_t ping_time = ping(*it);
+      fprintf(stderr,"%20s %20lf\n", tbsys::CNetUtil::addrToString(*it).c_str(), ping_time / 1000.);
+    }
 	fprintf(stderr,"\n");
 
 	for (it=out_info.begin(); it != out_info.end(); it++) {
 		map<string, string> out_info2;
 		map<string, string>::iterator it2;
-		client_helper.query_from_configserver(request_query_info::Q_STAT_INFO, group, out_info2, tbsys::CNetUtil::strToAddr(it->first.c_str(), 0));
+        uint64_t server_id = tbsys::CNetUtil::strToAddr(it->first.c_str(), 0);
+		client_helper.query_from_configserver(request_query_info::Q_STAT_INFO, group, out_info2, server_id);
 		for (it2=out_info2.begin(); it2 != out_info2.end(); it2++) {
 			fprintf(stderr,"%s : %s %s\n",it->first.c_str(), it2->first.c_str(), it2->second.c_str());
 		}
@@ -621,7 +639,7 @@ namespace tair {
 		fprintf(stderr,"%s %s\n", it2->first.c_str(), it2->second.c_str());
 	}
 
-}
+   }
 
 
    void tair_client::do_cmd_remove_area(VSTRING &param)

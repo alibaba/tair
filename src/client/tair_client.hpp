@@ -55,6 +55,7 @@ namespace tair {
       void print_help(const char *cmd);
       char *canonical_key(char *key, char **akey, int *size);
 
+      int64_t ping(uint64_t server_id);
       void  do_cmd_quit(VSTRING &param);
       void  do_cmd_help(VSTRING &param);
       void  do_cmd_put(VSTRING &param);
