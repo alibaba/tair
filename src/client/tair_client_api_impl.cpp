@@ -54,9 +54,9 @@ namespace tair {
    *-----------------------------------------------------------------------------*/
 
   tair_client_impl::tair_client_impl():inited(false),is_stop(false),packet_factory(0),streamer(0),
-                                       transport(0),connmgr(0),timeout(2000),config_version(0),
-                                       new_config_version(0),send_fail_count(0),this_wait_object_manager(0),
-                                       bucket_count(0),copy_count(0),rand_read_flag(false)
+  transport(0),connmgr(0),timeout(2000),config_version(0),
+  new_config_version(0),send_fail_count(0),this_wait_object_manager(0),
+  bucket_count(0),copy_count(0),rand_read_flag(false)
   {
     atomic_set(&read_seq, 0);
   }
@@ -345,9 +345,9 @@ FAIL:
       resp->data = 0;
       ret = TAIR_RETURN_SUCCESS;
     } else {
-        ret = TAIR_RETURN_PROXYED_ERROR;
-        TBSYS_LOG(ERROR, "proxyed get error: %d.", ret);
-        goto FAIL;
+      ret = TAIR_RETURN_PROXYED_ERROR;
+      TBSYS_LOG(ERROR, "proxyed get error: %d.", ret);
+      goto FAIL;
     }
     TBSYS_LOG(DEBUG,"end get:ret:%d",ret);
 
@@ -641,6 +641,144 @@ FAIL:
     return ret;
   }
 
+  int tair_client_impl::invalidate(int area, const data_entry &key, const char *groupname)
+  {
+    if (groupname == NULL) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    if (!key_entry_check(key)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    if (invalid_server_list.size() == 0) {
+      TBSYS_LOG(ERROR, "invalidate server list is empty.");
+      return TAIR_RETURN_FAILED;
+    }
+    static hash_map<uint64_t, int, __gnu_cxx::hash<int> > fail_count_map;
+
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    request_invalid *req = new request_invalid();
+    req->set_group_name(groupname);
+    req->area = area;
+    req->add_key(key.get_data(), key.get_size());
+
+    int ret_code = TAIR_RETURN_SUCCESS;
+    do {
+      const int inval_size = invalid_server_list.size();
+      uint64_t server_id = invalid_server_list[rand() % inval_size];
+      base_packet * tpacket = NULL;
+      //~ send request.
+      log_debug("send request_invalid to %s.", tbsys::CNetUtil::addrToString(server_id).c_str());
+      if (connmgr->sendPacket(server_id, req, NULL, (void*)(long)cwo->get_id()) == false) {
+        log_error("send request_invalid to %s failed.", tbsys::CNetUtil::addrToString(server_id).c_str());
+        int fail_count = ++fail_count_map[server_id];
+        if (fail_count >= 10) {
+          //! remove invalid server, if 10 consecutive timeout encountered.
+          log_error("invalid server %s regarded to be down.",
+              tbsys::CNetUtil::addrToString(server_id).c_str());
+          shrink_invalidate_server(server_id);
+        }
+        send_fail_count++;
+        ret_code = TAIR_RETURN_SEND_FAILED;
+        delete req;
+        break;
+      }
+      //~ get response
+      if ((ret_code = get_response(cwo, 1, tpacket)) != 0) {
+        log_warn("get invalid response timeout.");
+        int fail_count = ++fail_count_map[server_id];
+        if (fail_count >= 10) {
+          //! remove invalid server, if 10 consecutive timeout encountered.
+          log_error("invalid server %s regarged to be down.",
+              tbsys::CNetUtil::addrToString(server_id).c_str());
+          shrink_invalidate_server(server_id);
+        }
+      }
+      //~ got response
+      if (tpacket != NULL) {
+        response_return *resp = dynamic_cast<response_return*>(tpacket);
+        if (resp != NULL) {
+          if ((ret_code = resp->get_code()) != TAIR_RETURN_SUCCESS) {
+            TBSYS_LOG(ERROR, "invalidate failure, ret_code: %", ret_code);
+          } else {
+            fail_count_map[server_id] = 0;
+          }
+        } else {
+          TBSYS_LOG(ERROR, "packet cannot be casted to response_return");
+        }
+      } else {
+        log_error("tpacket is null");
+        ret_code = TAIR_RETURN_FAILED;
+      }
+
+    } while (false);
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return ret_code;
+  }
+
+  int tair_client_impl::invalidate(int area, const data_entry &key)
+  {
+    return invalidate(area, key, group_name.c_str());
+  }
+
+  int tair_client_impl::hide(int area, const data_entry &key)
+  {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if( !key_entry_check(key)){
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    vector<uint64_t> server_list;
+    if ( !get_server_id(key, server_list)) {
+      TBSYS_LOG(DEBUG, "can not find serverId, return false");
+      return -1;
+    }
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    request_hide *packet = new request_hide();
+    packet->area = area;
+    packet->add_key(key.get_data(), key.get_size());
+
+    base_packet *tpacket = 0;
+    response_return *resp  = 0;
+
+    int ret = TAIR_RETURN_SEND_FAILED;
+    if( (ret = send_request(server_list[0],packet,cwo->get_id())) < 0){
+      delete packet;
+      goto FAIL;
+    }
+    if( (ret = get_response(cwo,1,tpacket)) < 0){
+      goto FAIL;
+    }
+    if ( tpacket->getPCode() != TAIR_RESP_RETURN_PACKET ) {
+      goto FAIL;
+    }
+
+    resp = (response_return*)tpacket;
+    new_config_version = resp->config_version;
+    if ( (ret = resp->get_code()) < 0) {
+      if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK){
+        send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+      }
+      goto FAIL;
+    }
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return ret;
+FAIL:
+    this_wait_object_manager->destroy_wait_object(cwo);
+    TBSYS_LOG(INFO, "remove failure: %s:%s",
+        tbsys::CNetUtil::addrToString(server_list[0]).c_str(),
+        get_error_msg(ret));
+    return ret;
+  }
   int tair_client_impl::init_request_map(int area, vector<data_entry *>& keys, request_remove_map &request_removes)
   {
     if (area < 0 || area >= TAIR_MAX_AREA_COUNT)
@@ -1156,6 +1294,66 @@ FAIL:
     return;
   }
 
+  bool tair_client_impl::get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames)
+  {
+    if (id1 == 0 && id2 == 0) {
+      return false;
+    }
+    if (initialize() == false) {
+      return false;
+    }
+    start_tbnet();
+    inited = true;
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+
+    request_group_names *req = new request_group_names();
+    bool ret = false;
+    do {
+      if (id1 != 0) {
+        if (connmgr->sendPacket(id1, req, NULL, (void*)(long)cwo->get_id()) == false) {
+          TBSYS_LOG(ERROR, "send request_group_names packet to %s failed.",
+              tbsys::CNetUtil::addrToString(id1).c_str());
+        } else {
+          ret = true;
+        }
+      }
+      if (!ret && id2 != 0) {
+        if (connmgr->sendPacket(id2, req, NULL, (void*)(long)cwo->get_id()) == false) {
+          TBSYS_LOG(ERROR, "send request_group_names packet to %s failed.",
+              tbsys::CNetUtil::addrToString(id2).c_str());
+        } else {
+          ret = true;
+        }
+      }
+      if (!ret) {
+        delete req;
+        break;
+      }
+      base_packet *tpacket = NULL;
+      response_group_names * resp = NULL;
+      if (get_response(cwo, 1, tpacket) == TAIR_RETURN_TIMEOUT) {
+        TBSYS_LOG(ERROR, "get reponse_group_names packet from timeout.");
+        ret = false;
+        break;
+      }
+      if (tpacket != NULL && tpacket->getPCode() == TAIR_RESP_GROUP_NAMES_PACKET) {
+        resp = dynamic_cast<response_group_names*>(tpacket);
+        if (resp != NULL) {
+          groupnames = resp->group_name_list;
+          ret = true;
+        }
+      } else {
+        ret = false;
+        break;
+      }
+    } while (false);
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return ret;
+
+  }
+
   void tair_client_impl::get_servers(std::set<uint64_t> &servers)
   {
     set<uint64_t> tmp(my_server_list.begin(), my_server_list.end());
@@ -1197,6 +1395,7 @@ FAIL:
             TBSYS_LOG(DEBUG, "update server table: [%d] => [%s]", i, tbsys::CNetUtil::addrToString(server_list[i]).c_str());
             my_server_list[i] = server_list[i];
           }
+          parse_invalidate_server(rggp);
           TBSYS_LOG(INFO, "config_version: %u => %u", config_version, rggp->config_version);
           config_version = new_config_version;
         }
@@ -1484,6 +1683,10 @@ FAIL:
     }
 
     new_config_version = config_version = rggp->config_version; //set the same value on the first time.
+
+    //~ parse invalid servers
+    parse_invalidate_server(rggp);
+
     this_wait_object_manager->destroy_wait_object(cwo);
     thread.start(this, NULL);
     return true;
@@ -1493,6 +1696,66 @@ OUT:
     return false;
   }
 
+  void tair_client_impl::parse_invalidate_server(response_get_group *resp)
+  {
+    tbsys::STR_STR_MAP::iterator it;
+    it = resp->config_map.find("invalidate_server");
+    if (it == resp->config_map.end()) {
+      TBSYS_LOG(WARN, "no invalid server info found.");
+      return ;
+    }
+
+    char *str = strdup(it->second.c_str());
+    vector<char*> iplist;
+    tbsys::CStringUtil::split(str, ";,", iplist);
+
+    std::vector<uint64_t> tmp;
+    tmp.reserve(TAIR_MAX_INVALSVR_CNT);
+
+    for (size_t i = 0; i < TAIR_MAX_INVALSVR_CNT && i < iplist.size(); ++i) {
+      uint64_t id = tbsys::CNetUtil::strToAddr(iplist[i], TAIR_INVAL_SERVER_DEFAULT_PORT);
+      if (id != 0 && tbnet::ConnectionManager::isAlive(id)) {
+        log_warn("got invalid server %s.", iplist[i]);
+        tmp.push_back(id);
+      }
+    }
+    free(str);
+    //~ duplicate tmp, if neccessary.
+    size_t size = tmp.size();
+    if (size > 0) {
+      size_t loop = TAIR_MAX_INVALSVR_CNT / size;
+      for (size_t i = 1; i < loop; ++i) {
+        for (size_t j = 0; j < size; ++j) {
+          tmp.push_back(tmp[j]);
+        }
+      }
+    }
+    //~ replace invalid_server_list with tmp.
+    invalid_server_list.swap(tmp);
+  }
+
+  void tair_client_impl::shrink_invalidate_server(uint64_t server_id)
+  {
+    //~ remove server_id from invalid_server_list.
+    std::vector<uint64_t> tmp;
+    tmp.reserve(TAIR_MAX_INVALSVR_CNT);
+    for (size_t i = 0; i < invalid_server_list.size(); ++i) {
+      if (invalid_server_list[i] != server_id) {
+        tmp.push_back(invalid_server_list[i]);
+      }
+    }
+    //~ duplicate
+    size_t size = tmp.size();
+    if (size > 0) {
+      size_t loop = TAIR_MAX_INVALSVR_CNT / size;
+      for (size_t i = 1; i < loop; ++i) {
+        for (size_t j = 0; j < size; ++j) {
+          tmp.push_back(tmp[j]);
+        }
+      }
+    }
+    invalid_server_list.swap(tmp);
+  }
   void tair_client_impl::start_tbnet()
   {
     connmgr->setDefaultQueueTimeout(0, timeout);

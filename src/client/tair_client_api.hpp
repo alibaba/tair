@@ -127,6 +127,13 @@ namespace tair {
       int remove(int area,
           const data_entry &key);
 
+
+      int invalidate(int area, const data_entry &key, const char *groupname);
+
+      int invalidate(int area, const data_entry &key);
+
+      int hide(int area, const data_entry &key);
+
       /**
        * @brief remove multi  data from tair cluster
        *
@@ -311,6 +318,9 @@ namespace tair {
       const char *get_error_msg(int ret);
 
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const;
+
+      bool get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const;
+
       int64_t ping(uint64_t server_id);
 
     private:

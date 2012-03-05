@@ -1,0 +1,15 @@
+
+[invalserver]
+port=5196
+process_thread_num=4
+async_thread_num=4
+client_timeout=1000
+log_level=info
+ignore_zero_area=0
+dev_name=eth0
+log_file=logs/inval.log
+pid_file=logs/inval.pid
+config_server_cm3=10.232.12.141:5198
+config_server_cm3=10.232.12.141:5298
+config_server_cm4=10.232.12.142:5198
+config_server_cm4=10.232.12.142:5298

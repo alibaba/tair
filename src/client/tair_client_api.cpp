@@ -147,6 +147,21 @@ namespace tair {
     return ret;
   }
 
+   int tair_client_api::invalidate( int area, const data_entry &key, const char *groupname)
+   {
+       return impl->invalidate(area, key, groupname);
+   }
+
+   int tair_client_api::invalidate(int area, const data_entry &key)
+   {
+       return impl->invalidate(area, key);
+   }
+
+   int tair_client_api::hide(int area, const data_entry &key)
+   {
+     return impl->hide(area, key);
+   }
+
   void tair_client_api::invalid_local_cache(int area, const vector<data_entry *> &keys)
   {
     cache_type *cache = cache_impl[area];
@@ -316,6 +331,10 @@ namespace tair {
   void tair_client_api::get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const
   {
     return impl->get_server_with_key(key,servers);
+  }
+  bool tair_client_api::get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const
+  {
+    return impl->get_group_name_list(id1, id2, groupnames);
   }
   int64_t tair_client_api::ping(uint64_t server_id)
   {

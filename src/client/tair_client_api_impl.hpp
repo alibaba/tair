@@ -37,6 +37,10 @@
 #include "util.hpp"
 #include "dump_data_info.hpp"
 #include "remove_packet.hpp"
+#include "get_group_packet.hpp"
+#include "group_names_packet.hpp"
+#include "invalid_packet.hpp"
+#include "hide_packet.hpp"
 
 namespace tair {
 
@@ -81,6 +85,12 @@ namespace tair {
 
       int remove(int area,
           const data_entry &key);
+
+      int invalidate(int area, const data_entry &key, const char *groupname);
+
+      int invalidate(int area, const data_entry &key);
+
+      int hide(int area, const data_entry &key);
 
       int mdelete(int area,
           vector<data_entry*> &keys);
@@ -138,6 +148,7 @@ namespace tair {
       static std::map<int,string> init_errmsg();
       const char *get_error_msg(int ret);
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers);
+      bool get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames);
       void get_servers(std::set<uint64_t> &servers);
 
       //@override IPacketHandler
@@ -178,6 +189,10 @@ namespace tair {
       bool initialize();
 
       bool retrieve_server_addr();
+
+      void parse_invalidate_server(response_get_group *rggp);
+
+      void shrink_invalidate_server(uint64_t server_id);
 
       void start_tbnet();
 
@@ -232,6 +247,7 @@ namespace tair {
 
       vector<uint64_t> my_server_list;
       vector<uint64_t> config_server_list;
+      vector<uint64_t> invalid_server_list;
       std::string group_name;
       uint32_t config_version;
       uint32_t new_config_version;

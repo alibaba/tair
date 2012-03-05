@@ -13,7 +13,7 @@ EXTRA_DIST=bootstrap.sh \
 	   scripts/Makefile.am scripts/Makefile.in scripts/mdbshm_reader.py scripts/set_shm.sh \
 	   scripts/tair.sh \
 	   libtool \
-	   packages/tair.spec 
+	   packages/tair.spec
 
 TMP_DIR:=/tmp/tair-tmp.$(shell echo $$$$)
 #PREFIX:=$(shell [ x$(PREFIX) = x ] && PREFIX=/home/admin/tair && echo "$${PREFIX}")
@@ -39,5 +39,5 @@ rpms: dist-gzip packages/tair.spec
 		-ba $(TMP_DIR)/BUILD/tair-$(VERSION)/packages/tair.spec
 	find $(TMP_DIR)/RPMS/ -name "*.rpm" -exec mv '{}' . \;
 	rm -rf $(TMP_DIR)
-	
+
 

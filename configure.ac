@@ -1,6 +1,6 @@
 AC_INIT(tair, 2.3.1.1,ruohai@taobao.com)
 
-AM_INIT_AUTOMAKE(tair, 2.3.1.1) 
+AM_INIT_AUTOMAKE(tair, 2.3.1.1)
 AC_PROG_CXX
 AC_LANG([C++])
 AC_PROG_LIBTOOL
@@ -91,6 +91,8 @@ AC_CONFIG_FILES([\
 		 src/configserver/Makefile \
 		 src/dataserver/Makefile \
 		 src/client/Makefile \
+		 src/invalserver/Makefile \
+     src/tools/Makefile \
 		 test/Makefile \
 		 test/interface_test/Makefile \
 		 test/unit_test/Makefile \

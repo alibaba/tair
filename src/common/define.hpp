@@ -89,6 +89,7 @@
 #define TAIRPUBLIC_SECTION           "public"
 #define TAIRSERVER_SECTION           "tairserver"
 #define CONFSERVER_SECTION           "configserver"
+#define INVALSERVER_SECTION           "invalserver"
 #define TAIRFDB_SECTION              "fdb"
 #define TAIRKDB_SECTION              "kdb"
 #define TAIRLDB_SECTION              "ldb"
@@ -136,7 +137,7 @@
 #define TAIR_ULOG_DEFAULT_FILENUM       3
 #define TAIR_ULOG_FILESIZE              "ulog_file_size"
 #define TAIR_ULOG_DEFAULT_FILESIZE      64// 64MB
-#define TAIR_DUP_SYNC_MODE              0 
+#define TAIR_DUP_SYNC_MODE              0
 #define TAIR_COUNT_NEGATIVE_MODE        1 //default is allow count negative
 
 
@@ -228,13 +229,21 @@
 #define TAIR_CLIENT_OP_TIME             (2)
 #define TAIR_MAX_CLIENT_OP_TIME             (5)
 
-//REMOTE_TAIRSERVER_SECTION    
+//REMOTE_TAIRSERVER_SECTION
 #define TAIR_MASTER_NAME                "master"
 #define TAIR_SLAVE_NAME                 "slaver"
 #define TAIR_GROUP_NAME                "group"
 #define REMOTE_DATA_DIR                 "data_dir"
 #define REMOTE_DEFAULT_DATA_DIR         "data/remote"
 
+// invalserver
+#define TAIR_INVAL_SERVER_DEFAULT_PORT  5196
+#define TAIR_IGNORE_ZERO_AREA           "ignore_zero_area"
+#define TAIR_MAX_INVALSVR_CNT           32
+enum {
+  SYNC_INVALID,
+  ASYNC_INVALID,
+};
 //////////////////////////////////////////////
 enum {
    TAIR_ITEM_FLAG_ADDCOUNT = 1,
@@ -279,6 +288,10 @@ enum {
    TAIR_RETURN_DEC_NOTFOUND= -3978,
 
    TAIR_RETURN_PROXYED_ERROR = -3977,
+
+   TAIR_RETURN_INVAL_CONN_ERROR = -3970,
+   TAIR_RETURN_HIDDEN = -3969,
+   TAIR_RETURN_QUEUE_OVERFLOWED = -3968,
 
    // for lock
    TAIR_RETURN_LOCK_EXIST = -3975,

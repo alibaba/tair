@@ -17,11 +17,13 @@ fi
 VAL_LOG_PATH=./val_log
 VAL_CMD="valgrind --tool=memcheck --leak-check=full --show-reachable=yes --log-file=${VAL_LOG_PATH}/valgrind.log."`date +%m%d%s`
 
-DS_CMD=${TAIR_BIN_DIR}/tair_server 
-CS_CMD=${TAIR_BIN_DIR}/tair_cfg_svr 
+DS_CMD=${TAIR_BIN_DIR}/tair_server
+CS_CMD=${TAIR_BIN_DIR}/tair_cfg_svr
+IV_CMD=${TAIR_BIN_DIR}/inval_server
 
 VAL_DS_CMD="${VAL_CMD} ${TAIR_BIN_DIR}/tair_server"
 VAL_CS_CMD="${VAL_CMD} ${TAIR_BIN_DIR}/tair_cfg_svr"
+VAL_IV_CMD="${VAL_CMD} ${TAIR_BIN_DIR}/inval_server"
 
 check_folder()
 {
@@ -83,7 +85,7 @@ start_ds()
   do
     if [ -f ${TAIR_ETC_DIR}/dataserver.conf.$i ]
     then
-      if check_shm_size ${TAIR_ETC_DIR}/dataserver.conf.$i 
+      if check_shm_size ${TAIR_ETC_DIR}/dataserver.conf.$i
       then
         $1 -f ${TAIR_ETC_DIR}/dataserver.conf.$i
       fi
@@ -93,6 +95,10 @@ start_ds()
     sleep 2;
   done
   sleep 2;
+}
+start_iv()
+{
+  $1 -f ${TAIR_ETC_DIR}/invalserver.conf
 }
 
 stop_cs()
@@ -112,6 +118,11 @@ stop_ds()
       break;
     fi
   done
+}
+
+stop_iv()
+{
+  kill `cat logs/inval.pid`
 }
 
 
@@ -164,7 +175,7 @@ tomdb_shm()
 }
 
 tofdb()
-{	
+{
   cd ${TAIR_ETC_DIR} &&  sed -i "s/^storage_engine.*$/storage_engine=fdb/" *.conf
 }
 
@@ -184,7 +195,13 @@ case "$1" in
   start_ds "${DS_CMD}"
   ;;
   stop_ds)
-  stop_ds 
+  stop_ds
+  ;;
+  start_iv)
+  start_iv "${IV_CMD}"
+  ;;
+  stop_iv)
+  stop_iv
   ;;
   valgrind_start_cs)
   check_folder
@@ -193,6 +210,10 @@ case "$1" in
   valgrind_start_ds)
   check_folder
   start_ds "${VAL_DS_CMD}"
+  ;;
+  valgrind_start_iv)
+  check_folder
+  start_iv "${VAL_IV_CMD}"
   ;;
   valgrind_stop)
   valgrind_stop_all
@@ -225,6 +246,6 @@ case "$1" in
   tomdb_shm
   ;;
   *)
-  echo "useage: $0 {start_cs|stop_cs|start_ds|stop_ds [SERVER_COUNT]|lean|log_debug2warn|log_warn2debug}"
+  echo "usage: $0 {start_cs|stop_cs|start_ds|stop_ds|start_iv|stop_iv [SERVER_COUNT]|lean|log_debug2warn|log_warn2debug}"
 esac
 

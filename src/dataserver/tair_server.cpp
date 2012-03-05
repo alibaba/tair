@@ -259,6 +259,19 @@ namespace tair {
             send_return = false;
             break;
          }
+         case TAIR_REQ_HIDE_PACKET:
+         {
+             request_hide *npacket = (request_hide*) packet;
+             ret = req_processor->process(npacket, send_return);
+             break;
+         }
+         case TAIR_REQ_GET_HIDDEN_PACKET:
+         {
+             request_get_hidden *npacket = (request_get_hidden*) packet;
+             ret = req_processor->process(npacket, send_return);
+             send_return = false;
+             break;
+         }
          case TAIR_REQ_REMOVE_PACKET:
          {
             request_remove *npacket = (request_remove*)packet;

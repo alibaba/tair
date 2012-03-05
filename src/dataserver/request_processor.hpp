@@ -27,33 +27,37 @@
 #include "mupdate_packet.hpp"
 #include "remote_sync_manager.hpp"
 #include "lock_packet.hpp"
+#include "hide_packet.hpp"
+#include "get_hidden_packet.hpp"
 
 namespace tair {
-   class request_processor {
-   public:
-      request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr,remote_sync_manager  *remote_mgr);
-      ~request_processor();
+  class request_processor {
+  public:
+    request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr,remote_sync_manager  *remote_mgr);
+    ~request_processor();
 
-      int process(request_put *request, bool &send_return);
-      int process(request_get *request, bool &send_return);
-      int process(request_remove *request, bool &send_return);
-      int process(request_inc_dec *request, bool &send_return);
-      int process(request_duplicate *request, bool &send_return);
-      int process(request_add_items *request, bool &send_return);
-      int process(request_get_items *request, bool &send_return);
-      int process(request_remove_items *request, bool &send_return);
-      int process(request_get_and_remove_items *request, bool &send_return);
-      int process(request_get_items_count *request,bool &send_return);
-      int process(request_mupdate *request,bool &send_return);
-      int process(request_lock* request, bool &send_return);
+    int process(request_put *request, bool &send_return);
+    int process(request_get *request, bool &send_return);
+    int process(request_hide *request, bool &send_return);
+    int process(request_get_hidden *request, bool &send_return);
+    int process(request_remove *request, bool &send_return);
+    int process(request_inc_dec *request, bool &send_return);
+    int process(request_duplicate *request, bool &send_return);
+    int process(request_add_items *request, bool &send_return);
+    int process(request_get_items *request, bool &send_return);
+    int process(request_remove_items *request, bool &send_return);
+    int process(request_get_and_remove_items *request, bool &send_return);
+    int process(request_get_items_count *request,bool &send_return);
+    int process(request_mupdate *request,bool &send_return);
+    int process(request_lock* request, bool &send_return);
 
-   private:
-      bool do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet);
- 
-   private:
-      tair_manager *tair_mgr;
-      heartbeat_thread *heart_beat;
-      tbnet::ConnectionManager *connection_mgr;
-      remote_sync_manager  *remote_mgr;
-   };
+  private:
+    bool do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet);
+
+  private:
+    tair_manager *tair_mgr;
+    heartbeat_thread *heart_beat;
+    tbnet::ConnectionManager *connection_mgr;
+    remote_sync_manager  *remote_mgr;
+  };
 }
