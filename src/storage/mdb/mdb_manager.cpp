@@ -457,12 +457,12 @@ namespace tair {
       // test lock.
       if ((data.server_flag & TAIR_OPERATION_UNLOCK) == 0 &&
           test_flag(ITEM_FLAGS(it->item_id), TAIR_ITEM_FLAG_LOCKED)) {
-        return TAIR_RETURN_LOCK_EXIST;        
+        return TAIR_RETURN_LOCK_EXIST;
       }
 
-      if(test_flag(it->item_id, TAIR_ITEM_FLAG_DELETED)) {        // in migrate
-        old_flag = TAIR_ITEM_FLAG_DELETED;
-      }
+      //if(test_flag(it->item_id, TAIR_ITEM_FLAG_DELETED)) {        // in migrate
+        //old_flag = TAIR_ITEM_FLAG_DELETED;
+      //}
       if(it->exptime != 0 && it->exptime < crrnt_time) {        //expired
         __remove(it);
         version = 0;
@@ -478,6 +478,9 @@ namespace tair {
       else {
         if(version_care) {
           version = it->version;
+        }
+        if (test_flag(ITEM_FLAGS(it->item_id), TAIR_ITEM_FLAG_DELETED)) {
+          version = 0;
         }
         TBSYS_LOG(DEBUG, "%s:already exists,remove it", __FUNCTION__);
         __remove(it);
@@ -595,55 +598,71 @@ namespace tair {
   int mdb_manager::do_add_count(data_entry &key, int count, int init_value,
             bool not_negative,int expired ,int &result_value)
   {
-      data_entry old_value;
+    data_entry old_value;
 
-      //todo:: get and just replace it.it should be done with new mdb version.
-      int rc = do_get(key,old_value);
-      if (rc == TAIR_RETURN_SUCCESS && test_flag(key.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT)) 
-      {
-         // old value exist
-         int32_t *v = (int32_t *)(old_value.get_data() + ITEM_HEAD_LENGTH);
-         log_debug("old count: %d, new count: %d, init value: %d", (*v), count, init_value);
-        if(not_negative)
-        {
-         if(0>=(*v) && count<0)
-         {
-           return  TAIR_RETURN_DEC_ZERO;
-         }
-         if(0>((*v)+count))
-         {
-           result_value = *v;
-           return  TAIR_RETURN_DEC_BOUNDS;
-         }
+    //todo:: get and just replace it.it should be done with new mdb version.
+    int rc = do_get(key,old_value);
+    if (rc == TAIR_RETURN_SUCCESS) {
+      if (test_flag(key.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT)) {
+        if (!test_flag(key.data_meta.flag, TAIR_ITEM_FLAG_DELETED)) { //! exists && iscounter && not hidden
+          // old value exist
+          int32_t *v = (int32_t *)(old_value.get_data() + ITEM_HEAD_LENGTH);
+          log_debug("old count: %d, new count: %d, init value: %d", (*v), count, init_value);
+          if(not_negative)
+          {
+            if(0>=(*v) && count<0)
+            {
+              return  TAIR_RETURN_DEC_ZERO;
+            }
+            if(0>((*v)+count))
+            {
+              result_value = *v;
+              return  TAIR_RETURN_DEC_BOUNDS;
+            }
+          }
+          *v += count;
+          result_value = *v;
+        } else { //! exists && iscounter && is hidden, overwrite it
+          if(not_negative)
+          {
+            if(0>count && 0>=init_value )
+            {
+              //not allowed to add a negative number to new a key.
+              return TAIR_RETURN_DEC_NOTFOUND;
+            }
+            if(0>(init_value + count)) return  TAIR_RETURN_DEC_BOUNDS;
+          }
+          // overwrite old value
+          result_value = init_value + count;
+          //~ clear hidden flag
+          clear_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_DELETED);
         }
-         *v += count;
-         result_value = *v;
-      } else if(rc == TAIR_RETURN_SUCCESS){
-         //exist,but is not add_count,return error;
-         log_debug("cann't override old value");
-         return TAIR_RETURN_CANNOT_OVERRIDE;
-      }else {
-        if(not_negative)
-        {
-         if(0>count && 0>=init_value )
-         {
-           //not allowed to add a negative number to new a key.
-           return TAIR_RETURN_DEC_NOTFOUND;
-         }
-         if(0>(init_value + count)) return  TAIR_RETURN_DEC_BOUNDS;
-        }
-         // old value not exist
-         result_value = init_value + count;
+      } else {
+        //exist,but is not add_count,return error;
+        log_debug("cann't override old value");
+        return TAIR_RETURN_CANNOT_OVERRIDE;
       }
+    } else { //~ not exist
+      if(not_negative)
+      {
+        if(0>count && 0>=init_value )
+        {
+          //not allowed to add a negative number to new a key.
+          return TAIR_RETURN_DEC_NOTFOUND;
+        }
+        if(0>(init_value + count)) return  TAIR_RETURN_DEC_BOUNDS;
+      }
+      result_value = init_value + count;
+    }
 
-      char fv[INCR_DATA_SIZE]; // 2 + sizeof(int)
-      SET_INCR_DATA_COUNT(fv,result_value);
-      old_value.set_data(fv, INCR_DATA_SIZE);
-      set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT);
-      rc= do_put(key, old_value, false,expired);
+    char fv[INCR_DATA_SIZE]; // 2 + sizeof(int)
+    SET_INCR_DATA_COUNT(fv,result_value);
+    old_value.set_data(fv, INCR_DATA_SIZE);
+    set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT);
+    rc= do_put(key, old_value, true, expired);
 
-      return rc;
-   }
+    return rc;
+  }
 
   void mdb_manager::get_stats(tair_stat * stat)
   {
@@ -690,7 +709,7 @@ namespace tair {
 
           uint32_t server_hash =
             util::string_util::mur_mur_hash(ITEM_KEY(it) + 2,
-                                            it->key_len - 2);
+                it->key_len - 2);
           server_hash %= bucket_count;
           if(__buckets.find(server_hash) != __buckets.end()) {
             __remove(it);
@@ -714,22 +733,22 @@ namespace tair {
     return ret;
   }
 
-/**
- * @brief remove expired mdb_item,get lock before invoke this func
- *
- * @param area
- * @param key
- * @param mdb_item [OUT]
- *
- * @return  true -- removed ,false -- otherwise
- */
+  /**
+   * @brief remove expired mdb_item,get lock before invoke this func
+   *
+   * @param area
+   * @param key
+   * @param mdb_item [OUT]
+   *
+   * @return  true -- removed ,false -- otherwise
+   */
   bool mdb_manager::remove_if_expired(data_entry & key, mdb_item * &item)
   {
     mdb_item *it = hashmap->find(key.get_data(), key.get_size());
     bool ret = false;
     if(it != 0) {                //found
       if(it->exptime != 0
-         && it->exptime<static_cast<uint32_t> (time(NULL))) {
+          && it->exptime<static_cast<uint32_t> (time(NULL))) {
         TBSYS_LOG(DEBUG, "this item is expired");
         __remove(it);
         ret = true;
@@ -748,8 +767,8 @@ namespace tair {
 
   void mdb_manager::__remove(mdb_item * it)
   {
-//      m_stat.dataSize -= (it->key_len + it->data_len);
-//
+    //      m_stat.dataSize -= (it->key_len + it->data_len);
+    //
     /*update stat */
     area_stat[ITEM_AREA(it)]->data_size -= (it->key_len + it->data_len);
     area_stat[ITEM_AREA(it)]->space_usage -= SLAB_SIZE(it->item_id);
@@ -849,7 +868,7 @@ namespace tair {
         it != slab_info.end(); ++it) {
       if(it->second < 0) {
         TBSYS_LOG(INFO, "from [%d] free  [%d] page(s)", it->first,
-                  it->second);
+            it->second);
         for(int i = 0; i < -it->second; ++i) {
           {
             boost::mutex::scoped_lock guard(mem_locker);
@@ -869,13 +888,13 @@ namespace tair {
   bool mdb_manager::is_chkexprd_time()
   {
     return hour_range(mdb_param::chkexprd_time_low,
-                      mdb_param::chkexprd_time_high);
+        mdb_param::chkexprd_time_high);
   }
 
   bool mdb_manager::is_chkslab_time()
   {
     return hour_range(mdb_param::chkslab_time_low,
-                      mdb_param::chkslab_time_high);
+        mdb_param::chkslab_time_high);
   }
 
   void mdb_manager::run_chkexprd_deleted()
@@ -889,7 +908,7 @@ namespace tair {
       }
       //avoid to check too often
       if (last_expd_time != 0
-         && time(NULL) - last_expd_time < (60 * 60 * 6)) {
+          && time(NULL) - last_expd_time < (60 * 60 * 6)) {
         TBSYS_LOG(DEBUG, "don't exprd too often, last_expd_time: %u", last_expd_time);
         continue;
       }
@@ -913,7 +932,7 @@ namespace tair {
       }
 
       if(last_balance_time != 0
-         && time(NULL) - last_balance_time < (60 * 60 * 6)) {
+          && time(NULL) - last_balance_time < (60 * 60 * 6)) {
         TBSYS_LOG(DEBUG, "don't check too often,%u", last_balance_time);
         continue;                //avoid to check too often
       }
@@ -938,8 +957,8 @@ namespace tair {
           boost::mutex::scoped_lock guard(mem_locker);
           if(area_stat[i]->data_size > area_stat[i]->quota) {
             cache->keep_area_quota(i,
-                                   area_stat[i]->data_size -
-                                   area_stat[i]->quota);
+                area_stat[i]->data_size -
+                area_stat[i]->quota);
           }
         }
       }
