@@ -779,6 +779,7 @@ FAIL:
         get_error_msg(ret));
     return ret;
   }
+
   int tair_client_impl::init_request_map(int area, vector<data_entry *>& keys, request_remove_map &request_removes)
   {
     if (area < 0 || area >= TAIR_MAX_AREA_COUNT)
@@ -839,68 +840,68 @@ FAIL:
 
   int tair_client_impl::mdelete(int area, vector<data_entry*> &keys)
   {
-    request_remove_map request_removes;
-    int ret = TAIR_RETURN_SUCCESS;
-    if ((ret = init_request_map(area, keys, request_removes)) < 0)
-    {
-      return ret;
-    }
-    wait_object* cwo = this_wait_object_manager->create_wait_object();
-    request_remove_map::iterator rq_iter = request_removes.begin();
-
-    while (rq_iter != request_removes.end())
-    {
-      if (send_request(rq_iter->first, rq_iter->second, cwo->get_id()) < 0)
+      request_remove_map request_removes;
+      int ret = TAIR_RETURN_SUCCESS;
+      if ((ret = init_request_map(area, keys, request_removes)) < 0)
       {
-        delete rq_iter->second;
-        request_removes.erase(rq_iter++);
+          return ret;
       }
-      else
-      {
-        ++rq_iter;
-      }
-    }
+      wait_object* cwo = this_wait_object_manager->create_wait_object();
+      request_remove_map::iterator rq_iter = request_removes.begin();
 
-    ret = TAIR_RETURN_SEND_FAILED;
-    vector<base_packet*> tpk;
-    if ((ret = get_response(cwo, request_removes.size(), tpk)) < 1)
-    {
+      while (rq_iter != request_removes.end())
+      {
+          if (send_request(rq_iter->first, rq_iter->second, cwo->get_id()) < 0)
+          {
+              delete rq_iter->second;
+              request_removes.erase(rq_iter++);
+          }
+          else
+          {
+              ++rq_iter;
+          }
+      }
+
+      ret = TAIR_RETURN_SEND_FAILED;
+      vector<base_packet*> tpk;
+      if ((ret = get_response(cwo, request_removes.size(), tpk)) < 1)
+      {
+          this_wait_object_manager->destroy_wait_object(cwo);
+          TBSYS_LOG(ERROR, "all requests are failed, ret: %d", ret);
+          return ret;
+      }
+
+      uint32_t send_success = 0;
+      vector<base_packet *>::iterator bp_iter = tpk.begin();
+      for (; bp_iter != tpk.end(); ++bp_iter)
+      {
+          response_return* tpacket = dynamic_cast<response_return*> (*bp_iter);
+          if (tpacket->getPCode() != TAIR_RESP_RETURN_PACKET)
+          {
+              TBSYS_LOG(ERROR, "mdelete return pcode: %d", tpacket->getPCode());
+              continue;
+          }
+          new_config_version = tpacket->config_version;
+          if ((ret = tpacket->get_code()) < 0)
+          {
+              if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK)
+              {
+                  send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+              }
+              continue;
+          }
+          ++send_success;
+
+      }
+
+      TBSYS_LOG(DEBUG,"mdelete keys size: %d, send success: %u, return packet size: %u",
+              keys.size(), send_success, tpk.size());
+      if (keys.size() != send_success)
+      {
+          ret = TAIR_RETURN_PARTIAL_SUCCESS;
+      }
       this_wait_object_manager->destroy_wait_object(cwo);
-      TBSYS_LOG(ERROR, "all requests are failed, ret: %d", ret);
       return ret;
-    }
-
-    uint32_t send_success = 0;
-    vector<base_packet *>::iterator bp_iter = tpk.begin();
-    for (; bp_iter != tpk.end(); ++bp_iter)
-    {
-      response_return* tpacket = dynamic_cast<response_return*> (*bp_iter);
-      if (tpacket->getPCode() != TAIR_RESP_RETURN_PACKET)
-      {
-        TBSYS_LOG(ERROR, "mdelete return pcode: %d", tpacket->getPCode());
-        continue;
-      }
-      new_config_version = tpacket->config_version;
-      if ((ret = tpacket->get_code()) < 0)
-      {
-        if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK)
-        {
-          send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
-        }
-        continue;
-      }
-      ++send_success;
-
-      //TBSYS_LOG(DEBUG,"response from server key_count:%d",tpacket->key_count);
-    }
-
-    TBSYS_LOG(DEBUG,"mdelete keys size: %d, send success: %u, return packet size: %u", keys.size(), send_success, tpk.size());
-    if (keys.size() != send_success)
-    {
-      ret = TAIR_RETURN_PARTIAL_SUCCESS;
-    }
-    this_wait_object_manager->destroy_wait_object(cwo);
-    return ret;
   }
 
   // add count

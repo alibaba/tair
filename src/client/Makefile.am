@@ -25,11 +25,15 @@ api_source_list=tair_client_api.cpp tair_client_api_impl.cpp \
 AM_LDFLAGS=-lpthread -lz -lncurses -lreadline ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
 
 lib_LTLIBRARIES=libtairclientapi.la libtairclientapi_c.la
-sbin_PROGRAMS=tairclient
+sbin_PROGRAMS=tairclient keycleantool
 
 tairclient_SOURCES=tair_client.cpp
 tairclient_LDADD=libtairclientapi.la ${LDADD}
 tairclient_LDFLAGS= -static
+
+keycleantool_SOURCES=tair_key_clean.cpp DelJob.hpp NBQueue.hpp Worker.hpp ConfigLoader.hpp
+keycleantool_LDADD=libtairclientapi.la ${LDADD}
+keycleantool_LDFLAGS= -static
 
 libtairclientapi_la_SOURCES=${api_source_list}
 libtairclientapi_c_la_SOURCES=tair_client_capi.cpp
