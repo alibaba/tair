@@ -29,38 +29,38 @@ namespace tair {
       }
       bool plugin_handler::load_dll() 
       {
-         if (instance != NULL) return true;
-         char* err_mesage;
-         dll_handler = dlopen(dll_name.c_str(), RTLD_NOW|RTLD_GLOBAL);
-         if (dll_handler == NULL) {
-            err_mesage = dlerror();
-            if (err_mesage == NULL) {
-               log_error("load dll error name=%s", dll_name.c_str());
-            } else {
-               log_error("load dll error name=%s error=%s", dll_name.c_str(), err_mesage);
-            }
-            return false;
-         }
-         // reset errors
-         dlerror();
-         create = (create_t*)dlsym(dll_handler, CREATE_FUNC_NAME.c_str());
-         err_mesage = dlerror();
-         if (err_mesage != NULL) {
-            log_error("find create func error message=%s", err_mesage);
-            unload_dll();
-            return false;
-         }
-         // reset errors
-         dlerror();
-         destroy = (destroy_t*)dlsym(dll_handler,DESTROY_FUNC_NAME.c_str());
-         err_mesage = dlerror();
-         if (err_mesage != NULL) {
-            log_error("find destroy func error message=%s", err_mesage);
-            unload_dll();
-            return false;
-         }
-         instance = create();
-         return true;
+        if (instance != NULL) return true;
+        char* err_mesage;
+        dll_handler = dlopen(dll_name.c_str(), RTLD_NOW|RTLD_GLOBAL);
+        if (dll_handler == NULL) {
+          err_mesage = dlerror();
+          if (err_mesage == NULL) {
+            log_error("load dll error name=%s", dll_name.c_str());
+          } else {
+            log_error("load dll error name=%s error=%s", dll_name.c_str(), err_mesage);
+          }
+          return false;
+        }
+        // reset errors
+        dlerror();
+        create = (create_t*)dlsym(dll_handler, CREATE_FUNC_NAME.c_str());
+        err_mesage = dlerror();
+        if (err_mesage != NULL) {
+          log_error("find create func error message=%s", err_mesage);
+          unload_dll();
+          return false;
+        }
+        // reset errors
+        dlerror();
+        destroy = (destroy_t*)dlsym(dll_handler,DESTROY_FUNC_NAME.c_str());
+        err_mesage = dlerror();
+        if (err_mesage != NULL) {
+          log_error("find destroy func error message=%s", err_mesage);
+          unload_dll();
+          return false;
+        }
+        instance = create();
+        return true;
       }
       bool plugin_handler::unload_dll()
       {
@@ -82,55 +82,89 @@ namespace tair {
       }
       base_plugin* plugin_handler::get_instance() const
       {
-         return instance;
+         return dynamic_cast<base_plugin*>(instance);
       }
-      bool plugins_manager::add_plugin(const std::string& dll_name, plugins_root* root)
+      bool plugins_manager::add_plugin(const std::string& _dll_value, plugins_root* root)
       {
-         if (root == NULL) return false;
-         plugin_handler *handler = new plugin_handler(dll_name);
-         // The dl library maintains reference counts for library handles
-         if ( handler->load_dll() == false) {
+        if (root == NULL) return false;
+
+        //the syncplug.so come like below for compatiable.
+        //libsync_plugin.so:{remote:{10.232.4.25,10.232.4.26,group_dup,data/sync},local:{10.232.4.25,10.232.4.26,group_1,nop}}
+        string dll_name=_dll_value;
+        string _para=_dll_value;
+        std::string::size_type _pos=dll_name.find(".so:");
+        if(std::string::npos!=_pos)
+        {
+          dll_name=dll_name.substr(0,_pos+3);
+          _para=_para.substr(_pos+4,std::string::npos);
+        }
+        else
+        {
+          _para="";
+        }
+
+
+        plugin_handler *handler = new plugin_handler(dll_name);
+        // The dl library maintains reference counts for library handles
+        if ( handler->load_dll() == false) {
+          delete handler;
+          return false;
+        }
+        if (!(handler->get_instance()->get_hook_point() & HOOK_POINT_REQUEST) &&
+            !(handler->get_instance()->get_hook_point() & HOOK_POINT_RESPONSE)) {
+          log_error("HookPoint error %s ", dll_name.c_str());
+          delete handler;
+          return false;
+        }
+        int property = handler->get_instance()->get_property();
+        if (handler->get_instance()->get_hook_point() & HOOK_POINT_REQUEST) {
+          map<int, plugin_handler*>::iterator it_ph = root->request_plugins.find(property);
+          if (it_ph != root->request_plugins.end()) {
+            log_error("have same property in request %s %s",
+                it_ph->second->get_dll_name().c_str());
             delete handler;
             return false;
-         }
-         if (!(handler->get_instance()->get_hook_point() & HOOK_POINT_REQUEST) &&
-             !(handler->get_instance()->get_hook_point() & HOOK_POINT_RESPONSE)) {
-            log_error("HookPoint error %s ", dll_name.c_str());
+          }
+          // we do not add p_handler to handlermap here so we can clean it very easy when something wrong
+        }
+        if (handler->get_instance()->get_hook_point() & HOOK_POINT_RESPONSE) {
+          map<int, plugin_handler*>::iterator it_ph = root->response_plugins.find(property);
+          if (it_ph != root->response_plugins.end()) {
+            log_error("have same property in response %s %s",
+                it_ph->second->get_dll_name().c_str());
             delete handler;
             return false;
-         }
-         int property = handler->get_instance()->get_property();
-         if (handler->get_instance()->get_hook_point() & HOOK_POINT_REQUEST) {
-            map<int, plugin_handler*>::iterator it_ph = root->request_plugins.find(property);
-            if (it_ph != root->request_plugins.end()) {
-               log_error("have same property in request %s %s",
-                         it_ph->second->get_dll_name().c_str());
-               delete handler;
-               return false;
-            }
-            // we do not add p_handler to handlermap here so we can clean it very easy when something wrong
-         }
-         if (handler->get_instance()->get_hook_point() & HOOK_POINT_RESPONSE) {
-            map<int, plugin_handler*>::iterator it_ph = root->response_plugins.find(property);
-            if (it_ph != root->response_plugins.end()) {
-               log_error("have same property in response %s %s",
-                         it_ph->second->get_dll_name().c_str());
-               delete handler;
-               return false;
-            }
-         }
-         if (!handler->get_instance()->init()) {
+          }
+        }
+        if(_para.size()<=0)
+        {
+          //only for old plugin.so,althou we just have one.
+          if (!handler->get_instance()->init()) {
             log_error("init error %s ", dll_name.c_str());
             delete handler;
             return false;
-         }
-         if (handler->get_instance()->get_hook_point() & HOOK_POINT_REQUEST) {
-            root->request_plugins[property] = handler;
-         }
-         if (handler->get_instance()->get_hook_point() & HOOK_POINT_RESPONSE) {
-            root->response_plugins[property] = handler;
-         }
-         return true;
+          }
+        }
+        else
+        {
+          if (!handler->get_instance()->init(_para)) {
+            log_error("init error %s with %s", dll_name.c_str(),_para.c_str());
+            delete handler;
+            return false;
+          }
+          else
+          {
+            log_info("init %s with %s ", dll_name.c_str(),_para.c_str());
+          }
+        }
+
+        if (handler->get_instance()->get_hook_point() & HOOK_POINT_REQUEST) {
+          root->request_plugins[property] = handler;
+        }
+        if (handler->get_instance()->get_hook_point() & HOOK_POINT_RESPONSE) {
+          root->response_plugins[property] = handler;
+        }
+        return true;
       }
       void plugins_manager::clean_plugins(plugins_root* root)
       {
@@ -151,6 +185,7 @@ namespace tair {
          }
          delete root;
       }
+
       plugins_manager::~plugins_manager()
       {
          {
@@ -158,6 +193,7 @@ namespace tair {
             clean_plugins(root);
          }
       }
+
       bool plugins_manager::add_plugins(const set<string>& dll_names)
       {
          plugins_root* new_root = new plugins_root();

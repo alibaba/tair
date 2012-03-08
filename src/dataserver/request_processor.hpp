@@ -25,7 +25,6 @@
 #include "duplicate_packet.hpp"
 #include "items_packet.hpp"
 #include "mupdate_packet.hpp"
-#include "remote_sync_manager.hpp"
 #include "lock_packet.hpp"
 #include "hide_packet.hpp"
 #include "get_hidden_packet.hpp"
@@ -33,7 +32,7 @@
 namespace tair {
   class request_processor {
   public:
-    request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr,remote_sync_manager  *remote_mgr);
+    request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr);
     ~request_processor();
 
     int process(request_put *request, bool &send_return);
@@ -58,6 +57,5 @@ namespace tair {
     tair_manager *tair_mgr;
     heartbeat_thread *heart_beat;
     tbnet::ConnectionManager *connection_mgr;
-    remote_sync_manager  *remote_mgr;
   };
 }

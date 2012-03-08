@@ -16,8 +16,9 @@
 #define TAIR_CLIENT_API
 
 #include <vector>
+#include <map>
 
-#include "common/define.hpp"
+#include "define.hpp"
 #include "data_entry.hpp"
 #include "data_entry_local_cache.h"
 
@@ -201,6 +202,44 @@ namespace tair {
           int init_value = 0);
 
       /**
+       * @brief set count to key's value, ignore whether this key exists or is not
+       *        count type.
+       *
+       * @param area            namespace
+       * @param key             key
+       * @param count           set count value
+       * @param expire          expire time
+       * @param version         version
+       *
+       * @return 0 -- success, otherwise fail.
+       */
+      int set_count(int area, const data_entry& key, int count, int expire = 0, int version = 0);
+
+      /**
+       * @brief Once a key is locked, it can NOT be updated(put/incr/decr), can only
+       *        be get or delete. A locked key can be unlocked(unlock)
+       *
+       * @param area            namespace
+       * @param key             key
+       *
+       * @return TAIR_RETURN_SUCCESS -- success, TAIR_RETURN_LOCK_EXIST -- fail: already locked
+       *         otherwise -- fail
+       */
+      int lock(int area, const data_entry& key);
+  
+      /**
+       * @brief opposite to lock
+       *
+       * @param area            namespace
+       * @param key             key
+       *
+       * @return TAIR_RETURN_SUCCESS -- success,
+       *         TAIR_RETURN_LOCK_NOT_EXIST -- fail: key is not locked
+       *         otherwise -- fail
+       */
+      int unlock(int area, const data_entry& key);
+
+      /**
        *
        * items :  just support four types: int32_t int64_t double string
        *
@@ -320,6 +359,10 @@ namespace tair {
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const;
 
       bool get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const;
+
+      void query_from_configserver(uint32_t query_type, const std::string &groupname, std::map<std::string, std::string> &out, uint64_t serverId);
+
+      uint32_t get_config_version() const;
 
       int64_t ping(uint64_t server_id);
 

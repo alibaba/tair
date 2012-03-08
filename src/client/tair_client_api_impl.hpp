@@ -37,6 +37,8 @@
 #include "util.hpp"
 #include "dump_data_info.hpp"
 #include "remove_packet.hpp"
+#include "BlockQueueEx.hpp"
+#include "lock_packet.hpp"
 #include "get_group_packet.hpp"
 #include "group_names_packet.hpp"
 #include "invalid_packet.hpp"
@@ -51,6 +53,7 @@ namespace tair {
   using namespace tair::common;
 
   const int UPDATE_SERVER_TABLE_INTERVAL = 50;
+  typedef void (*TAIRCALLBACKFUNC)(int retcode, void* parg);
 
   typedef map<uint64_t , request_get *> request_get_map;
   typedef map<uint64_t , request_remove *> request_remove_map;
@@ -65,6 +68,7 @@ namespace tair {
       bool startup(uint64_t data_server);
 
       void close();
+      bool isinited(){return inited;}
 
     public:
 
@@ -72,7 +76,8 @@ namespace tair {
           const data_entry &key,
           const data_entry &data,
           int expire,
-          int version);
+          int version,
+          TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
 
       //the caller will release the memory
       int get(int area,
@@ -84,7 +89,8 @@ namespace tair {
           tair_keyvalue_map &data);
 
       int remove(int area,
-          const data_entry &key);
+          const data_entry &key,
+          TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
 
       int invalidate(int area, const data_entry &key, const char *groupname);
 
@@ -101,6 +107,13 @@ namespace tair {
           int *retCount,
           int init_value = 0,
           int expire_time = 0);
+
+      int set_count(int area, const data_entry& key, int count,
+          int expire, int version,
+          TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
+
+      int lock(int area, const data_entry& key, LockType type,
+          TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
 
       template< typename IT >
         int add_items(int area,
@@ -166,6 +179,7 @@ namespace tair {
       void force_change_dataserver_status(uint64_t server_id, int cmd);
       void get_migrate_status(uint64_t server_id,vector<pair<uint64_t,uint32_t> >& result);
       void query_from_configserver(uint32_t query_type, const string group_name, map<string, string>&, uint64_t server_id = 0);
+      uint32_t get_config_version() const;
       int64_t ping(uint64_t server_id);
 
 #if  0     /* ----- #if 0 : If0Label_1 ----- */
@@ -181,6 +195,9 @@ namespace tair {
       uint64_t getConfigServerId();
 
 #endif     /* ----- #if 0 : If0Label_1 ----- */
+    public:
+      int push_waitobject(wait_object * obj);
+      static int invoke_callback(void * phandler,wait_object * obj);
 
     private:
 
@@ -233,6 +250,7 @@ namespace tair {
       bool inited;
       bool is_stop;
       tbsys::CThread thread;
+      tbsys::CThread response_thread; //thread to response packet.
 
       //tair_packet_factory packet_factory;
       //tbnet::DefaultPacketStreamer streamer;
@@ -258,6 +276,13 @@ namespace tair {
       uint32_t copy_count;
       bool rand_read_flag;
       atomic_t read_seq;
+    private:
+      void do_queue_response();
+      int handle_response_obj(wait_object * obj);
+    private:
+	    typedef BlockQueueEx<wait_object* > CAsyncCallerQueue;
+      CAsyncCallerQueue  m_return_object_queue;
+      pthread_rwlock_t m_init_mutex;
   };
 
   template< typename IT >

@@ -17,12 +17,11 @@
 #include "request_processor.hpp"
 
 namespace tair {
-   request_processor::request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr,remote_sync_manager  *remote_mgr)
+   request_processor::request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr)
    {
       this->tair_mgr = tair_mgr;
       this->heart_beat = heart_beat;
       this->connection_mgr = connection_mgr;
-      this->remote_mgr=remote_mgr;
    }
 
    request_processor::~request_processor()
@@ -77,12 +76,6 @@ namespace tair {
       log_debug("put request return: %d", rc);
       PROFILER_DUMP();
       PROFILER_STOP();
-
-      //now we will do remote sync.
-      //if (TAIR_RETURN_SUCCESS==rc|| TAIR_DUP_WAIT_RSP==rc && remote_mgr)
-      //{
-      //  remote_mgr->sync_put_data(request->area, request->key, request->data, request->expired,request->version);
-      //}
       return rc;
    }
 
@@ -413,13 +406,6 @@ namespace tair {
       }
       PROFILER_DUMP();
       PROFILER_STOP();
-
-      //now we will do remote sync.
-      //if (TAIR_RETURN_SUCCESS==rc|| TAIR_DUP_WAIT_RSP==rc && remote_mgr)
-      //{
-      //  remote_mgr->sync_remove_data(request->area, *request->key);
-      //}
-
       return rc;
    }
 
@@ -478,6 +464,7 @@ namespace tair {
       }
       PROFILER_DUMP();
       PROFILER_STOP();
+
       return rc;
    }
 

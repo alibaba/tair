@@ -45,7 +45,6 @@ namespace tair{
       bool get(unsigned int index,T& value);
       bool batch_get(unsigned int max_count,std::vector<T *>& _item_vector);
       uint64_t get_count();
-      bool isEmpty();
     private:
       tair::common::FileOperation* file_;
       int64_t file_offset_;
@@ -53,9 +52,8 @@ namespace tair{
   };
 
   template <class T>
-  RecordLogFile<T>::RecordLogFile():file_(NULL),file_offset_(0)
+  RecordLogFile<T>::RecordLogFile():file_(NULL),file_offset_(0),last_read_index(0)
   {
-    last_read_index=0;
   }
 
   template <class T>
@@ -79,7 +77,13 @@ namespace tair{
     if(!need_new_log)
     {
       file_offset_=get_count()*LOG_RECORD_SIZE;
-    }
+    }else{
+			if(0!=file_->ftruncate_file(0))
+			{
+					log_error("ftruncate_file file %s failed.", name.c_str());
+          return false;
+			}
+		}
 
     return true;
   }
@@ -190,12 +194,6 @@ namespace tair{
   }
 
   template <class T>
-  bool RecordLogFile<T>::isEmpty()
-  {
-    return last_read_index<=get_count();
-  }
-
-  template <class T>
   uint64_t RecordLogFile<T>::get_count()
   {
     //must return 0 or uint64_t
@@ -215,14 +213,14 @@ namespace tair{
       }
       count = (file_size)/LOG_RECORD_SIZE;
     }
-    log_error("record file size: %"PRI64_PREFIX"d, record count: %d,last_read_index=%d", file_size, count,last_read_index);
+    log_info("record file size: %"PRI64_PREFIX"d, record count: %d,last_read_index=%d", file_size, count,last_read_index);
     return count;
   }
 
   template <class T>
   bool RecordLogFile<T>::clear()
   {
-    log_error("now clear record file,offset=%d,read_index=%d",file_offset_,last_read_index);
+    log_info("now clear record file,offset=%"PRI64_PREFIX"d,read_index=%d",file_offset_,last_read_index);
     file_offset_=0;
     last_read_index=0;
     return 0==file_->ftruncate_file(0);

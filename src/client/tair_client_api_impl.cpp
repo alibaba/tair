@@ -38,6 +38,7 @@
 #include "query_info_packet.hpp"
 #include "get_migrate_machine.hpp"
 #include "data_server_ctrl_packet.hpp"
+#include "scoped_wrlock.hpp"
 
 
 namespace tair {
@@ -59,11 +60,13 @@ namespace tair {
   bucket_count(0),copy_count(0),rand_read_flag(false)
   {
     atomic_set(&read_seq, 0);
+    pthread_rwlock_init(&m_init_mutex, NULL);
   }
 
   tair_client_impl::~tair_client_impl()
   {
     close();
+    pthread_rwlock_destroy(&m_init_mutex);
   }
 
   bool tair_client_impl::startup(const char *master_addr,const char *slave_addr,const char *group_name)
@@ -104,6 +107,10 @@ namespace tair {
 
     this->group_name = group_name;
 
+    if(inited) return true;
+    CScopedRwLock __scoped_lock(&m_init_mutex,true);
+    if(inited) return true;
+
     start_tbnet();
 
     if (!retrieve_server_addr()){
@@ -118,7 +125,7 @@ namespace tair {
   bool tair_client_impl::initialize()
   {
 
-    this_wait_object_manager = new wait_object_manager();
+    this_wait_object_manager = new wait_object_manager(invoke_callback,this);
     if(this_wait_object_manager == 0)
 
       return false;
@@ -177,6 +184,7 @@ FAIL_1:
     stop_tbnet();
     wait_tbnet();
     thread.join();
+    response_thread.join();
     if (connmgr)
       delete connmgr;
     if (transport)
@@ -193,7 +201,8 @@ FAIL_1:
   int tair_client_impl::put(int area,
       const data_entry &key,
       const data_entry &data,
-      int expired, int version )
+      int expired, int version,
+      TAIRCALLBACKFUNC pfunc,void * parg )
   {
 
     if( !(key_entry_check(key)) || (!data_entry_check(data))){
@@ -217,7 +226,7 @@ FAIL_1:
     TBSYS_LOG(DEBUG,"put to server:%s",tbsys::CNetUtil::addrToString(server_list[0]).c_str());
 
 
-    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_PUT_PACKET,pfunc,parg,expired);
 
     request_put *packet = new request_put();
     packet->area = area;
@@ -235,6 +244,9 @@ FAIL_1:
       delete packet;
       goto FAIL;
     }
+
+    //if it's a async call,just return ok and wait callback.
+    if(pfunc) return 0;
 
     if( (ret = get_response(cwo,1,tpacket)) < 0){
       goto FAIL;
@@ -266,6 +278,89 @@ FAIL:
     this_wait_object_manager->destroy_wait_object(cwo);
     TBSYS_LOG(INFO, "put failure: %s ",get_error_msg(ret));
 
+    return ret;
+  }
+
+  int tair_client_impl::set_count(int area, const data_entry& key, int count,
+      int expire, int version, TAIRCALLBACKFUNC pfunc,void * parg)
+  {
+    // This is an ugly trick, 'cause Tair's key/value has two bits flag to indicate
+    // type in Java client implementation but count type's flag is added in server,
+    // we don't want to add a new packet for this set_count() function, so we add two
+    // bits type flag here and use put() to make following incr()/decr() happy.
+    // We ignore compress type here as same as what CPP client always does.
+    char buf[INCR_DATA_SIZE];
+    SET_INCR_DATA_COUNT(buf, count);
+    data_entry value;
+    value.set_data(buf, INCR_DATA_SIZE, false);
+    // force set count type flag
+    value.data_meta.flag = TAIR_ITEM_FLAG_ADDCOUNT;
+    return put(area, key, value, expire, version, pfunc, parg);
+  }
+
+  int tair_client_impl::lock(int area, const data_entry &key, LockType type,
+      TAIRCALLBACKFUNC pfunc,void * arg)
+  {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    if( !key_entry_check(key)){
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    vector<uint64_t> server_list;
+    if ( !get_server_id(key, server_list)) {
+      TBSYS_LOG(DEBUG, "can not find serverId, return false");
+      return -1;
+    }
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_LOCK_PACKET,pfunc,arg);
+    request_lock *packet = new request_lock();
+    packet->area = area;
+    packet->key.data_meta = key.data_meta;
+    // not copy
+    packet->key.set_data(key.get_data(), key.get_size(), false);
+    packet->lock_type = type;
+    base_packet *tpacket = 0;
+    response_return *resp  = 0;
+
+    int ret = TAIR_RETURN_SEND_FAILED;
+    if( (ret = send_request(server_list[0],packet,cwo->get_id())) < 0){
+
+      delete packet;
+      goto FAIL;
+    }
+    //if async callback,return it.
+    if(pfunc) return 0;
+
+    if( (ret = get_response(cwo,1,tpacket)) < 0){
+      goto FAIL;
+    }
+    if ( tpacket->getPCode() != TAIR_RESP_RETURN_PACKET ) {
+      goto FAIL;
+    }
+
+    resp = (response_return*)tpacket;
+    new_config_version = resp->config_version;
+    if ( (ret = resp->get_code()) < 0) {
+      if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK){
+        send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+      }
+      goto FAIL;
+    }
+
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+
+    return ret;
+FAIL:
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+
+    TBSYS_LOG(INFO, "lock(%d) failure: %s:%s",
+        type, tbsys::CNetUtil::addrToString(server_list[0]).c_str(),
+        get_error_msg(ret));
     return ret;
   }
 
@@ -578,7 +673,7 @@ FAIL:
   }
 
 
-  int tair_client_impl::remove(int area, const data_entry &key)
+  int tair_client_impl::remove(int area, const data_entry &key,TAIRCALLBACKFUNC pfunc,void * arg)
   {
 
     if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
@@ -596,7 +691,7 @@ FAIL:
     }
 
 
-    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_REMOVE_PACKET,pfunc,arg);
     request_remove *packet = new request_remove();
     packet->area = area;
     packet->add_key(key.get_data(), key.get_size());
@@ -610,6 +705,8 @@ FAIL:
       delete packet;
       goto FAIL;
     }
+    //if async callback,return it.
+    if(pfunc) return 0;
 
     if( (ret = get_response(cwo,1,tpacket)) < 0){
       goto FAIL;
@@ -1268,6 +1365,12 @@ FAIL:
     temp[TAIR_RETURN_PROXYED]                 = "porxied";
     temp[TAIR_RETURN_INVALID_ARGUMENT]        = "invalid argument";
     temp[TAIR_RETURN_CANNOT_OVERRIDE] = "cann't override old value.please check and remove it first.";
+    temp[TAIR_RETURN_DEC_BOUNDS] = "can't dec to negative when allow_count_negative=0";
+    temp[TAIR_RETURN_DEC_ZERO] = "can't dec zero number when allow_count_negative=0";
+    temp[TAIR_RETURN_DEC_NOTFOUND] = "dec but not found when allow_count_negative=0";
+    temp[TAIR_RETURN_LOCK_EXIST]                 = "lock exist";
+    temp[TAIR_RETURN_LOCK_NOT_EXIST]                 = "lock not exist";
+    //temp[TAIR_RETURN_NO_INVALID_SERVER]       = "invlaid but not found invalid server";
     return temp;
   }
 
@@ -1410,6 +1513,13 @@ FAIL:
   //@override Runnable
   void tair_client_impl::run(tbsys::CThread *thread, void *arg)
   {
+    int type= static_cast<int> ((reinterpret_cast<long>(arg)));
+    if(1==type)
+    {
+      //start the send thread.
+      return do_queue_response();
+    }
+
     if (config_server_list.size() == 0U) {
       return;
     }
@@ -1656,6 +1766,8 @@ FAIL:
     }
     uint64_t *server_list = NULL ;
     uint32_t server_list_count = 0;
+    int heart_type=0;  
+    int response_type=1;  
 
     rggp = dynamic_cast<response_get_group*>(tpacket);
     if (rggp->config_version <= 0){
@@ -1689,7 +1801,10 @@ FAIL:
     parse_invalidate_server(rggp);
 
     this_wait_object_manager->destroy_wait_object(cwo);
-    thread.start(this, NULL);
+
+    thread.start(this, (void *)heart_type);
+    response_thread.start(this, (void *)response_type);
+
     return true;
 OUT:
     this_wait_object_manager->destroy_wait_object(cwo);
@@ -1757,6 +1872,11 @@ OUT:
     }
     invalid_server_list.swap(tmp);
   }
+
+   uint32_t tair_client_impl::get_config_version() const
+   {
+     return config_version;
+   }
   void tair_client_impl::start_tbnet()
   {
     connmgr->setDefaultQueueTimeout(0, timeout);
@@ -1905,4 +2025,74 @@ OUT:
     return true;
   }
 
+  int tair_client_impl::invoke_callback(void * phandler,wait_object * obj)
+  {
+      tair_client_impl *pclient= (tair_client_impl  *) phandler;
+      return pclient->push_waitobject(obj);
+  }
+  int tair_client_impl::push_waitobject(wait_object * obj)
+  {
+    //push it to queue,let another thread to send it.
+    //todo check queue length;
+    log_debug("push_waitobject to queue,id=%d\n",obj->get_id());
+    m_return_object_queue.put(obj);
+    return 0;
+  }
+
+  int tair_client_impl::handle_response_obj(wait_object * cwo)
+  {
+    log_debug("do_async_response id=%d\n",cwo->get_id());
+    base_packet *tpacket = cwo->get_packet();
+    if(tpacket == 0)
+    {
+      //tell the caller is failed with timeout.
+      return cwo->do_async_response(TAIR_RETURN_TIMEOUT);
+    }
+    //now check the response code.
+    int _cmd= tpacket->getPCode() ;
+    int ret;
+    response_return *resp =  NULL;
+    switch (_cmd)
+    {
+      case TAIR_RESP_RETURN_PACKET:
+          resp =  (response_return*)tpacket;
+          new_config_version = resp->config_version;
+          ret = resp->get_code();
+          if (ret != TAIR_RETURN_SUCCESS)
+          {
+            if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK || ret == TAIR_RETURN_WRITE_NOT_ON_MASTER) 
+            {
+              //update server table immediately
+              send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+            }
+          }
+          return cwo->do_async_response(ret);
+        break;
+      default:
+        break;
+    }
+    delete tpacket;
+    return 0;
+  }
+
+  void tair_client_impl::do_queue_response()
+  {
+    log_debug("start thread do_queue_response");
+    while (!is_stop) 
+    {
+      //TAIR_SLEEP(is_stop, 1);
+      //if (is_stop) break;
+      try 
+      {   
+        wait_object * cwo=m_return_object_queue.get(1000); //1s
+        if(!cwo) continue;
+        handle_response_obj(cwo);
+        delete cwo;
+      }   
+      catch(...)
+      {   
+        log_warn("unknow error! get timeoutqueue error!");
+      } 
+    }   
+  }
 }

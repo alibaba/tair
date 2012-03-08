@@ -241,6 +241,23 @@
       return rc;
     }
 
+   int tair_manager::do_duplicate(int area, data_entry& key, data_entry& value,int bucket_number,base_packet *request,int heart_vesion)
+   {
+     int rc=0;
+     vector<uint64_t> slaves;
+     get_slaves(key.server_flag, bucket_number, slaves);
+     if (slaves.empty() == false) 
+     {
+       PROFILER_BEGIN("do duplicate");
+       if (request)
+       {
+         rc = duplicator->duplicate_data(area, &key, &value,0,bucket_number,slaves,request,heart_vesion);
+       }
+       PROFILER_END();
+     }
+     return rc;
+   }
+
     int tair_manager::add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,request_inc_dec * request,int heart_version)
     {
       if (status != STATUS_CAN_WORK) {
@@ -254,16 +271,43 @@
       if (area < 0 || area >= TAIR_MAX_AREA_COUNT) {
         return TAIR_RETURN_INVALID_ARGUMENT;
       }
-      //check if it's support add_count or it's a mdb enginer.
+
+      data_entry old_value;
       data_entry mkey = key;
       mkey.merge_area(area);
       int bucket_number = get_bucket_number(key);
+      int op_flag = get_op_flag(bucket_number, key.server_flag);
+      //check if it's support add_count or it's a mdb enginer.
       int rc=storage_mgr->add_count(bucket_number,mkey,count,init_value,not_allow_count_negative,expire_time,*result_value);
-      if(TAIR_RETURN_NOT_SUPORTED!=rc) return rc;
+
+      if(TAIR_RETURN_NOT_SUPORTED!=rc)
+      {
+        //if add_count success,now just mdb supported add_count.
+        if (rc == TAIR_RETURN_SUCCESS )
+        {
+          if(op_flag & TAIR_OPERATION_DUPLICATE)
+          {
+            //reget value.
+            //todo:the storage_mgr should return data_entry when add_count;
+            rc = get(area, key,old_value); 
+            key.data_meta.log_self();
+            storage_mgr->set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT);
+            //do duplicate thing .
+            rc=do_duplicate(area,key,old_value,bucket_number,request,heart_version);
+
+          }
+          //log it
+          if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
+            PROFILER_BEGIN("do migrate log");
+            migrate_log->log(SN_PUT, key, old_value, bucket_number);
+            PROFILER_END();
+          }
+        }
+        return rc;
+      }
 
       tbsys::CThreadGuard guard(&counter_mutex[get_mutex_index(key)]);
       // get from storage engine
-      data_entry old_value;
       PROFILER_BEGIN("get from storage");
       rc = get(area, key, old_value);
       PROFILER_END();

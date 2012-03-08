@@ -71,8 +71,12 @@ namespace tair {
          {
             return true;
          }
+         virtual bool init(const std::string& para)
+				 {
+            return true;
+         }
          virtual void clean()
-          {
+         {
             return;
          }
       };

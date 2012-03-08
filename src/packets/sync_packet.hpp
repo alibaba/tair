@@ -26,16 +26,6 @@ namespace tair {
   class request_sync
   {
     public:
-      request_sync(int _action,int _area,const tair::common::data_entry& _key, const tair::common::data_entry& _value,int _expired, int _version)
-      {
-        action=_action;
-        area=_area;
-        key.clone(_key);
-        value.clone(_value);
-        expired=_expired;
-        version=_version;
-        failed=0;
-      };
       ~request_sync()
       {
       }
@@ -43,17 +33,19 @@ namespace tair {
       {
         failed=0;
       }
+	  /**
       request_sync(int _area,const tair::common::data_entry& _key)
       {
         area=_area;
         key.clone(_key);
         failed=0;
       }
-      request_sync(int _action,int _area, const tair::common::data_entry& _key)
+	  **/
+      request_sync(int _action,int _area, const tair::common::data_entry * _pkey)
       {
         action=_action;
         area=_area;
-        key.clone(_key);
+        key.clone(*_pkey);
         failed=0;
       }
       void encode(tbnet::DataBuffer* output) 

@@ -138,17 +138,7 @@ namespace tair {
 
       heartbeat.set_thread_parameter(this, &streamer, tair_mgr);
 
-      //new a remote sync manager if wee need it.
-      remote_sync_manager  *remote_mgr=NULL;
-#if 0
-      remote_mgr=new remote_sync_manager(tair_mgr,g_tair_home);
-      if(!remote_mgr->init())
-      {
-        log_error("remote_mgr init failed with base_home= %s", g_tair_home);
-      }
-#endif
-
-      req_processor = new request_processor(tair_mgr, &heartbeat, conn_manager,remote_mgr);
+      req_processor = new request_processor(tair_mgr, &heartbeat, conn_manager);
 
       return true;
    }
@@ -381,11 +371,16 @@ namespace tair {
          }
       }
 
-      if (ret == TAIR_RETURN_PROXYED ||TAIR_DUP_WAIT_RSP==ret)
+      if (ret == TAIR_RETURN_PROXYED )//||TAIR_DUP_WAIT_RSP==ret || TAIR_RETURN_DUPLICATE_BUSY== ret)
 	  {
 		// request is proxyed
 		//or wait dup_response,don't rsp to client unlit dup_rsp arrive or timeout.
 		return false;
+	  }
+      if (TAIR_DUP_WAIT_RSP==ret )
+	  {
+		send_return =false;
+		return true;
 	  }
 
       if (send_return && packet->get_direction() == DIRECTION_RECEIVE) {

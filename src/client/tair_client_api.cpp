@@ -14,6 +14,7 @@
  */
 #include "tair_client_api.hpp"
 #include "tair_client_api_impl.hpp"
+#include <vector>
 #include <iterator>
 namespace tair {
 
@@ -231,6 +232,20 @@ namespace tair {
 
   }
 
+  int tair_client_api::set_count(int area, const data_entry& key, int count, int expire, int version)
+  {
+    return impl->set_count(area, key, count, expire, version);
+  }
+
+  int tair_client_api::lock(int area, const data_entry& key)
+  {
+    return impl->lock(area, key, LOCK_VALUE);
+  }
+
+  int tair_client_api::unlock(int area, const data_entry& key)
+  {
+    return impl->lock(area, key, UNLOCK_VALUE);
+  }
   //int tair_client_api::removeArea(int area)
   //{
   //      return impl->removeArea(area);
@@ -335,6 +350,14 @@ namespace tair {
   bool tair_client_api::get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const
   {
     return impl->get_group_name_list(id1, id2, groupnames);
+  }
+  void tair_client_api::query_from_configserver(uint32_t query_type, const std::string &groupname, std::map<std::string, std::string> &out, uint64_t serverId)
+  {
+    impl->query_from_configserver(query_type, groupname, out, serverId);
+  }
+  uint32_t tair_client_api::get_config_version() const
+  {
+    return impl->get_config_version();
   }
   int64_t tair_client_api::ping(uint64_t server_id)
   {

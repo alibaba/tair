@@ -421,7 +421,7 @@ namespace tair {
       int ret = client_helper.add_count(area, key, count, &retCount, initValue);
 
       if (ret != TAIR_RETURN_SUCCESS) {
-         fprintf(stderr, "add failed:%s.\n", client_helper.get_error_msg(ret));
+         fprintf(stderr, "add failed:%d,%s.\n", ret,client_helper.get_error_msg(ret));
       } else {
          fprintf(stderr, "retCount: %d\n", retCount);
       }

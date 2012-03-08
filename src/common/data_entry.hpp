@@ -118,6 +118,30 @@ namespace tair
                //log_debug( "TairDataEntry(%d) - %s", size, debug_data);
             }
          }
+         std::string get_printable_key(bool tohex=false)
+				 {
+				 #define MAX_SHOW_KEY_LEN 128
+					 if(size <=0) { return "null key";}
+					if(tohex)
+					{
+						int _show_size = size<MAX_SHOW_KEY_LEN?size:MAX_SHOW_KEY_LEN;
+						int _need_size = _show_size*3+5;
+						char *p= (char *)malloc(_need_size);
+						if(!p) return "no memory for key";
+
+            char *d = (char *)data;
+
+						for(int j=0; j<_show_size; j++)
+							sprintf(p+3*j, "%02X ", (d[j] & 0xFF));
+						std::string  _print_key(p);
+						free(p);
+						return _print_key;
+					}
+					else
+					{
+						return std::string(m_true_data,m_true_size);
+					}
+				 }
 
          data_entry(const char *str, bool alloc = true)
           {

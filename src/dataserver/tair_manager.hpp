@@ -126,6 +126,7 @@ namespace tair {
       int get_op_flag(int bucket_number, int server_flag);
       void init_migrate_log();
       int get_mutex_index(data_entry &key);
+      int do_duplicate(int area, data_entry& key, data_entry& value,int bucket_number,base_packet *request,int heart_vesion);
 
    private:
       int status;
