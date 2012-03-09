@@ -41,6 +41,7 @@ namespace tair {
       }
 
       bp = (base_packet*)async_queue.pop();
+			log_debug("async_queue.size: %d", async_queue.size());
       queue_cond.unlock();
       int pc = bp->getPCode();
       if (pc == TAIR_REQ_HIDE_BY_PROXY_PACKET) {
