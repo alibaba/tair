@@ -59,16 +59,16 @@ namespace tair {
     //~ stop threads.
     if (!_stop) {
       _stop = true;
-      invalid_loader.stop();
-      log_warn("stopping invalid_loader");
+      transport.stop();
+      log_warn("stopping transport");
       task_queue_thread.stop();
       log_warn("stopping task_queue_thread");
       async_thread.stop();
       log_warn("stopping async_thread");
       retry_thread.stop();
       log_warn("stopping retry_thread");
-      transport.stop();
-      log_warn("stopping transport");
+      invalid_loader.stop();
+      log_warn("stopping invalid_loader");
     }
   }
 
