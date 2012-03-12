@@ -10,14 +10,14 @@ class ConfigLoader {
 public:
     ConfigLoader();
     ~ConfigLoader();
-    char* getMsConfigServ();
-    char* getSlConfigServ();
-    char* getGroupName();
-    int getNameSpace();
-    char* getKeyFile();
-    int getWorkerNum();
-    int getDelJobSize();
-    int getKeyFormat();
+    const char* getMsConfigServ();
+    const char* getSlConfigServ();
+    const char* getGroupName();
+    const int getNameSpace();
+    const char* getKeyFile();
+    const int getWorkerNum();
+    const int getDelJobSize();
+    const int getKeyFormat();
     int loadInfo(const char* filename); 
 private:
     char* match(char* src, const char* matcher);
@@ -75,35 +75,35 @@ ConfigLoader::~ConfigLoader() {
     }
 }
 
-char* ConfigLoader::getMsConfigServ() {
+const char* ConfigLoader::getMsConfigServ() {
     return _master_config_server;
 }
 
-char* ConfigLoader::getSlConfigServ() {
+const char* ConfigLoader::getSlConfigServ() {
     return _slave_config_server;
 }
 
-char* ConfigLoader::getGroupName() {
+const char* ConfigLoader::getGroupName() {
     return _group_name;
 }
 
-int ConfigLoader::getNameSpace() {
+const int ConfigLoader::getNameSpace() {
     return _namespace;
 }
 
-char* ConfigLoader::getKeyFile() {
+const char* ConfigLoader::getKeyFile() {
     return _keys_file;
 }
 
-int ConfigLoader::getWorkerNum() {
+const int ConfigLoader::getWorkerNum() {
     return _worker_num;
 }
 
-int ConfigLoader::getDelJobSize() {
+const int ConfigLoader::getDelJobSize() {
     return _del_job_size;
 }
 
-int ConfigLoader::getKeyFormat() {
+const int ConfigLoader::getKeyFormat() {
     return _key_format;
 }
 

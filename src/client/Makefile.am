@@ -31,7 +31,7 @@ tairclient_SOURCES=tair_client.cpp
 tairclient_LDADD=libtairclientapi.la ${LDADD}
 tairclient_LDFLAGS= -static
 
-keycleantool_SOURCES=tair_key_clean.cpp DelJob.hpp NBQueue.hpp Worker.hpp ConfigLoader.hpp
+keycleantool_SOURCES=tair_key_clean.cpp del_job.hpp nonblock_queue.hpp clean_worker.hpp config_loader.hpp
 keycleantool_LDADD=libtairclientapi.la ${LDADD}
 keycleantool_LDFLAGS= -static
 

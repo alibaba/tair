@@ -11,8 +11,8 @@
 #include <tbsys.h>
 #include <tbnet.h>
 
-#include "NBQueue.hpp"
-#include "DelJob.hpp"
+#include "nonblock_queue.hpp"
+#include "del_job.hpp"
 #include "tair_client_api_impl.hpp"
 
 #include "define.hpp"
@@ -33,16 +33,18 @@ enum {
     RAW_FORMAT=2
 };
 
-class Worker {
+class CleanWorker {
 public:
-    Worker():_queue(_MAX_QUEUE_SIZE){}
-    Worker(char* server_addr, char* group_name, int area, int key_format, char* name = NULL);
-    ~Worker();
-    void init(char* server_addr, char* group_name, int area, int key_format, char* name = NULL);
+    CleanWorker():_queue(_MAX_QUEUE_SIZE){}
+    CleanWorker(const char* server_addr, const char* group_name, const int area,
+            const int key_format, const char* name = NULL);
+    ~CleanWorker();
+    void init(const char* server_addr, const char* group_name, const int area,
+            const int key_format, const char* name = NULL);
     void start();
     void run();
     void stop();
-    int getJob(DelJob* job);
+    int offerJob(DelJob* job);
     char* getName();
 private:
     static void* thread_func(void* argv);
@@ -60,12 +62,13 @@ private:
     int _key_format;
 };
 
-Worker::Worker(char* server_addr, char* group_name, int area, int key_format, char* name)
+CleanWorker::CleanWorker(const char* server_addr, const char* group_name, const int area,
+        const int key_format, const char* name)
     : _queue(_MAX_QUEUE_SIZE){
     init(server_addr, group_name, area, key_format, name);
 }
 
-Worker::~Worker() {
+CleanWorker::~CleanWorker() {
     _can_over = 1;
     pthread_join(_work_thread, NULL);
     if (_name != NULL) {
@@ -81,8 +84,8 @@ Worker::~Worker() {
     }
 }
 
-void Worker::init(char* server_addr, char* group_name, int area,
-        int key_format, char* name) {
+void CleanWorker::init(const char* server_addr, const char* group_name, const int area,
+        const int key_format, const char* name) {
     _server_addr = NULL;
     _group_name = NULL;
 
@@ -117,7 +120,7 @@ void Worker::init(char* server_addr, char* group_name, int area,
     _key_format = key_format;
 }
 
-void Worker::start() {
+void CleanWorker::start() {
     client_helper.set_timeout(5000);
     bool done = client_helper.startup(_server_addr, NULL, _group_name);
     if (done == false) {
@@ -133,13 +136,13 @@ void Worker::start() {
     }
 }
 
-void* Worker::thread_func(void* argv) {
-    Worker* worker = (Worker*)argv;
+void* CleanWorker::thread_func(void* argv) {
+    CleanWorker* worker = (CleanWorker*)argv;
     worker->run();
     return NULL;
 }
 
-void Worker::run() {
+void CleanWorker::run() {
     while(true) {
         if(_queue.isEmpty()) {
             if (_can_over) {
@@ -154,7 +157,7 @@ void Worker::run() {
     }
 }
 
-int Worker::getJob(DelJob* job) {
+int CleanWorker::offerJob(DelJob* job) {
     if (_queue.isFull()) {
         return 0;
     }
@@ -162,11 +165,11 @@ int Worker::getJob(DelJob* job) {
     return 1;
 }
 
-char* Worker::getName() {
+char* CleanWorker::getName() {
     return _name;
 }
 
-void Worker::doDelete(char** keys, int keynum) {
+void CleanWorker::doDelete(char** keys, int keynum) {
     std::vector<data_entry*> keys_v;
     for (int i = 0; i < keynum; ++i)
     {
@@ -201,7 +204,7 @@ void Worker::doDelete(char** keys, int keynum) {
     }
 }
 
-char* Worker::canonical_key(char *key, int *size)
+char* CleanWorker::canonical_key(char *key, int *size)
 {
    char *pdata = key;
    if (_key_format == JAVA_FORMAT) { // java format
