@@ -9,7 +9,7 @@ AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB} \
       @BOOST_THREAD_LIB@
 
 LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
-      $(TBLIB_ROOT)/lib/libtbsys.a 
+      $(TBLIB_ROOT)/lib/libtbsys.a
 
 base_src=data_dumpper.cpp	\
 	 stat_helper.cpp	\
@@ -26,7 +26,12 @@ base_src=data_dumpper.cpp	\
 	 stat_info.hpp	\
 	 util.hpp	\
 	 wait_object.hpp	 \
+   file_op.hpp \
    file_op.cpp \
+	 BlockQueueEx.hpp \
+	 blockqueue.hpp \
+	 syncproc.hpp \
+	 scoped_wrlock.hpp \
    file_list_factory.hpp
 
 noinst_LIBRARIES=libtair_common.a

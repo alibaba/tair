@@ -36,6 +36,11 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
 			  mupdate_packet.hpp	\
 			  packet_factory.hpp	\
 			  ping_packet.hpp	\
+				invalid_packet.hpp \
+				hide_packet.hpp \
+				hide_by_proxy_packet.hpp \
+				get_hidden_packet.hpp \
+				sync_packet.hpp \
 			  put_packet.hpp	\
 			  query_info_packet.hpp	\
 			  remove_area_packet.hpp	\

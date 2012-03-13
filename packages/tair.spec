@@ -1,9 +1,9 @@
 Name: %NAME
 Version: %VERSION
-Release: r453%{?dist}
+Release: r454%{?dist}
 Summary: Taobao key/value storage system
 Group: Application
-URL: http:://yum.corp.alimama.com
+URL: http://yum.corp.alimama.com
 Packager: taobao<opensource@taobao.com>
 License: GPL
 Vendor: TaoBao
@@ -63,6 +63,8 @@ rm  -f /etc/ld.so.conf.d/tair-%{VERSION}.conf
 %config(noreplace) %{_prefix}/etc/*
 %attr(0755, admin, admin) %{_prefix}/set_shm.sh
 %attr(0755, admin, admin) %{_prefix}/tair.sh
+%attr(0755, admin, admin) %{_prefix}/stat.sh
+%attr(0755, admin, admin) %{_prefix}/check_version.sh
 
 %files devel
 %{_prefix}/include
