@@ -11,8 +11,12 @@ Prefix:%{_prefix}
 Source:%{NAME}-%{VERSION}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-root
 BuildRequires: t-csrd-tbnet-devel >= 1.0.4
+BuildRequires: google-perftools >= 1.7
+BuildRequires: boost-devel >= 1.30.0
 #Requires: openssl-devel >= 0.9
+Requires: t-csrd-tbnet-devel >= 1.0.4
 Requires: google-perftools >= 1.7
+Requires: boost-devel >= 1.30.0
 
 %description
 Tair is a high performance, distribution key/value storage system.
