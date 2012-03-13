@@ -3,7 +3,7 @@
 port=5196
 process_thread_num=4
 async_thread_num=4
-client_timeout=1000
+client_timeout=5000
 log_level=info
 ignore_zero_area=0
 dev_name=eth0
