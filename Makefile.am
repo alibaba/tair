@@ -8,7 +8,7 @@ utest: check
 
 .PHONY: utest
 EXTRA_DIST=bootstrap.sh \
-	   share/configserver.conf.default share/dataserver.conf.default share/group.conf.default share/Makefile.am \
+	   share/configserver.conf.default share/dataserver.conf.default share/group.conf.default share/invalserver.conf.default share/Makefile.am \
 	   share/Makefile.in \
 	   scripts/Makefile.am scripts/Makefile.in scripts/mdbshm_reader.py scripts/set_shm.sh \
 		 scripts/tair.sh scripts/stat.sh scripts/check_version.sh \

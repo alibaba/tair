@@ -25,6 +25,7 @@ namespace tair {
   tair_client_api::tair_client_api()
   {
     impl = new tair_client_impl();
+    memset(cache_impl, 0, sizeof(cache_impl));
   }
 
   tair_client_api::~tair_client_api()
@@ -44,7 +45,6 @@ namespace tair {
 
   bool tair_client_api::startup(const char *master_addr,const char *slave_addr,const char *group_name)
   {
-    memset(cache_impl, 0, sizeof(cache_impl));
     return impl->startup(master_addr,slave_addr,group_name);
   }
 
