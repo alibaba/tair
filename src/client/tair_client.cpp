@@ -263,6 +263,9 @@ namespace tair {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
    int64_t tair_client::ping(uint64_t server_id)
    {
+		 if (server_id == 0ul) {
+			 return 0L;
+		 }
      int ping_count = 10;
      int64_t total = 0;
      for (int i = 0; i < ping_count; ++i) {
