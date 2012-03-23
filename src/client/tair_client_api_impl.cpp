@@ -1352,7 +1352,7 @@ FAIL:
     temp[TAIR_RETURN_ITEM_EMPTY]              = "item is empty";
     temp[TAIR_RETURN_SERIALIZE_ERROR] = "serialize failed";
     temp[TAIR_RETURN_OUT_OF_RANGE]            = "item's index out of range";
-    temp[TAIR_RETURN_ITEMSIZE_ERROR]  = "key or vlaue too large";
+    temp[TAIR_RETURN_ITEMSIZE_ERROR]  = "key or value too large";
     temp[TAIR_RETURN_SEND_FAILED]             = "send packet error";
     temp[TAIR_RETURN_TIMEOUT]         = "timeout";
     temp[TAIR_RETURN_SERVER_CAN_NOT_WORK]   = "server can not work";
