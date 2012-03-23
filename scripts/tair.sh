@@ -246,6 +246,6 @@ case "$1" in
   tomdb_shm
   ;;
   *)
-  echo "usage: $0 {start_cs|stop_cs|start_ds|stop_ds|start_iv|stop_iv [SERVER_COUNT]|lean|log_debug2warn|log_warn2debug}"
+  echo "usage: $0 {start_cs|stop_cs|start_ds|stop_ds|start_iv|stop_iv [SERVER_COUNT]|clean|log_debug2warn|log_warn2debug}"
 esac
 
