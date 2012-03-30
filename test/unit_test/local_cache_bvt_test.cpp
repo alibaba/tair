@@ -48,7 +48,7 @@ protected:
       client = NULL;
       return ;
     }
-    client->setup_cache(AREA, 1024, EXPIRE);
+    client->setup_cache(AREA, 1024);
 
     if (internal != NULL) 
       return;
@@ -111,7 +111,7 @@ TEST_F(local_cache_bvt_test, test_connet_tc)
         slave.c_str(), 
         group.c_str()); 
   ASSERT_EQ(startup, true);
-  client.setup_cache(AREA, 1024, 300);
+  client.setup_cache(AREA, 1023);
   client.close();
 }
 

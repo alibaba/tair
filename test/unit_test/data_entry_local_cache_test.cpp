@@ -16,7 +16,7 @@ class data_entry_local_cache_test : public testing::Test
 {
 public:
   data_entry_local_cache_test() : 
-      cache(MAX_COUNT, EXPIRE_TIME) 
+      cache(MAX_COUNT) 
   {
   }
 
@@ -25,7 +25,7 @@ public:
 protected:
   virtual void SetUp() 
   {
-    cache.set_capability(MAX_COUNT);
+    cache.set_capacity(MAX_COUNT);
     cache.set_expire(EXPIRE_TIME);
     cache.clear();
   }
@@ -48,7 +48,7 @@ protected:
 TEST_F(data_entry_local_cache_test, cap_0_tc)
 { 
   const size_t count = 10;
-  cache.set_capability(0);
+  cache.set_capacity(0);
   for (size_t i = 0; i < count; ++i) {
     data_entry_local_cache::result res;
     data_entry test_key = env->random_data_entry(KEY_LEN);
@@ -69,7 +69,7 @@ TEST_F(data_entry_local_cache_test, put_get_10k_tc)
 { 
   const size_t count = 10 * 1000;
 
-  cache.set_capability(100);
+  cache.set_capacity(100);
   for (size_t i = 0; i < count; ++i) {
     data_entry_local_cache::result res;
     data_entry test_key = env->random_data_entry(KEY_LEN);
@@ -77,7 +77,7 @@ TEST_F(data_entry_local_cache_test, put_get_10k_tc)
     data_entry value;
     res = cache.get(test_key, value);
     ASSERT_EQ(res, data_entry_local_cache::MISS);
-    size_t cap = cache.get_capability();
+    size_t cap = cache.get_capacity();
     ASSERT_EQ(cache.size(), i > cap ? cap : i);
     cache.put(test_key, test_val);
     ASSERT_EQ(cache.size(), i + 1 > cap ? cap : i + 1);
@@ -97,7 +97,7 @@ TEST_F(data_entry_local_cache_test, put_10k_256b_tc)
     data_entry test_key = env->random_data_entry(56);
     data_entry test_val = env->random_data_entry(200);
     cache.put(test_key, test_val);
-    size_t cap = cache.get_capability();
+    size_t cap = cache.get_capacity();
     ASSERT_EQ(cache.size(), i + 1 > cap ? cap : i + 1);
     data_entry_local_cache::result res;
     data_entry value;
@@ -146,7 +146,7 @@ TEST_F(data_entry_local_cache_test, put_10k_same_key_val_tc)
 TEST_F(data_entry_local_cache_test, evict_tc)
 { 
   const size_t cap = 100;
-  tair::data_entry_local_cache cache(cap, 10);
+  tair::data_entry_local_cache cache(cap);
   char buf[1024];
   
   for (int i = 0; i < 110; ++i) {

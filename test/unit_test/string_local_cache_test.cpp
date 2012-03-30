@@ -15,8 +15,8 @@ TestEnvironment* const env = dynamic_cast<TestEnvironment * const>(
 class string_local_cache_testable : public string_local_cache
 {
 public:
-  string_local_cache_testable(size_t cap, int64_t exp) :
-      string_local_cache(cap, exp) {}
+  string_local_cache_testable(size_t cap) :
+      string_local_cache(cap) {}
   using tair::string_local_cache::lru_size;
 };
 
@@ -24,7 +24,7 @@ class string_local_cache_test : public testing::Test
 {
 public:
   string_local_cache_test() : 
-      cache(MAX_COUNT, EXPIRE_TIME) 
+      cache(MAX_COUNT ) 
   {
   }
 
@@ -34,7 +34,7 @@ protected:
 
   virtual void SetUp() 
   {
-    cache.set_capability(MAX_COUNT);
+    cache.set_capacity(MAX_COUNT);
     cache.set_expire(EXPIRE_TIME);
     cache.clear();
   }
@@ -95,7 +95,7 @@ TEST_F(string_local_cache_test, simple_tc)
 TEST_F(string_local_cache_test, cap_0_tc)
 { 
   const size_t count = 10;
-  cache.set_capability(0);
+  cache.set_capacity(0);
   for (size_t i = 0; i < count; ++i) {
     string_local_cache::result res;
     string test_key = env->random_string(KEY_LEN);
@@ -148,7 +148,7 @@ TEST_F(string_local_cache_test, put_get_remove_10k_uniq_tc)
 TEST_F(string_local_cache_test, test_lru_tc) 
 {
   const size_t count = 150;
-  cache.set_capability(100);
+  cache.set_capacity(100);
   cache.set_expire(0);
   for (size_t i = 0; i < count; ++i) {
     string_local_cache::result res;
@@ -162,7 +162,7 @@ TEST_F(string_local_cache_test, test_lru_tc)
     EXPECT_EQ(test_val, value);
   }
 
-  const size_t cap = cache.get_capability();
+  const size_t cap = cache.get_capacity();
   for (size_t i = 0; i < count - cap; ++i) {
     string_local_cache::result res;
     string test_key((char *)(&i), sizeof(i));
@@ -185,7 +185,7 @@ TEST_F(string_local_cache_test, simple_test_evict_tc)
 {
   const size_t count = 100;
   string pre_key;
-  cache.set_capability(1);
+  cache.set_capacity(1);
   for (size_t i = 0; i < count; ++i) {
     string_local_cache::result res;
     string test_key = env->random_string(KEY_LEN);
@@ -215,7 +215,7 @@ TEST_F(string_local_cache_test, put_get_1k_uniq_tc)
 { 
   const size_t count = 1000;
 
-  cache.set_capability(100000);
+  cache.set_capacity(100000);
   for (size_t i = 0; i < count; ++i) {
     string_local_cache::result res;
     string test_key = env->random_string(KEY_LEN);
@@ -224,7 +224,7 @@ TEST_F(string_local_cache_test, put_get_1k_uniq_tc)
     string value;
     res = cache.get(test_key, value);
     ASSERT_EQ(res, string_local_cache::MISS);
-    size_t cap = cache.get_capability();
+    size_t cap = cache.get_capacity();
     ASSERT_EQ(cache.size(), i > cap ? cap : i);
     cache.put(test_key, test_val);
     ASSERT_EQ(cache.size(), i + 1 > cap ? cap : i + 1);
@@ -240,7 +240,7 @@ TEST_F(string_local_cache_test, put_get_10k_tc)
 { 
   const size_t count = 10 * 1000;
 
-  cache.set_capability(100);
+  cache.set_capacity(100);
   for (size_t i = 0; i < count; ++i) {
     string_local_cache::result res;
     string test_key = env->random_string(KEY_LEN);
@@ -248,7 +248,7 @@ TEST_F(string_local_cache_test, put_get_10k_tc)
     string value;
     res = cache.get(test_key, value);
     ASSERT_EQ(res, string_local_cache::MISS);
-    size_t cap = cache.get_capability();
+    size_t cap = cache.get_capacity();
     ASSERT_EQ(cache.size(), i > cap ? cap : i);
     cache.put(test_key, test_val);
     ASSERT_EQ(cache.size(), i + 1 > cap ? cap : i + 1);
@@ -268,7 +268,7 @@ TEST_F(string_local_cache_test, put_10k_256b_tc)
     string test_key = env->random_string(56);
     string test_val = env->random_string(200);
     cache.put(test_key, test_val);
-    size_t cap = cache.get_capability();
+    size_t cap = cache.get_capacity();
     ASSERT_EQ(cache.size(), i + 1 > cap ? cap : i + 1);
     ASSERT_EQ(cache.lru_size(), cache.size());
     string_local_cache::result res;
@@ -317,7 +317,7 @@ TEST_F(string_local_cache_test, put_10k_same_key_val_tc)
 TEST_F(string_local_cache_test, evict_tc)
 { 
   const size_t cap = 100;
-  tair::string_local_cache cache(cap, 10);
+  tair::string_local_cache cache(cap);
   char buf[1024];
   
   for (int i = 0; i < 110; ++i) {
