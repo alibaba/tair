@@ -31,17 +31,19 @@ public:
 
   // cap: cache max size, if cache size reach cap, lru one entry
   // expire: entry expire time, refresh interval
-  local_cache(size_t cap, int64_t expire);
+  local_cache(size_t cap);
   virtual ~local_cache();
 
   typedef enum {
     HIT,
     MISS,
-    EXPIRED
+    EXPIRED,
+    SETOK,
+    SETERROR
   } result;
  
   // put a entry in cache, 
-  // if size >= capability, evict entry, until size < capabiliy
+  // if size >= capacity, evict entry, until size < capabiliy
   virtual void put(const KeyT& key, const ValueT& val); 
 
   // update entry utime
@@ -65,20 +67,20 @@ public:
     return cache.size();
   }
 
-  size_t get_capability() 
+  size_t get_capacity() 
   {
-    return this->capability;  
+    return this->capacity;  
   }
 
-  void set_capability(size_t cap) 
+  void set_capacity(size_t cap) 
   {
-    this->capability = cap > 0 ? cap : 0;
+    this->capacity = cap > 0 ? cap : 0;
     if(cap < 1) {
       clear();
     } else {
       tbsys::CThreadGuard guard(&mutex);
-      while (cache.size() >= capability) {
-        assert(capability >= 1);
+      while (cache.size() >= capacity) {
+        assert(capacity >= 1);
         const internal_entry *evict = evict_one();
         assert(evict != NULL);
         // free entry
@@ -87,9 +89,14 @@ public:
     }
   }
 
-  void set_expire(int64_t e)
+  result set_expire(uint64_t e)
   {
-    this->expire = e;
+    if (e > 0) {
+      this->expire = e;
+      return SETOK;
+    } else {
+      return SETERROR;
+    }
   }
 
 protected:
@@ -102,9 +109,9 @@ protected:
   {
     KeyT    key;
     ValueT  value;
-    int64_t utime;
+    uint64_t utime;
 
-    internal_entry(const KeyT& key, const ValueT& value, int64_t utime)
+    internal_entry(const KeyT& key, const ValueT& value, uint64_t utime)
       : key(key), value(value), utime(utime) {}
   };
 
@@ -147,7 +154,7 @@ protected:
     return last_elem;
   }
 private:
-  int64_t entry_utime(const entry_cache_iterator& iter)
+  uint64_t entry_utime(const entry_cache_iterator& iter)
   {
     return (*(iter->second))->utime;
   }
@@ -193,14 +200,13 @@ private:
   {
     delete entry;
   }
-
   
 private:
   entry_list lru;
   entry_cache cache;
 
-  size_t capability;
-  int64_t expire;
+  size_t capacity;
+  uint64_t expire;
 
   tbsys::CThreadMutex mutex;
 };

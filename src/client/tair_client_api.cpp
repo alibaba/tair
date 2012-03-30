@@ -37,10 +37,12 @@ namespace tair {
     }
   }
 
-  void tair_client_api::setup_cache(int area, size_t capability, int64_t expire)
+  void tair_client_api::setup_cache(int area, size_t capacity)
   {
+    if (area < 0 || area > TAIR_MAX_AREA_COUNT)
+      return ;
     if (cache_impl[area] == NULL)
-      cache_impl[area] = new data_entry_local_cache(capability, expire);
+      cache_impl[area] = new data_entry_local_cache(capacity);
   }
 
   bool tair_client_api::startup(const char *master_addr,const char *slave_addr,const char *group_name)
@@ -76,7 +78,7 @@ namespace tair {
     cache_type *cache = cache_impl[area];
     if (cache != NULL) {
       // find first
-      data = new data_entry();;
+      data = new data_entry();
       cache_type::result result = cache->get(key, *data);
       if (cache_type::HIT == result) {
         return TAIR_RETURN_SUCCESS;

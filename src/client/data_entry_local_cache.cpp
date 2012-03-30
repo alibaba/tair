@@ -7,7 +7,7 @@ namespace tair
 
 void data_entry_local_cache_instantiation()
 {
-  data_entry_local_cache var(0, 0);
+  data_entry_local_cache var(0);
 }
 
 }

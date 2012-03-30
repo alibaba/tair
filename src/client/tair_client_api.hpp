@@ -37,10 +37,12 @@ namespace tair {
       // capability, cache size
       // expire, entry expire time, unit ms
       // now, just support cache read
-      void setup_cache(int area, size_t capability, int64_t expire);
+      void setup_cache(int area, size_t capacity = 30);
 
       data_entry_local_cache* get_local_cache(int area)
       {
+        if (area < 0 || area >= TAIR_MAX_AREA_COUNT)
+          return NULL;
         return cache_impl[area];
       }
 

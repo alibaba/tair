@@ -988,7 +988,6 @@ FAIL:
               continue;
           }
           ++send_success;
-
       }
 
       TBSYS_LOG(DEBUG,"mdelete keys size: %d, send success: %u, return packet size: %u",

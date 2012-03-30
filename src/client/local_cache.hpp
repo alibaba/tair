@@ -21,9 +21,9 @@ LOCAL_CACHE_CLASS::~local_cache()
 }
 
 LOCAL_CACHE_TEMPLATE
-LOCAL_CACHE_CLASS::local_cache(size_t cap, int64_t exp) : 
-    capability(cap > 0 ? cap : 0),
-    expire(exp)
+LOCAL_CACHE_CLASS::local_cache(size_t cap) : 
+    capacity(cap > 0 ? cap : 0),
+    expire(300)
 {
   tbsys::CThreadGuard guard(&mutex);
   lru.clear();
@@ -40,9 +40,12 @@ void LOCAL_CACHE_CLASS::touch(const KeyT& key)
   if (iter == cache.end()) {
     // miss
     return ;
-  }
-  // update utime
-  set_entry_utime_now(iter->second);
+  } 
+  // move to first
+  lru.splice(lru.begin(), lru, iter->second); 
+  // check whether entry was expired 
+  // set_entry_utime_now(iter->second);
+  return ;
 }
 
 
@@ -61,7 +64,7 @@ void LOCAL_CACHE_CLASS::remove(const KeyT& key)
 LOCAL_CACHE_TEMPLATE
 void LOCAL_CACHE_CLASS::put(const KeyT& key, const ValueT& val) 
 {
-  if (capability < 1) {
+  if (capacity < 1) {
       return ;
   }
   // lock 
@@ -72,8 +75,8 @@ void LOCAL_CACHE_CLASS::put(const KeyT& key, const ValueT& val)
   if (iter == cache.end()) {
     // not found
     // evict entry
-    while (cache.size() >= capability) {
-      assert(capability >= 1);
+    while (cache.size() >= capacity) {
+      assert(capacity >= 1);
       const internal_entry *evict = evict_one();
       assert(evict != NULL);
       // free entry
@@ -119,13 +122,12 @@ void LOCAL_CACHE_CLASS::clear()
   cache.clear();
 }
 
-
 LOCAL_CACHE_TEMPLATE
 typename LOCAL_CACHE_CLASS::result 
 LOCAL_CACHE_CLASS::get(const KeyT& key, ValueT& value) 
 {
   // lock
-  if (capability < 1) {
+  if (capacity < 1) {
     return MISS;
   }
   tbsys::CThreadGuard guard(&mutex);
@@ -139,8 +141,9 @@ LOCAL_CACHE_CLASS::get(const KeyT& key, ValueT& value)
   // whatever, find entry, fill value
   fill_value(iter, value);
   // check whether entry was expired 
-  int64_t now = tbutil::Time::now().toMilliSeconds();
-  if (expire != 0 && now - entry_utime(iter) > expire) {
+  uint64_t now = tbutil::Time::now().toMilliSeconds();
+  assert(expire != 0);
+  if (now - entry_utime(iter) > expire) {
     // expired
     set_entry_utime(iter->second, now);
     return EXPIRED;
