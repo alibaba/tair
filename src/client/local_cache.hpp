@@ -57,8 +57,10 @@ void LOCAL_CACHE_CLASS::remove(const KeyT& key)
   if (iter == cache.end()) {
     return ;
   }
+  internal_entry *entry = *(iter->second);
   lru.erase(iter->second);
   cache.erase(iter);
+  drop_entry(entry);
 }
 
 LOCAL_CACHE_TEMPLATE
