@@ -75,6 +75,10 @@ namespace tair {
       const data_entry &key,
       data_entry*& data)
   {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
     cache_type *cache = cache_impl[area];
     if (cache != NULL) {
       // find first
@@ -104,6 +108,10 @@ namespace tair {
       vector<data_entry *> &keys,
       tair_keyvalue_map& data)
   {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
     cache_type *cache = cache_impl[area];
     if (cache != NULL) {
       vector<data_entry *> cached_keys;
@@ -167,6 +175,10 @@ namespace tair {
 
   void tair_client_api::invalid_local_cache(int area, const vector<data_entry *> &keys)
   {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return ;
+    }
+
     cache_type *cache = cache_impl[area];
     if (cache == NULL)
       return;
