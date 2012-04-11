@@ -39,7 +39,7 @@ namespace tair {
 
   void tair_client_api::setup_cache(int area, size_t capacity)
   {
-    if (area < 0 || area > TAIR_MAX_AREA_COUNT)
+    if (area < 0 || area >= TAIR_MAX_AREA_COUNT)
       return ;
     if (cache_impl[area] == NULL)
       cache_impl[area] = new data_entry_local_cache(capacity);

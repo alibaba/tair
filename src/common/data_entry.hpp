@@ -31,11 +31,12 @@ namespace tair
       class data_entry {
       public:
          data_entry()
-          {
+         {
             init();
          }
          data_entry(const data_entry &entry)
-          {
+         {
+            m_true_data = NULL;
             alloc = false;
             data = NULL;
 
@@ -389,7 +390,7 @@ namespace tair
 
          inline void free_data()
          {
-           if (m_true_data&& alloc) {
+           if (m_true_data && alloc) {
              free(m_true_data);
            }
            data = NULL;
