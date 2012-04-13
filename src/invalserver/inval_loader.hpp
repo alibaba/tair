@@ -27,6 +27,9 @@ namespace tair {
 
         std::vector<tair_client_api*>* get_client_list(const char *groupname);
         void run(tbsys::CThread *thread, void *arg);
+        bool is_loading() const {
+          return loading;
+        }
         void stop();
 
     private:

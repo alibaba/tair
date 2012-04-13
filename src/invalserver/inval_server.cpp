@@ -134,6 +134,12 @@ namespace tair {
         break;
       case TAIR_REQ_PING_PACKET:
         {
+          if (invalid_loader.is_loading()) {
+            log_info("ping packet received, but clients are still not ready");
+            ret = TAIR_RETURN_FAILED;
+            msg = "iv not ready";
+            break;
+          }
           request_ping *req = dynamic_cast<request_ping*>(bp);
           if (req != NULL) {
             log_info("ping packet received, config_version: %u, value: %d", req->config_version, req->value);
