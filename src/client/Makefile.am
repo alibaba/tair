@@ -11,7 +11,7 @@ AM_CPPFLAGS= -fPIC -I${top_srcdir}/src \
 	    ${BOOST_CPPFLAGS}
 
 LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
-      $(TBLIB_ROOT)/lib/libtbsys.a
+      $(TBLIB_ROOT)/lib/libtbsys.a -lrt
 
 api_source_list=tair_client_api.cpp tair_client_api_impl.cpp \
 		${top_srcdir}/src/packets/packet_factory.cpp \

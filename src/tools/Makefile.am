@@ -13,9 +13,9 @@ AM_CPPFLAGS= -fPIC -I${top_srcdir}/src \
 
 LDADD=$(top_srcdir)/src/client/.libs/libtairclientapi.a \
 	  $(TBLIB_ROOT)/lib/libtbnet.a \
-	  $(TBLIB_ROOT)/lib/libtbsys.a
+	  $(TBLIB_ROOT)/lib/libtbsys.a ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@ -lz -lrt
 
-AM_LDFLAGS=-lpthread -lz ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
+AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
 
 sbin_PROGRAMS=dump_transfer
 

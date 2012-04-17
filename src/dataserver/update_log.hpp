@@ -18,6 +18,7 @@
 #define TAIR_FDB_MIGRATE_LOG_HPP
 
 #include <stdio.h>
+#include <stddef.h>
 #include <vector>
 #include <tbsys.h>
 #include "data_entry.hpp"

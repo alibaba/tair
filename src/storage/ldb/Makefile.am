@@ -10,7 +10,7 @@ noinst_LIBRARIES=libldb.a
 libldb_a_SOURCES=ldb_manager.cpp ldb_manager.hpp ldb_instance.hpp ldb_instance.cpp stat_manager.cpp stat_manager.hpp ldb_define.hpp ldb_define.cpp bg_task.hpp bg_task.cpp ldb_comparator.hpp ldb_comparator.cpp ldb_gc_factory.hpp ldb_gc_factory.cpp ldb_cache_stat.hpp ldb_cache_stat.cpp
 
 
-view_cache_stat_LDADD=libldb.a ./leveldb/libleveldb.a ${top_builddir}/src/common/libtair_common.a $(TBLIB_ROOT)/lib/libtbsys.a
+view_cache_stat_LDADD=libldb.a ./leveldb/libleveldb.a ${top_builddir}/src/common/libtair_common.a $(TBLIB_ROOT)/lib/libtbsys.a -lrt
 
 sbin_PROGRAMS=view_cache_stat
 view_cache_stat_SOURCES=view_cache_stat.cpp

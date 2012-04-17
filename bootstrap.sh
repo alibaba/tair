@@ -12,5 +12,4 @@ fi
 libtoolize --force
 aclocal
 autoconf
-automake --add-missing --force
-
+automake --add-missing --force --warnings=no-portability
