@@ -22,7 +22,7 @@ api_source_list=tair_client_api.cpp tair_client_api_impl.cpp \
           data_entry_local_cache.h data_entry_local_cache.cpp \
 		tair_client.hpp
 
-AM_LDFLAGS=-lpthread -lz ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
+AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
 
 lib_LTLIBRARIES=libtairclientapi.la libtairclientapi_c.la
 sbin_PROGRAMS=tairclient keycleantool
