@@ -471,7 +471,7 @@ FAIL:
     return ret;
   }
 
-  int tair_client_impl::init_request_map(int area, vector<data_entry *>& keys, request_get_map &request_gets, int server_select)
+  int tair_client_impl::init_request_map(int area, const vector<data_entry *>& keys, request_get_map &request_gets, int server_select)
   {
     if ( area < 0 || area >= TAIR_MAX_AREA_COUNT || server_select < 0 )
     {
@@ -482,7 +482,7 @@ FAIL:
 
     request_get_map::iterator rq_iter;
 
-    vector<data_entry *>::iterator key_iter;
+    vector<data_entry *>::const_iterator key_iter;
     for (key_iter = keys.begin(); key_iter != keys.end(); ++key_iter)
     {
       if ( !key_entry_check(**key_iter))
@@ -533,7 +533,7 @@ FAIL:
     return ret;
   }
 
-  int tair_client_impl::mget_impl(int area, vector<data_entry*> &keys, tair_keyvalue_map &data, int server_select)
+  int tair_client_impl::mget_impl(int area, const vector<data_entry*> &keys, tair_keyvalue_map &data, int server_select)
   {
     request_get_map request_gets;
     int ret = TAIR_RETURN_SUCCESS;
@@ -587,10 +587,10 @@ FAIL:
         continue;
       }
       resps.push_back(tpacket);
-      //TBSYS_LOG(DEBUG, "response from server key_count: %d", tpacket->key_count);
     }
 
     vector<response_get *>::iterator rp_iter = resps.begin();
+    bool kv_map_null = false;
     for (; rp_iter != resps.end(); ++ rp_iter)
     {
       ret = (*rp_iter)->get_code();
@@ -609,7 +609,12 @@ FAIL:
       else
       {
         tair_keyvalue_map* kv_map = (*rp_iter)->key_data_map;
-        assert(kv_map != NULL);
+        if (kv_map == NULL)
+        {
+          TBSYS_LOG(ERROR, "mget response's key data map is null");
+          kv_map_null = true;
+          break;
+        }
         tair_keyvalue_map::iterator it = kv_map->begin();
         while (it != kv_map->end())
         {
@@ -622,56 +627,36 @@ FAIL:
       new_config_version = (*rp_iter)->config_version;
     }
 
-    ret = TAIR_RETURN_SUCCESS;
-    if (keys.size() > data.size())
+    if (kv_map_null)
     {
-      ret = TAIR_RETURN_PARTIAL_SUCCESS;
+      //return fail
+      ret = TAIR_RETURN_FAILED; 
+      //free
+      tair_keyvalue_map::iterator mit = data.begin();
+      for ( ; mit != data.end(); ++mit)
+      {
+        delete mit->first;
+        delete mit->second;
+      }
+      data.clear();
+    }
+    else
+    {
+      ret = TAIR_RETURN_SUCCESS;
+      if (keys.size() > data.size())
+      {
+        ret = TAIR_RETURN_PARTIAL_SUCCESS;
+      }
     }
 
     this_wait_object_manager->destroy_wait_object(cwo);
     return ret;
   }
 
-  int tair_client_impl::mget(int area, vector<data_entry*> &keys, tair_keyvalue_map &data)
+  int tair_client_impl::mget(int area, const vector<data_entry*> &keys, tair_keyvalue_map &data)
   {
-    int ret = mget_impl(area, keys, data, 0);
-
-    //if (ret == TAIR_RETURN_PARTIAL_SUCCESS)
-    //{
-    //  vector<data_entry *> diff_keys;
-
-    //  tair_keyvalue_map::iterator iter;
-    //  vector<data_entry *>::iterator key_iter;
-    //  for (key_iter = keys.begin(); key_iter != keys.end(); ++key_iter)
-    //  {
-    //    iter = data.find(*key_iter);//why can not find??
-    //    if ( iter == data.end())
-    //    {
-    //      diff_keys.push_back(*key_iter);
-    //    }
-    //  }
-
-    //  tair_keyvalue_map diff_data;
-    //  ret = mget_impl(area, diff_keys, diff_data, 1);
-    //  if (ret == TAIR_RETURN_SUCCESS || ret == TAIR_RETURN_PARTIAL_SUCCESS)
-    //  {
-    //    iter = diff_data.begin();
-    //    while (iter != diff_data.end())
-    //    {
-    //      data.insert(tair_keyvalue_map::value_type(iter->first, iter->second));
-    //      ++iter;
-    //    }
-    //    diff_data.clear();
-    //  }
-    //  if (keys.size() > data.size())
-    //  {
-    //    ret = TAIR_RETURN_PARTIAL_SUCCESS;
-    //  }
-    //}
-
-    return ret;
+    return mget_impl(area, keys, data, 0);
   }
-
 
   int tair_client_impl::remove(int area, const data_entry &key,TAIRCALLBACKFUNC pfunc,void * arg)
   {
@@ -877,7 +862,7 @@ FAIL:
     return ret;
   }
 
-  int tair_client_impl::init_request_map(int area, vector<data_entry *>& keys, request_remove_map &request_removes)
+  int tair_client_impl::init_request_map(int area, const vector<data_entry *>& keys, request_remove_map &request_removes)
   {
     if (area < 0 || area >= TAIR_MAX_AREA_COUNT)
     {
@@ -887,7 +872,7 @@ FAIL:
     int ret = TAIR_RETURN_SUCCESS;
     request_remove_map::iterator rq_iter;
 
-    vector<data_entry *>::iterator key_iter;
+    vector<data_entry *>::const_iterator key_iter;
     for (key_iter = keys.begin(); key_iter != keys.end(); ++key_iter)
     {
       if (!key_entry_check(**key_iter))
@@ -935,7 +920,7 @@ FAIL:
     return ret;
   }
 
-  int tair_client_impl::mdelete(int area, vector<data_entry*> &keys)
+  int tair_client_impl::mdelete(int area, const vector<data_entry*> &keys)
   {
       request_remove_map request_removes;
       int ret = TAIR_RETURN_SUCCESS;
@@ -1492,7 +1477,6 @@ FAIL:
         new_config_version = rggp->config_version;
         if (config_version != new_config_version) {
           uint64_t *server_list = rggp->get_server_list(bucket_count,copy_count);
-          //assert(rggp->server_list_count == bucket_count * copy_count);
           for (uint32_t i=0; server_list != NULL && i<(uint32_t)rggp->server_list_count
               && i<my_server_list.size(); i++) {
             TBSYS_LOG(DEBUG, "update server table: [%d] => [%s]", i, tbsys::CNetUtil::addrToString(server_list[i]).c_str());
@@ -1787,7 +1771,13 @@ FAIL:
     }
 
     server_list_count = (uint32_t)(rggp->server_list_count);
-    assert(server_list_count == bucket_count * copy_count);
+
+    if (server_list_count != bucket_count * copy_count);
+    {
+      TBSYS_LOG(ERROR, "server table is wrong, server_list_count: %u, bucket_count: %u, copy_count: %u",
+          server_list_count, bucket_count, copy_count);
+      goto OUT;
+    }
 
     for (uint32_t i=0; server_list != 0 && i< server_list_count; ++i) {
       TBSYS_LOG(DEBUG, "server table: [%d] => [%s]", i, tbsys::CNetUtil::addrToString(server_list[i]).c_str());
@@ -1933,14 +1923,23 @@ OUT:
 
   int tair_client_impl::send_request(uint64_t server_id,base_packet *packet,int waitId)
   {
-    assert(server_id != 0 && packet != 0 && waitId >= 0);
-    if (connmgr->sendPacket(server_id, packet, NULL, (void*)((long)waitId)) == false) {
-      TBSYS_LOG(ERROR, "Send RequestGetPacket to %s failure.",
-          tbsys::CNetUtil::addrToString(server_id).c_str());
-      send_fail_count ++;
-      return TAIR_RETURN_SEND_FAILED;
+    int ret = TAIR_RETURN_SUCCESS;
+    if (server_id == 0 || packet == NULL)
+    {
+      TBSYS_LOG(ERROR, "param invalid. server id: %"PRI64_PREFIX"u", server_id);
+      ret = TAIR_RETURN_FAILED; 
     }
-    return 0;
+    else
+    {
+      if (connmgr->sendPacket(server_id, packet, NULL, (void*)((long)waitId)) == false)
+      {
+        TBSYS_LOG(ERROR, "Send RequestGetPacket to %s failure.",
+            tbsys::CNetUtil::addrToString(server_id).c_str());
+        send_fail_count ++;
+        ret = TAIR_RETURN_SEND_FAILED;
+      }
+    }
+    return ret;
   }
 #if 0
   int tair_client_impl::send_request(vector<uint64_t>& server,base_packet *packet,int waitId)
@@ -1967,19 +1966,32 @@ OUT:
   int tair_client_impl::get_response(wait_object *cwo,int wait_count,base_packet*& tpacket)
 
   {
-    assert(cwo != 0 && wait_count >= 0);
-    cwo->wait_done(wait_count, timeout);
-    base_packet *packet = cwo->get_packet();
-    if(packet == 0){
-      return TAIR_RETURN_TIMEOUT;
+    int ret = TAIR_RETURN_SUCCESS; 
+    if (cwo == NULL)
+    {
+      TBSYS_LOG(ERROR, "param invalid, cwo is null, wait count: %d", wait_count);
+      ret = TAIR_RETURN_FAILED; 
     }
-    tpacket = packet;
-    return 0;
+    else
+    {
+      cwo->wait_done(wait_count, timeout);
+      base_packet *packet = cwo->get_packet();
+      if(packet == 0)
+      {
+        ret = TAIR_RETURN_TIMEOUT;
+      }
+      tpacket = packet;
+    }
+    return ret;
   }
 
   int tair_client_impl::get_response(wait_object *cwo, int wait_count, vector<base_packet*>& tpacket)
   {
-    assert(cwo != 0 && wait_count >= 0);
+    if (cwo == NULL)
+    {
+      TBSYS_LOG(ERROR, "param invalid, cwo is null, wait count: %d", wait_count);
+      return TAIR_RETURN_FAILED; 
+    }
     cwo->wait_done(wait_count, timeout);
     int r_num = cwo->get_packet_count();
     int push_num = (r_num < wait_count) ? r_num: wait_count;
@@ -1987,7 +1999,8 @@ OUT:
     for (int idx = 0 ; idx < push_num ; ++ idx)
     {
       base_packet *packet = cwo->get_packet(idx);
-      if(packet == NULL){
+      if(packet == NULL)
+      {
         return TAIR_RETURN_TIMEOUT;
       }
       tpacket.push_back(packet);
@@ -2015,9 +2028,6 @@ OUT:
     if( data.get_size() == 0 || data.get_data() == 0 ){
       return false;
     }
-    //      if( (data.get_size() == 1) && ( *(data.get_data()) == '\0')){
-    //              return false;
-    //      }
     if( data.get_size() >= TAIR_MAX_DATA_SIZE ){
       return false;
     }

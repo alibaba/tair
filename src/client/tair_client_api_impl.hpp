@@ -85,7 +85,7 @@ namespace tair {
           data_entry*& data);
 
       int mget(int area,
-          vector<data_entry *> &keys,
+          const vector<data_entry *> &keys,
           tair_keyvalue_map &data);
 
       int remove(int area,
@@ -99,7 +99,7 @@ namespace tair {
       int hide(int area, const data_entry &key);
 
       int mdelete(int area,
-          vector<data_entry*> &keys);
+          const vector<data_entry*> &keys);
 
       int add_count(int area,
           const data_entry &key,
@@ -233,17 +233,17 @@ namespace tair {
       bool key_entry_check(const data_entry& data);
 
       int mget_impl(int area,
-          vector<data_entry *> &keys,
+          const vector<data_entry *> &keys,
           tair_keyvalue_map &data ,
           int server_select = 0);
 
       int init_request_map(int area,
-          vector<data_entry *>& keys,
+          const vector<data_entry *>& keys,
           request_get_map &request_gets ,
           int server_select = 0);
 
       int init_request_map(int area,
-          vector<data_entry *>& keys,
+          const vector<data_entry *>& keys,
           request_remove_map &request_removes);
 
     private:
@@ -251,10 +251,6 @@ namespace tair {
       bool is_stop;
       tbsys::CThread thread;
       tbsys::CThread response_thread; //thread to response packet.
-
-      //tair_packet_factory packet_factory;
-      //tbnet::DefaultPacketStreamer streamer;
-      //tbnet::Transport transport;
 
       tair_packet_factory *packet_factory;
       tbnet::DefaultPacketStreamer *streamer;
@@ -270,7 +266,6 @@ namespace tair {
       uint32_t config_version;
       uint32_t new_config_version;
       int send_fail_count;
-      //CWaitObjectManager wait_object_manager;
       wait_object_manager *this_wait_object_manager;
       uint32_t bucket_count;
       uint32_t copy_count;

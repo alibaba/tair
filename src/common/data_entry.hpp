@@ -338,6 +338,16 @@ namespace tair
           {
             data_meta.cdate = cdate;
          }
+
+         uint32_t get_mdate() const
+          {
+            return data_meta.mdate;
+         }
+
+         void  set_mdate(uint32_t mdate)
+          {
+            data_meta.mdate = mdate;
+         }
          inline bool is_alloc() const {
             return alloc;
          }

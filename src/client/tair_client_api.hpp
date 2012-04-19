@@ -116,7 +116,7 @@ namespace tair {
        * @return 0 -- success, TAIR_RETURN_PARTIAL_SUCCESS -- partly success, otherwise fail.
        */
       int mget(int area,
-          vector<data_entry *> &keys,
+          const vector<data_entry *> &keys,
           tair_keyvalue_map& data);
 
       /**
@@ -146,7 +146,7 @@ namespace tair {
        * @return  0 -- success, TAIR_RETURN_PARTIAL_SUCCESS partly success, otherwise fail.
        */
       int mdelete(int area,
-          vector<data_entry*> &key);
+          const vector<data_entry*> &key);
       /**
        * @brief invalid multi  data from tair cluster
        *

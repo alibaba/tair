@@ -105,7 +105,7 @@ namespace tair {
   }
 
   int tair_client_api::mget(int area,
-      vector<data_entry *> &keys,
+      const vector<data_entry *> &keys,
       tair_keyvalue_map& data)
   {
     if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
@@ -187,7 +187,7 @@ namespace tair {
   }
 
   int tair_client_api::mdelete(int area,
-      vector<data_entry *> &keys)
+      const vector<data_entry *> &keys)
   {
     int ret = impl->mdelete(area,keys);
     if (TAIR_RETURN_SUCCESS == ret ||
