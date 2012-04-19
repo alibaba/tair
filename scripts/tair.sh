@@ -7,7 +7,7 @@ cd ${TAIR_DIR}
 
 ulimit -c unlimited
 
-export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH:/usr/local/lib:/opt/csr/common/lib
 
 if [ x$2 != x ]
 then
