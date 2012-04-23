@@ -453,7 +453,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 
 		//check migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finish on cs "+(String)csList.get(1)+" log");
 			waitto(2);
