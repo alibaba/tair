@@ -2,6 +2,7 @@
 * tair opensourced
 
 2011-12-20
+version 2.3.1.2
 * feature: 
 * 1. support read from all replicas in c++ client:
 * tair_handle->set_randread(true)
@@ -13,3 +14,8 @@
 
 * fixbug: 
 * 1. expire items once in one period
+
+2012-04-19
+version 2.3.1.3
+* fixbug:
+* 1. 去除客户端中的assert，避免core.
