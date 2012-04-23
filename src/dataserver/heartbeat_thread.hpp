@@ -32,7 +32,7 @@ namespace tair {
 
       void run(tbsys::CThread *thread, void *arg);
 
-      void set_thread_parameter(tbnet::IServerAdapter *adaptor, tbnet::DefaultPacketStreamer *streamer, tair_manager *tair_mgr);
+      void set_thread_parameter(tbnet::IServerAdapter *adaptor, tair_packet_streamer *streamer, tair_manager *tair_mgr);
 
       tbnet::IPacketHandler::HPRetCode handlePacket(tbnet::Packet *packet, void *args);
 

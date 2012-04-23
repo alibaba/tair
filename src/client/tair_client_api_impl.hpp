@@ -30,6 +30,7 @@
 #include "define.hpp"
 #include "tair_client_api.hpp"
 #include "packet_factory.hpp"
+#include "packet_streamer.hpp"
 #include "wait_object.hpp"
 #include "item_manager.hpp"
 #include "items_packet.hpp"
@@ -253,7 +254,7 @@ namespace tair {
       tbsys::CThread response_thread; //thread to response packet.
 
       tair_packet_factory *packet_factory;
-      tbnet::DefaultPacketStreamer *streamer;
+      tair_packet_streamer *streamer;
       tbnet::Transport *transport;
       tbnet::ConnectionManager *connmgr;
 

@@ -36,11 +36,11 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
 			  mupdate_packet.hpp	\
 			  packet_factory.hpp	\
 			  ping_packet.hpp	\
-				invalid_packet.hpp \
-				hide_packet.hpp \
-				hide_by_proxy_packet.hpp \
-				get_hidden_packet.hpp \
-				sync_packet.hpp \
+			  invalid_packet.hpp \
+			  hide_packet.hpp \
+			  hide_by_proxy_packet.hpp \
+			  get_hidden_packet.hpp \
+			  sync_packet.hpp \
 			  put_packet.hpp	\
 			  query_info_packet.hpp	\
 			  remove_area_packet.hpp	\
@@ -48,4 +48,6 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
 			  response_return_packet.hpp	\
 			  server_hash_table_packet.hpp	\
 			  set_master_packet.hpp \
-			  lock_packet.hpp
+			  lock_packet.hpp \
+			  packet_streamer.hpp \
+			  packet_streamer.cpp

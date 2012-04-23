@@ -42,7 +42,7 @@ namespace tair {
       }
    }
 
-   void heartbeat_thread::set_thread_parameter(tbnet::IServerAdapter *adaptor, tbnet::DefaultPacketStreamer *streamer, tair_manager *tair_mgr)
+   void heartbeat_thread::set_thread_parameter(tbnet::IServerAdapter *adaptor, tair_packet_streamer *streamer, tair_manager *tair_mgr)
    {
       heartbeat_packet.server_id = local_server_ip::ip;
       // init heartbeat

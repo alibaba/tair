@@ -15,6 +15,7 @@ LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
 
 api_source_list=tair_client_api.cpp tair_client_api_impl.cpp \
 		${top_srcdir}/src/packets/packet_factory.cpp \
+		${top_srcdir}/src/packets/packet_streamer.cpp \
 		tair_client_capi.hpp tair_client_api.hpp \
 	       	tair_client_api_impl.hpp tair_client_capi.hpp \
           local_cache.hpp local_cache.hpp \

@@ -20,9 +20,7 @@
 namespace tair {
    class tair_packet_factory : public tbnet::IPacketFactory {
    public:
-      tair_packet_factory() {
-         tbnet::DefaultPacketStreamer::setPacketFlag(TAIR_PACKET_FLAG);
-      }
+       tair_packet_factory() {}
       ~tair_packet_factory();
 
       tbnet::Packet *createPacket(int pcode);

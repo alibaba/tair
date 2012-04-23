@@ -23,6 +23,7 @@
 #include <tbnet.h>
 #include "server_conf_thread.hpp"
 #include "packet_factory.hpp"
+#include "packet_streamer.hpp"
 
 using namespace std;
 using namespace __gnu_cxx;
@@ -46,7 +47,7 @@ namespace tair {
     private:
       int stop_flag;
       tair_packet_factory packet_factory;
-        tbnet::DefaultPacketStreamer packet_streamer;
+        tair_packet_streamer packet_streamer;
         tbnet::Transport packet_transport;
         tbnet::Transport heartbeat_transport;        //
 

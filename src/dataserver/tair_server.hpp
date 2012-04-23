@@ -28,6 +28,7 @@
 #include <tbnet.h>
 
 #include "packet_factory.hpp"
+#include "packet_streamer.hpp"
 #include "remove_area_packet.hpp"
 #include "response_return_packet.hpp"
 #include "dump_packet.hpp"
@@ -56,7 +57,7 @@ namespace tair {
    private:
       int is_stoped;
       tair_packet_factory factory;
-      tbnet::DefaultPacketStreamer streamer;
+      tair_packet_streamer streamer;
 
       tbnet::Transport transport;
       tbnet::ConnectionManager *conn_manager;

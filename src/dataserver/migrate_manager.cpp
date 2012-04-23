@@ -23,7 +23,7 @@
 
 namespace tair {
 
-   migrate_manager::migrate_manager(tbnet::Transport *transport, tbnet::DefaultPacketStreamer *streamer, base_duplicator *this_duplicator, tair_manager *tair_mgr, tair::storage::storage_manager *storage_mgr)
+   migrate_manager::migrate_manager(tbnet::Transport *transport, tair_packet_streamer *streamer, base_duplicator *this_duplicator, tair_manager *tair_mgr, tair::storage::storage_manager *storage_mgr)
    {
       conn_mgr = new tbnet::ConnectionManager(transport, streamer, this);
       duplicator = this_duplicator;

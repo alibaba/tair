@@ -21,6 +21,7 @@
 #include "table_manager.hpp"
 #include "duplicate_base.hpp"
 #include "duplicate_packet.hpp"
+#include "packet_streamer.hpp"
 
 #include "BlockQueueEx.hpp"
 #include "put_packet.hpp"
@@ -169,7 +170,7 @@ namespace tair {
     public:
 
       dup_sync_sender_manager( tbnet::Transport *transport,
-          tbnet::DefaultPacketStreamer *streamer, table_manager* table_mgr);
+          tair_packet_streamer *streamer, table_manager* table_mgr);
       ~dup_sync_sender_manager();
       void do_hash_table_changed();
       void set_max_queue_size(uint32_t max_queue_size) {

@@ -40,7 +40,6 @@
 #include "data_server_ctrl_packet.hpp"
 #include "scoped_wrlock.hpp"
 
-
 namespace tair {
 
 
@@ -134,7 +133,7 @@ namespace tair {
     if( packet_factory == 0)
       goto FAIL_1;
 
-    streamer = new tbnet::DefaultPacketStreamer();
+    streamer = new tair_packet_streamer();
     if(streamer == 0)
       goto FAIL_2;
     streamer->setPacketFactory(packet_factory);
@@ -1772,7 +1771,7 @@ FAIL:
 
     server_list_count = (uint32_t)(rggp->server_list_count);
 
-    if (server_list_count != bucket_count * copy_count);
+    if (server_list_count != bucket_count * copy_count)
     {
       TBSYS_LOG(ERROR, "server table is wrong, server_list_count: %u, bucket_count: %u, copy_count: %u",
           server_list_count, bucket_count, copy_count);

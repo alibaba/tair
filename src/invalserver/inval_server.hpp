@@ -14,6 +14,7 @@
 #include "define.hpp"
 #include "base_packet.hpp"
 #include "packet_factory.hpp"
+#include "packet_streamer.hpp"
 #include "invalid_packet.hpp"
 #include "ping_packet.hpp"
 #include "util.hpp"
@@ -43,7 +44,7 @@ namespace tair {
         bool ignore_zero_area;
 
         tair_packet_factory packet_factory;
-        tbnet::DefaultPacketStreamer streamer;
+        tair_packet_streamer streamer;
         tbnet::Transport transport;
 
         tbnet::PacketQueueThread task_queue_thread;

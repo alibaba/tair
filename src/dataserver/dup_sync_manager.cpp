@@ -16,6 +16,7 @@
 #include "dup_sync_manager.hpp"
 #include "syncproc.hpp"
 #include "packet_factory.hpp"
+#include "packet_streamer.hpp"
 #include "inc_dec_packet.hpp"
 #include "storage_manager.hpp"
 namespace tair{
@@ -169,7 +170,7 @@ namespace tair{
   }
 
   dup_sync_sender_manager::dup_sync_sender_manager( tbnet::Transport *transport,
-      tbnet::DefaultPacketStreamer *streamer, table_manager* table_mgr)
+      tair_packet_streamer *streamer, table_manager* table_mgr)
   {
     this->table_mgr = table_mgr;
     conn_mgr = new tbnet::ConnectionManager(transport, streamer, this);

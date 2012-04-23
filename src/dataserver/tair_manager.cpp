@@ -74,7 +74,7 @@
       table_mgr = NULL;
     }
 
-    bool tair_manager::initialize(tbnet::Transport *transport, tbnet::DefaultPacketStreamer *streamer)
+    bool tair_manager::initialize(tbnet::Transport *transport, tair_packet_streamer *streamer)
     {
       if (status != STATUS_NOT_INITED) {
         return true;

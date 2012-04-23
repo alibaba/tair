@@ -37,6 +37,7 @@
 #include "remove_packet.hpp"
 #include "lock_packet.hpp"
 #include "inc_dec_packet.hpp"
+#include "packet_streamer.hpp"
 
 namespace tair {
    enum {
@@ -61,7 +62,7 @@ namespace tair {
       tair_manager();
       ~tair_manager();
 
-      bool initialize(tbnet::Transport *transport, tbnet::DefaultPacketStreamer *streamer);
+      bool initialize(tbnet::Transport *transport, tair_packet_streamer *streamer);
 
       int put(int area, data_entry &key, data_entry &value, int expire_time,base_packet *request=NULL,int version=0);
       //int put(int area, data_entry &key, data_entry &value, int expire_time,request_put *request,int version);

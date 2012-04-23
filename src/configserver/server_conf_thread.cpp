@@ -63,8 +63,7 @@ namespace tair {
                                                   transport,
                                                   tbnet::Transport *
                                                   transport_heartbeat,
-                                                  tbnet::
-                                                  DefaultPacketStreamer *
+                                                  tair_packet_streamer *
                                                   streamer)
     {
       connmgr = new tbnet::ConnectionManager(transport, streamer, this);

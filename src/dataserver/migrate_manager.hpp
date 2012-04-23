@@ -46,7 +46,7 @@ namespace tair {
 
    class migrate_manager: public base_migrate, public tbsys::CDefaultRunnable, public tbnet::IPacketHandler {
    public:
-      migrate_manager(tbnet::Transport *transport, tbnet::DefaultPacketStreamer *streamer, base_duplicator *this_duplicator, tair_manager *tair_mgr, tair::storage::storage_manager *storage_mgr);
+      migrate_manager(tbnet::Transport *transport, tair_packet_streamer *streamer, base_duplicator *this_duplicator, tair_manager *tair_mgr, tair::storage::storage_manager *storage_mgr);
       ~migrate_manager();
       void set_log(update_log *log);
       void set_migrate_server_list(bucket_server_map migrate_server_list, uint32_t version);

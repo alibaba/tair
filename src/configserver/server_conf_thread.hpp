@@ -32,6 +32,7 @@
 #include "data_server_ctrl_packet.hpp"
 #include "get_migrate_machine.hpp"
 #include "wait_object.hpp"
+#include "packet_streamer.hpp"
 
 namespace tair {
   namespace config_server {
@@ -44,7 +45,7 @@ namespace tair {
 
       void set_thread_parameter(tbnet::Transport * transport,
                                 tbnet::Transport *,
-                                tbnet::DefaultPacketStreamer * streamer);
+                                tair_packet_streamer * streamer);
 
       // IPacketHandler interface
         tbnet::IPacketHandler::HPRetCode handlePacket(tbnet::Packet * packet,

@@ -20,6 +20,7 @@
 #include "boost/shared_ptr.hpp"
 #include "duplicate_base.hpp"
 #include "duplicate_packet.hpp"
+#include "packet_streamer.hpp"
 #include <ext/hash_map>
 #include <queue>
 #include <map>
@@ -57,7 +58,7 @@ namespace tair {
    public:
 
       duplicate_sender_manager( tbnet::Transport *transport,
-                                tbnet::DefaultPacketStreamer *streamer, table_manager* table_mgr);
+                                tair_packet_streamer *streamer, table_manager* table_mgr);
       ~duplicate_sender_manager();
       void do_hash_table_changed();
       void set_max_queue_size(uint32_t max_queue_size) {

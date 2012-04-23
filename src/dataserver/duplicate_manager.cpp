@@ -121,7 +121,7 @@ namespace tair{
    }
 
 
-   duplicate_sender_manager::duplicate_sender_manager(tbnet::Transport *transport,tbnet::DefaultPacketStreamer *streamer, table_manager* table_mgr)
+   duplicate_sender_manager::duplicate_sender_manager(tbnet::Transport *transport,tair_packet_streamer *streamer, table_manager* table_mgr)
    {
       this->table_mgr = table_mgr;
       conn_mgr = new tbnet::ConnectionManager(transport, streamer, this);
