@@ -33,6 +33,7 @@
     tair_manager::tair_manager() : migrate_done_set(0)
     {
       status = STATUS_NOT_INITED;
+      localmode = false;
       not_allow_count_negative = false;
       storage_mgr = NULL;
       table_mgr = new table_manager();
@@ -112,6 +113,7 @@
       // init the storage manager for stat helper
       TAIR_STAT.set_storage_manager(storage_mgr);
       // is allow dec to negative?
+      localmode = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_LOCAL_MODE, 0);
       uint32_t _allow_negative = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_COUNT_NEGATIVE, TAIR_COUNT_NEGATIVE_MODE);
       not_allow_count_negative = (0 == _allow_negative);
 
@@ -865,7 +867,7 @@
       }
 
       vector<int> release_buckets (table_mgr->get_release_buckets());
-      if (release_buckets.empty() == false) {
+      if (release_buckets.empty() == false && localmode == false) {
         storage_mgr->close_buckets(release_buckets);
       }
 
@@ -923,6 +925,10 @@
         log_debug("server can not work now...");
         rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
         return false;
+      }
+
+      if (localmode == true) {
+        return true;
       }
 
       if (migrate_mgr->is_bucket_available(bucket_number) == false) {
@@ -1012,7 +1018,7 @@
 
     void tair_manager::set_solitary()
     {
-      if (status == STATUS_CAN_WORK) {
+      if (status == STATUS_CAN_WORK && localmode == false) {
         status = STATUS_INITED;
         sleep(1);
         table_mgr->clear_available_server();

@@ -131,6 +131,7 @@ namespace tair {
 
    private:
       int status;
+      bool localmode;
       bool not_allow_count_negative;
       tbsys::CThreadMutex counter_mutex[mutex_array_size];
       tbsys::CThreadMutex item_mutex[mutex_array_size];

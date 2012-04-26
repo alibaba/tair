@@ -109,7 +109,7 @@
 #define TAIR_DEV_NAME                "dev_name"
 #define TAIR_DUP_SYNC                "dup_sync"
 #define TAIR_COUNT_NEGATIVE          "allow_count_negative"
-
+#define TAIR_LOCAL_MODE              "local_mode"
 #define TAIR_GROUP_FILE              "group_file"
 #define TAIR_DATA_DIR                "data_dir"
 #define TAIR_EVICT_DATA_PATH         "evict_data_path"
