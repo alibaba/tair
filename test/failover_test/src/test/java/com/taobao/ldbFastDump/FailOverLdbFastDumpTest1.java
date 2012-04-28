@@ -17,7 +17,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("modify configure file's group_name to " + group + " failed");
 		if(!modify_config_file("local", test_bin+conf, "filename", kv_name))
 			fail("modify configure file's kvfile to " + kv_name + " failed");
-		if(!modify_config_file("local", test_bin+conf, "start_key", putstart))
+		if(!modify_config_file("local", test_bin+conf, "putstart", putstart))
 			fail("modify configure file's putstart to " + putstart + " failed");
 		if("tairtool_put.conf".equals(conf)) {
 			execute_data_verify_tool(test_bin, "put");
@@ -157,25 +157,29 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("get group1 status not on!");
 		if(!"group_2: group_status=on".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 getstatus group_2")))
 			fail("get group2 status not on!");
-		//client访问ds,发现version不一致, 访问cs取group状态(group1 off,group2 on)
+		
+		//client访问ds,发现version不一致, 访问cs取group状态(group1 on,group2 on)
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after set group_1 status on!");
 		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
 			fail("group_2 version changed after set group_1 status on!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
-		//client只请求group2的ds——在group_1、group_2上检查getCount
+		
+		//client请求两个group的ds
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
 		waitto(2);
 		Assert.assertTrue("get successful count not changed!", getKeyNumber("local", test_bin, "Successful") > suc_count);
-		Assert.assertTrue("get fail_count count changed after read new data!", getKeyNumber("local", test_bin, "fail") == fail_count);
+//		Assert.assertTrue("get fail_count count changed after read new data!", getKeyNumber("local", test_bin, "fail") == fail_count);
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
+		
+		//在group_1、group_2上检查getCount
 		group1_getcount = new Integer(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
 		group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
 		Assert.assertTrue(group1_getcount > 0);
-		Assert.assertTrue(group2_getcount == 0);
+		Assert.assertTrue(group2_getcount > 0);
 		
 		//console发请求给cs, 将group2 off
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 setstatus group_2 off")))
