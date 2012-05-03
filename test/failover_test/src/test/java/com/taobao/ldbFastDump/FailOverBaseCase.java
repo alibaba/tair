@@ -501,7 +501,7 @@ public class FailOverBaseCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
-				log.info("get " + key + " number:" + ret);
+				log.debug("get " + key + " number:" + ret);
 			} catch (Exception e) {
 				log.error("get verify exception: " + stdout);
 			}
@@ -522,6 +522,7 @@ public class FailOverBaseCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = stdout.trim();
+				log.debug(ret);
 			} catch (Exception e) {
 				log.debug("get shell return exception: " + stdout);
 				ret = "";
@@ -550,6 +551,7 @@ public class FailOverBaseCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = stdout.trim();
+				log.debug(ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 			}

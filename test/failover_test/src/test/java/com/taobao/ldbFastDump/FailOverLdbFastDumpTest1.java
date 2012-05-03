@@ -198,6 +198,10 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(5);
 		
 	    //12、client得到group[1,2]状态是on, 轮询访问group[1,2]
+		if(!sendSignal("local", "tairtool_get", "10"))
+			fail("send signal 10 to tairtool_get failed!");
+		waitto(2);
+		fail_count = getKeyNumber("local", test_bin, "fail");
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -243,10 +247,9 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(ds_down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after set group_1 status on!");
-		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")==versionGroup_2)
-			fail("group_2 version didn't changed after set group_1 status on!");
+		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
+			fail("group_2 version changed after set group_1 status on!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
-		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
 	    //6、更新version table.不访问ds1.(此时group1的其他ds还可继续提供服务)
 		waitto(15);
@@ -257,13 +260,13 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get fail_count count more than 100!", getKeyNumber("local", test_bin, "fail") < fail_count+100);
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
-		
+
 		//7、检查被关闭的ds是否加入了临时关闭列表、两个group状态是否改变
-		if("10.232.4.14:5161;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
+		if(!"10.232.4.14:5361;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
 			fail("check ds 1 didn't add to group_1's tmp_down_server by read group.conf!");
-		if("group_1: tmp_down_server=10.232.4.14:5161;".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 gettmpdownsvr group_1")))
+		if(!"group_1: tmp_down_server=10.232.4.14:5361;".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 gettmpdownsvr group_1")))
 			fail("check ds 1 didn't add to group_1's tmp_down_server by tairclient cmd!");
-		if("".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
+		if(!"".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
 			fail("check group_2's tmp_down_server not null!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status changed after one ds on group1 down!");
@@ -273,12 +276,15 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 	    //8、group ds1不清数据情况下重启,进程start
 		if(!control_ds(dsList.get(0), start, 0))
 			fail("start " + dsList.get(0) + " failed!");
+		waitto(down_time);
 		
 	    //9、cs 将group1 ds1的状态由down改成not ready(不需要升版本)
 	    //10、订正ds1上的数据到可用.
 	    //11、console通知cs,将ds1的状态变成up
-		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetserver group_1 10.232.4.14")))
+		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetserver group_1 10.232.4.14:5361")))
 			fail("resetserver on group1 failed!");
+		if(!"".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
+			fail("check group_1's tmp_down_server not null!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status did't on after set group1 status on!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
@@ -288,8 +294,8 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after restart ds on group1!");
-		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")==versionGroup_2)
-			fail("group_2 version didn't changed after restart ds on group1!");
+		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
+			fail("group_2 version changed after restart ds on group1!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
@@ -340,10 +346,9 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(ds_down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after set group_1 status on!");
-		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")==versionGroup_2)
-			fail("group_2 version didn't changed after set group_1 status on!");
+		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
+			fail("group_2 version changed after set group_1 status on!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
-		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
 	    //6、更新version table.不访问ds1.(此时group1的其他ds还可继续提供服务)
 		waitto(15);
@@ -356,17 +361,20 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		fail_count = getKeyNumber("local", test_bin, "fail");
 		
 		//7、检查被关闭的ds是否加入了临时关闭列表、两个group状态是否改变
-		if("10.232.4.14:5161;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
+		if(!"10.232.4.14:5361;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
 			fail("check ds 1 didn't add to group_1's tmp_down_server!");
-		if("".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
+		if(!"".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
 			fail("check group_2's tmp_down_server not null!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status changed after one ds on group1 down!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status changed after one ds on group1 down!");
 		
+		if(!control_ds(dsList.get(0), start, 0))
+			fail("restart " + dsList.get(0) + " failed!");
+		waitto(down_time);
 	    //8、group ds1清数据后重启,进程start
-		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetdb group_1 10.232.4.14:5161")))
+		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetdb group_1 10.232.4.14:5361")))
 			fail("clear data on ds1 failed!");
 		if(!control_ds(dsList.get(0), start, 0))
 			fail("start " + dsList.get(0) + " failed!");
@@ -374,8 +382,10 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 	    //9、cs 将group1 ds1的状态由down改成not ready(不需要升版本)
 	    //10、订正ds1上的数据到可用.
 	    //11、console通知cs,将ds1的状态变成up
-		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetserver group_1 10.232.4.14")))
+		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetserver group_1 10.232.4.14:5361")))
 			fail("resetserver on group1 failed!");
+		if(!"".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
+			fail("check group_1's tmp_down_server not null!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status did't on after set group1 status on!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
@@ -385,10 +395,9 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after restart ds on group1!");
-		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")==versionGroup_2)
-			fail("group_2 version didn't changed after restart ds on group1!");
+		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
+			fail("group_2 version changed after restart ds on group1!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
-		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
 	    //13、client升级版本,访问ds1.
 		waitto(15);
@@ -399,8 +408,8 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get fail_count count changed after restart ds on group1!", getKeyNumber("local", test_bin, "fail") == fail_count);
 		int group1_getcount = new Integer(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
 		int group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
-		Assert.assertTrue("group1 getCount smaller than group2 1.4 times!", group1_getcount * 1.4 < group2_getcount);
-		Assert.assertTrue("group2 getCount larger than group1 1.6 times!", group2_getcount < group1_getcount * 1.6);
+		Assert.assertTrue("group1 getCount larger than group2 1.2 times!", group1_getcount < group2_getcount* 1.2);
+		Assert.assertTrue("group2 getCount larger than group1 1.2 times!", group2_getcount < group1_getcount * 1.2);
 
 		//end test
 		log.info("end ldb fast dump test Failover case 03");
@@ -435,7 +444,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(ds_down_time);
 		
 		//4、查看主cs是否切换
-		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.17:5168", tair_bin+"logs/config.log") != 1)
+		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.17:5368", tair_bin+"logs/config.log") != 1)
 			fail("check slave cs didn't changed to master cs after master cs down!");
 		log.info("slave cs changed to master cs after master cs down!");
 		
@@ -446,24 +455,31 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("check group2 status changed after group1 shut down!");
 		
 		//6、tmp_down_server是否更改
-		if("10.232.4.14:5161;10.232.4.15:5161;10.232.4.16:5161;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
+		if(!"10.232.4.14:5361;10.232.4.15:5361;10.232.4.16:5361;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
 			fail("check group_1's tmp_down_server not correct!");
-			
-	    //7、client只请求group2的ds——检查失败数未增多太多
+		
+		//7、记录当前成功数、失败数
+		if(!sendSignal("local", "tairtool_get", "10"))
+			fail("send signal 10 to tairtool_get failed!");
+		waitto(2);
+		suc_count = getKeyNumber("local", test_bin, "Successful");
+		fail_count = getKeyNumber("local", test_bin, "fail");
+		
+	    //8、client只请求group2的ds——检查失败数未增多
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
 		waitto(2);
 		Assert.assertTrue("get successful count not changed!", getKeyNumber("local", test_bin, "Successful") > suc_count);
-		Assert.assertTrue("get fail_count count more than 1000!", getKeyNumber("local", test_bin, "fail") < fail_count+1000);
+		Assert.assertTrue("get fail_count count changed!", getKeyNumber("local", test_bin, "fail") == fail_count);
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
 		
-		//8、在group_1、group_2上检查getCount
-		int group1_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
-		int group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
-		Assert.assertTrue(group1_getcount == 0);
-		Assert.assertTrue(group2_getcount > 0);
+		//9、在group_1、group_2上检查getCount
+//		int group1_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
+//		int group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
+//		Assert.assertTrue("group1 getCount larger than group2 1.2 times!", group1_getcount < group2_getcount * 1.2);
+//		Assert.assertTrue("group2 getCount larger than group1 1.2 times!", group2_getcount < group1_getcount * 1.2);
 		
 		//end test
 		log.info("end ldb fast dump test Failover case 04");
@@ -497,7 +513,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(ds_down_time);
 		
 		//4、查看主cs是否切换
-		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.17:5168", tair_bin+"logs/config.log") != 1)
+		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.17:5368", tair_bin+"logs/config.log") != 1)
 			fail("check slave cs didn't changed to master cs after master cs down!");
 		log.info("slave cs changed to master cs after master cs down!");
 		
@@ -523,21 +539,21 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(down_time);
 		
 		//8、查看主cs是否切换
-		if(check_keyword(csList.get(0), "MASTER_CONFIG changed 10.232.4.14:5168", tair_bin+"logs/config.log") != 1)
+		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.14:5368", tair_bin+"logs/config.log") != 1)
 			fail("check master cs didn't changed to master cs after master cs restart!");
 		log.info("master cs changed to master cs after master cs restart!");
 		
 		//9、两group状态是否改变
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
-			fail("check group1 status changed after group1 shut down!");
+			fail("check group1 status changed after master cs down!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
-			fail("check group2 status changed after group1 shut down!");
+			fail("check group2 status changed after master cs down!");
 		
 		//10、版本号是否增加
-		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
-			fail("group_1 version didn't changed after set group_1 status on!");
-		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")==versionGroup_2)
-			fail("group_2 version didn't changed after set group_1 status on!");
+		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")!=versionGroup_1)
+			fail("group_1 version changed after restart master cs!");
+		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
+			fail("group_2 version changed after restart master cs!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 			
@@ -548,8 +564,6 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		waitto(2);
 		Assert.assertTrue("get successful count not changed!", getKeyNumber("local", test_bin, "Successful") > suc_count);
 		Assert.assertTrue("get fail_count count changed!", getKeyNumber("local", test_bin, "fail") == fail_count);
-		suc_count = getKeyNumber("local", test_bin, "Successful");
-		fail_count = getKeyNumber("local", test_bin, "fail");
 		
 		//end test
 		log.info("end ldb fast dump test Failover case 05");
@@ -598,21 +612,23 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
 		
+		int log_back = check_keyword(csList.get(0), "config server up and master not changed", tair_bin+"logs/config.log");
+		
 		//6、重启所有cs
 		if(!batch_control_cs(csList, start, 0))
 			fail("restart cs group failed!");
 		waitto(down_time);
 		
 		//7、查看主cs是否切换
-		if(check_keyword(csList.get(0), "MASTER_CONFIG changed 10.232.4.14:5168", tair_bin+"logs/config.log") != 1)
+		if(check_keyword(csList.get(0), "config server up and master not changed", tair_bin+"logs/config.log") == log_back)
 			fail("check master cs didn't changed to master cs after master cs restart!");
 		log.info("master cs changed to master cs after master cs restart!");
 		
 		//8、查看version号是否增加
-		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
-			fail("group_1 version didn't changed after set group_1 status on!");
-		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")==versionGroup_2)
-			fail("group_2 version didn't changed after set group_1 status on!");
+		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")!=versionGroup_1)
+			fail("group_1 version changed after restart all cs!!");
+		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
+			fail("group_2 version changed after restart all cs!!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
@@ -663,9 +679,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("shut off net on 10.232.4.14 failed!");
 		if (!"0".equals(control_sh(csList.get(1), tair_bin, "netctrl.sh", "shut")))
 			fail("shut off net on 10.232.4.17 failed!");
+		
+		waitto(ds_down_time);
+		// tmp_down_server是否更改
+		if(!"10.232.4.17:5361;10.232.4.18:5361;10.232.4.19:5361;".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
+			fail("check group_2's tmp_down_server not correct after shut off net!");
 
 		// 数据get不受影响
-		waitto(15);
+		waitto(30);
 		if (!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
 		waitto(2);
@@ -685,9 +706,18 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("shut off net on 10.232.4.14 failed!");
 		if (!"0".equals(control_sh(csList.get(1), tair_bin, "netctrl.sh", "recover")))
 			fail("shut off net on 10.232.4.17 failed!");
+		
+		waitto(down_time);
+		// 清除所有tmp_down_server
+		if(!batch_modify(csList, tair_bin+"etc/group.conf", "tmp_down_server", " "))
+			fail("modify configure file failure");
+		
+		// tmp_down_server是否更改
+		if(!"".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
+			fail("check group_2's tmp_down_server not correct after recover net!");
 
 		// 数据get不受影响
-		waitto(15);
+		waitto(30);
 		if (!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
 		waitto(2);

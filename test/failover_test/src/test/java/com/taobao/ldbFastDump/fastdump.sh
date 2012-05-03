@@ -1,5 +1,5 @@
 #!/bin/bash
-PORT=5168
+PORT=5368
 
 group=$1
 par2=$2

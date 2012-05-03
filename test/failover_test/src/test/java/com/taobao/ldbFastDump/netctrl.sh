@@ -2,14 +2,14 @@
 
 case $1 in
 shut)
-    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.17 -p tcp --dport 5168 -j DROP "
-    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.17 -p tcp --dport 5168 -j DROP "
-    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.17 -p tcp --dport 5161 -j DROP "
-    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.17 -p tcp --dport 5168 -j DROP "
-    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.18 -p tcp --dport 5161 -j DROP "
-    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.18 -p tcp --dport 5168 -j DROP "
-    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.19 -p tcp --dport 5161 -j DROP "
-    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.19 -p tcp --dport 5168 -j DROP "
+    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.17 -p tcp --dport 5368 -j DROP "
+    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.17 -p tcp --dport 5368 -j DROP "
+    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.17 -p tcp --dport 5361 -j DROP "
+    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.17 -p tcp --dport 5368 -j DROP "
+    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.18 -p tcp --dport 5361 -j DROP "
+    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.18 -p tcp --dport 5368 -j DROP "
+    ssh root@localhost "/sbin/iptables -A OUTPUT -d 10.232.4.19 -p tcp --dport 5361 -j DROP "
+    ssh root@localhost "/sbin/iptables -A INPUT -s 10.232.4.19 -p tcp --dport 5368 -j DROP "
     ssh root@localhost "/sbin/iptables-save">/dev/null 2>&1
     echo 0
     ;;
