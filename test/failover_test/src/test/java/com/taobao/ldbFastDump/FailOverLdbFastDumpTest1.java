@@ -51,14 +51,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!modify_config_file(csList.get(0), tair_bin+"etc/group.conf", "_min_data_server_count", "10"))
 			fail("modify configure file failure");
 		
-		// 1¡¢×¼±¸Êı¾İ
+		// 1ã€å‡†å¤‡æ•°æ®
 		int put1_old = ctrlDataTool("tairtool_put.conf", "group_1", "old1.kv", "0");
 		Assert.assertTrue("group_1 put successful rate small than 99%!",put1_old/put_count_float>0.99);
 		int put2_old = ctrlDataTool("tairtool_put.conf", "group_2", "old2.kv", "0");
 		Assert.assertTrue("group_2 put successful rate small than 99%!",put2_old/put_count_float>0.99);
 		log.info("Write data over!");
 		
-		// 2¡¢½«Á½¸ögroup×´Ì¬¸ÄÎªon
+		// 2ã€å°†ä¸¤ä¸ªgroupçŠ¶æ€æ”¹ä¸ºon
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 setstatus group_1 on")))
 			fail("set group1 on failed!");
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 setstatus group_2 on")))
@@ -68,14 +68,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status did't on after set group2 status on!");
 	}
-	
+
 	@Test
 	public void testFailover_01_reset_every_group()
 	{   
 		log.info("start ldb fast dump test Failover case 01");
 		start_cluster_and_prepare_data();
 		
-		// 2¡¢¿ªÊ¼Ñ­»·¶ÁÀÏÊı¾İ
+		// 2ã€å¼€å§‹å¾ªç¯è¯»è€æ•°æ®
 		if(ctrlDataTool("tairtool_get.conf", "group_master", "old1.kv", "0") != 0)
 			fail("start read old data failed!");
 		
@@ -91,12 +91,12 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
-		//3¡¢console·¢ÇëÇó¸øcs, ½«group1 off
+		//3ã€consoleå‘è¯·æ±‚ç»™cs, å°†group1 off
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 setstatus group_1 off")))
 			fail("shut off group1 failed!");
 		waitto(5);
 		
-	    //4¡¢cs rebuild version table, ÍÆËÍ¸øgroup[1,2]µÄds
+	    //4ã€cs rebuild version table, æ¨é€ç»™group[1,2]çš„ds
 		if(!"off".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status did't off after set group1 status off!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
@@ -106,14 +106,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!"group_2: group_status=on".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 getstatus group_2")))
 			fail("get group2 status not on!");
 		
-	    //5¡¢client·ÃÎÊds,·¢ÏÖversion²»Ò»ÖÂ, ·ÃÎÊcsÈ¡group×´Ì¬(group1 off,group2 on)
+	    //5ã€clientè®¿é—®ds,å‘ç°versionä¸ä¸€è‡´, è®¿é—®cså–groupçŠ¶æ€(group1 off,group2 on)
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after set group_1 status off!");
 		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
 			fail("group_2 version changed after set group_1 status off!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		
-	    //6¡¢clientÖ»ÇëÇógroup2µÄds¡ª¡ªÔÚgroup_1¡¢group_2ÉÏ¼ì²égetCount
+	    //6ã€clientåªè¯·æ±‚group2çš„dsâ€•â€•åœ¨group_1ã€group_2ä¸Šæ£€æŸ¥getCount
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -128,27 +128,27 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue(group1_getcount == 0);
 		Assert.assertTrue(group2_getcount > 0);
 		
-	    //7¡¢console·¢Çå³ı(±¸·İ)Êı¾İ-->group1µÄds
+	    //7ã€consoleå‘æ¸…é™¤(å¤‡ä»½)æ•°æ®-->group1çš„ds
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetserver group_1")))
 			fail("reset group1 failed!");
 		
-	    //8¡¢ÅúÁ¿²åÈëÊı¾İµ½group1 flush. group1 ds½«Êı¾İËùÓĞÊı¾İË¢µ½disk
+	    //8ã€æ‰¹é‡æ’å…¥æ•°æ®åˆ°group1 flush. group1 dså°†æ•°æ®æ‰€æœ‰æ•°æ®åˆ·åˆ°disk
 		int put1_new = ctrlDataTool("tairtool_put.conf", "group_1", "new1.kv", "100000");
 		Assert.assertTrue("group_1 put successful rate small than 99%!",put1_new/put_count_float>0.99);
 		
-	    //9¡¢console·¢ËÍgroup1 on ¸øcs
+	    //9ã€consoleå‘é€group1 on ç»™cs
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 setstatus group_1 on")))
 			fail("open group1 failed!");
 		waitto(5);
 		
-		//10¡¢Ê¹¹¤¾ß¶ÁĞÂÊı¾İ
+		//10ã€ä½¿å·¥å…·è¯»æ–°æ•°æ®
 		if(!modify_config_file("local", test_bin+"tairtool_get.conf", "filename", "new1.kv"))
 			fail("modify configure file's kv file name failed");
 		if(!sendSignal("local", "tairtool_get", "12"))//SIGUSR2
 			fail("send signal to change get group failed!");
 		
-	    //11¡¢ÖØ¸´4¡¢5¡¢6¡¢7¡¢8¡¢9
-		//cs rebuild version table, ÍÆËÍ¸øgroup[1,2]µÄds
+	    //11ã€é‡å¤4ã€5ã€6ã€7ã€8ã€9
+		//cs rebuild version table, æ¨é€ç»™group[1,2]çš„ds
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status did't on after set group1 status on!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
@@ -158,14 +158,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!"group_2: group_status=on".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 getstatus group_2")))
 			fail("get group2 status not on!");
 		
-		//client·ÃÎÊds,·¢ÏÖversion²»Ò»ÖÂ, ·ÃÎÊcsÈ¡group×´Ì¬(group1 on,group2 on)
+		//clientè®¿é—®ds,å‘ç°versionä¸ä¸€è‡´, è®¿é—®cså–groupçŠ¶æ€(group1 on,group2 on)
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after set group_1 status on!");
 		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
 			fail("group_2 version changed after set group_1 status on!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		
-		//clientÇëÇóÁ½¸ögroupµÄds
+		//clientè¯·æ±‚ä¸¤ä¸ªgroupçš„ds
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -175,29 +175,29 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
 		
-		//ÔÚgroup_1¡¢group_2ÉÏ¼ì²égetCount
+		//åœ¨group_1ã€group_2ä¸Šæ£€æŸ¥getCount
 		group1_getcount = new Integer(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
 		group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
 		Assert.assertTrue(group1_getcount > 0);
 		Assert.assertTrue(group2_getcount > 0);
 		
-		//console·¢ÇëÇó¸øcs, ½«group2 off
+		//consoleå‘è¯·æ±‚ç»™cs, å°†group2 off
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 setstatus group_2 off")))
 			fail("shut off group2 failed!");
 		waitto(5);
 		
-	    //console·¢Çå³ı(±¸·İ)Êı¾İ-->group2µÄds
+	    //consoleå‘æ¸…é™¤(å¤‡ä»½)æ•°æ®-->group2çš„ds
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 resetserver group_2")))
 			fail("reset group2 failed!");
-	    //ÅúÁ¿²åÈëÊı¾İµ½group2 flush. group2 ds½«Êı¾İËùÓĞÊı¾İË¢µ½disk
+	    //æ‰¹é‡æ’å…¥æ•°æ®åˆ°group2 flush. group2 dså°†æ•°æ®æ‰€æœ‰æ•°æ®åˆ·åˆ°disk
 		int put2_new = ctrlDataTool("tairtool_put.conf", "group_2", "new2.kv", "100000");
 		Assert.assertTrue("group_2 put successful rate small than 99%!",put2_new/put_count_float>0.99);
-	    //console·¢ËÍgroup2 on ¸øcs
+	    //consoleå‘é€group2 on ç»™cs
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 setstatus group_2 on")))
 			fail("open group1 failed!");
 		waitto(5);
 		
-	    //12¡¢clientµÃµ½group[1,2]×´Ì¬ÊÇon, ÂÖÑ¯·ÃÎÊgroup[1,2]
+	    //12ã€clientå¾—åˆ°group[1,2]çŠ¶æ€æ˜¯on, è½®è¯¢è®¿é—®group[1,2]
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
 		waitto(2);
@@ -223,7 +223,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		log.info("start ldb fast dump test Failover case 02");
 		start_cluster_and_prepare_data();
 		
-		// 3¡¢¿ªÊ¼Ñ­»·¶ÁÀÏÊı¾İ
+		// 3ã€å¼€å§‹å¾ªç¯è¯»è€æ•°æ®
 		if(ctrlDataTool("tairtool_get.conf", "group_master", "old1.kv", "0") != 0)
 			fail("start read old data failed!");
 		
@@ -239,11 +239,11 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
-		//4¡¢µ±group1 ds1 Òì³£. ±ÈÈç½ø³Ìcrash»òÕßserver down,»òÕßÅÌ»µ
+		//4ã€å½“group1 ds1 å¼‚å¸¸. æ¯”å¦‚è¿›ç¨‹crashæˆ–è€…server down,æˆ–è€…ç›˜å
 		if(!control_ds(dsList.get(0), stop, 0))
 			fail("shut down " + dsList.get(0) + " failed!");
 		
-	    //5¡¢csĞÄÌø¼ì²é·¢ÏÖds1 Òì³£, rebuild version table,ÉèÖÃds1×´Ì¬Îªdown.
+	    //5ã€cså¿ƒè·³æ£€æŸ¥å‘ç°ds1 å¼‚å¸¸, rebuild version table,è®¾ç½®ds1çŠ¶æ€ä¸ºdown.
 		waitto(ds_down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after set group_1 status on!");
@@ -251,7 +251,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("group_2 version changed after set group_1 status on!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		
-	    //6¡¢¸üĞÂversion table.²»·ÃÎÊds1.(´ËÊ±group1µÄÆäËûds»¹¿É¼ÌĞøÌá¹©·şÎñ)
+	    //6ã€æ›´æ–°version table.ä¸è®¿é—®ds1.(æ­¤æ—¶group1çš„å…¶ä»–dsè¿˜å¯ç»§ç»­æä¾›æœåŠ¡)
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -261,7 +261,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
 
-		//7¡¢¼ì²é±»¹Ø±ÕµÄdsÊÇ·ñ¼ÓÈëÁËÁÙÊ±¹Ø±ÕÁĞ±í¡¢Á½¸ögroup×´Ì¬ÊÇ·ñ¸Ä±ä
+		//7ã€æ£€æŸ¥è¢«å…³é—­çš„dsæ˜¯å¦åŠ å…¥äº†ä¸´æ—¶å…³é—­åˆ—è¡¨ã€ä¸¤ä¸ªgroupçŠ¶æ€æ˜¯å¦æ”¹å˜
 		if(!"10.232.4.14:5361;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
 			fail("check ds 1 didn't add to group_1's tmp_down_server by read group.conf!");
 		if(!"group_1: tmp_down_server=10.232.4.14:5361;".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 gettmpdownsvr group_1")))
@@ -273,14 +273,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status changed after one ds on group1 down!");
 		
-	    //8¡¢group ds1²»ÇåÊı¾İÇé¿öÏÂÖØÆô,½ø³Ìstart
+	    //8ã€group ds1ä¸æ¸…æ•°æ®æƒ…å†µä¸‹é‡å¯,è¿›ç¨‹start
 		if(!control_ds(dsList.get(0), start, 0))
 			fail("start " + dsList.get(0) + " failed!");
-		waitto(down_time);
+        waitto(down_time);
 		
-	    //9¡¢cs ½«group1 ds1µÄ×´Ì¬ÓÉdown¸Ä³Énot ready(²»ĞèÒªÉı°æ±¾)
-	    //10¡¢¶©Õıds1ÉÏµÄÊı¾İµ½¿ÉÓÃ.
-	    //11¡¢consoleÍ¨Öªcs,½«ds1µÄ×´Ì¬±ä³Éup
+	    //9ã€cs å°†group1 ds1çš„çŠ¶æ€ç”±downæ”¹æˆnot ready(ä¸éœ€è¦å‡ç‰ˆæœ¬)
+	    //10ã€è®¢æ­£ds1ä¸Šçš„æ•°æ®åˆ°å¯ç”¨.
+	    //11ã€consoleé€šçŸ¥cs,å°†ds1çš„çŠ¶æ€å˜æˆup
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetserver group_1 10.232.4.14:5361")))
 			fail("resetserver on group1 failed!");
 		if(!"".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
@@ -290,7 +290,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status did't on after set group2 status on!");
 		
-	    //12¡¢cs rebuild version
+	    //12ã€cs rebuild version
 		waitto(down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after restart ds on group1!");
@@ -299,7 +299,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
-	    //13¡¢clientÉı¼¶°æ±¾,·ÃÎÊds1.
+	    //13ã€clientå‡çº§ç‰ˆæœ¬,è®¿é—®ds1.
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -315,14 +315,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		log.info("end ldb fast dump test Failover case 02");
 	}
 	
-	//case 03 ÇåÊı¾İºóÖØÆôds
+	//case 03 æ¸…æ•°æ®åé‡å¯ds
 	@Test
 	public void testFailover_03_restart_one_ds_after_clear_data()
 	{ 
 		log.info("start ldb fast dump test Failover case 03");
 		start_cluster_and_prepare_data();
 		
-		// 3¡¢¿ªÊ¼Ñ­»·¶ÁÀÏÊı¾İ
+		// 3ã€å¼€å§‹å¾ªç¯è¯»è€æ•°æ®
 		if(ctrlDataTool("tairtool_get.conf", "group_master", "old1.kv", "0") != 0)
 			fail("start read old data failed!");
 		
@@ -338,11 +338,11 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
-		//4¡¢µ±group1 ds1 Òì³£. ±ÈÈç½ø³Ìcrash»òÕßserver down,»òÕßÅÌ»µ
+		//4ã€å½“group1 ds1 å¼‚å¸¸. æ¯”å¦‚è¿›ç¨‹crashæˆ–è€…server down,æˆ–è€…ç›˜å
 		if(!control_ds(dsList.get(0), stop, 0))
 			fail("shut down " + dsList.get(0) + " failed!");
 		
-	    //5¡¢csĞÄÌø¼ì²é·¢ÏÖds1 Òì³£, rebuild version table,ÉèÖÃds1×´Ì¬Îªdown.
+	    //5ã€cså¿ƒè·³æ£€æŸ¥å‘ç°ds1 å¼‚å¸¸, rebuild version table,è®¾ç½®ds1çŠ¶æ€ä¸ºdown.
 		waitto(ds_down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after set group_1 status on!");
@@ -350,7 +350,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("group_2 version changed after set group_1 status on!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		
-	    //6¡¢¸üĞÂversion table.²»·ÃÎÊds1.(´ËÊ±group1µÄÆäËûds»¹¿É¼ÌĞøÌá¹©·şÎñ)
+	    //6ã€æ›´æ–°version table.ä¸è®¿é—®ds1.(æ­¤æ—¶group1çš„å…¶ä»–dsè¿˜å¯ç»§ç»­æä¾›æœåŠ¡)
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -360,7 +360,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
 		
-		//7¡¢¼ì²é±»¹Ø±ÕµÄdsÊÇ·ñ¼ÓÈëÁËÁÙÊ±¹Ø±ÕÁĞ±í¡¢Á½¸ögroup×´Ì¬ÊÇ·ñ¸Ä±ä
+		//7ã€æ£€æŸ¥è¢«å…³é—­çš„dsæ˜¯å¦åŠ å…¥äº†ä¸´æ—¶å…³é—­åˆ—è¡¨ã€ä¸¤ä¸ªgroupçŠ¶æ€æ˜¯å¦æ”¹å˜
 		if(!"10.232.4.14:5361;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
 			fail("check ds 1 didn't add to group_1's tmp_down_server!");
 		if(!"".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
@@ -370,18 +370,18 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status changed after one ds on group1 down!");
 		
-		if(!control_ds(dsList.get(0), start, 0))
-			fail("restart " + dsList.get(0) + " failed!");
-		waitto(down_time);
-	    //8¡¢group ds1ÇåÊı¾İºóÖØÆô,½ø³Ìstart
+        if(!control_ds(dsList.get(0), start, 0))
+            fail("restart " + dsList.get(0) + " failed!");
+        waitto(down_time);
+	    //8ã€group ds1æ¸…æ•°æ®åé‡å¯,è¿›ç¨‹start
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetdb group_1 10.232.4.14:5361")))
 			fail("clear data on ds1 failed!");
 		if(!control_ds(dsList.get(0), start, 0))
 			fail("start " + dsList.get(0) + " failed!");
 		
-	    //9¡¢cs ½«group1 ds1µÄ×´Ì¬ÓÉdown¸Ä³Énot ready(²»ĞèÒªÉı°æ±¾)
-	    //10¡¢¶©Õıds1ÉÏµÄÊı¾İµ½¿ÉÓÃ.
-	    //11¡¢consoleÍ¨Öªcs,½«ds1µÄ×´Ì¬±ä³Éup
+	    //9ã€cs å°†group1 ds1çš„çŠ¶æ€ç”±downæ”¹æˆnot ready(ä¸éœ€è¦å‡ç‰ˆæœ¬)
+	    //10ã€è®¢æ­£ds1ä¸Šçš„æ•°æ®åˆ°å¯ç”¨.
+	    //11ã€consoleé€šçŸ¥cs,å°†ds1çš„çŠ¶æ€å˜æˆup
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetserver group_1 10.232.4.14:5361")))
 			fail("resetserver on group1 failed!");
 		if(!"".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
@@ -391,7 +391,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status did't on after set group2 status on!");
 		
-	    //12¡¢cs rebuild version
+	    //12ã€cs rebuild version
 		waitto(down_time);
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")==versionGroup_1)
 			fail("group_1 version didn't changed after restart ds on group1!");
@@ -399,7 +399,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("group_2 version changed after restart ds on group1!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		
-	    //13¡¢clientÉı¼¶°æ±¾,·ÃÎÊds1.
+	    //13ã€clientå‡çº§ç‰ˆæœ¬,è®¿é—®ds1.
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -408,21 +408,21 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get fail_count count changed after restart ds on group1!", getKeyNumber("local", test_bin, "fail") == fail_count);
 		int group1_getcount = new Integer(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
 		int group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
-		Assert.assertTrue("group1 getCount larger than group2 1.2 times!", group1_getcount < group2_getcount* 1.2);
-		Assert.assertTrue("group2 getCount larger than group1 1.2 times!", group2_getcount < group1_getcount * 1.2);
+        Assert.assertTrue("group1 getCount larger than group2 1.2 times!", group1_getcount < group2_getcount* 1.2);
+        Assert.assertTrue("group2 getCount larger than group1 1.2 times!", group2_getcount < group1_getcount * 1.2);
 
 		//end test
 		log.info("end ldb fast dump test Failover case 03");
 	}
 	
-	//case 04 group_1¹Òµô
+	//case 04 group_1æŒ‚æ‰
 	@Test
 	public void testFailover_04_restart_group1()
 	{   
 		log.info("start ldb fast dump test Failover case 04");
 		start_cluster_and_prepare_data();
 		
-		// 2¡¢¿ªÊ¼Ñ­»·¶ÁÀÏÊı¾İ
+		// 2ã€å¼€å§‹å¾ªç¯è¯»è€æ•°æ®
 		if(ctrlDataTool("tairtool_get.conf", "group_master", "old1.kv", "0") != 0)
 			fail("start read old data failed!");
 		
@@ -438,44 +438,52 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 //		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 //		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
-		//3¡¢¹Ø±ÕÖ÷csºÍgroup_1¼¯Èº
+		//3ã€å…³é—­ä¸»cså’Œgroup_1é›†ç¾¤
 		if(!batch_control_ds(dsList1, stop, 0) || !control_cs(csList.get(0), stop, 0))
 			fail("shut down group1 and master cs failed!");
 		waitto(ds_down_time);
 		
-		//4¡¢²é¿´Ö÷csÊÇ·ñÇĞ»»
+		//4ã€æŸ¥çœ‹ä¸»csæ˜¯å¦åˆ‡æ¢
 		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.17:5368", tair_bin+"logs/config.log") != 1)
 			fail("check slave cs didn't changed to master cs after master cs down!");
 		log.info("slave cs changed to master cs after master cs down!");
 		
-		//5¡¢Á½group×´Ì¬ÊÇ·ñ¸Ä±ä
+		//5ã€ä¸¤groupçŠ¶æ€æ˜¯å¦æ”¹å˜
 		if(!"on".equals(getGroupKeyword(csList.get(1), "group_1", "group_status")))
 			fail("check group1 status changed after group1 shut down!");
 		if(!"on".equals(getGroupKeyword(csList.get(1), "group_2", "group_status")))
 			fail("check group2 status changed after group1 shut down!");
 		
-		//6¡¢tmp_down_serverÊÇ·ñ¸ü¸Ä
+		//6ã€tmp_down_serveræ˜¯å¦æ›´æ”¹
 		if(!"10.232.4.14:5361;10.232.4.15:5361;10.232.4.16:5361;".equals(getGroupKeyword(csList.get(0), "group_1", "tmp_down_server")))
 			fail("check group_1's tmp_down_server not correct!");
-		
-		//7¡¢¼ÇÂ¼µ±Ç°³É¹¦Êı¡¢Ê§°ÜÊı
-		if(!sendSignal("local", "tairtool_get", "10"))
-			fail("send signal 10 to tairtool_get failed!");
-		waitto(2);
-		suc_count = getKeyNumber("local", test_bin, "Successful");
-		fail_count = getKeyNumber("local", test_bin, "fail");
-		
-	    //8¡¢clientÖ»ÇëÇógroup2µÄds¡ª¡ª¼ì²éÊ§°ÜÊıÎ´Ôö¶à
+			
+	    //7ã€clientåªè¯·æ±‚group2çš„dsâ€•â€•æ£€æŸ¥å¤±è´¥æ•°æœªå¢å¤šå¤ªå¤š
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
 		waitto(2);
 		Assert.assertTrue("get successful count not changed!", getKeyNumber("local", test_bin, "Successful") > suc_count);
-		Assert.assertTrue("get fail_count count changed!", getKeyNumber("local", test_bin, "fail") == fail_count);
+		Assert.assertTrue("get fail_count count not changed!", getKeyNumber("local", test_bin, "fail") > fail_count);
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
 		
-		//9¡¢ÔÚgroup_1¡¢group_2ÉÏ¼ì²égetCount
+        //7ã€è®°å½•å½“å‰æˆåŠŸæ•°ã€å¤±è´¥æ•°
+        if(!sendSignal("local", "tairtool_get", "10"))
+            fail("send signal 10 to tairtool_get failed!");
+        waitto(2);
+        suc_count = getKeyNumber("local", test_bin, "Successful");
+        fail_count = getKeyNumber("local", test_bin, "fail");
+        
+        //8ã€clientåªè¯·æ±‚group2çš„dsâ€”â€”æ£€æŸ¥å¤±è´¥æ•°æœªå¢å¤š
+        waitto(15);
+        if(!sendSignal("local", "tairtool_get", "10"))
+            fail("send signal 10 to tairtool_get failed!");
+        waitto(2);
+        Assert.assertTrue("get successful count not changed!", getKeyNumber("local", test_bin, "Successful") > suc_count);
+        Assert.assertTrue("get fail_count count changed!", getKeyNumber("local", test_bin, "fail") == fail_count);
+
+		//9ã€åœ¨group_1ã€group_2ä¸Šæ£€æŸ¥getCount
 //		int group1_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
 //		int group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
 //		Assert.assertTrue("group1 getCount larger than group2 1.2 times!", group1_getcount < group2_getcount * 1.2);
@@ -485,13 +493,13 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		log.info("end ldb fast dump test Failover case 04");
 	}
 	
-	//case 05 ÖØÆôÖ÷cs
+	//case 05 é‡å¯ä¸»cs
 	@Test
 	public void testFailover_05_restart_master_cs() {
 		log.info("start ldb fast dump test Failover case 05");
 		start_cluster_and_prepare_data();
 		
-		// 2¡¢¿ªÊ¼Ñ­»·¶ÁÀÏÊı¾İ
+		// 2ã€å¼€å§‹å¾ªç¯è¯»è€æ•°æ®
 		if(ctrlDataTool("tairtool_get.conf", "group_master", "old1.kv", "0") != 0)
 			fail("start read old data failed!");
 		
@@ -507,23 +515,23 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
-		//3¡¢¹Ø±ÕÖ÷cs
+		//3ã€å…³é—­ä¸»cs
 		if(!control_cs(csList.get(0), stop, 0))
 			fail("shut down master cs failed!");
 		waitto(ds_down_time);
 		
-		//4¡¢²é¿´Ö÷csÊÇ·ñÇĞ»»
+		//4ã€æŸ¥çœ‹ä¸»csæ˜¯å¦åˆ‡æ¢
 		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.17:5368", tair_bin+"logs/config.log") != 1)
 			fail("check slave cs didn't changed to master cs after master cs down!");
 		log.info("slave cs changed to master cs after master cs down!");
 		
-		//5¡¢Á½group×´Ì¬ÊÇ·ñ¸Ä±ä
+		//5ã€ä¸¤groupçŠ¶æ€æ˜¯å¦æ”¹å˜
 		if(!"on".equals(getGroupKeyword(csList.get(1), "group_1", "group_status")))
 			fail("check group1 status changed after group1 shut down!");
 		if(!"on".equals(getGroupKeyword(csList.get(1), "group_2", "group_status")))
 			fail("check group2 status changed after group1 shut down!");
 		
-		//6¡¢¼ì²éÊ§°ÜÊıÎ´±ä»¯
+		//6ã€æ£€æŸ¥å¤±è´¥æ•°æœªå˜åŒ–
 		waitto(10);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -533,23 +541,23 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
 		
-		//7¡¢ÖØÆôÖ÷cs
+		//7ã€é‡å¯ä¸»cs
 		if(!control_cs(csList.get(0), start, 0))
 			fail("restart master cs failed!");
 		waitto(down_time);
 		
-		//8¡¢²é¿´Ö÷csÊÇ·ñÇĞ»»
+		//8ã€æŸ¥çœ‹ä¸»csæ˜¯å¦åˆ‡æ¢
 		if(check_keyword(csList.get(1), "MASTER_CONFIG changed 10.232.4.14:5368", tair_bin+"logs/config.log") != 1)
 			fail("check master cs didn't changed to master cs after master cs restart!");
 		log.info("master cs changed to master cs after master cs restart!");
 		
-		//9¡¢Á½group×´Ì¬ÊÇ·ñ¸Ä±ä
+		//9ã€ä¸¤groupçŠ¶æ€æ˜¯å¦æ”¹å˜
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
-			fail("check group1 status changed after master cs down!");
+			fail("check group1 status changed after group1 shut down!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
-			fail("check group2 status changed after master cs down!");
+			fail("check group2 status changed after group1 shut down!");
 		
-		//10¡¢°æ±¾ºÅÊÇ·ñÔö¼Ó
+		//10ã€ç‰ˆæœ¬å·æ˜¯å¦å¢åŠ 
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")!=versionGroup_1)
 			fail("group_1 version changed after restart master cs!");
 		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
@@ -557,7 +565,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 			
-	    //11¡¢¼ì²éÊ§°ÜÊıÎ´Ôö¶à
+	    //11ã€æ£€æŸ¥å¤±è´¥æ•°æœªå¢å¤š
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -569,13 +577,13 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		log.info("end ldb fast dump test Failover case 05");
 	}
 	
-	//case 06 ÖØÆôËùÓĞcs
+	//case 06 é‡å¯æ‰€æœ‰cs
 	@Test
 	public void testFailover_06_restart_all_cs() {
 		log.info("start ldb fast dump test Failover case 06");
 		start_cluster_and_prepare_data();
 		
-		// 2¡¢¿ªÊ¼Ñ­»·¶ÁÀÏÊı¾İ
+		// 2ã€å¼€å§‹å¾ªç¯è¯»è€æ•°æ®
 		if(ctrlDataTool("tairtool_get.conf", "group_master", "old1.kv", "0") != 0)
 			fail("start read old data failed!");
 		
@@ -591,18 +599,18 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 	
-		//3¡¢¹Ø±ÕËùÓĞcs
+		//3ã€å…³é—­æ‰€æœ‰cs
 		if(!batch_control_cs(csList, stop, 0))
 			fail("shut down cs group failed!");
 		waitto(ds_down_time);
 		
-		//4¡¢Á½group×´Ì¬ÊÇ·ñ¸Ä±ä
+		//4ã€ä¸¤groupçŠ¶æ€æ˜¯å¦æ”¹å˜
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status changed after group1 shut down!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status changed after group1 shut down!");
 		
-		//5¡¢¼ì²éÊ§°ÜÊıÎ´±ä»¯
+		//5ã€æ£€æŸ¥å¤±è´¥æ•°æœªå˜åŒ–
 		waitto(10);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -611,34 +619,34 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get fail_count count changed!", getKeyNumber("local", test_bin, "fail") == fail_count);
 		suc_count = getKeyNumber("local", test_bin, "Successful");
 		fail_count = getKeyNumber("local", test_bin, "fail");
+
+        int log_back = check_keyword(csList.get(0), "config server up and master not changed", tair_bin+"logs/config.log");
 		
-		int log_back = check_keyword(csList.get(0), "config server up and master not changed", tair_bin+"logs/config.log");
-		
-		//6¡¢ÖØÆôËùÓĞcs
+		//6ã€é‡å¯æ‰€æœ‰cs
 		if(!batch_control_cs(csList, start, 0))
 			fail("restart cs group failed!");
 		waitto(down_time);
 		
-		//7¡¢²é¿´Ö÷csÊÇ·ñÇĞ»»
+		//7ã€æŸ¥çœ‹ä¸»csæ˜¯å¦åˆ‡æ¢
 		if(check_keyword(csList.get(0), "config server up and master not changed", tair_bin+"logs/config.log") == log_back)
 			fail("check master cs didn't changed to master cs after master cs restart!");
 		log.info("master cs changed to master cs after master cs restart!");
 		
-		//8¡¢²é¿´versionºÅÊÇ·ñÔö¼Ó
+		//8ã€æŸ¥çœ‹versionå·æ˜¯å¦å¢åŠ 
 		if(check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log")!=versionGroup_1)
-			fail("group_1 version changed after restart all cs!!");
+			fail("group_1 version changed after restart all cs!");
 		if(check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log")!=versionGroup_2)
-			fail("group_2 version changed after restart all cs!!");
+			fail("group_2 version changed after restart all cs!");
 		versionGroup_1=check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
 		versionGroup_2=check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
-		//9¡¢Á½group×´Ì¬ÊÇ·ñ¸Ä±ä
+		//9ã€ä¸¤groupçŠ¶æ€æ˜¯å¦æ”¹å˜
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_1", "group_status")))
 			fail("check group1 status changed after group1 shut down!");
 		if(!"on".equals(getGroupKeyword(csList.get(0), "group_2", "group_status")))
 			fail("check group2 status changed after group1 shut down!");
 			
-	    //10¡¢¼ì²éÊ§°ÜÊıÎ´Ôö¶à
+	    //10ã€æ£€æŸ¥å¤±è´¥æ•°æœªå¢å¤š
 		waitto(15);
 		if(!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -651,14 +659,14 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		//end test
 		log.info("end ldb fast dump test Failover case 06");
 	}
-	
-	//case 07 Á½group¶ÏÍø
+
+	//case 07 ä¸¤groupæ–­ç½‘
 	@Test
 	public void testFailover_07_shut_off_net_between_two_group() {
 		log.info("start ldb fast dump test Failover case 07");
 		start_cluster_and_prepare_data();
 		
-		// 2¡¢¿ªÊ¼Ñ­»·¶ÁÀÏÊı¾İ
+		// 2ã€å¼€å§‹å¾ªç¯è¯»è€æ•°æ®
 		if(ctrlDataTool("tairtool_get.conf", "group_master", "old1.kv", "0") != 0)
 			fail("start read old data failed!");
 		
@@ -674,18 +682,18 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 //		int versionGroup_1 = check_keyword(csList.get(0), verchange_group_1, tair_bin + "logs/config.log");
 //		int versionGroup_2 = check_keyword(csList.get(0), verchange_group_2, tair_bin + "logs/config.log");
 
-		// ¶Ï¿ªÁ½groupÍøÂç
+		// æ–­å¼€ä¸¤groupç½‘ç»œ
 		if (!"0".equals(control_sh(csList.get(0), tair_bin, "netctrl.sh", "shut")))
 			fail("shut off net on 10.232.4.14 failed!");
 		if (!"0".equals(control_sh(csList.get(1), tair_bin, "netctrl.sh", "shut")))
 			fail("shut off net on 10.232.4.17 failed!");
-		
-		waitto(ds_down_time);
-		// tmp_down_serverÊÇ·ñ¸ü¸Ä
-		if(!"10.232.4.17:5361;10.232.4.18:5361;10.232.4.19:5361;".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
-			fail("check group_2's tmp_down_server not correct after shut off net!");
+        
+        waitto(ds_down_time);
+        // tmp_down_serveræ˜¯å¦æ›´æ”¹
+        if(!"10.232.4.17:5361;10.232.4.18:5361;10.232.4.19:5361;".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
+            fail("check group_2's tmp_down_server not correct after shut off net!");
 
-		// Êı¾İget²»ÊÜÓ°Ïì
+		// æ•°æ®getä¸å—å½±å“
 		waitto(30);
 		if (!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -695,28 +703,28 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get successful count smaller than 0!", suc_count > 0);
 		Assert.assertTrue("get fail_count count not 0!", fail_count == 0);
 
-		// getCountÈ«²¿×ªÒÆµ½group1
+		// getCountå…¨éƒ¨è½¬ç§»åˆ°group1
 		int group1_getcount = new Integer(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
 		int group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
 		Assert.assertTrue("group2_getcount not 0!", group2_getcount == 0);
 		Assert.assertTrue("group1_getcount not larger than 0!", group1_getcount > 0);
 
-		// »Ö¸´ÍøÂç
+		// æ¢å¤ç½‘ç»œ
 		if (!"0".equals(control_sh(csList.get(0), tair_bin, "netctrl.sh", "recover")))
 			fail("shut off net on 10.232.4.14 failed!");
 		if (!"0".equals(control_sh(csList.get(1), tair_bin, "netctrl.sh", "recover")))
 			fail("shut off net on 10.232.4.17 failed!");
-		
-		waitto(down_time);
-		// Çå³ıËùÓĞtmp_down_server
-		if(!batch_modify(csList, tair_bin+"etc/group.conf", "tmp_down_server", " "))
-			fail("modify configure file failure");
-		
-		// tmp_down_serverÊÇ·ñ¸ü¸Ä
-		if(!"".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
-			fail("check group_2's tmp_down_server not correct after recover net!");
+        
+        waitto(down_time);
+        // æ¸…é™¤æ‰€æœ‰tmp_down_server
+        if(!batch_modify(csList, tair_bin+"etc/group.conf", "tmp_down_server", " "))
+            fail("modify configure file failure");
 
-		// Êı¾İget²»ÊÜÓ°Ïì
+        // tmp_down_serveræ˜¯å¦æ›´æ”¹
+        if(!"".equals(getGroupKeyword(csList.get(0), "group_2", "tmp_down_server")))
+            fail("check group_2's tmp_down_server not correct after recover net!");
+
+		// æ•°æ®getä¸å—å½±å“
 		waitto(30);
 		if (!sendSignal("local", "tairtool_get", "10"))
 			fail("send signal 10 to tairtool_get failed!");
@@ -724,7 +732,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get successful count not changed after recover net!", getKeyNumber("local", test_bin, "Successful") > suc_count);
 		Assert.assertTrue("get fail_count count changed after recover net!", getKeyNumber("local", test_bin, "fail") == fail_count);
 
-		// getCount»ù±¾ÏàÍ¬
+		// getCountåŸºæœ¬ç›¸åŒ
 		group1_getcount = new Integer(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 stat")).intValue();
 		group2_getcount = new Integer(control_sh(csList.get(1), tair_bin, "fastdump.sh", "group_2 stat")).intValue();
 		Assert.assertTrue("group1 getCount larger than group2 1.2 times!", group1_getcount < group2_getcount * 1.2);
@@ -747,18 +755,18 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 			fail("modify configure file failure");
 		if(!batch_modify(csList, tair_bin+"etc/group.conf", "tmp_down_server", " "))
 			fail("modify configure file failure");
-//		if(!batch_modify(csList, tair_bin+"etc/group.conf", "_copy_count", "1"))
-//            fail("modify configure file failure");
-//        if(!batch_modify(dsList, tair_bin+"etc/group.conf", "_copy_count", "1"))
-//            fail("modify configure file failure");
+		if(!batch_modify(csList, tair_bin+"etc/group.conf", "_copy_count", "1"))
+            fail("modify configure file failure");
+        if(!batch_modify(dsList, tair_bin+"etc/group.conf", "_copy_count", "1"))
+            fail("modify configure file failure");
 	}
 	
 	@After
 	public void tearDown()
 	{
 		log.info("enter tearDown!");
-//		log.info("clean tool and cluster!");
-//		clean_tool("local");
-//		reset_cluster(csList,dsList);
+		log.info("clean tool and cluster!");
+		clean_tool("local");
+		reset_cluster(csList,dsList);
 	}
 }
