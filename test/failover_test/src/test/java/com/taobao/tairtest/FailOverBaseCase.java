@@ -539,6 +539,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
+				log.debug(ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
@@ -635,6 +636,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
+				log.debug(ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
