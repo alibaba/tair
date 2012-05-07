@@ -30,13 +30,13 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 
 		//write data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "put"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "datasize", "100000"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "filename", "read.kv"))fail("change conf failed!");
 
 		execute_data_verify_tool();
 
-		while(check_process("local", "DataDebug")!=2)
+		while(check_process("local", "mdb_tool")!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -60,11 +60,11 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 
 		waitto(FailOverBaseCase.down_time);
 		//verify data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "get"))fail("change conf failed!");
 
 		execute_data_verify_tool();
 
-		while(check_process("local", "DataDebug")!=2)
+		while(check_process("local", "mdb_tool")!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -96,13 +96,13 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		waitto(FailOverBaseCase.down_time);
 
 		//write data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", "100000"))fail("change conf failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "put"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "datasize", "100000"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "filename", "read.kv"))fail("change conf failed!");
 
 		execute_data_verify_tool();
 
-		while(check_process("local", "DataDebug")!=2)
+		while(check_process("local", "mdb_tool")!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -150,11 +150,11 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 
 		waitto(FailOverBaseCase.down_time);
 		//verify data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("change conf failed!");
+		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "get"))fail("change conf failed!");
 
 		execute_data_verify_tool();
 
-		while(check_process("local", "DataDebug")!=2)
+		while(check_process("local", "mdb_tool")!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;

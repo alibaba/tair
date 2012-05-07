@@ -16,8 +16,8 @@ import java.util.List;
  */
 public class FailOverBaseCase extends BaseTestCase {
 	// Directory
-	final static String tair_bin = "/home/admin/tair_bin/";
-	final static String test_bin = "/home/admin/ashu/recovery/";
+	final static String tair_bin = "/home/admin/tair_bin_iv/";
+	final static String test_bin = "/home/admin/ashu/recovery/mdb/";
 	// Server Operation
 	final static String start = "start";
 	final static String stop = "stop";
@@ -35,9 +35,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String put_count = "100000";
 	final static float put_count_float = 100000.0f;
 	// Server List
-	final String csarr[] = new String[] { "10.232.4.20", "10.232.4.21" };
-	final String dsarr[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24" };
-	final String dsarr2[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24", "10.232.4.25" };
+	final String csarr[] = new String[] { "10.232.4.14", "10.232.4.15" };
+	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18" };
+	final String dsarr2[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18", "10.232.4.19" };
 	final List<String> csList = Arrays.asList(csarr);
 	final List<String> dsList = Arrays.asList(dsarr);
 	final List<String> dsList2 = Arrays.asList(dsarr2);
@@ -54,9 +54,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_cs && sleep 5";
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_cfg_svr_hudson && sleep 2";
+			cmd = "killall -9 tair_cfg_svr_iv && sleep 2";
 		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep tair_cfg_svr_hudson|wc -l";
+		cmd = "ps -ef|grep tair_cfg_svr_iv|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
 			log.debug("cs rc!=0");
@@ -95,10 +95,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		executeShell(stafhandle, machine, cmd);
 
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_server_hudson && sleep 2";
+			cmd = "killall -9 tair_server_iv && sleep 2";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		int waittime = 0;
-		cmd = "ps -ef|grep tair_server_hudson|wc -l";
+		cmd = "ps -ef|grep tair_server_iv|wc -l";
 		while (waittime < 110) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {
@@ -246,7 +246,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	public boolean killall_tool_proc() {
 		log.debug("force kill all data tool process");
 		boolean ret = false;
-		String cmd = "killall -9 tair3test";
+		String cmd = "killall -9 mdb_tool";
 		STAFResult result = executeShell(stafhandle, "local", cmd);
 		if (result.rc != 0)
 			ret = false;
@@ -466,11 +466,11 @@ public class FailOverBaseCase extends BaseTestCase {
 
 	public boolean execute_tool_on_mac(String machine, String option) {
 		log.debug("start " + option + " on " + machine);
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "actiontype", option))
+		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/mdb_tool.conf", "actiontype", option))
 			fail("modify configure file failed");
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/mdb_tool.conf", "datasize", FailOverBaseCase.put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/mdb_tool.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		boolean ret = true;
@@ -485,7 +485,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	{
 		log.error("start wait on " + machine);
 		int count=0;
-		while(check_process(machine, "DataDebug")!=2)
+		while(check_process(machine, "mdb_tool")!=2)
 		{
 			waitto(16);
 			if(++count>150)break;
