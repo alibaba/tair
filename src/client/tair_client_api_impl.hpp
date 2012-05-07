@@ -66,6 +66,7 @@ namespace tair {
       ~tair_client_impl();
 
       bool startup(const char *master_addr,const char *slave_addr,const char *group_name);
+      bool directup(const char *server_addr);
       bool startup(uint64_t data_server);
 
       void close();
@@ -203,6 +204,7 @@ namespace tair {
     private:
 
       bool startup(uint64_t master_cfgsvr, uint64_t slave_cfgsvr, const char *group_name);
+      bool directup(uint64_t data_server);
 
       bool initialize();
 
@@ -253,6 +255,8 @@ namespace tair {
       tbsys::CThread thread;
       tbsys::CThread response_thread; //thread to response packet.
 
+      bool direct;
+      uint64_t data_server;
       tair_packet_factory *packet_factory;
       tair_packet_streamer *streamer;
       tbnet::Transport *transport;

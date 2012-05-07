@@ -50,6 +50,11 @@ namespace tair {
     return impl->startup(master_addr,slave_addr,group_name);
   }
 
+  bool tair_client_api::directup(const char *server_addr)
+  {
+    return impl->directup(server_addr);
+  }
+
   void tair_client_api::close()
   {
     impl->close();

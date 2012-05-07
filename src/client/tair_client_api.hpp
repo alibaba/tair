@@ -61,6 +61,15 @@ namespace tair {
       bool startup(const char *master_addr,const char *slave_addr,const char *group_name);
 
       /**
+       * @brief connect to data server
+       *
+       * @param server_addr		data server addr [ip:port],default port is 5191
+       *
+       * @return true -- success,false -- fail
+       */
+      bool directup(const char *server_addr);
+
+      /**
        * @brief connect to tair cluster
        *
        * @param master_cfgsvr master configserver ip:port

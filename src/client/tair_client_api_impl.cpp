@@ -53,7 +53,7 @@ namespace tair {
    *  tair_client_impl
    *-----------------------------------------------------------------------------*/
 
-  tair_client_impl::tair_client_impl():inited(false),is_stop(false),packet_factory(0),streamer(0),
+  tair_client_impl::tair_client_impl():inited(false),is_stop(false),direct(false),data_server(0),packet_factory(0),streamer(0),
   transport(0),connmgr(0),timeout(2000),config_version(0),
   new_config_version(0),send_fail_count(0),this_wait_object_manager(0),
   bucket_count(0),copy_count(0),rand_read_flag(false)
@@ -88,9 +88,29 @@ namespace tair {
     return startup(master_cfgsvr,slave_cfgsvr,group_name);
   }
 
+  bool tair_client_impl::directup(const char *server_addr)
+  {
+    if(server_addr == NULL){
+      return false;
+    }
+
+    if(inited){
+      return true;
+    }
+    is_stop = false;
+
+    if( !initialize() ){
+      return false;
+    }
+
+    int default_port = 5191;
+    uint64_t data_server = tbsys::CNetUtil::strToAddr(server_addr, default_port);
+
+    return directup(data_server);
+  }
+
   bool tair_client_impl::startup(uint64_t master_cfgsvr, uint64_t slave_cfgsvr, const char *group_name)
   {
-
     if(master_cfgsvr == 0 || group_name == NULL){
       return false;
     }
@@ -120,6 +140,26 @@ namespace tair {
     inited = true;
     return true;
   }
+
+  bool tair_client_impl::directup(uint64_t data_server)
+  {
+    if(data_server == 0){
+      return false;
+    }
+
+    if(inited) return true;
+    CScopedRwLock __scoped_lock(&m_init_mutex,true);
+    if(inited) return true;
+
+    start_tbnet();
+
+    inited = true;
+    this->data_server = data_server;
+    this->direct = true;
+
+    return true;
+  }
+
 
   bool tair_client_impl::initialize()
   {
@@ -203,7 +243,6 @@ FAIL_1:
       int expired, int version,
       TAIRCALLBACKFUNC pfunc,void * parg )
   {
-
     if( !(key_entry_check(key)) || (!data_entry_check(data))){
       return TAIR_RETURN_ITEMSIZE_ERROR;
     }
@@ -217,13 +256,16 @@ FAIL_1:
     }
 
     vector<uint64_t> server_list;
-    if ( !get_server_id(key, server_list)) {
-      TBSYS_LOG(DEBUG, "can not find serverId, return false");
-      return -1;
+    if(!this->direct) {
+      if ( !get_server_id(key, server_list)) {
+        TBSYS_LOG(DEBUG, "can not find serverId, return false");
+        return -1;
+      }
+    } else {
+      server_list.push_back(this->data_server);
     }
 
     TBSYS_LOG(DEBUG,"put to server:%s",tbsys::CNetUtil::addrToString(server_list[0]).c_str());
-
 
     wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_PUT_PACKET,pfunc,parg,expired);
 
@@ -237,9 +279,7 @@ FAIL_1:
     base_packet *tpacket = 0;
     response_return *resp = 0;
 
-
     if( (ret = send_request(server_list[0],packet,cwo->get_id())) < 0){
-
       delete packet;
       goto FAIL;
     }
@@ -377,10 +417,15 @@ FAIL:
     }
 
     vector<uint64_t> server_list;
-    if ( !get_server_id(key, server_list)) {
-      TBSYS_LOG(DEBUG, "can not find serverId, return false");
-      return -1;
+    if (!this->direct) {
+      if ( !get_server_id(key, server_list)) {
+        TBSYS_LOG(DEBUG, "can not find serverId, return false");
+        return -1;
+      }
+    } else {
+      server_list.push_back(this->data_server);
     }
+
     TBSYS_LOG(DEBUG,"get from server:%s",tbsys::CNetUtil::addrToString(server_list[0]).c_str());
     wait_object *cwo = 0;
 
