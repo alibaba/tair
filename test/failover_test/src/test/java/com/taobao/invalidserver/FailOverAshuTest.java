@@ -33,7 +33,16 @@ public class FailOverAshuTest extends FailOverBaseCase {
 
         // end test
         log.error("end staf test case");
-    }*/
+    }
+
+    @Test
+    public void test_getcwd() {
+        log.error("start staf test");
+		if (!modify_config_file("local", test_bin + "mdb_tool.conf", "dumperror", "1"))
+            fail("changed failed!");
+
+        log.error("end staf test case");
+    }
 
 	public void changeToolConf(String machine, String path, String value) {
 		// change test tool's configuration
@@ -198,4 +207,5 @@ public class FailOverAshuTest extends FailOverBaseCase {
 //				"invalidate_server", "10.232.4.20:5196,10.232.4.22:5196"))
 //			fail("modify configure file failure");
 	}
+*/
 }
