@@ -566,6 +566,29 @@ namespace tair {
           }
           node_list.clear();
           node_list = server_list;
+
+          // update node stat info
+          stat_info_rw_locker.wrlock();
+          server_info tmp_server_info;
+          node_info tmp_node_info(&tmp_server_info);
+          for (std::map<uint64_t, node_stat_info>::iterator stat_it = stat_info.begin(); stat_it != stat_info.end();)
+          {
+            tmp_node_info.server->server_id = stat_it->first;
+            // This stat info is not needed any more.
+            // NOTE: We only clear stat info here, 'cause this ds has been removed from _server_list,
+            //       we do nothing when ds is DOWN (maybe also clear).
+            if (node_list.find(&tmp_node_info) == node_list.end())
+            {
+              log_info("erase stat info of server: %s", tbsys::CNetUtil::addrToString(stat_it->first).c_str());
+              stat_info.erase(stat_it++);
+            }
+            else
+            {
+              ++stat_it;
+            }
+          }
+          stat_info_rw_locker.unlock();
+
           log_warn("nodeList changed");
           need_rebuild_hash_table = now;
         }
