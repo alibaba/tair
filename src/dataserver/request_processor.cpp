@@ -389,9 +389,10 @@ namespace tair {
           tair_mgr->plugins_manager.do_response_plugins(rev, plugin::PLUGIN_TYPE_SYSTEM,
               TAIR_REQ_GET_HIDDEN_PACKET, request->area, key, data, plugin_root);
           PROFILER_END();
-          if (rev != TAIR_RETURN_SUCCESS) {
+          if (rev != TAIR_RETURN_SUCCESS && rev != TAIR_RETURN_HIDDEN) {
             continue;
           }
+          rev = TAIR_RETURN_SUCCESS;
           ++count;
           resp->add_key_data(new data_entry(*key), data);
           data = NULL;
@@ -439,7 +440,8 @@ namespace tair {
           tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
               TAIR_REQ_GET_HIDDEN_PACKET,request->area, (request->key), data, plugin_root);
           PROFILER_END();
-          if (rc == TAIR_RETURN_SUCCESS) {
+          if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_HIDDEN) {
+            rc = TAIR_RETURN_SUCCESS;
             resp->add_key_data(request->key, data);
             request->key = NULL;
             log_debug("get return %s", resp->data->get_data());
