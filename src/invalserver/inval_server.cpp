@@ -1,7 +1,7 @@
 #include "inval_server.hpp"
 
 namespace tair {
-  InvalServer::InvalServer() {
+  InvalServer::InvalServer() : processor(&invalid_loader) {
     _stop = false;
     ignore_zero_area = TBSYS_CONFIG.getInt(INVALSERVER_SECTION, TAIR_IGNORE_ZERO_AREA, 0);
   }
@@ -101,59 +101,103 @@ namespace tair {
 
     switch (pcode) {
       case TAIR_REQ_INVAL_PACKET:
-        {
-          request_invalid *req = dynamic_cast<request_invalid*>(bp);
-          if (req != NULL) {
-            if (req->is_sync == SYNC_INVALID) {
-              ret = do_invalid(req);
-            } else if (req->is_sync == ASYNC_INVALID) {
-              ret = async_thread.add_packet(new request_invalid(*req)) ?
-                TAIR_RETURN_SUCCESS : TAIR_RETURN_QUEUE_OVERFLOWED;
-            }
-          } else {
-            log_error("[FATAL ERROR] packet could not be casted to request_invalid packet.");
-            ret = TAIR_RETURN_FAILED;
+      {
+        request_invalid *req = dynamic_cast<request_invalid*>(bp);
+        if (req != NULL) {
+          if (req->is_sync == SYNC_INVALID) {
+            ret = do_invalid(req);
+          } else if (req->is_sync == ASYNC_INVALID) {
+            request_invalid *async_packet = new request_invalid();
+            async_packet->swap(*req);
+            async_packet->set_group_name(req->group_name);
+            ret = async_thread.add_packet(async_packet) ?
+              TAIR_RETURN_SUCCESS : TAIR_RETURN_QUEUE_OVERFLOWED;
           }
-        }
-        break;
-      case TAIR_REQ_HIDE_BY_PROXY_PACKET:
-        {
-          request_hide_by_proxy *req = dynamic_cast<request_hide_by_proxy*>(bp);
-          if (req != NULL) {
-            if (req->is_sync == SYNC_INVALID) {
-              ret = do_hide(req);
-            } else if (req->is_sync == ASYNC_INVALID) {
-              ret = async_thread.add_packet(new request_hide_by_proxy(*req)) ?
-                TAIR_RETURN_SUCCESS : TAIR_RETURN_QUEUE_OVERFLOWED;
-            }
-          } else {
-            log_error("[FATAL ERROR] packet could not be casted to request_hide_by_proxy packet.");
-            ret = TAIR_RETURN_FAILED;
-          }
-        }
-        break;
-      case TAIR_REQ_PING_PACKET:
-        {
-          if (invalid_loader.is_loading()) {
-            log_info("ping packet received, but clients are still not ready");
-            ret = TAIR_RETURN_FAILED;
-            msg = "iv not ready";
-            break;
-          }
-          request_ping *req = dynamic_cast<request_ping*>(bp);
-          if (req != NULL) {
-            log_info("ping packet received, config_version: %u, value: %d", req->config_version, req->value);
-            ret = TAIR_RETURN_SUCCESS;
-          } else {
-            ret = TAIR_RETURN_FAILED;
-          }
-        }
-        break;
-      default:
-        {
-          log_error("[FATAL ERROR] packet not recognized, pcode: %d.", pcode);
+        } else {
+          log_error("[FATAL ERROR] packet could not be casted to request_invalid packet.");
           ret = TAIR_RETURN_FAILED;
         }
+        break;
+      }
+      case TAIR_REQ_HIDE_BY_PROXY_PACKET:
+      {
+        request_hide_by_proxy *req = dynamic_cast<request_hide_by_proxy*>(bp);
+        if (req != NULL) {
+          if (req->is_sync == SYNC_INVALID) {
+            ret = do_hide(req);
+          } else if (req->is_sync == ASYNC_INVALID) {
+            request_hide_by_proxy *async_packet = new request_hide_by_proxy();
+            async_packet->swap(*req);
+            async_packet->set_group_name(req->group_name);
+            ret = async_thread.add_packet(async_packet) ?
+              TAIR_RETURN_SUCCESS : TAIR_RETURN_QUEUE_OVERFLOWED;
+          }
+        } else {
+          log_error("[FATAL ERROR] packet could not be casted to request_hide_by_proxy packet.");
+          ret = TAIR_RETURN_FAILED;
+        }
+        break;
+      }
+      case TAIR_REQ_PREFIX_HIDES_BY_PROXY_PACKET:
+      {
+        request_prefix_hides_by_proxy *req = dynamic_cast<request_prefix_hides_by_proxy*>(bp);
+        if (req != NULL) {
+          if (req->is_sync == SYNC_INVALID) {
+            ret = do_prefix_hides(req);
+          } else if (req->is_sync == ASYNC_INVALID) {
+            request_prefix_hides_by_proxy *async_packet = new request_prefix_hides_by_proxy();
+            async_packet->swap(*req);
+            async_packet->set_group_name(req->group_name);
+            ret = async_thread.add_packet(async_packet) ?
+              TAIR_RETURN_SUCCESS : TAIR_RETURN_QUEUE_OVERFLOWED;
+          }
+        } else {
+          log_error("[FATAL ERROR] packet could not be casted to request_hides_by_proxy packet.");
+          ret = TAIR_RETURN_FAILED;
+        }
+        break;
+      }
+      case TAIR_REQ_PREFIX_INVALIDS_PACKET:
+      {
+        request_prefix_invalids *req = dynamic_cast<request_prefix_invalids*>(bp);
+        if (req != NULL) {
+          if (req->is_sync == SYNC_INVALID) {
+            ret = do_prefix_invalids(req);
+          } else if (req->is_sync == ASYNC_INVALID) {
+            request_prefix_invalids *async_packet = new request_prefix_invalids();
+            async_packet->swap(*req);
+            async_packet->set_group_name(req->group_name);
+            ret = async_thread.add_packet(async_packet) ?
+              TAIR_RETURN_SUCCESS : TAIR_RETURN_QUEUE_OVERFLOWED;
+          }
+        } else {
+          log_error("[FATAL ERROR] packet could not be casted to request_hide_by_proxy packet.");
+          ret = TAIR_RETURN_FAILED;
+        }
+        break;
+      }
+      case TAIR_REQ_PING_PACKET:
+      {
+        if (invalid_loader.is_loading()) {
+          log_info("ping packet received, but clients are still not ready");
+          ret = TAIR_RETURN_FAILED;
+          msg = "iv not ready";
+          break;
+        }
+        request_ping *req = dynamic_cast<request_ping*>(bp);
+        if (req != NULL) {
+          log_info("ping packet received, config_version: %u, value: %d", req->config_version, req->value);
+          ret = TAIR_RETURN_SUCCESS;
+        } else {
+          ret = TAIR_RETURN_FAILED;
+        }
+        break;
+      }
+      default:
+      {
+        log_error("[FATAL ERROR] packet not recognized, pcode: %d.", pcode);
+        ret = TAIR_RETURN_FAILED;
+      }
     }
     //~ set and send the general return_packet.
     if (send_ret && bp->get_direction() == DIRECTION_RECEIVE) {
@@ -163,144 +207,62 @@ namespace tair {
     if (bp) delete bp;
     return false;
   }
-  //~ would not delete req
+
   int InvalServer::do_invalid(request_invalid *req) {
     int ret = TAIR_RETURN_SUCCESS;
-
     if (ignore_zero_area && req->area == 0) {
       log_info("ignoring packet of area 0");
     } else {
-      std::vector<tair_client_api*> *clients = invalid_loader.get_client_list(req->group_name);
-      if (clients != NULL) {
-        //~ 'set' to collect keys that failed
-        tair_dataentry_set key_set;
-
-        for (int i = 0; i < clients->size(); ++i) {
-          tair_client_api *client = (*clients)[i];
-          //~ single key
-          if (req->key_count == 1) {
-            if ((ret = client->remove(req->area, *(req->key))) != TAIR_RETURN_SUCCESS) {
-              if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
-                std::vector<std::string> servers;
-                client->get_server_with_key(*(req->key), servers);
-                log_error("[FATAL ERROR] RemoveFailure: Group %s, DataServer %s.",
-                    req->group_name, servers[0].c_str());
-
-                data_entry *key = new data_entry;
-                key->clone(*(req->key));
-                pair<tair_dataentry_set::iterator, bool> result = key_set.insert(key);
-                if (!result.second) {
-                  delete key;
-                }
-              }
-            }
-          } else if (req->key_count > 1) {
-            //~ multiple keys
-            for (tair_dataentry_set::iterator it = (*req->key_list).begin();
-                it != (*req->key_list).end(); ++it) {
-              if ((ret = client->remove(req->area, **it)) != TAIR_RETURN_SUCCESS) {
-                if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
-                  std::vector<std::string> servers;
-                  client->get_server_with_key(**it, servers);
-                  log_error("[FATAL ERROR] RemoveFailure: Group %s, DataServer %s.",
-                      req->group_name, servers[0].c_str());
-                  data_entry *key = new data_entry;
-                  key->clone(**it);
-                  pair<tair_dataentry_set::iterator, bool> result = key_set.insert(key);
-                  if (!result.second) {
-                    delete key;
-                  }
-                }
-              }
-            }
-          } //~ end if
-        } //~ end for
-
-        for (tair_dataentry_set::iterator it = key_set.begin();
-            it != key_set.end(); ++it) {
-          request_invalid *packet = new request_invalid;
-          packet->add_key((**it).get_data(), (**it).get_size());
-          packet->area = req->area;
-          packet->set_group_name(req->group_name);
-          retry_thread.add_packet(packet, 0);
-          log_warn("add packet to 'RetryThread' 0");
-        }
-        ret = TAIR_RETURN_SUCCESS;
-      } else {
-        log_error("[FATAL ERROR] cannot find clients, maybe Group %s not added, or invalid_loader still loading.",
-            req->group_name);
-        ret = TAIR_RETURN_INVAL_CONN_ERROR;
+      request_invalid *post_req = NULL;
+      ret = processor.process(req, post_req);
+      if (post_req != NULL) {
+        log_error("add invalid packet to RetryThread 0");
+        retry_thread.add_packet(post_req, 0);
       }
     }
     return ret;
   }
-  //~ would not delete req
+
   int InvalServer::do_hide(request_hide_by_proxy *req) {
     int ret = TAIR_RETURN_SUCCESS;
-
     if (ignore_zero_area && req->area == 0) {
       log_info("ignoring packet of area 0");
     } else {
-      std::vector<tair_client_api*> *clients = invalid_loader.get_client_list(req->group_name);
-      if (clients != NULL) {
-        //~ 'set' to collect keys that failed
-        tair_dataentry_set key_set;
+      request_hide_by_proxy *post_req = NULL;
+      ret = processor.process(req, post_req);
+      if (post_req != NULL) {
+        log_error("add hide packet to RetryThread 0");
+        retry_thread.add_packet(post_req, 0);
+      }
+    }
+    return ret;
+  }
 
-        for (int i = 0; i < clients->size(); ++i) {
-          tair_client_api *client = (*clients)[i];
-          //~ single key
-          if (req->key_count == 1) {
-            if ((ret = client->hide(req->area, *(req->key))) != TAIR_RETURN_SUCCESS) {
-              if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
-                std::vector<std::string> servers;
-                client->get_server_with_key(*(req->key), servers);
-                log_error("[FATAL ERROR] HideFailure: Group %s, DataServer %s.",
-                    req->group_name, servers[0].c_str());
+  int InvalServer::do_prefix_hides(request_prefix_hides_by_proxy *req) {
+    int ret = TAIR_RETURN_SUCCESS;
+    if (ignore_zero_area && req->area == 0) {
+      log_info("ignoring packet of area 0");
+    } else {
+      request_prefix_hides_by_proxy *post_req = NULL;
+      ret = processor.process(req, post_req);
+      if (post_req != NULL) {
+        log_error("add prefix hides packet to RetryThread 0");
+        retry_thread.add_packet(post_req, 0);
+      }
+    }
+    return ret;
+  }
 
-                data_entry *key = new data_entry;
-                key->clone(*(req->key));
-                pair<tair_dataentry_set::iterator, bool> result = key_set.insert(key);
-                if (!result.second) {
-                  delete key;
-                }
-              }
-            }
-          } else if (req->key_count > 1) {
-            //~ multiple keys
-            for (tair_dataentry_set::iterator it = (*req->key_list).begin();
-                it != (*req->key_list).end(); ++it) {
-              if ((ret = client->hide(req->area, **it)) != TAIR_RETURN_SUCCESS) {
-                if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
-                  std::vector<std::string> servers;
-                  client->get_server_with_key(**it, servers);
-                  log_error("[FATAL ERROR] HideFailure: Group %s, DataServer %s.",
-                      req->group_name, servers[0].c_str());
-                  data_entry *key = new data_entry;
-                  key->clone(**it);
-                  pair<tair_dataentry_set::iterator, bool> result = key_set.insert(key);
-                  if (!result.second) {
-                    delete key;
-                  }
-                }
-              }
-            }
-          } //~ end if
-        } //~ end for
-
-        for (tair_dataentry_set::iterator it = key_set.begin();
-            it != key_set.end(); ++it) {
-          request_hide_by_proxy *packet = new request_hide_by_proxy();
-          packet->add_key((**it).get_data(), (**it).get_size());
-          packet->area = req->area;
-          packet->set_group_name(req->group_name);
-          retry_thread.add_packet(packet, 0);
-          log_warn("add packet to 'RetryThread' 0");
-        }
-        ret = TAIR_RETURN_SUCCESS;
-      } else {
-        log_error("[FATAL ERROR] cannot find clients, maybe Group %s not added, or invalid_loader still loading.",
-            req->group_name);
-        ret = TAIR_RETURN_INVAL_CONN_ERROR;
+  int InvalServer::do_prefix_invalids(request_prefix_invalids *req) {
+    int ret = TAIR_RETURN_SUCCESS;
+    if (ignore_zero_area && req->area == 0) {
+      log_info("ignoring packet of area 0");
+    } else {
+      request_prefix_invalids *post_req = NULL;
+      ret = processor.process(req, post_req);
+      if (post_req != NULL) {
+        log_error("add prefix invalids packet to RetryThread 0");
+        retry_thread.add_packet(post_req, 0);
       }
     }
     return ret;
@@ -319,9 +281,9 @@ namespace tair {
     int thread_count = TBSYS_CONFIG.getInt(INVALSERVER_SECTION, TAIR_PROCESS_THREAD_COUNT, 4);
     //~ set the number of threads to handle the requests.
     task_queue_thread.setThreadParameter(thread_count, this, NULL);
-    retry_thread.setThreadParameter(&invalid_loader);
+    retry_thread.setThreadParameter(&invalid_loader, &processor);
     thread_count = TBSYS_CONFIG.getInt(INVALSERVER_SECTION, "async_thread_num", 4);
-    async_thread.setThreadParameter(&invalid_loader, &retry_thread, thread_count);
+    async_thread.setThreadParameter(&invalid_loader, &retry_thread, &processor, thread_count);
     return true;
   }
 
@@ -432,6 +394,7 @@ int main(int argc, char **argv) {
 
   const char *logLevel = TBSYS_CONFIG.getString(INVALSERVER_SECTION, TAIR_LOG_LEVEL, "info");
   TBSYS_LOGGER.setLogLevel(logLevel);
+  TBSYS_LOGGER.setMaxFileSize(1<<23);
 
   //~ run as daemon process
   if (tbsys::CProcess::startDaemon(pidFile, logFile) == 0) {

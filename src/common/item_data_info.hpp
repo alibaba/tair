@@ -30,7 +30,7 @@ namespace tair {
       uint32_t mdate; // item last modified time
       uint32_t edate; // expire date
 
-      void encode(tbnet::DataBuffer *output) const 
+      void encode(tbnet::DataBuffer *output) const
      {
          output->writeInt16(magic);
          output->writeInt16(checksum);
@@ -56,6 +56,13 @@ namespace tair {
          cdate = input->readInt32();
          mdate = input->readInt32();
          edate = input->readInt32();
+      }
+
+      _item_meta& operator=(const _item_meta &rhs) {
+        if (this != &rhs) {
+          memcpy(this, &rhs, sizeof(*this));
+        }
+        return *this;
       }
 
       void log_self()

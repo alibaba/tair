@@ -144,7 +144,94 @@ namespace tair {
 
       int invalidate(int area, const data_entry &key);
 
+      /**
+       * @brief to hide one item
+       * @param area: namespace
+       * @param key: key to hide
+       */
       int hide(int area, const data_entry &key);
+
+      /**
+       * @brief to get one hidden item
+       * @param area: namespace
+       * @param key: key to get
+       * @param value: ptr holding the value returned
+       */
+      int get_hidden(int area, const data_entry &key, data_entry *&value);
+      /**
+       * @brief to get one item with prefix key
+       * @param area: namespace
+       * @param pkey: primary key
+       * @param skey: secondary key
+       * @param value: ptr holding the value returned
+       */
+      int prefix_get(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value);
+
+      /**
+       * @brief to put one item with prefix key
+       * @param area: namespace
+       * @param pkey & skey: primary key & secondary key
+       * @param value: value to put
+       * @param expire&version: expire & version
+       */
+      int prefix_put(int area, const data_entry &pkey, const data_entry &skey,
+          const data_entry &value, int expire, int version);
+      /**
+       * @brief to hide one item with prefix key
+       * @param area: namespace
+       * @param pkey & skey: primary & secondary key
+       */
+      int prefix_hide(int area, const data_entry &pkey, const data_entry &skey);
+
+      /**
+       * @brief like prefix_hide, but with multiple skeys
+       * @param pkey: primary key
+       * @param skey_set: set of skeys
+       * @param key_code_map: return code of each failed key, would be cleared before filled
+       * @return success, partial success, or others
+       */
+      int prefix_hides(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map);
+
+      /**
+       * @brief to get one hidden item with prefix key
+       * @param pkey & skey: primary & secondary key
+       * @param value: to receive the result
+       */
+      int prefix_get_hidden(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value);
+
+      /**
+       * @brief to remove one item with prefix key
+       * @param area: namespace
+       * @param pkey & skey: primary & secondary key
+       */
+      int prefix_remove(int area, const data_entry &pkey, const data_entry &skey);
+
+      /**
+       * @brief like prefix_remove, but with multiple skeys
+       * @param pkey: primary key
+       * @param skey_set: set of skeys
+       * @param key_code_map: return code of each failed skey, would be cleared before filled
+       * @return success, partial success, or others
+       */
+      int prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map);
+
+      /**
+       * @brief remove multiple items, which were merged with the same prefix key
+       * @param mkey_set: set of merged keys
+       * @param key_code_map: return code of each failed skey, would be cleared before filled
+       * @return success, partial success, or others
+       */
+      //!NOTE called by invalid server
+      int removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map);
+
+      /**
+       * @brief hide multiple items, which were merged with the same prefix key
+       * @param mkey_set: set of merged keys
+       * @param key_code_map: return code of each failed skey, would be cleared before filled
+       * @return success, partial success, or others
+       */
+      //!NOTE called by invalid server
+      int hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map);
 
       /**
        * @brief remove multi  data from tair cluster
@@ -237,7 +324,7 @@ namespace tair {
        *         otherwise -- fail
        */
       int lock(int area, const data_entry& key);
-  
+
       /**
        * @brief opposite to lock
        *

@@ -13,7 +13,8 @@ AM_CPPFLAGS= -fPIC -I${top_srcdir}/src \
 
 LDADD=$(top_srcdir)/src/client/.libs/libtairclientapi.a \
 	  $(TBLIB_ROOT)/lib/libtbnet.a \
-	  $(TBLIB_ROOT)/lib/libtbsys.a ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@ -lz -lrt
+	  $(TBLIB_ROOT)/lib/libtbsys.a \
+		$(top_srcdir)/src/common/libtair_common.a
 
 AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
 

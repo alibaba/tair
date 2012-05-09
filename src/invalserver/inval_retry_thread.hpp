@@ -9,6 +9,9 @@
 #include "base_packet.hpp"
 #include "invalid_packet.hpp"
 #include "hide_by_proxy_packet.hpp"
+#include "prefix_invalids_packet.hpp"
+#include "prefix_hides_by_proxy_packet.hpp"
+#include "inval_processor.hpp"
 
 #ifndef PACKET_GROUP_NAME
 #define PACKET_GROUP_NAME(ipacket, hpacket) \
@@ -21,7 +24,7 @@ namespace tair {
         InvalRetryThread();
         ~InvalRetryThread();
 
-        void setThreadParameter(InvalLoader *loader);
+        void setThreadParameter(InvalLoader *loader, RequestProcessor *processor);
         void stop();
         void run(tbsys::CThread *thread, void *arg);
         void add_packet(base_packet *packet, int index);
@@ -29,6 +32,7 @@ namespace tair {
         static const int RETRY_COUNT = 3;
         static const int MAX_QUEUE_SIZE = 10000;
         InvalLoader *invalid_loader;
+        RequestProcessor *processor;
         tbsys::CThreadCond queue_cond[RETRY_COUNT];
         tbnet::PacketQueue retry_queue[RETRY_COUNT];
     };

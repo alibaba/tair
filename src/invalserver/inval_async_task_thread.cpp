@@ -9,9 +9,11 @@ namespace tair {
   AsyncTaskThread::~AsyncTaskThread() {
   }
 
-  void AsyncTaskThread::setThreadParameter(InvalLoader *loader, InvalRetryThread *retry_thread, int thread_count) {
+  void AsyncTaskThread::setThreadParameter(InvalLoader *loader,
+      InvalRetryThread *retry_thread, RequestProcessor *processor, int thread_count) {
     this->invalid_loader = loader;
     this->retry_thread = retry_thread;
+    this->processor = processor;
     setThreadCount(thread_count);
   }
 
@@ -25,10 +27,7 @@ namespace tair {
     log_warn("AsyncTaskThread %d starts.", index);
 
     while (!_stop) {
-      data_entry *key = NULL;
       base_packet *bp = NULL;
-      request_hide_by_proxy *hpacket = NULL;
-      request_invalid *ipacket = NULL;
 
       queue_cond.lock();
       //~ wait until request is available, or stopped.
@@ -44,63 +43,62 @@ namespace tair {
 			log_debug("async_queue.size: %d", async_queue.size());
       queue_cond.unlock();
       int pc = bp->getPCode();
-      if (pc == TAIR_REQ_HIDE_BY_PROXY_PACKET) {
-        hpacket = dynamic_cast<request_hide_by_proxy*>(bp);
-      } else if (pc == TAIR_REQ_INVAL_PACKET) {
-        ipacket = dynamic_cast<request_invalid*>(bp);
-      }
-      if (hpacket == NULL && ipacket == NULL) {
-        log_error("unrecognized packet received, pcode: %d", pc);
-        delete bp;
-        continue;
-      }
 
-      std::vector<tair_client_api*> *clients =
-        invalid_loader->get_client_list(PACKET_GROUP_NAME(ipacket, hpacket));
-      int ret = TAIR_RETURN_SUCCESS;
-      bool indicator = true;
-      if (clients != NULL) {
-        for (size_t i = 0; i < clients->size(); ++i) {
-          tair_client_api *client = (*clients)[i];
-          if (ipacket != NULL) {
-            key = ipacket->key;
-            ret = client->remove(ipacket->area, *key);
+      switch (pc) {
+        case TAIR_REQ_INVAL_PACKET:
+        {
+          request_invalid *req = (request_invalid*) bp;
+          request_invalid *post_req = NULL;
+          int ret = processor->process(req, post_req);
+          if (post_req != NULL) {
+            log_error("async invalid failed, add packet to RetryThread %d", 0);
+            retry_thread->add_packet(post_req, 0);
           }
-          if (hpacket != NULL) {
-            key = hpacket->key;
-            ret = client->hide(hpacket->area, *key);
-          }
-          if (ret != TAIR_RETURN_SUCCESS) {
-            if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
-              std::vector<std::string> servers;
-              client->get_server_with_key(*key, servers);
-              log_error("async %s failed: Group %s, DataServer %s.",
-                  ipacket ? "invalid" : "hide", PACKET_GROUP_NAME(ipacket, hpacket), servers[0].c_str());
-            } else {
-              //~ if 'data_not_exist', regarded to be 'success'.
-              ret = TAIR_RETURN_SUCCESS;
-            }
-          } else {
-            log_debug("async %s successful", ipacket ? "invalid" : "hide");
-          }
-          if (ret != TAIR_RETURN_SUCCESS) {
-            indicator = false;
-          }
+          delete req;
+          break;
         }
-        //~ if any requst failed, then retry.
-        if (indicator == false) {
-          ret = TAIR_RETURN_FAILED;
+        case TAIR_REQ_HIDE_BY_PROXY_PACKET:
+        {
+          request_hide_by_proxy *req = (request_hide_by_proxy*) bp;
+          request_hide_by_proxy *post_req = NULL;
+          int ret = processor->process(req, post_req);
+          if (post_req != NULL) {
+            log_error("async hide failed, add packet to RetryThread %d", 0);
+            retry_thread->add_packet(post_req, 0);
+          }
+          delete req;
+          break;
         }
-      } else {
-        log_error(" cannot find clients, maybe Group %s not added, or invalid_loader still loading.",
-            PACKET_GROUP_NAME(ipacket, hpacket));
-        ret = TAIR_RETURN_FAILED;
-      }
-      //~ retry
-      if (ret != TAIR_RETURN_SUCCESS) {
-        retry_thread->add_packet(bp, 0);
-      } else {
-        delete bp;
+        case TAIR_REQ_PREFIX_HIDES_BY_PROXY_PACKET:
+        {
+          request_prefix_hides_by_proxy *req = (request_prefix_hides_by_proxy*) bp;
+          request_prefix_hides_by_proxy *post_req = NULL;
+          int ret = processor->process(req, post_req);
+          if (post_req != NULL) {
+            log_error("async prefix hides failed, add packet to RetryThread %d", 0);
+            retry_thread->add_packet(post_req, 0);
+          }
+          delete req;
+          break;
+        }
+        case TAIR_REQ_PREFIX_INVALIDS_PACKET:
+        {
+          request_prefix_invalids *req = (request_prefix_invalids*) bp;
+          request_prefix_invalids *post_req = NULL;
+          int ret = processor->process(req, post_req);
+          if (post_req != NULL) {
+            log_error("async prefix invalids failed, add packet to RetryThread %d", 0);
+            retry_thread->add_packet(post_req, 0);
+          }
+          delete req;
+          break;
+        }
+        default:
+        {
+          log_error("unknown packet with code %d", pc);
+          delete bp;
+          break;
+        }
       }
     }
     //~ clear the queue when stopped.

@@ -178,6 +178,57 @@ namespace tair {
      return impl->hide(area, key);
    }
 
+   int tair_client_api::get_hidden(int area, const data_entry &key, data_entry *&value)
+   {
+     return impl->get_hidden(area, key, value);
+   }
+
+   int tair_client_api::prefix_get(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
+   {
+     return impl->prefix_get(area, pkey, skey, value);
+   }
+
+   int tair_client_api::prefix_put(int area, const data_entry &pkey, const data_entry &skey,
+       const data_entry &value, int expire, int version)
+   {
+     return impl->prefix_put(area, pkey, skey, value, expire, version);
+   }
+
+   int tair_client_api::prefix_hide(int area, const data_entry &pkey, const data_entry &skey)
+   {
+     return impl->prefix_hide(area, pkey, skey);
+   }
+
+   int tair_client_api::prefix_hides(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
+   {
+     return impl->prefix_hides(area, pkey, skey_set, key_code_map);
+   }
+
+   int tair_client_api::prefix_get_hidden(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
+   {
+     return impl->prefix_get_hidden(area, pkey, skey, value);
+   }
+
+   int tair_client_api::prefix_remove(int area, const data_entry &pkey, const data_entry &skey)
+   {
+     return impl->prefix_remove(area, pkey, skey);
+   }
+
+   int tair_client_api::prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
+   {
+     return impl->prefix_removes(area, pkey, skey_set, key_code_map);
+   }
+
+   int tair_client_api::removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
+   {
+     return impl->removes(area, mkey_set, key_code_map);
+   }
+
+   int tair_client_api::hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
+   {
+     return impl->hides(area, mkey_set, key_code_map);
+   }
+
   void tair_client_api::invalid_local_cache(int area, const vector<data_entry *> &keys)
   {
     if( area < 0 || area >= TAIR_MAX_AREA_COUNT){

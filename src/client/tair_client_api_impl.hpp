@@ -44,6 +44,10 @@
 #include "group_names_packet.hpp"
 #include "invalid_packet.hpp"
 #include "hide_packet.hpp"
+#include "get_hidden_packet.hpp"
+#include "prefix_removes_packet.hpp"
+#include "response_mreturn_packet.hpp"
+#include "prefix_hides_packet.hpp"
 
 namespace tair {
 
@@ -99,6 +103,27 @@ namespace tair {
       int invalidate(int area, const data_entry &key);
 
       int hide(int area, const data_entry &key);
+
+      int get_hidden(int area, const data_entry &key, data_entry *&value);
+
+      int prefix_get(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value);
+
+      int prefix_put(int area, const data_entry &pkey, const data_entry &skey,
+          const data_entry &value, int expire, int version);
+
+      int prefix_hide(int area, const data_entry &pkey, const data_entry &skey);
+
+      int prefix_hides(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map);
+
+      int prefix_get_hidden(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value);
+
+      int prefix_remove(int area, const data_entry &pkey, const data_entry &skey);
+
+      int prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map);
+
+      int hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map);
+
+      int removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map);
 
       int mdelete(int area,
           const vector<data_entry*> &keys);
@@ -248,6 +273,38 @@ namespace tair {
       int init_request_map(int area,
           const vector<data_entry *>& keys,
           request_remove_map &request_removes);
+
+      //~ do the request operation, delete req if send failed
+      template <typename Request, typename Response>
+      int do_request(Request *req, Response *&resp, wait_object *cwo, uint64_t server_id) {
+        if (req == NULL) {
+          log_error("request is null");
+          return TAIR_RETURN_SEND_FAILED;
+        }
+        if (cwo == NULL) {
+          log_error("wait object is null");
+          return TAIR_RETURN_SEND_FAILED;
+        }
+
+        int ret = TAIR_RETURN_SEND_FAILED;
+        base_packet *tpacket = NULL;
+        do {
+          if ((ret = send_request(server_id, req, cwo->get_id())) != TAIR_RETURN_SUCCESS) {
+            delete req;
+            break;
+          }
+          if ((ret = get_response(cwo, 1, tpacket)) < 0) {
+            break;
+          }
+          resp = dynamic_cast<Response*>(tpacket);
+          if (resp == NULL) {
+            ret = TAIR_RETURN_FAILED;
+            break;
+          }
+          ret = resp->get_code();
+        } while (false);
+        return ret;
+      }
 
     private:
       bool inited;

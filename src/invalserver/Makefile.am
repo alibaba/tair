@@ -10,12 +10,13 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB}
 
 LDADD=$(top_builddir)/src/packets/libtair_packets.a \
-			$(top_builddir)/src/client/.libs/libtairclientapi.a \
-			$(TBLIB_ROOT)/lib/libtbnet.a \
-      $(TBLIB_ROOT)/lib/libtbsys.a \
-			-lz -lrt -lpthread \
-      -ldl \
-      @BOOST_THREAD_LIB@
+	  $(top_builddir)/src/client/.libs/libtairclientapi.a \
+		$(TBLIB_ROOT)/lib/libtbnet.a \
+		$(TBLIB_ROOT)/lib/libtbsys.a \
+		$(top_builddir)/src/common/libtair_common.a \
+		-lz -lrt -lpthread \
+		-ldl \
+		@BOOST_THREAD_LIB@
 
 
 sbin_PROGRAMS=inval_server
@@ -24,4 +25,5 @@ inval_server_SOURCES=inval_server.cpp inval_server.hpp \
 					 inval_loader.cpp inval_loader.hpp \
 					 inval_retry_thread.cpp inval_retry_thread.hpp \
 					 inval_async_task_thread.cpp inval_async_task_thread.hpp \
+					 inval_processor.cpp inval_processor.hpp \
 					 server_pair_id.hpp

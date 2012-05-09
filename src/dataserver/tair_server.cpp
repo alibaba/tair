@@ -364,6 +364,42 @@ namespace tair {
             ret = req_processor->process(mpacket, send_return);
             break;
          }
+         case TAIR_REQ_PREFIX_PUTS_PACKET:
+         {
+           request_prefix_puts *ppacket = (request_prefix_puts*)packet;
+           ret = req_processor->process(ppacket, send_return);
+           break;
+         }
+         case TAIR_REQ_PREFIX_REMOVES_PACKET:
+         {
+           request_prefix_removes *rpacket = (request_prefix_removes*)packet;
+           ret = req_processor->process(rpacket, send_return);
+           break;
+         }
+         case TAIR_REQ_PREFIX_INCDEC_PACKET:
+         {
+           request_prefix_incdec *ipacket = (request_prefix_incdec*)packet;
+           ret = req_processor->process(ipacket, send_return);
+           break;
+         }
+         case TAIR_REQ_PREFIX_GETS_PACKET:
+         {
+           request_prefix_gets *npacket = (request_prefix_gets*)packet;
+           ret = req_processor->process(npacket, send_return);
+           break;
+         }
+         case TAIR_REQ_PREFIX_HIDES_PACKET:
+         {
+           request_prefix_hides *hpacket = (request_prefix_hides*)packet;
+           ret = req_processor->process(hpacket, send_return);
+           break;
+         }
+         case TAIR_REQ_PREFIX_GET_HIDDENS_PACKET:
+         {
+           request_prefix_get_hiddens *ipacket = (request_prefix_get_hiddens*)packet;
+           ret = req_processor->process(ipacket, send_return);
+           break;
+         }
          default:
          {
             ret = EXIT_FAILURE;

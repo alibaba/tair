@@ -44,6 +44,16 @@
 #include "hide_packet.hpp"
 #include "hide_by_proxy_packet.hpp"
 #include "get_hidden_packet.hpp"
+#include "prefix_puts_packet.hpp"
+#include "prefix_incdec_packet.hpp"
+#include "prefix_removes_packet.hpp"
+#include "prefix_gets_packet.hpp"
+#include "response_mreturn_packet.hpp"
+#include "prefix_hides_packet.hpp"
+#include "prefix_invalids_packet.hpp"
+#include "prefix_hides_by_proxy_packet.hpp"
+#include "prefix_get_hiddens_packet.hpp"
+
   namespace tair {
     tbnet::Packet *tair_packet_factory::createPacket(int pcode)
     {
@@ -168,6 +178,36 @@
           break;
         case TAIR_RESP_GET_MIGRATE_MACHINE_PACKET:
           packet = new response_get_migrate_machine();
+          break;
+        case TAIR_REQ_PREFIX_PUTS_PACKET:
+          packet = new request_prefix_puts();
+          break;
+        case TAIR_REQ_PREFIX_REMOVES_PACKET:
+          packet = new request_prefix_removes();
+          break;
+        case TAIR_REQ_PREFIX_INCDEC_PACKET:
+          packet = new request_prefix_incdec();
+          break;
+        case TAIR_REQ_PREFIX_GETS_PACKET:
+          packet = new request_prefix_gets();
+          break;
+        case TAIR_RESP_PREFIX_GETS_PACKET:
+          packet = new response_prefix_gets();
+          break;
+        case TAIR_RESP_MRETURN_PACKET:
+          packet = new response_mreturn();
+          break;
+        case TAIR_REQ_PREFIX_HIDES_PACKET:
+          packet = new request_prefix_hides();
+          break;
+        case TAIR_REQ_PREFIX_INVALIDS_PACKET:
+          packet = new request_prefix_invalids();
+          break;
+        case TAIR_REQ_PREFIX_HIDES_BY_PROXY_PACKET:
+          packet = new request_prefix_hides_by_proxy();
+          break;
+        case TAIR_REQ_PREFIX_GET_HIDDENS_PACKET:
+          packet = new request_prefix_get_hiddens();
           break;
         default:
           log_error("createpacket error: pcode=%d", pcode);

@@ -27,20 +27,6 @@ namespace tair {
         request_hide(request_hide &packet): request_get(packet) {
             setPCode(TAIR_REQ_HIDE_PACKET);
         }
-
-        bool encode(tbnet::DataBuffer *output) {
-            if (request_get::encode(output) == false) {
-                return false;
-            }
-            return true;
-        }
-
-        bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) {
-            if (request_get::decode(input, header) == false) {
-                return false;
-            }
-            return true;
-        }
     };
 }
 #endif

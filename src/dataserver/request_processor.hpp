@@ -28,6 +28,14 @@
 #include "lock_packet.hpp"
 #include "hide_packet.hpp"
 #include "get_hidden_packet.hpp"
+#include "prefix_puts_packet.hpp"
+#include "prefix_removes_packet.hpp"
+#include "response_mreturn_packet.hpp"
+#include "prefix_incdec_packet.hpp"
+#include "prefix_gets_packet.hpp"
+#include "prefix_hides_packet.hpp"
+#include "prefix_get_hiddens_packet.hpp"
+#include "prefix_locker.hpp"
 
 namespace tair {
   class request_processor {
@@ -49,6 +57,12 @@ namespace tair {
     int process(request_get_items_count *request,bool &send_return);
     int process(request_mupdate *request,bool &send_return);
     int process(request_lock* request, bool &send_return);
+    int process(request_prefix_puts* request, bool &send_return);
+    int process(request_prefix_removes* request, bool &send_return);
+    int process(request_prefix_incdec* request, bool &send_return);
+    int process(request_prefix_gets* request, bool &send_return);
+    int process(request_prefix_hides *request, bool &send_return);
+    int process(request_prefix_get_hiddens *request, bool &send_return);
 
   private:
     bool do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet);
@@ -57,5 +71,6 @@ namespace tair {
     tair_manager *tair_mgr;
     heartbeat_thread *heart_beat;
     tbnet::ConnectionManager *connection_mgr;
+    prefix_locker plocker;
   };
 }

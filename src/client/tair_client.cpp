@@ -50,6 +50,15 @@ namespace tair {
       cmd_map["delall"] = &tair_client::do_cmd_remove_area;
       cmd_map["dump"] = &tair_client::do_cmd_dump_area;
       cmd_map["stat"] = &tair_client::do_cmd_stat;
+      cmd_map["hide"] = &tair_client::do_cmd_hide;
+      cmd_map["gethidden"] = &tair_client::do_cmd_get_hidden;
+      cmd_map["pput"] = &tair_client::do_cmd_prefix_put;
+      cmd_map["pget"] = &tair_client::do_cmd_prefix_get;
+      cmd_map["premove"] = &tair_client::do_cmd_prefix_remove;
+      cmd_map["premoves"] = &tair_client::do_cmd_prefix_removes;
+      cmd_map["pgethidden"] = &tair_client::do_cmd_prefix_get_hidden;
+      cmd_map["phide"] = &tair_client::do_cmd_prefix_hide;
+      cmd_map["phides"] = &tair_client::do_cmd_prefix_hides;
       // cmd_map["additems"] = &tair_client::doCmdAddItems;
    }
 
@@ -342,6 +351,61 @@ namespace tair {
                  "area start_time end_time,eg:"
                  "10 2008-12-09 12:08:07 2008-12-10 12:10:00"
             );
+      }
+
+      if (cmd == NULL || strcmp(cmd, "hide") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: hide [area] key\n"
+            "DESCRIPTION: to hide one item\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "gethidden") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: gethidden [area] key\n"
+            "DESCRIPTION: to get one hidden item\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "pput") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: pput [area] pkey skey value\n"
+            "DESCRIPTION: to put one item with prefix\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "pget") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: pget [area] pkey skey\n"
+            "DESCRIPTION: to get one item with prefix\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "premove") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: premove [area] pkey skey\n"
+            "DESCRIPTION: to remove one item with prefix\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "premoves") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: premoves area pkey skey1...skeyn\n"
+            "DESCRIPTION: to remove multiple items with prefix\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "pgethidden") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: pgethidden [area] pkey skey\n"
+            "DESCRIPTION: to get one hidden item with prefix\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "phide") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: phide [area] pkey skey\n"
+            "DESCRIPTION: to hide one item with prefix\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "phides") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: phides area pkey skey1...skeyn\n"
+            "DESCRIPTION: to hide multiple items with prefix\n");
       }
 
       fprintf(stderr, "\n");
@@ -733,7 +797,280 @@ namespace tair {
       return;
    }
 
+   void tair_client::do_cmd_hide(VSTRING &params)
+   {
+     if (params.size() != 2) {
+       print_help("hide");
+       return ;
+     }
+     int area = atoi(params[0]);
+     data_entry key;
+     key.set_data(params[1], strlen(params[1]) + 1);
+     fprintf(stderr, "area: %d, key: %s\n", area, params[1]);
+     int ret = client_helper.hide(area, key);
+     if (ret == TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "successful\n");
+     } else {
+       fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
+     }
+   }
 
+   void tair_client::do_cmd_get_hidden(VSTRING &params)
+   {
+     int area = 0;
+     const char *kstr = NULL;
+     if (params.size() == 2) {
+       area = atoi(params[0]);
+       kstr = params[1];
+     } else if (params.size() == 1) {
+       area = 0;
+       kstr = params[0];
+     } else {
+       print_help("gethidden");
+       return ;
+     }
+     data_entry key;
+     key.set_data(kstr, strlen(kstr) + 1);
+     data_entry *value = NULL;
+     int ret = client_helper.get_hidden(area, key, value);
+     if (value != NULL) {
+       char *p = util::string_util::conv_show_string(value->get_data(), value->get_size());
+       fprintf(stderr, "key: %s, len: %d\n", key.get_data(), key.get_size());
+       fprintf(stderr, "value: %s|%s, len: %d\n", value->get_data(), p, value->get_size());
+       free(p);
+       delete value;
+     } else {
+       fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
+     }
+   }
+
+   void tair_client::do_cmd_prefix_put(VSTRING &params)
+   {
+     int area = 0;
+     const char *pstr = NULL,
+                *sstr = NULL,
+                *vstr = NULL;
+     if (params.size() == 4) {
+       area = atoi(params[0]);
+       pstr = params[1];
+       sstr = params[2];
+       vstr = params[3];
+     } else if (params.size() == 3) {
+       area = 0;
+       pstr = params[0];
+       sstr = params[1];
+       vstr = params[2];
+     } else {
+       print_help("pput");
+       return ;
+     }
+     data_entry pkey,
+                skey,
+                value;
+     pkey.set_data(pstr, strlen(pstr) + 1);
+     skey.set_data(sstr, strlen(sstr) + 1);
+     value.set_data(vstr, strlen(vstr) + 1);
+
+     int ret = client_helper.prefix_put(area, pkey, skey, value, 0, 0);
+     if (ret == TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "successful\n");
+     } else {
+       fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
+     }
+   }
+
+   void tair_client::do_cmd_prefix_get(VSTRING &params)
+   {
+     int area = 0;
+     const char *pstr = NULL,
+                *sstr = NULL;
+     if (params.size() == 3) {
+       area = atoi(params[0]);
+       pstr = params[1];
+       sstr = params[2];
+     } else if (params.size() == 2) {
+       area = 0;
+       pstr = params[0];
+       sstr = params[1];
+     } else {
+       print_help("pget");
+       return ;
+     }
+
+     data_entry pkey,
+                skey;
+     pkey.set_data(pstr, strlen(pstr) + 1);
+     skey.set_data(sstr, strlen(sstr) + 1);
+     data_entry *value = NULL;
+
+     int ret = client_helper.prefix_get(area, pkey, skey, value);
+     if (value != NULL) {
+       char *p = util::string_util::conv_show_string(value->get_data(), value->get_size());
+       fprintf(stderr, "pkey: %s, len: %d\n", pkey.get_data(), pkey.get_size());
+       fprintf(stderr, "skey: %s, len: %d\n", skey.get_data(), skey.get_size());
+       fprintf(stderr, "value: %s|%s, len %d\n", value->get_data(), p, value->get_size());
+       free(p);
+       delete value;
+     } else {
+       fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
+     }
+   }
+
+   void tair_client::do_cmd_prefix_remove(VSTRING &params)
+   {
+     int area = 0;
+     const char *pstr = NULL,
+                *sstr = NULL;
+     if (params.size() == 3) {
+       area = atoi(params[0]);
+       pstr = params[1];
+       sstr = params[2];
+     } else if (params.size() == 2) {
+       area = 0;
+       pstr = params[0];
+       sstr = params[1];
+     }
+     data_entry pkey,
+                skey;
+     pkey.set_data(pstr, strlen(pstr) + 1);
+     skey.set_data(sstr, strlen(sstr) + 1);
+
+     int ret = client_helper.prefix_remove(area, pkey, skey);
+     if (ret == TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "successful\n");
+     } else {
+       fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
+     }
+   }
+
+   void tair_client::do_cmd_prefix_removes(VSTRING &params)
+   {
+     if (params.size() < 3) {
+       print_help("premoves");
+       return ;
+     }
+     int area = atoi(params[0]);
+     data_entry pkey;
+     pkey.set_data(params[1], strlen(params[1]) + 1);
+     tair_dataentry_set skey_set;
+     for (size_t i = 2; i < params.size(); ++i) {
+       data_entry *skey = new data_entry();
+       skey->set_data(params[i], strlen(params[i]) + 1);
+       skey_set.insert(skey);
+     }
+     key_code_map_t key_code_map;
+     int ret = client_helper.prefix_removes(area, pkey, skey_set, key_code_map);
+     if (ret == TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "successful\n");
+     } else {
+       key_code_map_t::iterator itr = key_code_map.begin();
+       while (itr != key_code_map.end()) {
+         data_entry *skey = itr->first;
+         int ret = itr->second;
+         fprintf(stderr, "failed key: %s, len: %d, code: %d, msg: %s\n",
+             skey->get_data(), skey->get_size(), ret, client_helper.get_error_msg(ret));
+         ++itr;
+         delete skey;
+       }
+     }
+   }
+
+   void tair_client::do_cmd_prefix_get_hidden(VSTRING &params)
+   {
+     int area = 0;
+     const char *pstr = NULL,
+                *sstr = NULL;
+     if (params.size() == 3) {
+       area = atoi(params[0]);
+       pstr = params[1];
+       sstr = params[2];
+     } else if (params.size() == 2) {
+       area = 0;
+       pstr = params[0];
+       sstr = params[1];
+     } else {
+       print_help("pget");
+       return ;
+     }
+
+     data_entry pkey,
+                skey;
+     pkey.set_data(pstr, strlen(pstr) + 1);
+     skey.set_data(sstr, strlen(sstr) + 1);
+     data_entry *value = NULL;
+
+     int ret = client_helper.prefix_get_hidden(area, pkey, skey, value);
+     if (value != NULL) {
+       char *p = util::string_util::conv_show_string(value->get_data(), value->get_size());
+       fprintf(stderr, "code: %d, msg: %s\n", ret, client_helper.get_error_msg(ret));
+       fprintf(stderr, "pkey: %s, len: %d\n", pkey.get_data(), pkey.get_size());
+       fprintf(stderr, "skey: %s, len: %d\n", skey.get_data(), skey.get_size());
+       fprintf(stderr, "value: %s|%s, len %d\n", value->get_data(), p, value->get_size());
+       free(p);
+       delete value;
+     } else {
+       fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
+     }
+   }
+
+   void tair_client::do_cmd_prefix_hide(VSTRING &params)
+   {
+     int area = 0;
+     const char *pstr = NULL,
+                *sstr = NULL;
+     if (params.size() == 3) {
+       area = atoi(params[0]);
+       pstr = params[1];
+       sstr = params[2];
+     } else if (params.size() == 2) {
+       area = 0;
+       pstr = params[0];
+       sstr = params[1];
+     }
+     data_entry pkey,
+                skey;
+     pkey.set_data(pstr, strlen(pstr) + 1);
+     skey.set_data(sstr, strlen(sstr) + 1);
+
+     int ret = client_helper.prefix_hide(area, pkey, skey);
+     if (ret == TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "successful\n");
+     } else {
+       fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
+     }
+   }
+
+   void tair_client::do_cmd_prefix_hides(VSTRING &params)
+   {
+     if (params.size() < 3) {
+       print_help("phides");
+       return ;
+     }
+     int area = atoi(params[0]);
+     data_entry pkey;
+     pkey.set_data(params[1], strlen(params[1]) + 1);
+     tair_dataentry_set skey_set;
+     for (size_t i = 2; i < params.size(); ++i) {
+       data_entry *skey = new data_entry();
+       skey->set_data(params[i], strlen(params[i]) + 1);
+       skey_set.insert(skey);
+     }
+     key_code_map_t key_code_map;
+     int ret = client_helper.prefix_hides(area, pkey, skey_set, key_code_map);
+     if (ret == TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "successful\n");
+     } else {
+       key_code_map_t::iterator itr = key_code_map.begin();
+       while (itr != key_code_map.end()) {
+         data_entry *skey = itr->first;
+         int ret = itr->second;
+         fprintf(stderr, "failed key: %s, len: %d, code: %d, msg: %s\n",
+             skey->get_data(), skey->get_size(), ret, client_helper.get_error_msg(ret));
+         ++itr;
+         delete skey;
+       }
+     }
+   }
 } // namespace tair
 
 

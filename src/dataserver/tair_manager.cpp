@@ -248,7 +248,7 @@
      int rc=0;
      vector<uint64_t> slaves;
      get_slaves(key.server_flag, bucket_number, slaves);
-     if (slaves.empty() == false) 
+     if (slaves.empty() == false)
      {
        PROFILER_BEGIN("do duplicate");
        if (request)
@@ -260,7 +260,7 @@
      return rc;
    }
 
-    int tair_manager::add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,request_inc_dec * request,int heart_version)
+    int tair_manager::add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,base_packet * request,int heart_version)
     {
       if (status != STATUS_CAN_WORK) {
         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
@@ -291,7 +291,7 @@
           {
             //reget value.
             //todo:the storage_mgr should return data_entry when add_count;
-            rc = get(area, key,old_value); 
+            rc = get(area, key,old_value);
             key.data_meta.log_self();
             storage_mgr->set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT);
             //do duplicate thing .
@@ -452,6 +452,10 @@
       PROFILER_BEGIN("get_hidden from storage engine");
       int rc = storage_mgr->get(bucket_number, mkey, value);
       PROFILER_END();
+      if (rc == TAIR_RETURN_SUCCESS) {
+        rc = (value.data_meta.flag & TAIR_ITEM_FLAG_DELETED) ?
+          TAIR_RETURN_HIDDEN : TAIR_RETURN_SUCCESS;
+      }
       key.data_meta = mkey.data_meta;
       TAIR_STAT.stat_get(area, rc);
       return rc;
@@ -914,7 +918,12 @@
     // private methods
     uint32_t tair_manager::get_bucket_number(data_entry &key)
     {
-      uint32_t hashcode = tair::util::string_util::mur_mur_hash(key.get_data(), key.get_size());
+      uint32_t hashcode;
+      if (key.get_prefix_size() == 0) {
+        hashcode = tair::util::string_util::mur_mur_hash(key.get_data(), key.get_size());
+      } else {
+        hashcode = tair::util::string_util::mur_mur_hash(key.get_data(), key.get_prefix_size());
+      }
       log_debug("hashcode: %u, bucket count: %d", hashcode, table_mgr->get_bucket_count());
       return hashcode % table_mgr->get_bucket_count();
     }

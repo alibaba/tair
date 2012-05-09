@@ -3,14 +3,16 @@
 namespace tair {
   InvalRetryThread::InvalRetryThread() {
     invalid_loader = NULL;
+    processor = NULL;
     setThreadCount(RETRY_COUNT);
   }
 
   InvalRetryThread::~InvalRetryThread() {
   }
 
-  void InvalRetryThread::setThreadParameter(InvalLoader *loader) {
-    invalid_loader = loader;
+  void InvalRetryThread::setThreadParameter(InvalLoader *loader, RequestProcessor *processor) {
+    this->invalid_loader = loader;
+    this->processor = processor;
   }
 
   void InvalRetryThread::stop() {
@@ -33,10 +35,7 @@ namespace tair {
     int delay_time = index * 3 + 1;
 
     while (!_stop) {
-      data_entry *key = NULL;
       base_packet *bp = NULL;
-      request_invalid *ipacket = NULL;
-      request_hide_by_proxy *hpacket = NULL;
       cur_cond->lock();
       //~ wait until request is available, or stopped.
       while (!_stop && cur_queue->size() == 0) {
@@ -47,21 +46,10 @@ namespace tair {
         break;
       }
 
-      bp = (request_invalid*)cur_queue->pop();
+      bp = (base_packet*) cur_queue->pop();
       cur_cond->unlock();
       int pc = bp->getPCode();
-      if (pc == TAIR_REQ_INVAL_PACKET) {
-        ipacket = dynamic_cast<request_invalid*>(bp);
-      }
-      if (pc == TAIR_REQ_HIDE_BY_PROXY_PACKET) {
-        hpacket = dynamic_cast<request_hide_by_proxy*>(bp);
-      }
-      if (ipacket == NULL && hpacket == NULL) {
-        delete bp;
-        continue;
-      }
 
-      //~ wait
       int towait = bp->request_time + delay_time - time(NULL);
       if (towait > 0) {
         log_debug("wait for %d seconds to retry in RetryThread %d.", towait, index);
@@ -69,55 +57,86 @@ namespace tair {
         if (_stop)
           break;
       }
-      std::vector<tair_client_api*> *clients =
-        invalid_loader->get_client_list(PACKET_GROUP_NAME(ipacket, hpacket));
-      int ret = TAIR_RETURN_SUCCESS;
-      bool indicator = true;
-      if (clients != NULL) {
-        for (size_t i = 0; i < clients->size(); ++i) {
-          tair_client_api *client = (*clients)[i];
-          if (ipacket != NULL) {
-            key = ipacket->key;
-            ret = client->remove(ipacket->area, *key);
-          }
-          if (hpacket != NULL) {
-            key = hpacket->key;
-            ret = client->hide(hpacket->area, *key);
-          }
-          if (ret != TAIR_RETURN_SUCCESS) {
-            if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
-              std::vector<std::string> servers;
-              client->get_server_with_key(*key, servers);
-              log_error("Retry%sFailure: Thread %d, Group %s, DataServer %s.",
-                  ipacket ? "Invalid" : "Hide", index, PACKET_GROUP_NAME(ipacket, hpacket), servers[0].c_str());
+
+      switch (pc) {
+        case TAIR_REQ_INVAL_PACKET:
+        {
+          request_invalid *req = (request_invalid*) bp;
+          request_invalid *post_req = NULL;
+          processor->process(req, post_req);
+          if (post_req != NULL) {
+            if (index < RETRY_COUNT - 1) {
+              log_error("add invalid packet to RetryThread %d", index + 1);
+              add_packet(post_req, index + 1);
             } else {
-              //~ if 'data_not_exist', regarded to be 'success'.
-              ret = TAIR_RETURN_SUCCESS;
+              log_error("invalid RetryFailedFinally");
             }
           } else {
-            log_warn("Retry%sSuccess in thread %d", ipacket ? "Invalid" : "Hide", index);
+            log_error("invalid success in RetryThread %d", index);
           }
-          if (ret != TAIR_RETURN_SUCCESS) {
-            indicator = false;
+          delete req;
+          break;
+        }
+        case TAIR_REQ_HIDE_BY_PROXY_PACKET:
+        {
+          request_hide_by_proxy *req = (request_hide_by_proxy*) bp;
+          request_hide_by_proxy *post_req = NULL;
+          processor->process(req, post_req);
+          if (post_req != NULL) {
+            if (index < RETRY_COUNT - 1) {
+              log_error("add hide packet to RetryThread %d", index + 1);
+              add_packet(post_req, index + 1);
+            } else {
+              log_error("hide RetryFailedFinally");
+            }
+          } else {
+            log_error("hide success in RetryThread %d", index);
           }
+          delete req;
+          break;
         }
-        //~ if any requst failed, then retry.
-        if (indicator == false) {
-          ret = TAIR_RETURN_FAILED;
+        case TAIR_REQ_PREFIX_HIDES_BY_PROXY_PACKET:
+        {
+          request_prefix_hides_by_proxy *req = (request_prefix_hides_by_proxy*) bp;
+          request_prefix_hides_by_proxy *post_req = NULL;
+          processor->process(req, post_req);
+          if (post_req != NULL) {
+            if (index < RETRY_COUNT - 1) {
+              log_error("add prefix hides packet to RetryThread %d", index + 1);
+              add_packet(post_req, index + 1);
+            } else {
+              log_error("prefix hides RetryFailedFinally");
+            }
+          } else {
+            log_error("prefix hides success in RetryThread %d", index);
+          }
+          delete req;
+          break;
         }
-      } else {
-        log_error("[FATAL ERROR] cannot find clients, maybe Group %s not added, or invalid_loader still loading.",
-            PACKET_GROUP_NAME(ipacket, hpacket));
-        ret = TAIR_RETURN_FAILED;
-      }
-      //~ retry again, or give up
-      if (ret != TAIR_RETURN_SUCCESS && index < RETRY_COUNT - 1) {
-        add_packet(bp, index + 1);
-      } else if (ret != TAIR_RETURN_SUCCESS) {
-        log_error("[FATAL ERROR] RetryRemoveFailureFinally");
-        delete bp;
-      } else { //~ success
-        delete bp;
+        case TAIR_REQ_PREFIX_INVALIDS_PACKET:
+        {
+          request_prefix_invalids *req = (request_prefix_invalids*) bp;
+          request_prefix_invalids *post_req = NULL;
+          processor->process(req, post_req);
+          if (post_req != NULL) {
+            if (index < RETRY_COUNT - 1) {
+              log_error("add prefix invalids packet to RetryThread %d", index + 1);
+              add_packet(post_req, index + 1);
+            } else {
+              log_error("prefix invalids RetryFailedFinally");
+            }
+          } else {
+            log_error("prefix invalids success in RetryThread %d", index);
+          }
+          delete req;
+          break;
+        }
+        default:
+        {
+          log_error("unknown packet with code %d", pc);
+          delete bp;
+          break;
+        }
       }
     }
     //~ clear the queue when stopped.

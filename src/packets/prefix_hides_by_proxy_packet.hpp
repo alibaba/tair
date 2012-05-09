@@ -14,18 +14,20 @@
  *     - initial release
  *
  */
-#ifndef TAIR_PACKET_INVAL_HIDE_PACKET_HPP
-#define TAIR_PACKET_INVAL_HIDE_PACKET_HPP
-#include "get_packet.hpp"
+#ifndef PREFIX_HIDES_BY_PROXY_PACKET_HPP
+#define PREFIX_HIDES_BY_PROXY_PACKET_HPP
+
 namespace tair {
-    class request_hide_by_proxy: public request_invalid {
-    public:
-        request_hide_by_proxy(): request_invalid() {
-            setPCode(TAIR_REQ_HIDE_BY_PROXY_PACKET);
-        }
-        request_hide_by_proxy(request_hide_by_proxy &packet): request_invalid(packet) {
-            setPCode(TAIR_REQ_HIDE_BY_PROXY_PACKET);
-        }
-    };
+  class request_prefix_hides_by_proxy : public request_hide_by_proxy {
+  public:
+    request_prefix_hides_by_proxy() {
+      setPCode(TAIR_REQ_PREFIX_HIDES_BY_PROXY_PACKET);
+    }
+
+    request_prefix_hides_by_proxy(request_prefix_hides_by_proxy &packet) : request_hide_by_proxy(packet) {
+      setPCode(TAIR_REQ_PREFIX_HIDES_BY_PROXY_PACKET);
+    }
+  };
 }
+
 #endif

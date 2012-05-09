@@ -21,6 +21,7 @@
 #include "inval_loader.hpp"
 #include "inval_retry_thread.hpp"
 #include "inval_async_task_thread.hpp"
+#include "inval_processor.hpp"
 
 
 namespace tair {
@@ -37,6 +38,8 @@ namespace tair {
     private:
         int do_invalid(request_invalid *req);
         int do_hide(request_hide_by_proxy *req);
+        int do_prefix_hides(request_prefix_hides_by_proxy *req);
+        int do_prefix_invalids(request_prefix_invalids *req);
         bool init();
         bool destroy();
     private:
@@ -49,6 +52,7 @@ namespace tair {
 
         tbnet::PacketQueueThread task_queue_thread;
         InvalLoader invalid_loader;
+        RequestProcessor processor;
         InvalRetryThread retry_thread;
         AsyncTaskThread async_thread;
     };

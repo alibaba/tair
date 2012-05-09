@@ -16,6 +16,7 @@ base_src=data_dumpper.cpp	\
 	 util.cpp	\
 	 data_dumpper.hpp	\
 	 data_entry.hpp	\
+	 data_entry.cpp	\
 	 define.hpp	\
 	 dump_data_info.hpp	\
 	 hash.hpp	\

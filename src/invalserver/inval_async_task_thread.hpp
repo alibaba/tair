@@ -10,11 +10,9 @@
 #include "base_packet.hpp"
 #include "invalid_packet.hpp"
 #include "hide_packet.hpp"
-
-#ifndef PACKET_GROUP_NAME
-#define PACKET_GROUP_NAME(ipacket, hpacket) \
-  ((ipacket) ? (ipacket)->group_name : (hpacket)->group_name)
-#endif
+#include "inval_processor.hpp"
+#include "prefix_invalids_packet.hpp"
+#include "prefix_hides_by_proxy_packet.hpp"
 
 namespace tair {
   class AsyncTaskThread: public tbsys::CDefaultRunnable {
@@ -22,7 +20,7 @@ namespace tair {
     AsyncTaskThread();
     ~AsyncTaskThread();
 
-    void setThreadParameter(InvalLoader *loader, InvalRetryThread *retry_thread, int thread_count);
+    void setThreadParameter(InvalLoader *loader, InvalRetryThread *retry_thread, RequestProcessor *processor, int thread_count);
     void stop();
     void run(tbsys::CThread *thread, void *arg);
     bool add_packet(base_packet *bp);
@@ -30,6 +28,7 @@ namespace tair {
     static const int MAX_QUEUE_SIZE = 10000;
     InvalLoader *invalid_loader;
     InvalRetryThread *retry_thread;
+    RequestProcessor *processor;
     tbsys::CThreadCond queue_cond;
     tbnet::PacketQueue async_queue;
   };

@@ -68,6 +68,15 @@ namespace tair {
       //void  doCmdAddItems(VSTRING &param);
       void  do_cmd_remove_area(VSTRING &param);
       void  do_cmd_dump_area(VSTRING &param);
+      void do_cmd_hide(VSTRING &params);
+      void do_cmd_get_hidden(VSTRING &params);
+      void do_cmd_prefix_get(VSTRING &params);
+      void do_cmd_prefix_put(VSTRING &params);
+      void do_cmd_prefix_remove(VSTRING &params);
+      void do_cmd_prefix_removes(VSTRING &params);
+      void do_cmd_prefix_get_hidden(VSTRING &params);
+      void do_cmd_prefix_hide(VSTRING &params);
+      void do_cmd_prefix_hides(VSTRING &params);
 
     private:
       str_cmdcall_map cmd_map;

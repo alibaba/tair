@@ -66,6 +66,7 @@ namespace tair {
             delete key;
             key = NULL;
          }
+         key_count = 0;
       }
 
       bool encode(tbnet::DataBuffer *output)
@@ -116,11 +117,12 @@ namespace tair {
       }
 
       // add key
-      void add_key(char *str_key, int str_size)
+      void add_key(char *str_key, int str_size, int prefix_size = 0)
       {
          assert(str_size <= 2000);
          if (key_count == 0) {
             key = new data_entry(str_key, str_size);
+            key->set_prefix_size(prefix_size);
             key_count ++;
          } else {
             if (key_list == NULL) {
@@ -129,6 +131,7 @@ namespace tair {
                key = NULL;
             }
             data_entry *p = new data_entry(str_key, str_size);
+            p->set_prefix_size(prefix_size);
             pair<tair_dataentry_set::iterator, bool> ret;
             ret = key_list->insert(p);
             if (!ret.second) {
@@ -137,6 +140,45 @@ namespace tair {
                key_count ++;
             }
          }
+      }
+
+      void add_key(data_entry *key, bool copy = false)
+      {
+        if (copy) {
+          key = new data_entry(*key);
+        }
+        if (key_count == 0) {
+          this->key = key;
+          ++key_count;
+        } else {
+          if (key_list == NULL) {
+            key_list = new tair_dataentry_set();
+            key_list->insert(this->key);
+            this->key = NULL;
+          }
+          key_list->insert(key);
+          ++key_count;
+        }
+      }
+
+      void swap(request_get &rhs) {
+        if (this == &rhs)
+          return ;
+        std::swap(area, rhs.area);
+        std::swap(key_count, rhs.key_count);
+        std::swap(key, rhs.key);
+        std::swap(key_list, rhs.key_list);
+      }
+
+      void move_from(request_get &rhs) {
+        if (this == &rhs)
+          return ;
+        this->~request_get();
+        this->swap(rhs);
+      }
+
+      void move_to(request_get &rhs) {
+        rhs.move_from(*this);
       }
 
    public:

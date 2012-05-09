@@ -444,7 +444,7 @@ FAIL:
       request_get *packet = new request_get();
       packet->area = area;
 
-      packet->add_key(key.get_data(), key.get_size());
+      packet->add_key(key.get_data(), key.get_size(), key.get_prefix_size());
       cwo = this_wait_object_manager->create_wait_object();
 
       if (send_request(server_list[index],packet,cwo->get_id()) < 0) {
@@ -674,7 +674,7 @@ FAIL:
     if (kv_map_null)
     {
       //return fail
-      ret = TAIR_RETURN_FAILED; 
+      ret = TAIR_RETURN_FAILED;
       //free
       tair_keyvalue_map::iterator mit = data.begin();
       for ( ; mit != data.end(); ++mit)
@@ -723,7 +723,7 @@ FAIL:
     wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_REMOVE_PACKET,pfunc,arg);
     request_remove *packet = new request_remove();
     packet->area = area;
-    packet->add_key(key.get_data(), key.get_size());
+    packet->add_key(key.get_data(), key.get_size(), key.get_prefix_size());
 
     base_packet *tpacket = 0;
     response_return *resp  = 0;
@@ -871,7 +871,7 @@ FAIL:
     wait_object *cwo = this_wait_object_manager->create_wait_object();
     request_hide *packet = new request_hide();
     packet->area = area;
-    packet->add_key(key.get_data(), key.get_size());
+    packet->add_key(key.get_data(), key.get_size(), key.get_prefix_size()); //~ prefix_hide may call this method
 
     base_packet *tpacket = 0;
     response_return *resp  = 0;
@@ -903,6 +903,321 @@ FAIL:
     TBSYS_LOG(INFO, "remove failure: %s:%s",
         tbsys::CNetUtil::addrToString(server_list[0]).c_str(),
         get_error_msg(ret));
+    return ret;
+  }
+
+  int tair_client_impl::get_hidden(int area, const data_entry &key, data_entry *&value)
+  {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (!key_entry_check(key)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    request_get_hidden *req = new request_get_hidden();
+    req->add_key(key.get_data(), key.get_size(), key.get_prefix_size());
+    req->area = area;
+    response_get *resp = NULL;
+
+    vector<uint64_t> server_list;
+    if (!get_server_id(key, server_list)) {
+      TBSYS_LOG(WARN, "no dataserver available");
+      return TAIR_RETURN_FAILED;
+    }
+    TBSYS_LOG(DEBUG, "get from server: %s", tbsys::CNetUtil::addrToString(server_list[0]).c_str());
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    int ret = do_request(req, resp, cwo, server_list[0]);
+    if (resp != NULL) {
+      new_config_version = resp->config_version;
+      value = resp->data;
+      if (value == NULL) {
+        ret = TAIR_RETURN_PROXYED;
+      }
+      resp->data = NULL;
+    }
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return ret;
+  }
+
+  int tair_client_impl::prefix_get(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
+  {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if(!key_entry_check(pkey) || !key_entry_check(skey)){
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    data_entry mkey;
+    merge_key(pkey, skey, mkey);
+
+    return get(area, mkey, value);
+  }
+
+  int tair_client_impl::prefix_put(int area, const data_entry &pkey, const data_entry &skey,
+      const data_entry &value, int expire, int version)
+  {
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if(!key_entry_check(pkey) || !key_entry_check(skey) || !data_entry_check(value)){
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    data_entry mkey;
+    merge_key(pkey, skey, mkey);
+
+    return put(area, mkey, value, expire, version);
+  }
+
+  int tair_client_impl::prefix_hide(int area, const data_entry &pkey, const data_entry &skey)
+  {
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (!key_entry_check(pkey) || !key_entry_check(skey)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    data_entry mkey;
+    merge_key(pkey, skey, mkey);
+
+    return hide(area, mkey);
+  }
+
+  /**
+   * hide with multiple merged key
+   * should only be called by invalid server
+   */
+  int tair_client_impl::hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
+  {
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (mkey_set.empty()) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    request_prefix_hides *req = new request_prefix_hides();
+    req->area = area;
+    response_mreturn *resp = NULL;
+    int ret = TAIR_RETURN_SUCCESS;
+
+    do {
+      tair_dataentry_set::const_iterator itr = mkey_set.begin();
+      data_entry *mkey = NULL;
+      while (itr != mkey_set.end()) {
+        mkey = *itr;
+        req->add_key(mkey, true);
+        ++itr;
+      }
+
+      vector<uint64_t> server_list;
+      if (!get_server_id(*mkey, server_list)) {
+        TBSYS_LOG(WARN, "no dataserver available");
+        delete req;
+        ret = TAIR_RETURN_FAILED;
+        break;
+      }
+
+      wait_object *cwo = this_wait_object_manager->create_wait_object();
+      ret = do_request(req, resp, cwo, server_list[0]);
+      if (resp != NULL && ret != TAIR_RETURN_SUCCESS && resp->key_code_map != NULL) {
+        key_code_map.clear();
+        resp->key_code_map->swap(key_code_map);
+      }
+      this_wait_object_manager->destroy_wait_object(cwo);
+    } while (false);
+    return ret;
+  }
+
+  int tair_client_impl::prefix_hides(int area, const data_entry &pkey,
+      const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
+  {
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (!key_entry_check(pkey)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    request_prefix_hides *req = new request_prefix_hides();
+    req->area = area;
+    response_mreturn *resp = NULL;
+    int ret = TAIR_RETURN_SUCCESS;
+
+    do {
+      tair_dataentry_set::const_iterator itr = skey_set.begin();
+      data_entry *mkey = NULL;
+      while (itr != skey_set.end()) {
+        data_entry *skey = *itr;
+        mkey = new data_entry();
+        merge_key(pkey, *skey, *mkey);
+        if (!key_entry_check(*mkey)) {
+          delete mkey;
+          ret = TAIR_RETURN_ITEMSIZE_ERROR;
+          break;
+        }
+        req->add_key(mkey);
+        ++itr;
+      }
+      if (ret != TAIR_RETURN_SUCCESS) {
+        delete req;
+        break;
+      }
+
+      vector<uint64_t> server_list;
+      if (!get_server_id(*mkey, server_list)) {
+        TBSYS_LOG(DEBUG, "no dataserver available");
+        delete req;
+        ret = TAIR_RETURN_FAILED;
+        break;
+      }
+
+      wait_object *cwo = this_wait_object_manager->create_wait_object();
+      ret = do_request(req, resp, cwo, server_list[0]);
+      if (resp != NULL && ret != TAIR_RETURN_SUCCESS && resp->key_code_map != NULL) {
+        key_code_map.clear();
+        resp->key_code_map->swap(key_code_map);
+      }
+      this_wait_object_manager->destroy_wait_object(cwo);
+    } while (false);
+    return ret;
+  }
+
+  int tair_client_impl::prefix_get_hidden(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
+  {
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (!key_entry_check(pkey) || !key_entry_check(skey)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    data_entry mkey;
+    merge_key(pkey, skey, mkey);
+
+    return get_hidden(area, mkey, value);
+  }
+
+  int tair_client_impl::prefix_remove(int area, const data_entry &pkey, const data_entry &skey)
+  {
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (!key_entry_check(pkey) || !key_entry_check(skey)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    data_entry mkey;
+    merge_key(pkey, skey, mkey);
+    return remove(area, mkey);
+  }
+
+  int tair_client_impl::removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
+  {
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (mkey_set.empty()) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    request_prefix_removes *req = new request_prefix_removes();
+    req->area = area;
+    response_mreturn *resp = NULL;
+    int ret = TAIR_RETURN_SUCCESS;
+
+    do {
+      tair_dataentry_set::const_iterator itr = mkey_set.begin();
+      data_entry *mkey = NULL;
+      while (itr != mkey_set.end()) {
+        mkey = *itr;
+        req->add_key(mkey, true);
+        ++itr;
+      }
+
+      vector<uint64_t> server_list;
+      if (!get_server_id(*mkey, server_list)) {
+        TBSYS_LOG(WARN, "no dataserver available");
+        delete req;
+        ret = TAIR_RETURN_FAILED;
+        break;
+      }
+
+      wait_object *cwo = this_wait_object_manager->create_wait_object();
+      ret = do_request(req, resp, cwo, server_list[0]);
+      if (resp == NULL) {
+        this_wait_object_manager->destroy_wait_object(cwo);
+        break;
+      }
+      if (ret != TAIR_RETURN_SUCCESS && resp->key_code_map != NULL) {
+        key_code_map.clear();
+        resp->key_code_map->swap(key_code_map);
+      }
+      this_wait_object_manager->destroy_wait_object(cwo);
+    } while (false);
+    return ret;
+  }
+
+  int tair_client_impl::prefix_removes(int area, const data_entry &pkey,
+      const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
+  {
+    //~ duplicate logic from prefix_hides
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+    if (!key_entry_check(pkey)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    request_prefix_removes *req = new request_prefix_removes();
+    req->area = area;
+    response_mreturn *resp = NULL;
+    int ret = TAIR_RETURN_SUCCESS;
+
+    do {
+      tair_dataentry_set::const_iterator itr = skey_set.begin();
+      data_entry *mkey = NULL;
+      while (itr != skey_set.end()) {
+        data_entry *skey = *itr;
+        mkey = new data_entry();
+        merge_key(pkey, *skey, *mkey);
+        if (!key_entry_check(*mkey)) {
+          delete mkey;
+          ret = TAIR_RETURN_ITEMSIZE_ERROR;
+          break;
+        }
+        req->add_key(mkey);
+        ++itr;
+      }
+      if (ret != TAIR_RETURN_SUCCESS) {
+        delete req;
+        break;
+      }
+
+      vector<uint64_t> server_list;
+      if (!get_server_id(*mkey, server_list)) {
+        TBSYS_LOG(DEBUG, "no dataserver available");
+        delete req;
+        ret = TAIR_RETURN_FAILED;
+        break;
+      }
+
+      wait_object *cwo = this_wait_object_manager->create_wait_object();
+      ret = do_request(req, resp, cwo, server_list[0]);
+      if (resp == NULL) {
+        this_wait_object_manager->destroy_wait_object(cwo);
+        break;
+      }
+      if (ret != TAIR_RETURN_SUCCESS && resp->key_code_map != NULL) {
+        key_code_map.clear();
+        resp->key_code_map->swap(key_code_map);
+      }
+      this_wait_object_manager->destroy_wait_object(cwo);
+    } while (false);
     return ret;
   }
 
@@ -1398,6 +1713,7 @@ FAIL:
     temp[TAIR_RETURN_DEC_NOTFOUND] = "dec but not found when allow_count_negative=0";
     temp[TAIR_RETURN_LOCK_EXIST]                 = "lock exist";
     temp[TAIR_RETURN_LOCK_NOT_EXIST]                 = "lock not exist";
+    temp[TAIR_RETURN_HIDDEN] = "item is hidden";
     //temp[TAIR_RETURN_NO_INVALID_SERVER]       = "invlaid but not found invalid server";
     return temp;
   }
@@ -1793,8 +2109,8 @@ FAIL:
     }
     uint64_t *server_list = NULL ;
     uint32_t server_list_count = 0;
-    int heart_type=0;  
-    int response_type=1;  
+    int heart_type=0;
+    int response_type=1;
 
     rggp = dynamic_cast<response_get_group*>(tpacket);
     if (rggp->config_version <= 0){
@@ -1950,7 +2266,13 @@ OUT:
 
   bool tair_client_impl::get_server_id(const data_entry &key,vector<uint64_t>& server)
   {
-    uint32_t hash = util::string_util::mur_mur_hash(key.get_data(), key.get_size());
+    uint32_t hash;
+    int prefix_size = key.get_prefix_size();
+    if (prefix_size == 0) {
+      hash = util::string_util::mur_mur_hash(key.get_data(), key.get_size());
+    } else {
+      hash = util::string_util::mur_mur_hash(key.get_data(), prefix_size);
+    }
     server.clear();
 
     if (my_server_list.size() > 0U) {
@@ -1971,7 +2293,7 @@ OUT:
     if (server_id == 0 || packet == NULL)
     {
       TBSYS_LOG(ERROR, "param invalid. server id: %"PRI64_PREFIX"u", server_id);
-      ret = TAIR_RETURN_FAILED; 
+      ret = TAIR_RETURN_FAILED;
     }
     else
     {
@@ -2010,11 +2332,11 @@ OUT:
   int tair_client_impl::get_response(wait_object *cwo,int wait_count,base_packet*& tpacket)
 
   {
-    int ret = TAIR_RETURN_SUCCESS; 
+    int ret = TAIR_RETURN_SUCCESS;
     if (cwo == NULL)
     {
       TBSYS_LOG(ERROR, "param invalid, cwo is null, wait count: %d", wait_count);
-      ret = TAIR_RETURN_FAILED; 
+      ret = TAIR_RETURN_FAILED;
     }
     else
     {
@@ -2034,7 +2356,7 @@ OUT:
     if (cwo == NULL)
     {
       TBSYS_LOG(ERROR, "param invalid, cwo is null, wait count: %d", wait_count);
-      return TAIR_RETURN_FAILED; 
+      return TAIR_RETURN_FAILED;
     }
     cwo->wait_done(wait_count, timeout);
     int r_num = cwo->get_packet_count();
@@ -2113,7 +2435,7 @@ OUT:
           ret = resp->get_code();
           if (ret != TAIR_RETURN_SUCCESS)
           {
-            if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK || ret == TAIR_RETURN_WRITE_NOT_ON_MASTER) 
+            if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK || ret == TAIR_RETURN_WRITE_NOT_ON_MASTER)
             {
               //update server table immediately
               send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
@@ -2131,21 +2453,21 @@ OUT:
   void tair_client_impl::do_queue_response()
   {
     log_debug("start thread do_queue_response");
-    while (!is_stop) 
+    while (!is_stop)
     {
       //TAIR_SLEEP(is_stop, 1);
       //if (is_stop) break;
-      try 
-      {   
+      try
+      {
         wait_object * cwo=m_return_object_queue.get(1000); //1s
         if(!cwo) continue;
         handle_response_obj(cwo);
         delete cwo;
-      }   
+      }
       catch(...)
-      {   
+      {
         log_warn("unknow error! get timeoutqueue error!");
-      } 
-    }   
+      }
+    }
   }
 }
