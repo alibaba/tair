@@ -24,7 +24,7 @@ namespace tair{
       base_duplicator(){};
       virtual ~base_duplicator(){};
       virtual bool has_bucket_duplicate_done(int bucket_number) = 0;
-      virtual void set_max_queue_size(uint32_t max_queue_size)=0; 
+      virtual void set_max_queue_size(uint32_t max_queue_size)=0;
       virtual void do_hash_table_changed()=0;
       virtual bool is_bucket_available(uint32_t bucket_id)=0;
    public:

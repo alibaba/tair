@@ -105,8 +105,12 @@ namespace tair {
         data_entry *value = new data_entry();
         key->decode(input);
         value->decode(input);
-        kvmap->insert(make_pair(key, value));
+        if (kvmap->insert(make_pair(key, value)).second == false) {
+          delete key;
+          delete value;
+        }
       }
+      key_count = kvmap->size();
 
       return true;
     }

@@ -126,8 +126,12 @@ namespace tair {
         key->decode(input);
         counter_wrapper *wrapper = new counter_wrapper;
         wrapper->decode(input);
-        key_counter_map->insert(make_pair(key, wrapper));
+        if (key_counter_map->insert(make_pair(key, wrapper)).second == false) {
+          delete key;
+          delete wrapper;
+        }
       }
+      key_count = key_counter_map->size();
 
       return true;
     }
