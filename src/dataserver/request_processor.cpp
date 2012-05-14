@@ -971,6 +971,7 @@ namespace tair {
       data_entry *key = it->first;
       data_entry value;
       int version = key->data_meta.version;
+      int expire = key->data_meta.edate;
       tair_mgr->get(request->area, *key, value); // any method to get meta info only?
       if (version != 0 && version != key->data_meta.version) {
         rc = TAIR_RETURN_VERSION_ERROR;
@@ -979,6 +980,7 @@ namespace tair {
         skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
         resp->add_key_code(skey, rc);
       }
+      key->data_meta.edate = expire;
       ++it;
     }
     it = kvmap->begin();
