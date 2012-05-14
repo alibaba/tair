@@ -111,6 +111,7 @@ namespace tair {
                   delete pair;
                }
             }
+            key_count = key_list->size();
          }
 
          return true;
