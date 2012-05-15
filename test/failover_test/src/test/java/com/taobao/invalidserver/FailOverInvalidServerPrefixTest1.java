@@ -8,7 +8,7 @@ import com.ibm.staf.STAFResult;
  * 
  */
 
-public class FailOverInvalidServerTest2 extends
+public class FailOverInvalidServerPrefixTest1 extends
 		FailOverBaseCase {
 
 	public void startCluster() {
@@ -31,16 +31,16 @@ public class FailOverInvalidServerTest2 extends
 
 	public void changeToolConf(String machine, String path, String value) {
 		// change test tool's configuration
-		if (!modify_config_file(machine, path + "TairTool.conf", "actiontype",
+		if (!modify_config_file(machine, path + "DataDebug.conf", "actiontype",
 				value))
 			fail("modify configure file failure");
-		if (!modify_config_file(machine, path + "TairTool.conf", "datasize",
+		if (!modify_config_file(machine, path + "DataDebug.conf", "datasize",
 				FailOverBaseCase.put_count))
 			fail("modify configure file failure");
 	}
 
 	public void changeToolConf(String machine, String path, String key, String value) {
-		if (!modify_config_file(machine, path + "TairTool.conf", key, value))
+		if (!modify_config_file(machine, path + "DataDebug.conf", key, value))
 			fail("modify configure file failure");
 	}
 
