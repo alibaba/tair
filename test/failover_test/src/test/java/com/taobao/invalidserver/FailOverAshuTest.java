@@ -46,17 +46,17 @@ public class FailOverAshuTest extends FailOverBaseCase {
 
 	public void changeToolConf(String machine, String path, String value) {
 		// change test tool's configuration
-		if (!modify_config_file(machine, path + "DataDebug.conf", "actiontype",
+		if (!modify_config_file(machine, path + "TairTool.conf", "actiontype",
 				value))
 			fail("modify configure file failure");
-		if (!modify_config_file(machine, path + "DataDebug.conf", "datasize",
+		if (!modify_config_file(machine, path + "TairTool.conf", "datasize",
 				FailOverBaseCase.put_count))
 			fail("modify configure file failure");
 	}
 
 	public void changeToolConf(String machine, String path, String key,
 			String value) {
-		if (!modify_config_file(machine, path + "DataDebug.conf", key, value))
+		if (!modify_config_file(machine, path + "TairTool.conf", key, value))
 			fail("modify configure file failure");
 	}
 

@@ -201,10 +201,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		executeShell(stafhandle, iv, cmd);
 
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 inval_server && sleep 2";
+			cmd = "killall -9 inval_server_iv && sleep 2";
 		STAFResult result = executeShell(stafhandle, iv, cmd);
 		int waittime = 0;
-		cmd = "ps -ef|grep inval_server|wc -l";
+		cmd = "ps -ef|grep inval_server_iv|wc -l";
         while (waittime < 110) {
 			result = executeShell(stafhandle, iv, cmd);
 			if (result.rc != 0) {
@@ -559,11 +559,11 @@ public class FailOverBaseCase extends BaseTestCase {
 
 	public boolean execute_tool_on_mac(String machine, String option) {
 		log.debug("start " + option + " on " + machine);
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "actiontype", option))
+		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/TairTool.conf", "actiontype", option))
 			fail("modify configure file failed");
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/TairTool.conf", "datasize", FailOverBaseCase.put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/TairTool.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		boolean ret = true;
@@ -578,7 +578,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	{
 		log.error("start wait on " + machine);
 		int count=0;
-		while(check_process(machine, "DataDebug")!=2)
+		while(check_process(machine, "TairTool")!=2)
 		{
 			waitto(16);
 			if(++count>150)break;
