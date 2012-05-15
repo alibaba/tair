@@ -46,7 +46,7 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 
 		// ContextResult response = diamondSDKManagerImpl
 		// .pulishFromDefaultServerAfterModified(
-		// "com.taobao.tair.testInvalid", "testInvalid.cm3",
+		// "com.taobao.tair.testInvalid", "testInvalid-CM3",
 		// "content");
 		// assertTrue("change diamond failed!", response.isSuccess());
 	}
@@ -238,7 +238,7 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 		}
 		ContextResult response = diamondSDKManagerImpl
 				.pulishFromDefaultServerAfterModified(
-						"com.taobao.tair.testInvalid", "testInvalid.cm4",
+						"com.taobao.tair.testInvalid", "com.taobao.tair.testInvalid-CM4",
 						diamond_a);
 		assertTrue("change diamond failed!", response.isSuccess());
 		// ////////////////////////////////////////////////////
@@ -299,7 +299,7 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 		}
 		ContextResult response = diamondSDKManagerImpl
 				.pulishFromDefaultServerAfterModified(
-						"com.taobao.tair.testInvalid", "testInvalid.cm3",
+						"com.taobao.tair.testInvalid", "com.taobao.tair.testInvalid-CM3",
 						diamond_fail);
 		assertTrue("change diamond failed!", response.isSuccess());
 		// ////////////////////////////////////////////////////
@@ -527,9 +527,9 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 		reset_inval_cluster(ivList);
 		reset_cluster(csList1, dsList1);
 		reset_cluster(csList2, dsList2);
-		batch_recover_net(dsList1);
-		batch_recover_net(dsList2);
-		batch_recover_net(ivList);
+//		batch_recover_net(dsList1);
+//		batch_recover_net(dsList2);
+//		batch_recover_net(ivList);
 		if (!batch_modify(csList1,
 				FailOverBaseCase.tair_bin + "etc/group.conf", "_copy_count",
 				"2"))
@@ -554,7 +554,7 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 		}
 		ContextResult response = diamondSDKManagerImpl
 				.pulishFromDefaultServerAfterModified(
-						"com.taobao.tair.testInvalid", "testInvalid.cm3",
+						"com.taobao.tair.testInvalid", "com.taobao.tair.testInvalid-CM3",
 						diamond_a);
 		assertTrue("change diamond failed!", response.isSuccess());
 		// /////////////////////////////////////////////////////
@@ -571,7 +571,7 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 			e.printStackTrace();
 		}
 		response = diamondSDKManagerImpl.pulishFromDefaultServerAfterModified(
-				"com.taobao.tair.testInvalid", "testInvalid.cm4", diamond_b);
+				"com.taobao.tair.testInvalid", "com.taobao.tair.testInvalid-CM4", diamond_b);
 		assertTrue("change diamond failed!", response.isSuccess());
 		// /////////////////////////////////////////////////////
 		File file_group = new File("tair_group_back.conf");
@@ -603,9 +603,9 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 		// reset_cluster(csList1, dsList1);
 		// reset_cluster(csList2, dsList2);
 		recover_net(clList.get(0));
-		batch_recover_net(dsList1);
-		batch_recover_net(dsList2);
-		batch_recover_net(ivList);
+//		batch_recover_net(dsList1);
+//		batch_recover_net(dsList2);
+//		batch_recover_net(ivList);
 		log.error("clean tool and cluster while tearDown!");
 		batch_uncomment(csList1, FailOverBaseCase.tair_bin + "etc/group.conf",
 				dsList1, "#");
@@ -633,7 +633,7 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 		}
 		ContextResult response = diamondSDKManagerImpl
 				.pulishFromDefaultServerAfterModified(
-						"com.taobao.tair.testInvalid", "testInvalid.cm3",
+						"com.taobao.tair.testInvalid", "com.taobao.tair.testInvalid-CM3",
 						diamond_a);
 		assertTrue("change diamond failed!", response.isSuccess());
 		// /////////////////////////////////////////////////////
@@ -650,7 +650,7 @@ public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
 			e.printStackTrace();
 		}
 		response = diamondSDKManagerImpl.pulishFromDefaultServerAfterModified(
-				"com.taobao.tair.testInvalid", "testInvalid.cm4", diamond_b);
+				"com.taobao.tair.testInvalid", "com.taobao.tair.testInvalid-CM4", diamond_b);
 		assertTrue("change diamond failed!", response.isSuccess());
 		// /////////////////////////////////////////////////////
 		File file_group = new File("tair_group_back.conf");
