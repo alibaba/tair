@@ -19,7 +19,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String tair_bin = "/home/admin/tair_bin_iv/";
 	final static String test_bin = "/home/admin/ashu/TairTool/";
 	final static String test_bin2 = "/home/admin/baoni/TairTool/";
-	final static String iv_bin = "/home/admin/tair_bin_invalid/";
+	final static String iv_bin = "/home/admin/tair_bin_iv/";
 	// Server Operation
 	final static String start = "start";
 	final static String stop = "stop";
