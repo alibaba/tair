@@ -14,16 +14,11 @@ import com.taobao.diamond.domain.DiamondConf;
 import com.taobao.diamond.domain.DiamondSDKConf;
 import com.taobao.diamond.sdkapi.impl.DiamondSDKManagerImpl;
 
-/**
- * @author ashu.cs
- * 
- */
-
-public class FailOverInvalidDiamondTest2 extends FailOverBaseCase {
+public class FailOverInvalidDiamondTest extends FailOverBaseCase {
 
 	private DiamondSDKManagerImpl diamondSDKManagerImpl;
 
-	public FailOverInvalidDiamondTest2() {
+	public FailOverInvalidDiamondTest() {
 		List<DiamondConf> dialyDiamondConfs = new ArrayList<DiamondConf>();
 		DiamondConf diamondConf_1 = new DiamondConf("10.232.22.157", "8080",
 				"admin", "admin");

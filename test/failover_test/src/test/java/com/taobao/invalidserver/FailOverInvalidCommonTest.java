@@ -3,12 +3,7 @@ package com.taobao.invalidserver;
 import org.junit.Test;
 import com.ibm.staf.STAFResult;
 
-/**
- * @author ashu.cs
- * 
- */
-
-public class FailOverInvalidServerPerfixTest1 extends
+public class FailOverInvalidCommonTest extends
 		FailOverBaseCase {
 
 	public void startCluster() {
@@ -35,7 +30,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 				value))
 			fail("modify configure file failure");
 		if (!modify_config_file(machine, path + "TairTool.conf", "datasize",
-				FailOverBaseCase.put_count1))
+				FailOverBaseCase.put_count))
 			fail("modify configure file failure");
 	}
 
@@ -116,8 +111,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 		startCluster();
 
 		int waitcnt = 0;
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
@@ -125,9 +120,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -174,11 +169,11 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 > 0.9);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float > 0.9);
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -197,8 +192,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 		startCluster();
 
 		int waitcnt = 0;
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
@@ -206,9 +201,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -259,11 +254,11 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) == put_count_float1 -60);
+				getVerifySuccessful(clList.get(0), test_bin) == put_count_float -20);
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -271,9 +266,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 
 		// verify get result
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) < 4000);
+				getVerifySuccessful(clList.get(0), test_bin) < 2000);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) < 8000);
+				getVerifySuccessful(clList.get(1), test_bin) < 30000);
 		log.error("Successfully Verified data!");
 	}
 
@@ -281,10 +276,10 @@ public class FailOverInvalidServerPerfixTest1 extends
 		startCluster();
 
 		int waitcnt = 0;
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
-		changeToolConf(clList.get(0), test_bin, "start", "5000");
-		changeToolConf(clList.get(1), test_bin, "start", "5000");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
+		changeToolConf(clList.get(0), test_bin, "start", "100000");
+		changeToolConf(clList.get(1), test_bin, "start", "100000");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
@@ -293,8 +288,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 
         int suc1 = getVerifySuccessful(clList.get(0), test_bin);
         int suc2 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float1 > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float > 0.99);
 
 		// change test tool's configuration
 //		changeToolConf(test_bin, "actiontype", cmd);
@@ -342,12 +337,12 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 2);
         int suc3 = getVerifySuccessful(clList.get(0), test_bin);
         int suc4 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float1 > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float > 0.99);
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -371,10 +366,10 @@ public class FailOverInvalidServerPerfixTest1 extends
 		startCluster();
 
 		int waitcnt = 0;
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
-		changeToolConf(clList.get(0), test_bin, "start", "5000");
-		changeToolConf(clList.get(1), test_bin, "start", "5000");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
+		changeToolConf(clList.get(0), test_bin, "start", "100000");
+		changeToolConf(clList.get(1), test_bin, "start", "100000");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
@@ -383,8 +378,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 
         int suc1 = getVerifySuccessful(clList.get(0), test_bin);
         int suc2 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float1 > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float > 0.99);
 
 		// change test tool's configuration
 //		changeToolConf(test_bin, "actiontype", cmd);
@@ -432,12 +427,12 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 2);
         int suc3 = getVerifySuccessful(clList.get(0), test_bin);
         int suc4 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float1 > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float > 0.99);
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -455,8 +450,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
@@ -464,9 +459,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -492,11 +487,11 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 > 0.9);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float > 0.9);
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -504,9 +499,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 
 		// verify get result
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) < 10);
+				getVerifySuccessful(clList.get(0), test_bin) < 100);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) < 10);
+				getVerifySuccessful(clList.get(1), test_bin) < 100);
 		log.error("Successfully Verified data!");
 	}
 
@@ -514,8 +509,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
@@ -523,9 +518,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -553,11 +548,11 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 > 0.9);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float > 0.9);
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -565,9 +560,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 
 		// verify get result
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) < 10);
+				getVerifySuccessful(clList.get(0), test_bin) < 100);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) < 10);
+				getVerifySuccessful(clList.get(1), test_bin) < 100);
 		log.error("Successfully Verified data!");
 	}
 
@@ -575,8 +570,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "put");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "put");
 		if ("1".equals(async)) {
 			changeToolConf(clList.get(0), test_bin, "datasize", "22000");
 			changeToolConf(clList.get(1), test_bin, "datasize", "22000");
@@ -621,16 +616,16 @@ public class FailOverInvalidServerPerfixTest1 extends
 			assertTrue("get data verify failure!",
 				getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
-				fail("using prefix replace not detected!");
+			if(check_keyword(clList.get(0), "3968", test_bin + "datadbg0.log") == 0)
+				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 500 == 1);
 		}
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "get");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -663,27 +658,27 @@ public class FailOverInvalidServerPerfixTest1 extends
 		clean_tool(clList.get(0), test_bin);
 		clean_tool(clList.get(1), test_bin);
 		// reput
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		// reget
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -699,8 +694,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "put");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "put");
 		if("1".equals(async)) {
 			changeToolConf(clList.get(0), test_bin, "datasize", "15000");
 			changeToolConf(clList.get(1), test_bin, "datasize", "15000");
@@ -753,8 +748,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 		}
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "get");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -784,27 +779,27 @@ public class FailOverInvalidServerPerfixTest1 extends
 		clean_tool(clList.get(0), test_bin);
 		clean_tool(clList.get(1), test_bin);
 		// reput
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		// reget
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -820,8 +815,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "put");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "put");
 		if("1".equals(async)) {
 			changeToolConf(clList.get(0), test_bin, "datasize", "22000");
 			changeToolConf(clList.get(1), test_bin, "datasize", "22000");
@@ -873,24 +868,19 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		if("1".equals(async)) {
-			//grep if QUEUE_OVERFLOWED detected
-            if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") != 0) {
-                log.info("QUEUE_OVERFLOWED detected!");
-                assertTrue("get data verify failure!",
-                        getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
-            } else {
-                log.info("QUEUE_OVERFLOWED not detected!");
-                assertTrue("get data verify failure!",
-                        getVerifySuccessful(clList.get(0), test_bin) / 22000 == 1);
-            }
+			assertTrue("get data verify failure!",
+				getVerifySuccessful(clList.get(0), test_bin) / 22000 == 1);
+//			//grep if QUEUE_OVERFLOWED detected
+//			if(check_keyword(clList.get(), "3968", test_bin + "datadbg0.log") == 0)
+//				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 250 == 1);
 		}
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "get");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -908,8 +898,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "put");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "put");
 		if("1".equals(async)) {
 			changeToolConf(clList.get(0), test_bin, "datasize", "22000");
 			changeToolConf(clList.get(1), test_bin, "datasize", "22000");
@@ -957,7 +947,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
+			if(check_keyword(clList.get(0), "3968", test_bin + "datadbg0.log") == 0)
 				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
@@ -965,8 +955,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 		}
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "get");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -1000,27 +990,27 @@ public class FailOverInvalidServerPerfixTest1 extends
 		clean_tool(clList.get(0), test_bin);
 		clean_tool(clList.get(1), test_bin);
 		// reput
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		// reget
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -1036,8 +1026,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "put");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "put");
 		if("1".equals(async)) {
 			changeToolConf(clList.get(0), test_bin, "datasize", "22000");
 			changeToolConf(clList.get(1), test_bin, "datasize", "22000");
@@ -1090,7 +1080,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 		if("1".equals(async)) {
 			getVerifySuccessful(clList.get(0), test_bin);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
+			if(check_keyword(clList.get(0), "3968", test_bin + "datadbg0.log") == 0)
 				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
@@ -1098,8 +1088,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 		}
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "actiontype", "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "actiontype", "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "actiontype", "get");
+		changeToolConf(clList.get(1), test_bin, "actiontype", "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -1130,27 +1120,27 @@ public class FailOverInvalidServerPerfixTest1 extends
 		clean_tool(clList.get(0), test_bin);
 		clean_tool(clList.get(1), test_bin);
 		// reput
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		// reget
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -1165,8 +1155,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 	protected void Failover_12_normal(String cmd, String async) {
 		startCluster();
 
-		changeToolConf(clList.get(0), test_bin, "prefixPuts");
-		changeToolConf(clList.get(1), test_bin, "prefixPuts");
+		changeToolConf(clList.get(0), test_bin, "put");
+		changeToolConf(clList.get(1), test_bin, "put");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 1);
@@ -1174,9 +1164,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -1186,11 +1176,11 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float == 1);
 
 		// change test tool's configuration to read
-		changeToolConf(clList.get(0), test_bin, "prefixGets");
-		changeToolConf(clList.get(1), test_bin, "prefixGets");
+		changeToolConf(clList.get(0), test_bin, "get");
+		changeToolConf(clList.get(1), test_bin, "get");
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
 		waitForFinish(clList.get(0), test_bin, 3);
@@ -1207,28 +1197,28 @@ public class FailOverInvalidServerPerfixTest1 extends
 	@Test
 	public void testFailover_01_restart_one_invalid_server() {
 		log.error("start invalid server test Failover case 01");
-		Failover_01_restart_one_invalid_server("prefixInvalids", "0");
+		Failover_01_restart_one_invalid_server("invalid", "0");
 		log.error("end config test Failover case 01");
 	}
 
 	@Test
 	public void testFailover_02_restart_all_invalid_server() {
 		log.error("start invalid server test Failover case 02");
-		Failover_02_restart_all_invalid_server("prefixInvalids", "0");
+		Failover_02_restart_all_invalid_server("invalid", "0");
 		log.error("end config test Failover case 02");
 	}
 
 	@Test
 	public void testFailover_03_add_one_invalid_server() {
 		log.error("start invalid server test Failover case 03");
-		Failover_03_add_one_invalid_server("prefixPuts", "0");
+		Failover_03_add_one_invalid_server("put", "0");
 		log.error("end config test Failover case 03");
 	}
 
 	@Test
 	public void testFailover_04_add_two_invalid_server() {
 		log.error("start invalid server test Failover case 04");
-		Failover_04_add_two_invalid_server("prefixPuts", "0");
+		Failover_04_add_two_invalid_server("put", "0");
 		log.error("end config test Failover case 04");
 	}
 
@@ -1236,7 +1226,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_05_shutoff_net_between_client_and_one_invalid_server() {
 		log.error("start invalid server test Failover case 05");
 		Failover_05_shutoff_net_between_client_and_one_invalid_server(
-				"prefixInvalids", "0");
+				"invalid", "0");
 		log.error("end config test Failover case 05");
 	}
 
@@ -1244,7 +1234,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_06_shutoff_net_between_client_and_all_invalid_server() {
 		log.error("start invalid server test Failover case 06");
 		Failover_06_shutoff_net_between_client_and_all_invalid_server(
-				"prefixInvalids", "0");
+				"invalid", "0");
 		log.error("end config test Failover case 06");
 	}
 
@@ -1252,7 +1242,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_07_shutoff_net_between_one_invalid_server_and_one_cluster() {
 		log.error("start invalid server test Failover case 07");
 		Failover_07_shutoff_net_between_one_invalid_server_and_one_cluster(
-				"prefixInvalids", "0");
+				"invalid", "0");
 		log.error("end config test Failover case 07");
 	}
 
@@ -1260,7 +1250,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_08_shutoff_net_between_one_invalid_server_and_all_cluster() {
 		log.error("start invalid server test Failover case 08");
 		Failover_08_shutoff_net_between_one_invalid_server_and_all_cluster(
-				"prefixInvalids", "0");
+				"invalid", "0");
 		log.error("end config test Failover case 08");
 	}
 
@@ -1268,7 +1258,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_09_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover() {
 		log.error("start invalid server test Failover case 09");
 		Failover_09_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover(
-				"prefixInvalids", "0");
+				"invalid", "0");
 		log.error("end config test Failover case 09");
 	}
 
@@ -1276,7 +1266,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_10_shutoff_net_between_all_invalid_server_and_one_cluster() {
 		log.error("start invalid server test Failover case 10");
 		Failover_10_shutoff_net_between_all_invalid_server_and_one_cluster(
-				"prefixInvalids", "0");
+				"invalid", "0");
 		log.error("end config test Failover case 10");
 	}
 
@@ -1284,119 +1274,119 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_11_shutoff_net_between_all_invalid_server_and_all_cluster() {
 		log.error("start invalid server test Failover case 11");
 		Failover_11_shutoff_net_between_all_invalid_server_and_all_cluster(
-				"prefixInvalids", "0");
+				"invalid", "0");
 		log.error("end config test Failover case 11");
 	}
-///////////////////////////////////////////////////////////////////////////
+
 	@Test
-	public void testFailover_12_restart_one_invalid_server() {
+	public void testFailover_12_restart_one_invalid_server_sync() {
 		log.error("start invalid server test Failover case 12");
-		Failover_01_restart_one_invalid_server("prefixInvalids", "1");
+		Failover_01_restart_one_invalid_server("hidebyproxy", "0");
 		log.error("end config test Failover case 12");
 	}
 
 	@Test
-	public void testFailover_13_restart_all_invalid_server() {
+	public void testFailover_13_restart_all_invalid_server_sync() {
 		log.error("start invalid server test Failover case 13");
-		Failover_02_restart_all_invalid_server("prefixInvalids", "1");
+		Failover_02_restart_all_invalid_server("hidebyproxy", "0");
 		log.error("end config test Failover case 13");
 	}
 
-//	@Test
-//	public void testFailover_14_add_one_invalid_server() {
-//		log.error("start invalid server test Failover case 14");
-//		Failover_03_add_one_invalid_server("prefixPuts", "0");
-//		log.error("end config test Failover case 14");
-//	}
-//
-//	@Test
-//	public void testFailover_15_add_two_invalid_server() {
-//		log.error("start invalid server test Failover case 15");
-//		Failover_04_add_two_invalid_server("prefixPuts", "0");
-//		log.error("end config test Failover case 15");
-//	}
+	@Test
+	public void testFailover_14_add_one_invalid_server_sync() {
+		log.error("start invalid server test Failover case 14");
+		Failover_03_add_one_invalid_server("hidebyproxy", "0");
+		log.error("end config test Failover case 14");
+	}
 
 	@Test
-	public void testFailover_16_shutoff_net_between_client_and_one_invalid_server() {
+	public void testFailover_15_add_two_invalid_server_sync() {
+		log.error("start invalid server test Failover case 15");
+		Failover_04_add_two_invalid_server("hidebyproxy", "0");
+		log.error("end config test Failover case 15");
+	}
+
+	@Test
+	public void testFailover_16_shutoff_net_between_client_and_one_invalid_server_sync() {
 		log.error("start invalid server test Failover case 16");
 		Failover_05_shutoff_net_between_client_and_one_invalid_server(
-				"prefixInvalids", "1");
+				"hidebyproxy", "0");
 		log.error("end config test Failover case 16");
 	}
 
 	@Test
-	public void testFailover_17_shutoff_net_between_client_and_all_invalid_server() {
+	public void testFailover_17_shutoff_net_between_client_and_all_invalid_server_sync() {
 		log.error("start invalid server test Failover case 17");
 		Failover_06_shutoff_net_between_client_and_all_invalid_server(
-				"prefixInvalids", "1");
+				"hidebyproxy", "0");
 		log.error("end config test Failover case 17");
 	}
 
 	@Test
-	public void testFailover_18_shutoff_net_between_one_invalid_server_and_one_cluster() {
+	public void testFailover_18_shutoff_net_between_one_invalid_server_and_one_cluster_sync() {
 		log.error("start invalid server test Failover case 18");
 		Failover_07_shutoff_net_between_one_invalid_server_and_one_cluster(
-				"prefixInvalids", "1");
+				"hidebyproxy", "0");
 		log.error("end config test Failover case 18");
 	}
 
 	@Test
-	public void testFailover_19_shutoff_net_between_one_invalid_server_and_all_cluster() {
+	public void testFailover_19_shutoff_net_between_one_invalid_server_and_all_cluster_sync() {
 		log.error("start invalid server test Failover case 19");
 		Failover_08_shutoff_net_between_one_invalid_server_and_all_cluster(
-				"prefixInvalids", "1");
+				"hidebyproxy", "0");
 		log.error("end config test Failover case 19");
 	}
 
 	@Test
-	public void testFailover_20_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover() {
+	public void testFailover_20_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover_sync() {
 		log.error("start invalid server test Failover case 20");
 		Failover_09_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover(
-				"prefixInvalids", "1");
+				"hidebyproxy", "0");
 		log.error("end config test Failover case 20");
 	}
 
 	@Test
-	public void testFailover_21_shutoff_net_between_all_invalid_server_and_one_cluster() {
+	public void testFailover_21_shutoff_net_between_all_invalid_server_and_one_cluster_sync() {
 		log.error("start invalid server test Failover case 21");
 		Failover_10_shutoff_net_between_all_invalid_server_and_one_cluster(
-				"prefixInvalids", "1");
+				"hidebyproxy", "0");
 		log.error("end config test Failover case 21");
 	}
 
 	@Test
-	public void testFailover_22_shutoff_net_between_all_invalid_server_and_all_cluster() {
+	public void testFailover_22_shutoff_net_between_all_invalid_server_and_all_cluster_sync() {
 		log.error("start invalid server test Failover case 22");
 		Failover_11_shutoff_net_between_all_invalid_server_and_all_cluster(
-				"prefixInvalids", "1");
+				"hidebyproxy", "0");
 		log.error("end config test Failover case 22");
 	}
-///////////////////////////////////////////////////////////////////////////
+
 	@Test
 	public void testFailover_23_restart_one_invalid_server_async() {
 		log.error("start invalid server test Failover case 23");
-		Failover_01_restart_one_invalid_server("prefixHidesByProxy", "0");
+		Failover_01_restart_one_invalid_server("hidebyproxy", "1");
 		log.error("end config test Failover case 23");
 	}
 
 	@Test
 	public void testFailover_24_restart_all_invalid_server_async() {
 		log.error("start invalid server test Failover case 24");
-		Failover_02_restart_all_invalid_server("prefixHidesByProxy", "0");
+		Failover_02_restart_all_invalid_server("hidebyproxy", "1");
 		log.error("end config test Failover case 24");
 	}
 
 //	@Test
 //	public void testFailover_25_add_one_invalid_server_async() {
 //		log.error("start invalid server test Failover case 25");
-//		Failover_03_add_one_invalid_server("prefixPuts", "0");
+//		Failover_03_add_one_invalid_server("hidebyproxy", "1");
 //		log.error("end config test Failover case 25");
 //	}
 
 //	@Test
 //	public void testFailover_26_add_two_invalid_server_async() {
 //		log.error("start invalid server test Failover case 26");
-//		Failover_04_add_two_invalid_server("prefixPuts", "0");
+//		Failover_04_add_two_invalid_server("hidebyproxy", "1");
 //		log.error("end config test Failover case 26");
 //	}
 
@@ -1404,7 +1394,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_27_shutoff_net_between_client_and_one_invalid_server_async() {
 		log.error("start invalid server test Failover case 27");
 		Failover_05_shutoff_net_between_client_and_one_invalid_server(
-				"prefixHidesByProxy", "0");
+				"hidebyproxy", "1");
 		log.error("end config test Failover case 27");
 	}
 
@@ -1412,7 +1402,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_28_shutoff_net_between_client_and_all_invalid_server_async() {
 		log.error("start invalid server test Failover case 28");
 		Failover_06_shutoff_net_between_client_and_all_invalid_server(
-				"prefixHidesByProxy", "0");
+				"hidebyproxy", "1");
 		log.error("end config test Failover case 28");
 	}
 
@@ -1420,7 +1410,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_29_shutoff_net_between_one_invalid_server_and_one_cluster_async() {
 		log.error("start invalid server test Failover case 29");
 		Failover_07_shutoff_net_between_one_invalid_server_and_one_cluster(
-				"prefixHidesByProxy", "0");
+				"hidebyproxy", "1");
 		log.error("end config test Failover case 29");
 	}
 
@@ -1428,7 +1418,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_30_shutoff_net_between_one_invalid_server_and_all_cluster_async() {
 		log.error("start invalid server test Failover case 30");
 		Failover_08_shutoff_net_between_one_invalid_server_and_all_cluster(
-				"prefixHidesByProxy", "0");
+				"hidebyproxy", "1");
 		log.error("end config test Failover case 30");
 	}
 
@@ -1436,7 +1426,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_31_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover_async() {
 		log.error("start invalid server test Failover case 31");
 		Failover_09_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover(
-				"prefixHidesByProxy", "0");
+				"hidebyproxy", "1");
 		log.error("end config test Failover case 31");
 	}
 
@@ -1444,7 +1434,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_32_shutoff_net_between_all_invalid_server_and_one_cluster_async() {
 		log.error("start invalid server test Failover case 32");
 		Failover_10_shutoff_net_between_all_invalid_server_and_one_cluster(
-				"prefixHidesByProxy", "0");
+				"hidebyproxy", "1");
 		log.error("end config test Failover case 32");
 	}
 
@@ -1452,121 +1442,30 @@ public class FailOverInvalidServerPerfixTest1 extends
 	public void testFailover_33_shutoff_net_between_all_invalid_server_and_all_cluster_async() {
 		log.error("start invalid server test Failover case 33");
 		Failover_11_shutoff_net_between_all_invalid_server_and_all_cluster(
-				"prefixHidesByProxy", "0");
+				"hidebyproxy", "1");
 		log.error("end config test Failover case 33");
 	}
-///////////////////////////////////////////////////////////////////////////
-	@Test
-	public void testFailover_34_restart_one_invalid_server_async() {
+	
+/*	@Test
+	public void testFailOver_34_normal_invalid() {
 		log.error("start invalid server test Failover case 34");
-		Failover_01_restart_one_invalid_server("prefixHidesByProxy", "1");
-		log.error("end config test Failover case 34");
+		Failover_12_normal("invalid", "0");
+		log.error("start invalid server test Failover case 34");
 	}
-
+	
 	@Test
-	public void testFailover_35_restart_all_invalid_server_async() {
+	public void testFailOver_35_normal_hidebyproxy_sync() {
 		log.error("start invalid server test Failover case 35");
-		Failover_02_restart_all_invalid_server("prefixHidesByProxy", "1");
-		log.error("end config test Failover case 35");
-	}
-
-//	@Test
-//	public void testFailover_36_add_one_invalid_server_async() {
-//		log.error("start invalid server test Failover case 36");
-//		Failover_03_add_one_invalid_server("prefixPuts", "0");
-//		log.error("end config test Failover case 36");
-//	}
-
-//	@Test
-//	public void testFailover_37_add_two_invalid_server_async() {
-//		log.error("start invalid server test Failover case 37");
-//		Failover_04_add_two_invalid_server("prefixPuts", "0");
-//		log.error("end config test Failover case 37");
-//	}
-
-	@Test
-	public void testFailover_38_shutoff_net_between_client_and_one_invalid_server_async() {
-		log.error("start invalid server test Failover case 38");
-		Failover_05_shutoff_net_between_client_and_one_invalid_server(
-				"prefixHidesByProxy", "1");
-		log.error("end config test Failover case 38");
-	}
-
-	@Test
-	public void testFailover_39_shutoff_net_between_client_and_all_invalid_server_async() {
-		log.error("start invalid server test Failover case 39");
-		Failover_06_shutoff_net_between_client_and_all_invalid_server(
-				"prefixHidesByProxy", "1");
-		log.error("end config test Failover case 39");
-	}
-
-	@Test
-	public void testFailover_40_shutoff_net_between_one_invalid_server_and_one_cluster_async() {
-		log.error("start invalid server test Failover case 40");
-		Failover_07_shutoff_net_between_one_invalid_server_and_one_cluster(
-				"prefixHidesByProxy", "1");
-		log.error("end config test Failover case 40");
-	}
-
-	@Test
-	public void testFailover_41_shutoff_net_between_one_invalid_server_and_all_cluster_async() {
-		log.error("start invalid server test Failover case 41");
-		Failover_08_shutoff_net_between_one_invalid_server_and_all_cluster(
-				"prefixHidesByProxy", "1");
-		log.error("end config test Failover case 41");
-	}
-
-	@Test
-	public void testFailover_42_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover_async() {
-		log.error("start invalid server test Failover case 42");
-		Failover_09_shutoff_net_between_one_invalid_server_and_all_cluster_then_recover(
-				"prefixHidesByProxy", "1");
-		log.error("end config test Failover case 42");
-	}
-
-	@Test
-	public void testFailover_43_shutoff_net_between_all_invalid_server_and_one_cluster_async() {
-		log.error("start invalid server test Failover case 43");
-		Failover_10_shutoff_net_between_all_invalid_server_and_one_cluster(
-				"prefixHidesByProxy", "1");
-		log.error("end config test Failover case 43");
-	}
-
-	@Test
-	public void testFailover_44_shutoff_net_between_all_invalid_server_and_all_cluster_async() {
-		log.error("start invalid server test Failover case 44");
-		Failover_11_shutoff_net_between_all_invalid_server_and_all_cluster(
-				"prefixHidesByProxy", "1");
-		log.error("end config test Failover case 44");
+		Failover_12_normal("hidebyproxy", "0");
+		log.error("start invalid server test Failover case 35");
 	}
 	
 	@Test
-	public void testFailOver_45_normal_invalid() {
-		log.error("start invalid server test Failover case 45");
-		Failover_12_normal("prefixInvalids", "0");
-		log.error("start invalid server test Failover case 45");
-	}
-	
-	@Test
-	public void testFailOver_46_normal_hidebyproxy_sync() {
-		log.error("start invalid server test Failover case 46");
-		Failover_12_normal("prefixInvalids", "1");
-		log.error("start invalid server test Failover case 46");
-	}
-	
-	@Test
-	public void testFailOver_47_normal_hidebyproxy_async() {
-		log.error("start invalid server test Failover case 47");
-		Failover_12_normal("prefixHidesByProxy", "0");
-		log.error("start invalid server test Failover case 47");
-	}
-	
-	@Test
-	public void testFailOver_48_normal_hidebyproxy_async() {
-		log.error("start invalid server test Failover case 48");
-		Failover_12_normal("prefixHidesByProxy", "1");
-		log.error("start invalid server test Failover case 48");
-	}
+	public void testFailOver_36_normal_hidebyproxy_async() {
+		log.error("start invalid server test Failover case 36");
+		Failover_12_normal("hidebyproxy", "1");
+		log.error("start invalid server test Failover case 36");
+	}*/
 
 	public void setUp() {
 		log.error("clean tool and cluster while setUp!");
@@ -1581,10 +1480,10 @@ public class FailOverInvalidServerPerfixTest1 extends
         batch_recover_net(dsList2);
         batch_recover_net(ivList);
 		if (!batch_modify(csList1, FailOverBaseCase.tair_bin
-				+ "etc/group.conf", "_copy_count", "1"))
+				+ "etc/group.conf", "_copy_count", "2"))
 			fail("modify configure file failure");
 		if (!batch_modify(csList2, FailOverBaseCase.tair_bin
-				+ "etc/group.conf", "_copy_count", "1"))
+				+ "etc/group.conf", "_copy_count", "2"))
 			fail("modify configure file failure");
 	}
 

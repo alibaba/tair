@@ -3,12 +3,7 @@ package com.taobao.invalidserver;
 import org.junit.Test;
 import com.ibm.staf.STAFResult;
 
-/**
- * @author ashu.cs
- * 
- */
-
-public class FailOverAshuTest extends FailOverBaseCase {
+public class FailOverExtendTest extends FailOverBaseCase {
 
 /*    @Test
     public void test_staf() {

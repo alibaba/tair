@@ -8,10 +8,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * @author ashu.cs
- * 
- */
 public class FailOverBaseCase extends BaseTestCase {
 	// Directory
 	final static String tair_bin = "/home/admin/tair_bin_iv/";
