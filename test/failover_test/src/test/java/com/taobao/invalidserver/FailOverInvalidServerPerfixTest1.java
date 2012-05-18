@@ -35,7 +35,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 				value))
 			fail("modify configure file failure");
 		if (!modify_config_file(machine, path + "TairTool.conf", "datasize",
-				FailOverBaseCase.put_count))
+				FailOverBaseCase.put_count1))
 			fail("modify configure file failure");
 	}
 
@@ -125,9 +125,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -174,7 +174,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 > 0.9);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 > 0.9);
 
 		// change test tool's configuration to read
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
@@ -206,9 +206,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -259,7 +259,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) == put_count_float / 20 -60);
+				getVerifySuccessful(clList.get(0), test_bin) == put_count_float1 -60);
 
 		// change test tool's configuration to read
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
@@ -271,9 +271,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 
 		// verify get result
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) < 2000 / 20);
+				getVerifySuccessful(clList.get(0), test_bin) < 4000);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) < 30000 / 20);
+				getVerifySuccessful(clList.get(1), test_bin) < 8000);
 		log.error("Successfully Verified data!");
 	}
 
@@ -293,8 +293,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 
         int suc1 = getVerifySuccessful(clList.get(0), test_bin);
         int suc2 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float1 > 0.99);
 
 		// change test tool's configuration
 //		changeToolConf(test_bin, "actiontype", cmd);
@@ -342,8 +342,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 2);
         int suc3 = getVerifySuccessful(clList.get(0), test_bin);
         int suc4 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float / 20 > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float / 20 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float1 > 0.99);
 
 		// change test tool's configuration to read
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
@@ -383,8 +383,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 
         int suc1 = getVerifySuccessful(clList.get(0), test_bin);
         int suc2 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float / 20 > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float / 20 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc1 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc2 / put_count_float1 > 0.99);
 
 		// change test tool's configuration
 //		changeToolConf(test_bin, "actiontype", cmd);
@@ -432,8 +432,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 2);
         int suc3 = getVerifySuccessful(clList.get(0), test_bin);
         int suc4 = getVerifySuccessful(clList.get(1), test_bin);
-		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float / 20 > 0.99);
-		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float / 20 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc3 / put_count_float1 > 0.99);
+		assertTrue("put successful rate smaller than 100%!", suc4 / put_count_float1 > 0.99);
 
 		// change test tool's configuration to read
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
@@ -464,9 +464,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -492,7 +492,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 > 0.9);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 > 0.9);
 
 		// change test tool's configuration to read
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
@@ -504,9 +504,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 
 		// verify get result
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) < 100 / 20);
+				getVerifySuccessful(clList.get(0), test_bin) < 10);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) < 100 / 20);
+				getVerifySuccessful(clList.get(1), test_bin) < 10);
 		log.error("Successfully Verified data!");
 	}
 
@@ -523,9 +523,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -553,7 +553,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 > 0.9);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 > 0.9);
 
 		// change test tool's configuration to read
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
@@ -565,9 +565,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 
 		// verify get result
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) < 100 / 20);
+				getVerifySuccessful(clList.get(0), test_bin) < 10);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) < 100 / 20);
+				getVerifySuccessful(clList.get(1), test_bin) < 10);
 		log.error("Successfully Verified data!");
 	}
 
@@ -621,8 +621,8 @@ public class FailOverInvalidServerPerfixTest1 extends
 			assertTrue("get data verify failure!",
 				getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "3968", test_bin + "datadbg0.log") == 0)
-				fail("QUEUE_OVERFLOWED not detected!");
+			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
+				fail("using prefix replace not detected!");
 		} else {
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 500 == 1);
@@ -671,16 +671,16 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		// reget
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
 		changeToolConf(clList.get(1), test_bin, "prefixGets");
@@ -792,16 +792,16 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		// reget
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
 		changeToolConf(clList.get(1), test_bin, "prefixGets");
@@ -873,11 +873,16 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		if("1".equals(async)) {
-			assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / 22000 == 1);
-//			//grep if QUEUE_OVERFLOWED detected
-//			if(check_keyword(clList.get(), "3968", test_bin + "datadbg0.log") == 0)
-//				fail("QUEUE_OVERFLOWED not detected!");
+			//grep if QUEUE_OVERFLOWED detected
+            if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") != 0) {
+                log.info("QUEUE_OVERFLOWED detected!");
+                assertTrue("get data verify failure!",
+                        getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
+            } else {
+                log.info("QUEUE_OVERFLOWED not detected!");
+                assertTrue("get data verify failure!",
+                        getVerifySuccessful(clList.get(0), test_bin) / 22000 == 1);
+            }
 		} else {
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 250 == 1);
@@ -952,7 +957,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "3968", test_bin + "datadbg0.log") == 0)
+			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
 				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
@@ -1003,16 +1008,16 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		// reget
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
 		changeToolConf(clList.get(1), test_bin, "prefixGets");
@@ -1085,7 +1090,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 		if("1".equals(async)) {
 			getVerifySuccessful(clList.get(0), test_bin);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "3968", test_bin + "datadbg0.log") == 0)
+			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
 				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
@@ -1133,16 +1138,16 @@ public class FailOverInvalidServerPerfixTest1 extends
 		waitForFinish(clList.get(1), test_bin, 1);
 		log.error("put data over!");
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 		// reinvalid
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
 		changeToolConf(clList.get(0), test_bin, "async", async);
 		execute_tair_tool(clList.get(0), test_bin);
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		// reget
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
 		changeToolConf(clList.get(1), test_bin, "prefixGets");
@@ -1169,9 +1174,9 @@ public class FailOverInvalidServerPerfixTest1 extends
 		log.error("put data over!");
 
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 		assertTrue("put successful rate smaller than 100%!",
-				getVerifySuccessful(clList.get(1), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(1), test_bin) / put_count_float1 == 1);
 
 		// change test tool's configuration
 		changeToolConf(clList.get(0), test_bin, "actiontype", cmd);
@@ -1181,7 +1186,7 @@ public class FailOverInvalidServerPerfixTest1 extends
 		// wait for invalid finish
 		waitForFinish(clList.get(0), test_bin, 2);
 		assertTrue("invalid successful rate smaller than 90%!",
-				getVerifySuccessful(clList.get(0), test_bin) / put_count_float / 20 == 1);
+				getVerifySuccessful(clList.get(0), test_bin) / put_count_float1 == 1);
 
 		// change test tool's configuration to read
 		changeToolConf(clList.get(0), test_bin, "prefixGets");
@@ -1576,10 +1581,10 @@ public class FailOverInvalidServerPerfixTest1 extends
         batch_recover_net(dsList2);
         batch_recover_net(ivList);
 		if (!batch_modify(csList1, FailOverBaseCase.tair_bin
-				+ "etc/group.conf", "_copy_count", "2"))
+				+ "etc/group.conf", "_copy_count", "1"))
 			fail("modify configure file failure");
 		if (!batch_modify(csList2, FailOverBaseCase.tair_bin
-				+ "etc/group.conf", "_copy_count", "2"))
+				+ "etc/group.conf", "_copy_count", "1"))
 			fail("modify configure file failure");
 	}
 

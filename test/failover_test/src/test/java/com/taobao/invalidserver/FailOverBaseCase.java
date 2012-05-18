@@ -8,8 +8,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.BeforeClass;
-
 /**
  * @author ashu.cs
  * 
@@ -35,7 +33,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static int down_time = 10;
 	final static int ds_down_time = 10;
 	final static String put_count = "100000";
+	final static String put_count1 = "10000";
 	final static float put_count_float = 100000.0f;
+	final static float put_count_float1 = 10000.0f;
 	// Server List
 	final String csarr1[] = new String[] { "10.232.4.14", "10.232.4.15" };
 	final String csarr2[] = new String[] { "10.232.4.17", "10.232.4.18" };
@@ -744,6 +744,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
+                log.debug(ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
