@@ -111,7 +111,10 @@ namespace tair {
                   delete pair;
                }
             }
-            key_count = key_list->size();
+            if (key_count != key_list->size()) {
+              log_warn("duplicate key received, omitted");
+              key_count = key_list->size();
+            }
          }
 
          return true;

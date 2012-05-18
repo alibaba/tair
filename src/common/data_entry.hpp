@@ -470,6 +470,10 @@ namespace tair
          return *a == *b;
        }
      };
+     //! Be Cautious about the return value of set::insert & hash_map::insert,
+     //! which return pair<iterator, bool> type.
+     //! When inserting one existing data_entry to a set or hash_map below,
+     //! there is a risk of memory leaks
      typedef std::vector<data_entry *> tair_dataentry_vector;
      typedef std::set<data_entry*, data_entry_comparator> tair_dataentry_set;
      typedef __gnu_cxx::hash_map<data_entry*, data_entry*,

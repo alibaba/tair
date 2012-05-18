@@ -13,14 +13,16 @@ namespace tair {
         //~ single key
         if (req->key_count == 1) {
           if ((ret = client->remove(req->area, *(req->key))) != TAIR_RETURN_SUCCESS) {
-            if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
+            if (ret != TAIR_RETURN_DATA_NOT_EXIST && ret != TAIR_RETURN_EXPIRED) {
               std::vector<std::string> servers;
               client->get_server_with_key(*(req->key), servers);
               log_error("[FATAL ERROR] RemoveFailure: Group %s, DataServer %s.",
                   req->group_name, servers[0].c_str());
 
               data_entry *key = new data_entry(*req->key);
-              key_set.insert(key);
+              if (key_set.insert(key).second == false) {
+                delete key;
+              }
             }
           }
         } else if (req->key_count > 1) {
@@ -28,13 +30,15 @@ namespace tair {
           for (tair_dataentry_set::iterator it = req->key_list->begin();
               it != req->key_list->end(); ++it) {
             if ((ret = client->remove(req->area, **it)) != TAIR_RETURN_SUCCESS) {
-              if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
+              if (ret != TAIR_RETURN_DATA_NOT_EXIST && ret != TAIR_RETURN_EXPIRED) {
                 std::vector<std::string> servers;
                 client->get_server_with_key(**it, servers);
                 log_error("[FATAL ERROR] RemoveFailure: Group %s, DataServer %s.",
                     req->group_name, servers[0].c_str());
                 data_entry *key = new data_entry(**it);
-                key_set.insert(key);
+                if (key_set.insert(key).second == false) {
+                  delete key;
+                }
               }
             }
           }
@@ -74,14 +78,16 @@ namespace tair {
         //~ single key
         if (req->key_count == 1) {
           if ((ret = client->hide(req->area, *(req->key))) != TAIR_RETURN_SUCCESS) {
-            if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
+            if (ret != TAIR_RETURN_DATA_NOT_EXIST && ret != TAIR_RETURN_EXPIRED) {
               std::vector<std::string> servers;
               client->get_server_with_key(*(req->key), servers);
               log_error("[FATAL ERROR] HideFailure: Group %s, DataServer %s.",
                   req->group_name, servers[0].c_str());
 
               data_entry *key = new data_entry(*req->key);
-              key_set.insert(key);
+              if (key_set.insert(key).second == false) {
+                delete key;
+              }
             }
           }
         } else if (req->key_count > 1) {
@@ -89,13 +95,15 @@ namespace tair {
           for (tair_dataentry_set::iterator it = (*req->key_list).begin();
               it != (*req->key_list).end(); ++it) {
             if ((ret = client->hide(req->area, **it)) != TAIR_RETURN_SUCCESS) {
-              if (ret != TAIR_RETURN_DATA_NOT_EXIST) {
+              if (ret != TAIR_RETURN_DATA_NOT_EXIST && ret != TAIR_RETURN_EXPIRED) {
                 std::vector<std::string> servers;
                 client->get_server_with_key(**it, servers);
                 log_error("[FATAL ERROR] HideFailure: Group %s, DataServer %s.",
                     req->group_name, servers[0].c_str());
                 data_entry *key = new data_entry(**it);
-                key_set.insert(key);
+                if (key_set.insert(key).second == false) {
+                  delete key;
+                }
               }
             }
           }
@@ -147,14 +155,17 @@ namespace tair {
         if ((ret = client->hides(req->area, mkey_set, key_code_map)) != TAIR_RETURN_SUCCESS) {
           key_code_map_t::iterator itr = key_code_map.begin();
           while (itr != key_code_map.end()) {
-            if (itr->second != TAIR_RETURN_DATA_NOT_EXIST) {
+            if (itr->second != TAIR_RETURN_DATA_NOT_EXIST && itr->second != TAIR_RETURN_EXPIRED) {
               data_entry *mkey = new data_entry();
               merge_key(pkey, *itr->first, *mkey);
-              failed_key_set.insert(mkey);
               std::vector<std::string> servers;
               client->get_server_with_key(*mkey, servers);
               log_error("[FATAL ERROR] PrefixHidesFailure: Group %s, DataServer %s.",
                   req->group_name, servers[0].c_str());
+
+              if (failed_key_set.insert(mkey).second == false) {
+                delete mkey;
+              }
             }
             ++itr;
           }
@@ -205,14 +216,16 @@ namespace tair {
         if ((ret = client->removes(req->area, mkey_set, key_code_map)) != TAIR_RETURN_SUCCESS) {
           key_code_map_t::iterator itr = key_code_map.begin();
           while (itr != key_code_map.end()) {
-            if (itr->second != TAIR_RETURN_DATA_NOT_EXIST) {
+            if (itr->second != TAIR_RETURN_DATA_NOT_EXIST itr->second != TAIR_RETURN_DATA_EXPIRED) {
               data_entry *mkey = new data_entry();
               merge_key(pkey, *itr->first, *mkey);
-              failed_key_set.insert(mkey);
               std::vector<std::string> servers;
               client->get_server_with_key(*mkey, servers);
               log_error("[FATAL ERROR] PrefixInvalidsFailure: Group %s, DataServer %s.",
                   req->group_name, servers[0].c_str());
+              if (failed_key_set.insert(mkey) == false) {
+                delete mkey;
+              }
             }
             ++itr;
           }

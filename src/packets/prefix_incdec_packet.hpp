@@ -131,7 +131,10 @@ namespace tair {
           delete wrapper;
         }
       }
-      key_count = key_counter_map->size();
+      if (key_count != key_counter_map->size()) {
+        log_warn("duplicate key received, omitted");
+        key_count = key_counter_map->size();
+      }
 
       return true;
     }

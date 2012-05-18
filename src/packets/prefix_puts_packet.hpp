@@ -110,7 +110,10 @@ namespace tair {
           delete value;
         }
       }
-      key_count = kvmap->size();
+      if (key_count != kvmap->size()) {
+        log_warn("duplicate key received, omitted");
+        key_count = kvmap->size();
+      }
 
       return true;
     }
