@@ -30,7 +30,7 @@ public class FailOverInvalidPerfixTest extends
 				value))
 			fail("modify configure file failure");
 		if (!modify_config_file(machine, path + "TairTool.conf", "datasize",
-				FailOverBaseCase.put_count1))
+				FailOverBaseCase.put_count))
 			fail("modify configure file failure");
 	}
 
