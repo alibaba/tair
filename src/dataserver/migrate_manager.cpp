@@ -250,7 +250,7 @@ namespace tair {
          request_mupdate *temp_packet = new request_mupdate(*packet);
          wait_object *cwo = wait_object_mgr.create_wait_object();
          if (conn_mgr->sendPacket(server_id, temp_packet, NULL, (void*)((long)cwo->get_id())) == false) {
-            log_error("Send migrate put packet to %s failure, bucket:d%",
+            log_error("Send migrate put packet to %s failure, bucket: %d",
                       tbsys::CNetUtil::addrToString(server_id).c_str(), db_id);
             delete temp_packet;
             ret = false;
