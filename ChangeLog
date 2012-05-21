@@ -19,3 +19,11 @@ version 2.3.1.2
 version 2.3.1.3
 * fixbug:
 * 1. 去除客户端中的assert，避免core.
+
+2012-05-21
+version 2.3.1.4
+* feature:
+* 1.
+增加前缀key功能：可以把具有相同前缀的key放到同一台ds上，并能做到一定的事务功能。
+* 2. 增加invalid功能：支持双机房容灾。删数据需要使用invalid，而不是delete。
+* 3. 增加hide功能：提供数据隐藏功能，正常get无法读取到，且支持双机房。
