@@ -1,6 +1,6 @@
 Name: %NAME
 Version: %VERSION
-Release: r454%{?dist}
+Release: 1%{?dist}
 Summary: Taobao key/value storage system
 Group: Application
 URL: http://yum.corp.alimama.com
