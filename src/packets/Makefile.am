@@ -57,6 +57,7 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
 				prefix_hides_by_proxy_packet.hpp \
 				prefix_hides_packet.hpp \
 				prefix_invalids_packet.hpp \
-        lock_packet.hpp \
+				prefix_get_hiddens_packet.hpp \
+				lock_packet.hpp \
 			  packet_streamer.hpp \
 			  packet_streamer.cpp
