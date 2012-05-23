@@ -264,11 +264,12 @@ public class FailOverInvalidPerfixTest extends
 		waitForFinish(clList.get(0), test_bin, 3);
 		waitForFinish(clList.get(1), test_bin, 2);
 
+        int niss = check_keyword(clList.get(0), "no invalid server service", test_bin + "datadbg0.log");
 		// verify get result
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(0), test_bin) < 4000);
+				getVerifySuccessful(clList.get(0), test_bin) == 60);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) < 8000);
+				getVerifySuccessful(clList.get(1), test_bin) == niss + 60);
 		log.error("Successfully Verified data!");
 	}
 
@@ -616,8 +617,8 @@ public class FailOverInvalidPerfixTest extends
 			assertTrue("get data verify failure!",
 				getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
-				fail("using prefix replace not detected!");
+			if(check_keyword(clList.get(0), "using", test_bin + "datadbg0.log") == 0)
+				fail("using not detected!");
 		} else {
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 500 == 1);
@@ -952,7 +953,7 @@ public class FailOverInvalidPerfixTest extends
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 22000.0 > 0.9);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
+			if(check_keyword(clList.get(0), "using", test_bin + "datadbg0.log") == 0)
 				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
@@ -969,8 +970,9 @@ public class FailOverInvalidPerfixTest extends
 
 		// verify get result
 		if("1".equals(async)) {
+            int uscount = check_keyword(clList.get(0), "using", test_bin + "datadbg0.log");
 			assertTrue("get data verify failure!",
-					getVerifySuccessful(clList.get(0), test_bin) / 22000 == 1);
+					getVerifySuccessful(clList.get(0), test_bin) == 22000 - uscount);
             int suc_old = getVerifySuccessful(clList.get(1), test_bin);
             execute_tair_tool(clList.get(1), test_bin);
             waitForFinish(clList.get(1), test_bin, 3);
@@ -1085,7 +1087,7 @@ public class FailOverInvalidPerfixTest extends
 		if("1".equals(async)) {
 			getVerifySuccessful(clList.get(0), test_bin);
 			//grep if QUEUE_OVERFLOWED detected
-			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
+			if(check_keyword(clList.get(0), "using", test_bin + "datadbg0.log") == 0)
 				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
@@ -1102,8 +1104,9 @@ public class FailOverInvalidPerfixTest extends
 
 		// verify get result
 		if("1".equals(async)) {
+            int uscount = check_keyword(clList.get(0), "using", test_bin + "datadbg0.log");
 			assertTrue("get data verify failure!",
-					getVerifySuccessful(clList.get(0), test_bin) == 22000);
+					getVerifySuccessful(clList.get(0), test_bin) == 22000 - uscount);
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(1), test_bin) == 22000);
 		} else {
@@ -1584,13 +1587,13 @@ public class FailOverInvalidPerfixTest extends
 	}
 
 	public void tearDown() {
-		// clean_tool(clList.get(), test_bin);
-		// clean_tool(clList.get(), test_bin);
-		// clean_tool(clList.get(0), test_bin2);
-		// clean_tool(clList.get(1), test_bin2);
-		// reset_inval_cluster(ivList);
-		// reset_cluster(csList1, dsList1);
-		// reset_cluster(csList2, dsList2);
+		clean_tool(clList.get(0), test_bin);
+		clean_tool(clList.get(1), test_bin);
+		clean_tool(clList.get(0), test_bin2);
+		clean_tool(clList.get(1), test_bin2);
+		reset_inval_cluster(ivList);
+		reset_cluster(csList1, dsList1);
+		reset_cluster(csList2, dsList2);
 		recover_net(clList.get(0));
 		batch_recover_net(dsList1);
 		batch_recover_net(dsList2);

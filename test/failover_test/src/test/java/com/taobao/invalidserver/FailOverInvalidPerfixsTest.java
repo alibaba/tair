@@ -742,6 +742,9 @@ public class FailOverInvalidPerfixsTest extends
 		if("1".equals(async)) {
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) / 15000.0 > 0.9);
+			//grep if QUEUE_OVERFLOWED detected
+			if(check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log") == 0)
+				fail("using prefix replace not detected!");
 		} else {
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(0), test_bin) == 250);
@@ -969,8 +972,9 @@ public class FailOverInvalidPerfixsTest extends
 
 		// verify get result
 		if("1".equals(async)) {
+            int up = check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log");
 			assertTrue("get data verify failure!",
-					getVerifySuccessful(clList.get(0), test_bin) / 22000 == 1);
+					getVerifySuccessful(clList.get(0), test_bin) == 22000 - up);
             int suc_old = getVerifySuccessful(clList.get(1), test_bin);
             execute_tair_tool(clList.get(1), test_bin);
             waitForFinish(clList.get(1), test_bin, 3);
@@ -991,7 +995,7 @@ public class FailOverInvalidPerfixsTest extends
 		if (!recover_net(ivList.get(1)))
 			fail("recover net between iv 2 and cluster 1 failure!");
 		log.error("recover net between all iv and cluster 1 success!");
-
+/*
 		clean_tool(clList.get(0), test_bin);
 		clean_tool(clList.get(1), test_bin);
 		// reput
@@ -1024,7 +1028,7 @@ public class FailOverInvalidPerfixsTest extends
 				getVerifySuccessful(clList.get(0), test_bin) == 0);
 		assertTrue("get data verify failure!",
 				getVerifySuccessful(clList.get(1), test_bin) == 0);
-		log.error("Successfully Verified data!");
+		log.error("Successfully Verified data!");*/
 	}
 
 	protected void Failover_11_shutoff_net_between_all_invalid_server_and_all_cluster(
@@ -1037,8 +1041,8 @@ public class FailOverInvalidPerfixsTest extends
 			changeToolConf(clList.get(0), test_bin, "datasize", "22000");
 			changeToolConf(clList.get(1), test_bin, "datasize", "22000");
 		} else {
-			changeToolConf(clList.get(0), test_bin, "datasize", "50");
-			changeToolConf(clList.get(1), test_bin, "datasize", "50");
+			changeToolConf(clList.get(0), test_bin, "datasize", "500");
+			changeToolConf(clList.get(1), test_bin, "datasize", "500");
 		}
 		execute_tair_tool(clList.get(0), test_bin);
 		execute_tair_tool(clList.get(1), test_bin);
@@ -1053,9 +1057,9 @@ public class FailOverInvalidPerfixsTest extends
 					getVerifySuccessful(clList.get(1), test_bin) / 22000 == 1);
 		} else {
 			assertTrue("put successful rate smaller than 100%!",
-					getVerifySuccessful(clList.get(0), test_bin) / 50 == 1);
+					getVerifySuccessful(clList.get(0), test_bin) / 500 == 1);
 			assertTrue("put successful rate smaller than 100%!",
-					getVerifySuccessful(clList.get(1), test_bin) / 50 == 1);
+					getVerifySuccessful(clList.get(1), test_bin) / 500 == 1);
 		}
 
 		// shut off net between all iv and all cluster
@@ -1089,7 +1093,7 @@ public class FailOverInvalidPerfixsTest extends
 				fail("QUEUE_OVERFLOWED not detected!");
 		} else {
 			assertTrue("get data verify failure!",
-					getVerifySuccessful(clList.get(0), test_bin) == 50);
+					getVerifySuccessful(clList.get(0), test_bin) == 500);
 		}
 
 		// change test tool's configuration to read
@@ -1102,15 +1106,16 @@ public class FailOverInvalidPerfixsTest extends
 
 		// verify get result
 		if("1".equals(async)) {
+            int up = check_keyword(clList.get(0), "using prefix", test_bin + "datadbg0.log");
 			assertTrue("get data verify failure!",
-					getVerifySuccessful(clList.get(0), test_bin) == 22000);
+					getVerifySuccessful(clList.get(0), test_bin) == 22000 - up);
 			assertTrue("get data verify failure!",
 					getVerifySuccessful(clList.get(1), test_bin) == 22000);
 		} else {
 			assertTrue("get data verify failure!",
-					getVerifySuccessful(clList.get(0), test_bin) == 50);
+					getVerifySuccessful(clList.get(0), test_bin) == 500);
 			assertTrue("get data verify failure!",
-					getVerifySuccessful(clList.get(1), test_bin) == 50);
+					getVerifySuccessful(clList.get(1), test_bin) == 500);
 		}
 		log.error("Successfully Verified data!");
 
@@ -1121,7 +1126,7 @@ public class FailOverInvalidPerfixsTest extends
 		if (!recover_net(ivList.get(1)))
 			fail("recover net between iv 2 and all cluster failure!");
 		log.error("recover net between all iv and all cluster success!");
-
+/*
 		clean_tool(clList.get(0), test_bin);
 		clean_tool(clList.get(1), test_bin);
 		// reput
@@ -1153,7 +1158,7 @@ public class FailOverInvalidPerfixsTest extends
 		assertTrue("get data verify failure!",
 				getVerifySuccessful(clList.get(0), test_bin) == 0);
 		assertTrue("get data verify failure!",
-				getVerifySuccessful(clList.get(1), test_bin) == 0);
+				getVerifySuccessful(clList.get(1), test_bin) == 0);*/
 		log.error("Successfully Verified data!");
 	}
 	
@@ -1534,7 +1539,7 @@ public class FailOverInvalidPerfixsTest extends
 				"prefixHidesByProxy", "1");
 		log.error("end config test Failover case 44");
 	}
-	
+
 	@Test
 	public void testFailOver_45_normal_invalid() {
 		log.error("start invalid server test Failover case 45");
@@ -1584,13 +1589,13 @@ public class FailOverInvalidPerfixsTest extends
 	}
 
 	public void tearDown() {
-		// clean_tool(clList.get(), test_bin);
-		// clean_tool(clList.get(), test_bin);
-		// clean_tool(clList.get(0), test_bin2);
-		// clean_tool(clList.get(1), test_bin2);
-		// reset_inval_cluster(ivList);
-		// reset_cluster(csList1, dsList1);
-		// reset_cluster(csList2, dsList2);
+		clean_tool(clList.get(0), test_bin);
+		clean_tool(clList.get(1), test_bin);
+		clean_tool(clList.get(0), test_bin2);
+		clean_tool(clList.get(1), test_bin2);
+		reset_inval_cluster(ivList);
+		reset_cluster(csList1, dsList1);
+		reset_cluster(csList2, dsList2);
 		recover_net(clList.get(0));
 		batch_recover_net(dsList1);
 		batch_recover_net(dsList2);
