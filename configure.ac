@@ -88,6 +88,8 @@ AC_CONFIG_FILES([\
      src/storage/ldb/Makefile \
      src/storage/ldb/leveldb/Makefile \
 		 src/packets/Makefile \
+		 src/statserver/storage/Makefile \
+		 src/statserver/Makefile \
 		 src/configserver/Makefile \
 		 src/dataserver/Makefile \
 		 src/client/Makefile \
