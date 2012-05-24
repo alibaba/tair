@@ -21,7 +21,7 @@ namespace tair {
    class request_get : public base_packet {
    public:
       request_get()
-         {
+      {
          setPCode(TAIR_REQ_GET_PACKET);
          server_flag = 0;
          area = 0;
@@ -146,6 +146,30 @@ namespace tair {
          }
       }
 
+      virtual size_t size() 
+      {
+        if (fixed_size != 0)
+          return fixed_size;
+
+        size_t total = 1 + 2 + 4;
+        if (key_count > 0) {
+          if (key_list == NULL) {
+            total += key->get_size() + 40;
+          } else {
+            for (tair_dataentry_set::iterator it = key_list->begin(); 
+                it != key_list->end(); ++it) {
+              total += (*it)->get_size() + 40;
+            }
+          }
+        }
+        return total + 16; // tbnet header 16 bytes
+      }
+
+      virtual uint16_t ns()
+      {
+        return area;
+      }
+
       void add_key(data_entry *key, bool copy = false)
       {
         if (copy) {
@@ -188,8 +212,8 @@ namespace tair {
    public:
       uint16_t           area;
       uint32_t           key_count;
-      data_entry       *key;
-      tair_dataentry_set  *key_list;
+      data_entry         *key;
+      tair_dataentry_set *key_list;
 
    };
    class response_get : public base_packet {
@@ -245,7 +269,6 @@ namespace tair {
          }
       }
 
-
       bool encode(tbnet::DataBuffer *output)
       {
          output->writeInt32(config_version);
@@ -295,6 +318,7 @@ namespace tair {
             log_warn( "buffer data too few.");
             return false;
          }
+         fixed_size = header->_dataLen;
          config_version = input->readInt32();
          code = input->readInt32();
          key_count = input->readInt32();
@@ -371,6 +395,26 @@ namespace tair {
          ret = proxyed_key_list->insert(p);
          if (ret.second == false)
             delete p;
+      }
+ 
+      virtual size_t size()
+      {
+        if (fixed_size != 0)
+          return fixed_size;
+
+        size_t total = 4 + 4 + 4;
+        if (key_count > 0) {
+          if (key_data_map == NULL) {
+            // key or val never be null 
+            total += key->get_size() + data->get_size(); 
+          } else {
+            for (tair_keyvalue_map::iterator it=key_data_map->begin(); 
+                it!=key_data_map->end(); ++it) {
+              total += it->first->get_size() + it->second->get_size();
+            }
+          }
+        }
+        return total + 16; // tbnet header;
       }
 
    public:

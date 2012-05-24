@@ -28,8 +28,9 @@ namespace tair {
    {
    }
 
-   int request_processor::process(request_put *request, bool &send_return)
+   int request_processor::process(request_put *request, bool &send_return, uint32_t &resp_size)
    {
+      resp_size = 0;
       int rc = 0;
 
       if (tair_mgr->is_working() == false) {
@@ -79,8 +80,9 @@ namespace tair {
       return rc;
    }
 
-   int request_processor::process(request_get *request, bool &send_return)
+   int request_processor::process(request_get *request, bool &send_return, uint32_t &resp_size)
    {
+      resp_size = 0;
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
@@ -187,10 +189,11 @@ namespace tair {
       resp->config_version = heart_beat->get_client_version();
       resp->setChannelId(request->getChannelId());
       resp->set_code(rc);
+      resp_size = resp->size();
       if(request->get_connection()->postPacket(resp) == false) {
          delete resp;
          resp = 0;
-      }
+      } 
       PROFILER_DUMP();
       PROFILER_STOP();
 

@@ -25,7 +25,13 @@ namespace tair {
 
       tbnet::Packet *createPacket(int pcode);
 
-      static int set_return_packet(base_packet *packet, int code,const char *msg, uint32_t version);
+      static int set_return_packet(base_packet *packet, int code,const char *msg, uint32_t version)
+      {
+        uint32_t size = 0;
+        return set_return_packet(packet, code, msg, version, size);
+      }
+
+      static int set_return_packet(base_packet *packet, int code,const char *msg, uint32_t version, uint32_t &resp_size);
       static int set_return_packet(tbnet::Connection *conn,uint32_t chid,int cmd_id,int code,const char *msg,uint32_t version);
    };
 }

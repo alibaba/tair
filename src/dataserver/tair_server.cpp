@@ -15,6 +15,7 @@
  *
  */
 #include "tair_server.hpp"
+#include "flow_control_packet.hpp"
 
 char g_tair_home[129];
 
@@ -35,10 +36,14 @@ namespace tair {
       if (task_queue_size < 0){
          task_queue_size = 100;
       }
+      stat_mgr = tair::stat::StatManager::NewInstance();
+      flow_ctrl = tair::stat::FlowController::NewInstance();
    }
 
    tair_server::~tair_server()
    {
+     delete stat_mgr;
+     delete flow_ctrl;
    }
 
    void tair_server::start()
@@ -107,6 +112,8 @@ namespace tair {
 
    bool tair_server::initialize()
    {
+      if (stat_mgr->Initialize() == false || flow_ctrl->Initialize() == false)
+        return false;
 
       const char *dev_name = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_DEV_NAME, NULL);
       uint32_t local_ip = tbsys::CNetUtil::getLocalAddr(dev_name);
@@ -139,6 +146,7 @@ namespace tair {
       heartbeat.set_thread_parameter(this, &streamer, tair_mgr);
 
       req_processor = new request_processor(tair_mgr, &heartbeat, conn_manager);
+      stat_prc = new stat_processor(tair_mgr, stat_mgr, flow_ctrl);
 
       return true;
    }
@@ -227,9 +235,16 @@ namespace tair {
       return tbnet::IPacketHandler::FREE_CHANNEL;
    }
 
-   bool tair_server::handlePacketQueue(tbnet::Packet *apacket, void *args)
+
+  bool tair_server::handlePacketQueue(tbnet::Packet *apacket, void *args)
    {
       base_packet *packet = (base_packet*)apacket;
+      tair::stat::StatRecord stat;
+      stat.ip = (uint32_t)(packet->get_connection()->getServerId() & 0xffffffff);
+      stat.ns = (uint16_t)packet->ns();
+      stat.op = (uint16_t)packet->getPCode();
+      stat.in = (uint32_t)packet->size();
+
       int pcode = packet->getPCode();
 
       bool send_return = true;
@@ -239,13 +254,13 @@ namespace tair {
          case TAIR_REQ_PUT_PACKET:
          {
             request_put *npacket = (request_put*)packet;
-            ret = req_processor->process(npacket, send_return);
+            ret = req_processor->process(npacket, send_return, stat.out);
             break;
          }
          case TAIR_REQ_GET_PACKET:
          {
             request_get *npacket = (request_get*)packet;
-            ret = req_processor->process(npacket, send_return);
+            ret = req_processor->process(npacket, send_return, stat.out);
             send_return = false;
             break;
          }
@@ -364,6 +379,20 @@ namespace tair {
             ret = req_processor->process(mpacket, send_return);
             break;
          }
+         case TAIR_STAT_CMD_VIEW:
+         {
+            stat_cmd_view_packet *stat_packet = (stat_cmd_view_packet *)(packet);
+            stat.out = stat_prc->process(stat_packet); 
+            send_return = false;
+            break;
+         }
+         case TAIR_FLOW_CHECK:
+         {
+            flow_check *check_request = (flow_check*)(packet);
+            stat.out = stat_prc->process(check_request);
+            send_return = false;
+            break;
+         }
          case TAIR_REQ_PREFIX_PUTS_PACKET:
          {
            request_prefix_puts *ppacket = (request_prefix_puts*)packet;
@@ -407,21 +436,21 @@ namespace tair {
          }
       }
 
-      if (ret == TAIR_RETURN_PROXYED )//||TAIR_DUP_WAIT_RSP==ret || TAIR_RETURN_DUPLICATE_BUSY== ret)
-	  {
-		// request is proxyed
-		//or wait dup_response,don't rsp to client unlit dup_rsp arrive or timeout.
-		return false;
-	  }
-      if (TAIR_DUP_WAIT_RSP==ret )
-	  {
-		send_return =false;
-		return true;
-	  }
+      bool success = true;
+      if (ret == TAIR_RETURN_PROXYED) {
+         //||TAIR_DUP_WAIT_RSP==ret || TAIR_RETURN_DUPLICATE_BUSY== ret)
+         // request is proxyed
+         //or wait dup_response,don't rsp to client unlit dup_rsp arrive or timeout.
+         success = false;
 
-      if (send_return && packet->get_direction() == DIRECTION_RECEIVE) {
+      } else if (TAIR_DUP_WAIT_RSP==ret) {
+         send_return =false;
+         success = true;
+
+      } else if (send_return && packet->get_direction() == DIRECTION_RECEIVE) {
          log_debug("send return packet, return code: %d", ret);
-         tair_packet_factory::set_return_packet(packet, ret, msg, heartbeat.get_client_version());
+         tair_packet_factory::set_return_packet(packet, ret, msg, heartbeat.get_client_version(), stat.out);
+         success = true;
       }
 
       if ((TBSYS_LOG_LEVEL_DEBUG<=TBSYS_LOGGER._level)) {
@@ -430,8 +459,26 @@ namespace tair {
             log_warn("Slow, pcode: %d, %ld us", pcode, now-packet->request_time);
          }
       }
-
-      return true;
+      stat_mgr->AddUp(stat.ip, stat.ns, stat.op, 
+                      stat.in, stat.out);
+      flow_ctrl->AddUp(stat.ns, stat.in, stat.out);
+      tair::stat::FlowStatus status = flow_ctrl->IsOverflow(stat.ns);
+      if (status != tair::stat::DOWN)
+      {
+        tbnet::Connection *conn = packet->get_connection();
+        flow_control *ctrl_packet = new flow_control();
+        ctrl_packet->set_status(status);
+        ctrl_packet->set_ns(stat.ns);
+        ctrl_packet->setChannelId(-1);
+        int size = ctrl_packet->size();
+        if (conn->postPacket(ctrl_packet) == false)
+        {
+          delete ctrl_packet;
+          size = 0;
+        }
+        flow_ctrl->AddUp(0, 0, size);
+      }
+      return success;
    }
 
    tbnet::IPacketHandler::HPRetCode tair_server::handlePacket(tbnet::Packet *packet, void *args)

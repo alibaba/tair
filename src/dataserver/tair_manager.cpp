@@ -365,7 +365,7 @@
 
     int tair_manager::get(int area, data_entry &key, data_entry &value)
     {
-      if (status != STATUS_CAN_WORK) {
+      if (!localmode && status != STATUS_CAN_WORK) {
         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
 
@@ -827,7 +827,7 @@
     }
     bool tair_manager::should_proxy(data_entry &key, uint64_t &target_server_id)
     {
-      if (key.server_flag == TAIR_SERVERFLAG_PROXY)
+      if (key.server_flag == TAIR_SERVERFLAG_PROXY || localmode)
         return false; // if this is proxy, dont proxy
 
       int bucket_number = get_bucket_number(key);
@@ -925,19 +925,20 @@
         hashcode = tair::util::string_util::mur_mur_hash(key.get_data(), key.get_prefix_size());
       }
       log_debug("hashcode: %u, bucket count: %d", hashcode, table_mgr->get_bucket_count());
-      return hashcode % table_mgr->get_bucket_count();
+      return hashcode % (localmode ? 1023 : table_mgr->get_bucket_count());
     }
 
     bool tair_manager::should_write_local(int bucket_number, int server_flag, int op_flag, int &rc)
     {
+
+      if (localmode == true) {
+        return true;
+      }
+
       if (status != STATUS_CAN_WORK) {
         log_debug("server can not work now...");
         rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
         return false;
-      }
-
-      if (localmode == true) {
-        return true;
       }
 
       if (migrate_mgr->is_bucket_available(bucket_number) == false) {
@@ -1039,7 +1040,7 @@
 
     bool tair_manager::is_working()
     {
-      return status == STATUS_CAN_WORK;
+      return status == STATUS_CAN_WORK || localmode;
     }
 
     int tair_manager::get_mutex_index(data_entry &key)
@@ -1049,7 +1050,7 @@
     }
 
     void tair_manager::get_slaves(int server_flag, int bucket_number, vector<uint64_t> &slaves) {
-      if (table_mgr->get_copy_count() == 1) return;
+      if (localmode || table_mgr->get_copy_count() == 1) return;
 
       if (server_flag == TAIR_SERVERFLAG_PROXY) {
         slaves = table_mgr->get_slaves(bucket_number, true);

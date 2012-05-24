@@ -3,6 +3,7 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 			 -I${top_srcdir}/src/common \
 			 -I${top_srcdir}/src/storage/fdb \
 			 -I${top_srcdir}/src/storage \
+			 -I${top_srcdir}/src/statserver/include \
 			 -I${top_srcdir}/src/dataserver \
 	     	@BOOST_CPPFLAGS@
 
@@ -22,6 +23,8 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
         base_packet.hpp  \
         conf_heartbeat_packet.hpp  \
         data_server_ctrl_packet.hpp  \
+        stat_cmd_packet.hpp \
+        flow_control.hpp \
         dump_bucket_packet.hpp  \
         dump_packet.hpp  \
         duplicate_packet.hpp  \

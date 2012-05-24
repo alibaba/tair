@@ -312,7 +312,8 @@ namespace tair {
         log_error("unknow packet pcode: %d", pcode);
       }
       if(send_ret && packet->get_direction() == DIRECTION_RECEIVE) {
-        tair_packet_factory::set_return_packet(packet, ret, msg, 0);
+        uint32_t temp = 0;
+        tair_packet_factory::set_return_packet(packet, ret, msg, 0, temp);
       }
       return true;
     }

@@ -29,7 +29,6 @@ namespace tair {
          expired = 0;
       }
 
-
       request_put(request_put &packet) 
       {
          setPCode(TAIR_REQ_PUT_PACKET);
@@ -39,6 +38,11 @@ namespace tair {
          expired = packet.expired;
          key.clone(packet.key);
          data.clone(packet.data);
+      }
+
+      size_t size() 
+      {
+        return 1 + 2 + 2 + 4 + key.get_size() + data.get_size() + 16;
       }
 
       ~request_put()
@@ -53,8 +57,6 @@ namespace tair {
          output->writeInt32(expired);
          key.encode(output);
          data.encode(output);
-
-
          return true;
       }
 

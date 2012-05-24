@@ -183,27 +183,32 @@ namespace tair {
       uint64_t* psource_table = table;
       uint64_t* pdest_table = table + get_hash_table_size();
       for (size_t i = 0; i < this->copy_count; ++i) {
+
          bool need_migrate = true;
          uint64_t dest_dataserver = pdest_table[index + this->bucket_count * i];
-         for (size_t j =0; j < this->copy_count; ++j) {
+
+         for (size_t j =0; j < this->copy_count; ++j) 
+         {
             if (dest_dataserver == psource_table[index + this->bucket_count * j]) {
                need_migrate = false;
                break;
             }
          }
+
          if (need_migrate) {
             log_debug("add migrate item: bucket[%d] => %s", index, tbsys::CNetUtil::addrToString(dest_dataserver).c_str());
             migrates[index].push_back(dest_dataserver);
          }
       }
       bucket_server_map_it it = migrates.find(index);
-      if (it == migrates.end()) {
-         if (psource_table[index] != pdest_table[index]) {
+      if (it == migrates.end()) 
+      {
+         if (psource_table[index] != pdest_table[index]) 
+         {
             //this will add a empty vector to migrates,
             //some times only need to change master for a bucket
             migrates[index];
          }
-
       }
    }
 
@@ -211,10 +216,10 @@ namespace tair {
    {
       tair::common::CScopedRwLock __scoped_lock(&m_mutex,false);
       int bucket_number = 0;
-      for (size_t i=0; i<current_state_table.size(); i+=this->copy_count) {
+      for (size_t i=0; i< current_state_table.size(); i+= this->copy_count) {
          bucket_number = (int)current_state_table[i++]; // skip the bucket_number
          bool has_migrated = false;
-         for (size_t j=0; j<this->copy_count; ++j) {
+         for (size_t j=0; j < this->copy_count; ++j) {
             if (current_state_table[i+j] != server_table[bucket_number + j * this->bucket_count]) {
                has_migrated = true;
                break;

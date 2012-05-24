@@ -43,8 +43,8 @@ namespace tair {
     request_processor(tair_manager *tair_mgr, heartbeat_thread *heart_beat, tbnet::ConnectionManager *connection_mgr);
     ~request_processor();
 
-    int process(request_put *request, bool &send_return);
-    int process(request_get *request, bool &send_return);
+    int process(request_put *request, bool &send_return, uint32_t &resp_size);
+    int process(request_get *request, bool &send_return, uint32_t &resp_size);
     int process(request_hide *request, bool &send_return);
     int process(request_get_hidden *request, bool &send_return);
     int process(request_remove *request, bool &send_return);

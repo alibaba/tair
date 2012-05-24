@@ -16,6 +16,7 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     -I${top_srcdir}/src/storage \
 	     -I${top_srcdir}/src/dataserver \
 	     -I${top_srcdir}/src/common \
+	     -I${top_srcdir}/src/statserver/include \
 	     -I${top_srcdir}/src/packets \
 	     -I${top_srcdir}/src/storage/fdb \
 	     -I${top_srcdir}/src/storage/mdb \
@@ -33,6 +34,7 @@ LDADD=$(top_builddir)/src/storage/mdb/libmdb.a \
       $(LDB_LDFLAGS) \
       $(top_builddir)/src/plugin/libtair_plugins.a \
       $(top_builddir)/src/packets/libtair_packets.a \
+      $(top_builddir)/src/statserver/storage/libtair_stat.a \
       $(top_builddir)/src/storage/libdump.a \
       $(top_builddir)/src/common/libtair_common.a \
       $(TBLIB_ROOT)/lib/libtbnet.a \
@@ -47,7 +49,7 @@ sbin_PROGRAMS=tair_server
 include_HEADERS=item_manager.hpp tair_manager.hpp table_manager.hpp duplicate_manager.hpp duplicate_base.hpp \
 		update_log.hpp tinyjson.hpp
 
-tair_server_SOURCES=duplicate_manager.cpp item_manager.cpp request_processor.cpp tair_manager.cpp update_log.cpp \
+tair_server_SOURCES=duplicate_manager.cpp item_manager.cpp stat_processor.cpp request_processor.cpp tair_manager.cpp update_log.cpp \
 		    heartbeat_thread.cpp migrate_manager.cpp table_manager.cpp tair_server.cpp \
 		    $(top_builddir)/src/common/stat_helper.cpp \
 		    base_migrate.hpp	\

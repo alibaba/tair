@@ -33,6 +33,7 @@
 #include "mupdate_packet.hpp"
 #include "ping_packet.hpp"
 #include "put_packet.hpp"
+#include "flow_control_packet.hpp"
 #include "lock_packet.hpp"
 #include "query_info_packet.hpp"
 #include "remove_area_packet.hpp"
@@ -44,6 +45,9 @@
 #include "hide_packet.hpp"
 #include "hide_by_proxy_packet.hpp"
 #include "get_hidden_packet.hpp"
+#include "stat_cmd_packet.hpp"
+#include "flow_view.hpp"
+
 #include "prefix_puts_packet.hpp"
 #include "prefix_incdec_packet.hpp"
 #include "prefix_removes_packet.hpp"
@@ -179,6 +183,18 @@
         case TAIR_RESP_GET_MIGRATE_MACHINE_PACKET:
           packet = new response_get_migrate_machine();
           break;
+        case TAIR_STAT_CMD_VIEW:
+          packet = new stat_cmd_view_packet();
+          break;
+        case TAIR_FLOW_CONTROL:
+          packet = new flow_control();
+          break;
+        case TAIR_FLOW_CHECK:
+          packet = new flow_check();
+          break;
+        case TAIR_RESP_FLOW_VIEW:
+          packet = new flow_view_response();
+          break;
         case TAIR_REQ_PREFIX_PUTS_PACKET:
           packet = new request_prefix_puts();
           break;
@@ -222,17 +238,20 @@
     {
     }
 
-    int tair_packet_factory::set_return_packet(base_packet *packet, int code,const char *msg, uint32_t version)
+    int tair_packet_factory::set_return_packet(base_packet *packet, int code,const char *msg, uint32_t version, uint32_t &resp_size)
     {
       response_return *return_packet = new response_return(packet->getChannelId(), code, msg);
       return_packet->config_version = version;
       tbnet::Connection *conn=packet->get_connection();
+      resp_size = return_packet->size() + 16;
       if (!conn || conn->postPacket(return_packet) == false) {
         log_warn("send ReturnPacket failure, request pcode: %d", packet->getPCode());
         delete return_packet;
-      }
+        resp_size = 0;
+      }       
       return EXIT_SUCCESS;
     }
+    
     int tair_packet_factory::set_return_packet(tbnet::Connection *conn,uint32_t chid,int cmd_id,
         int code,const char *msg,uint32_t version)
     {
@@ -245,7 +264,5 @@
       }
       return EXIT_SUCCESS;
     }
-
-
   }
 

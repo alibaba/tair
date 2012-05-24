@@ -101,6 +101,12 @@ namespace tair {
       TAIR_REQ_DATASERVER_CTRL_PACKET = 1500,
       TAIR_REQ_GET_MIGRATE_MACHINE_PACKET,
 
+      TAIR_STAT_CMD_VIEW      = 9000,
+      TAIR_FLOW_CONTROL       = 9001,
+      TAIR_FLOW_CONTROL_SET   = 9002,
+      TAIR_REQ_FLOW_VIEW      = 9003,
+      TAIR_RESP_FLOW_VIEW     = 9004,
+      TAIR_FLOW_CHECK         = 9005,
    };
 
    enum {
@@ -126,6 +132,17 @@ namespace tair {
          no_free = false;
          server_flag = 0;
          request_time = 0;
+         fixed_size = 0;
+      }
+
+      virtual size_t size()
+      {
+        return 0;
+      }
+
+      virtual uint16_t ns()
+      {
+        return 0;
       }
 
       virtual ~base_packet()
@@ -177,6 +194,8 @@ namespace tair {
    public:
       uint8_t server_flag;
       int64_t request_time;
+   protected:
+      size_t fixed_size;
    };
 
 }

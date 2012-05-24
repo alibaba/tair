@@ -36,7 +36,11 @@
 #include "tair_manager.hpp"
 #include "wait_object.hpp"
 #include "request_processor.hpp"
+#include "stat_processor.h"
 #include "stat_helper.hpp"
+
+#include "stat_manager.h"
+#include "flow_controller.h"
 
 using namespace __gnu_cxx;
 
@@ -72,6 +76,9 @@ namespace tair {
       wait_object_manager wait_object_mgr;
       request_processor *req_processor;
 
+      tair::stat::StatManager *stat_mgr;
+      tair::stat::FlowController *flow_ctrl;
+      stat_processor          *stat_prc;
    private:
       inline bool initialize();
       inline bool destroy();
@@ -80,3 +87,4 @@ namespace tair {
 
 #endif
 ///////////////////////END
+
