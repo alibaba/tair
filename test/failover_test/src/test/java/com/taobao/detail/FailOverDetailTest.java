@@ -117,8 +117,8 @@ public class FailOverDetailTest extends FailOverBaseCase {
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
 		changeToolConf(dsList.get(1), test_bin, "actiontype", "put");
 		changeToolConf(dsList.get(2), test_bin, "actiontype", "put");
-		execute_tair_tool(dsList.get(0), test_bin);
 		execute_tair_tool(dsList.get(1), test_bin);
+		execute_tair_tool(dsList.get(2), test_bin);
 
 		// add one new ds while putting data
 		if (!control_ds(dsList.get(0), FailOverBaseCase.start, 0))
@@ -129,7 +129,7 @@ public class FailOverDetailTest extends FailOverBaseCase {
 				+ "etc/group.conf", (String) dsList.get(0), "#"))
 			fail("change group.conf failed!");
 		log.info("uncomment the last ds successful!");
-		execute_tair_tool(dsList.get(2), test_bin);
+		execute_tair_tool(dsList.get(0), test_bin);
 
 		waitForFinish(dsList.get(0));
 		waitForFinish(dsList.get(1));
@@ -427,8 +427,8 @@ public class FailOverDetailTest extends FailOverBaseCase {
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
 		changeToolConf(dsList.get(1), test_bin, "actiontype", "put");
 		changeToolConf(dsList.get(2), test_bin, "actiontype", "put");
-		execute_tair_tool(dsList.get(0), test_bin);
 		execute_tair_tool(dsList.get(1), test_bin);
+		execute_tair_tool(dsList.get(2), test_bin);
 
 		// add one new ds while putting data
 		if (!control_ds(dsList.get(0), FailOverBaseCase.start, 0))
@@ -439,7 +439,7 @@ public class FailOverDetailTest extends FailOverBaseCase {
 				+ "etc/group.conf", (String) dsList.get(0), "#"))
 			fail("change group.conf failed!");
 		log.info("uncomment the last ds successful!");
-		execute_tair_tool(dsList.get(2), test_bin);
+		execute_tair_tool(dsList.get(0), test_bin);
 
 		waitForFinish(dsList.get(0));
 		waitForFinish(dsList.get(1));
@@ -534,16 +534,15 @@ public class FailOverDetailTest extends FailOverBaseCase {
 				FailOverBaseCase.tair_bin + "logs/config.log") != 1)
 			fail("check master cs not changed!");
 		log.info("check master cs changed to " + csList.get(1) + " !");
-		
-		int csCount = check_keyword(csList.get(0),
-				"MASTER_CONFIG changed " + csList.get(0),
-				FailOverBaseCase.tair_bin + "logs/config.log");
+
+		int csCount = check_keyword(csList.get(1), "MASTER_CONFIG changed "
+				+ csList.get(0), FailOverBaseCase.tair_bin + "logs/config.log");
 		// restart master cs
 		if (!control_cs(csList.get(0), FailOverBaseCase.start, 0))
 			fail("restart master cs failed!");
 		log.info("Restart master cs Successful!");
 		waitto(down_time);
-		if (check_keyword(csList.get(0),
+		if (check_keyword(csList.get(1),
 				"MASTER_CONFIG changed " + csList.get(0),
 				FailOverBaseCase.tair_bin + "logs/config.log") != csCount + 1)
 			fail("check master cs not changed!");

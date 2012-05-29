@@ -31,7 +31,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static float put_count_float = 100000.0f;
 	// Server List
 	final String csarr[] = new String[] { "10.232.4.25", "10.232.4.26" };
-	final String dsarr[] = new String[] { "10.232.4.25", "10.232.4.26", "10.232.4.27" };
+	final String dsarr[] = new String[] { "10.232.4.25", "10.232.4.26",
+			"10.232.4.27" };
 	final List<String> csList = Arrays.asList(csarr);
 	final List<String> dsList = Arrays.asList(dsarr);
 
@@ -45,7 +46,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	public boolean control_cs(String machine, String opID, int type) {
 		log.debug("control cs:" + machine + " " + opID + " type=" + type);
 		boolean ret = false;
-		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_cs && sleep 5";
+		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh "
+				+ opID + "_cs && sleep 5";
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
 			cmd = "killall -9 tair_cfg_svr_detail && sleep 2";
 		executeShell(stafhandle, machine, cmd);
@@ -57,9 +59,11 @@ public class FailOverBaseCase extends BaseTestCase {
 		} else {
 			String stdout = getShellOutput(result);
 			log.debug("------------cs ps result--------------" + stdout);
-			if (opID.equals(FailOverBaseCase.start) && (new Integer(stdout.trim())).intValue() != 3) {
+			if (opID.equals(FailOverBaseCase.start)
+					&& (new Integer(stdout.trim())).intValue() != 3) {
 				ret = false;
-			} else if (opID.equals(FailOverBaseCase.stop) && (new Integer(stdout.trim())).intValue() != 2) {
+			} else if (opID.equals(FailOverBaseCase.stop)
+					&& (new Integer(stdout.trim())).intValue() != 2) {
 				ret = false;
 			} else {
 				ret = true;
@@ -78,7 +82,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	public boolean control_ds(String machine, String opID, int type) {
 		log.debug("control ds:" + machine + " " + opID + " type=" + type);
 		boolean ret = false;
-		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_ds ";
+		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh "
+				+ opID + "_ds ";
 		int expectNum = 0;
 		if (opID.equals(FailOverBaseCase.stop)) {
 			expectNum = 2;
@@ -125,9 +130,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	public boolean batch_control_cs(List cs_group, String opID, int type) {
+	public boolean batch_control_cs(List<String> cs_group, String opID, int type) {
 		boolean ret = false;
-		for (Iterator it = cs_group.iterator(); it.hasNext();) {
+		for (Iterator<String> it = cs_group.iterator(); it.hasNext();) {
 			if (!control_cs((String) it.next(), opID, type)) {
 				ret = false;
 				break;
@@ -144,9 +149,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	public boolean batch_control_ds(List ds_group, String opID, int type) {
+	public boolean batch_control_ds(List<String> ds_group, String opID, int type) {
 		boolean ret = false;
-		for (Iterator it = ds_group.iterator(); it.hasNext();) {
+		for (Iterator<String> it = ds_group.iterator(); it.hasNext();) {
 			if (!control_ds((String) it.next(), opID, type)) {
 				ret = false;
 				break;
@@ -164,15 +169,17 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	public boolean control_cluster(List cs_group, List ds_group, String opID, int type) {
+	public boolean control_cluster(List<String> cs_group,
+			List<String> ds_group, String opID, int type) {
 		boolean ret = false;
-		if (!batch_control_ds(ds_group, opID, type) || !batch_control_cs(cs_group, opID, type))
+		if (!batch_control_ds(ds_group, opID, type)
+				|| !batch_control_cs(cs_group, opID, type))
 			ret = false;
 		else
 			ret = true;
 		return ret;
 	}
-	
+
 	public boolean clean_data(String machine) {
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh clean";
@@ -183,7 +190,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-	
+
 	public boolean clean_test_data(String machine, String path) {
 		boolean ret = false;
 		killall_tool_proc();
@@ -196,7 +203,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-	
+
 	public boolean batch_clean_test_data(List<String> machines, String path) {
 		boolean ret = true;
 		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
@@ -205,7 +212,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-	
+
 	public boolean clean_bin_tool(String machine) {
 		boolean ret = false;
 		killall_tool_proc();
@@ -231,7 +238,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-	
+
 	public boolean execute_tair_tool(String machine, String path) {
 		log.debug("start verify tool,run batchData");
 		boolean ret = false;
@@ -270,23 +277,24 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	public boolean batch_clean_data(List machines) {
+	public boolean batch_clean_data(List<String> machines) {
 		boolean ret = true;
-		for (Iterator it = machines.iterator(); it.hasNext();) {
+		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
 			if (!clean_data((String) it.next()))
 				ret = false;
 		}
 		return ret;
 	}
-	
-	public boolean reset_cluster(List csList, List dsList) {
+
+	public boolean reset_cluster(List<String> csList, List<String> dsList) {
 		boolean ret = false;
 		log.debug("stop and clean cluster!");
-		if (control_cluster(csList, dsList, FailOverBaseCase.stop, 1) && batch_clean_data(csList) && batch_clean_data(dsList))
+		if (control_cluster(csList, dsList, FailOverBaseCase.stop, 1)
+				&& batch_clean_data(csList) && batch_clean_data(dsList))
 			ret = true;
 		return ret;
 	}
-	
+
 	public int check_process(String machine, String prname) {
 		log.debug("check process " + prname + " on " + machine);
 		int ret = 0;
@@ -309,7 +317,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	public int check_keyword(String machine, String keyword, String logfile) {
 		int ret = 0;
 		String cmd = "grep \"" + keyword + "\" " + logfile + " |wc -l";
-		log.debug("check keyword:" + cmd + " on " + machine + " in file:" + logfile);
+		log.debug("check keyword:" + cmd + " on " + machine + " in file:"
+				+ logfile);
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0)
 			ret = -1;
@@ -347,10 +356,14 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            value which you want to change
 	 * @return
 	 */
-	public boolean modify_config_file(String machine, String confname, String key, String value) {
-		log.debug("change file:" + confname + " on " + machine + " key=" + key + " value=" + value);
+	public boolean modify_config_file(String machine, String confname,
+			String key, String value) {
+		log.debug("change file:" + confname + " on " + machine + " key=" + key
+				+ " value=" + value);
 		boolean ret = false;
-		String cmd = "sed -i \"s/" + key + "=.*$/" + key + "=" + value + "/\" " + confname + " && grep \"" + key + "=.*$\" " + confname + "|awk -F\"=\" \'{print $2}\'";
+		String cmd = "sed -i \"s/" + key + "=.*$/" + key + "=" + value + "/\" "
+				+ confname + " && grep \"" + key + "=.*$\" " + confname
+				+ "|awk -F\"=\" \'{print $2}\'";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0)
 			ret = false;
@@ -359,15 +372,17 @@ public class FailOverBaseCase extends BaseTestCase {
 			if (stdout.trim().equals(value))
 				ret = true;
 			else {
-                log.error(stdout.trim());
+				log.error(stdout.trim());
 				ret = false;
-            }
+			}
 		}
 		return ret;
 	}
-	
-	public boolean modify_key(String machine, String confname, String old, String now) {
-		log.debug("change key:" + confname + " on " + machine + " old=" + old + " now=" + now);
+
+	public boolean modify_key(String machine, String confname, String old,
+			String now) {
+		log.debug("change key:" + confname + " on " + machine + " old=" + old
+				+ " now=" + now);
 		boolean ret = false;
 		String cmd = "sed -i \"s/" + old + ".*$/" + now + "/\" " + confname
 				+ " && grep \"" + now + "\" " + confname;
@@ -378,9 +393,11 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-	
-	public boolean modify_group_name(String machine, String confname, String old, String now) {
-		log.debug("change group name:" + confname + " on " + machine + " old=" + old + " now=" + now);
+
+	public boolean modify_group_name(String machine, String confname,
+			String old, String now) {
+		log.debug("change group name:" + confname + " on " + machine + " old="
+				+ old + " now=" + now);
 		boolean ret = false;
 		String cmd = "sed -i \"s/" + old + ".*$/" + now + "]/\" " + confname
 				+ " && grep \"" + now + "\" " + confname;
@@ -391,10 +408,12 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	public boolean batch_modify(List machines, String confname, String key, String value) {
+
+	// /////////////////////////////////////////////////////////////////////////////////////////////
+	public boolean batch_modify(List<String> machines, String confname,
+			String key, String value) {
 		boolean ret = true;
-		for (Iterator it = machines.iterator(); it.hasNext();) {
+		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
 			if (!modify_config_file((String) it.next(), confname, key, value)) {
 				ret = false;
 				break;
@@ -405,30 +424,29 @@ public class FailOverBaseCase extends BaseTestCase {
 
 	public boolean shutoff_net(String machine1, String machine2) {
 		log.debug("shut off net between " + machine1 + " and " + machine2);
-		String cmd = "ssh root@localhost " + "\"/sbin/iptables -A OUTPUT -d " + machine2 +" -j DROP\"";
+		String cmd = "ssh root@localhost " + "\"/sbin/iptables -A OUTPUT -d "
+				+ machine2 + " -j DROP\"";
 		STAFResult result = executeShell(stafhandle, machine1, cmd);
 		if (result.rc != 0) {
 			return false;
-		}
-		else {
+		} else {
 			cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
 			result = executeShell(stafhandle, machine1, cmd);
 			if (result.rc != 0) {
 				return false;
 			}
 		}
-		cmd = "ssh root@localhost " + "\"/sbin/iptables -A INPUT -s " + machine2 +" -j DROP\"";
+		cmd = "ssh root@localhost " + "\"/sbin/iptables -A INPUT -s "
+				+ machine2 + " -j DROP\"";
 		result = executeShell(stafhandle, machine1, cmd);
 		if (result.rc != 0) {
 			return false;
-		}
-		else {
+		} else {
 			cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
 			result = executeShell(stafhandle, machine1, cmd);
 			if (result.rc != 0) {
 				return false;
-			}
-			else {
+			} else {
 				return true;
 			}
 		}
@@ -444,10 +462,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	public boolean batch_recover_net(List machines) {
+	public boolean batch_recover_net(List<String> machines) {
 		boolean ret = true;
-		for (Iterator it = machines.iterator(); it.hasNext();) {
-			if (!recover_net((String)it.next())) {
+		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
+			if (!recover_net((String) it.next())) {
 				ret = false;
 				break;
 			}
@@ -457,71 +475,83 @@ public class FailOverBaseCase extends BaseTestCase {
 
 	public boolean execute_tool_on_mac(String machine, String option) {
 		log.debug("start " + option + " on " + machine);
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/TairTool.conf", "actiontype", option))
+		if (!modify_config_file(machine, FailOverBaseCase.tair_bin
+				+ "tools/TairTool.conf", "actiontype", option))
 			fail("modify configure file failed");
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/TairTool.conf", "datasize", FailOverBaseCase.put_count))
+		if (!modify_config_file(machine, FailOverBaseCase.tair_bin
+				+ "tools/TairTool.conf", "datasize", FailOverBaseCase.put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file(machine, FailOverBaseCase.tair_bin+"tools/TairTool.conf", "filename", "read.kv"))
+		if (!modify_config_file(machine, FailOverBaseCase.tair_bin
+				+ "tools/TairTool.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		boolean ret = true;
-		String cmd = "cd " + FailOverBaseCase.tair_bin+ "tools/" + "&& ./batchData.sh";
+		String cmd = "cd " + FailOverBaseCase.tair_bin + "tools/"
+				+ "&& ./batchData.sh";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0)
 			ret = false;
 		return ret;
 	}
 
-	public void wait_tool_on_mac(String machine)
-	{
+	public void wait_tool_on_mac(String machine) {
 		log.error("start wait on " + machine);
-		int count=0;
-		while(check_process(machine, "TairTool")!=2)
-		{
+		int count = 0;
+		while (check_process(machine, "TairTool") != 2) {
 			waitto(16);
-			if(++count>150)break;
+			if (++count > 150)
+				break;
 		}
-		if(count>150)fail("wait time out on " + machine + "!");
+		if (count > 150)
+			fail("wait time out on " + machine + "!");
 		log.error("wait success on " + machine);
 	}
 
 	public boolean execute_clean_on_cs(String machine) {
 		log.debug("clean kv and log files on " + machine);
 		boolean ret = true;
-		String cmd = "cd " + FailOverBaseCase.tair_bin + "tools/" + "&& ./clean.sh";
+		String cmd = "cd " + FailOverBaseCase.tair_bin + "tools/"
+				+ "&& ./clean.sh";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0)
 			ret = false;
 		return ret;
 	}
 
-	public void wait_keyword_equal(String machine, String keyword, int expect_count)
-	{
-		int count=0;
-		while(check_keyword(machine, keyword, FailOverBaseCase.tair_bin+"logs/config.log")!=expect_count)
-		{
+	public void wait_keyword_equal(String machine, String keyword,
+			int expect_count) {
+		int count = 0;
+		while (check_keyword(machine, keyword, FailOverBaseCase.tair_bin
+				+ "logs/config.log") != expect_count) {
 			waitto(2);
-			if(++count>10)break;
+			if (++count > 10)
+				break;
 		}
-		if(count>10)fail("wish the count of " + keyword + " on " + machine + " not change, but changed!");
+		if (count > 10)
+			fail("wish the count of " + keyword + " on " + machine
+					+ " not change, but changed!");
 		log.error("the count of " + keyword + " on " + machine + " is right!");
 	}
 
-	public void wait_keyword_change(String machine, String keyword, int base_count)
-	{
-		int count=0;
-		while(check_keyword(machine, keyword, FailOverBaseCase.tair_bin+"logs/config.log")<=base_count)
-		{
+	public void wait_keyword_change(String machine, String keyword,
+			int base_count) {
+		int count = 0;
+		while (check_keyword(machine, keyword, FailOverBaseCase.tair_bin
+				+ "logs/config.log") <= base_count) {
 			waitto(2);
-			if(++count>10)break;
+			if (++count > 10)
+				break;
 		}
-		if(count>10)fail("wish the count of " + keyword + " on " + machine + " change, but not changed!");
+		if (count > 10)
+			fail("wish the count of " + keyword + " on " + machine
+					+ " change, but not changed!");
 		log.error("the count of " + keyword + " on " + machine + " is right!");
 	}
 
 	protected int getVerifySuccessful(String machine) {
 		int ret = 0;
-		String verify = "tail -10 " + FailOverBaseCase.tair_bin + "tools/" + "datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
+		String verify = "tail -10 " + FailOverBaseCase.tair_bin + "tools/"
+				+ "datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
 		log.debug("do verify on " + machine);
 		STAFResult result = executeShell(stafhandle, machine, verify);
 		if (result.rc != 0)
@@ -551,18 +581,20 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = false;
 		return ret;
 	}
-	
-//	public boolean control_netcut_sh(String machine, String opID) {
-//		log.error("Copy " + opID + " files on " + machine);
-//		boolean ret = true;
-//		String cmd = "cd " + FailOverBaseCase.test_bin + " && ./shift.sh " + opID;
-//		STAFResult result = executeShell(stafhandle, machine, cmd);
-//		if (result.rc != 0)
-//			ret = false;
-//		return ret;
-//	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	public boolean comment_line(String machine, String file, String keyword, String comment) {
+
+	// public boolean control_netcut_sh(String machine, String opID) {
+	// log.error("Copy " + opID + " files on " + machine);
+	// boolean ret = true;
+	// String cmd = "cd " + FailOverBaseCase.test_bin + " && ./shift.sh " +
+	// opID;
+	// STAFResult result = executeShell(stafhandle, machine, cmd);
+	// if (result.rc != 0)
+	// ret = false;
+	// return ret;
+	// }
+	// //////////////////////////////////////////////////////////////////////////////////////////////////
+	public boolean comment_line(String machine, String file, String keyword,
+			String comment) {
 		boolean ret = false;
 		String cmd = "sed -i \'s/.*" + keyword + "/" + comment + "&/\' " + file;
 		STAFResult result = executeShell(stafhandle, machine, cmd);
@@ -575,9 +607,11 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	public boolean uncomment_line(String machine, String file, String keyword, String comment) {
+	public boolean uncomment_line(String machine, String file, String keyword,
+			String comment) {
 		boolean ret = false;
-		String cmd = "sed -i \'s/" + comment + "*\\(.*" + keyword + ".*$\\)/\\1/\' " + file;
+		String cmd = "sed -i \'s/" + comment + "*\\(.*" + keyword
+				+ ".*$\\)/\\1/\' " + file;
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0)
 			ret = false;
@@ -588,11 +622,12 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	public boolean batch_uncomment(List machines, String confname, List keywords, String comment) {
+	public boolean batch_uncomment(List<String> machines, String confname,
+			List<String> keywords, String comment) {
 		boolean ret = true;
-		for (Iterator ms = machines.iterator(); ms.hasNext();) {
+		for (Iterator<String> ms = machines.iterator(); ms.hasNext();) {
 			String cms = (String) ms.next();
-			for (Iterator ks = keywords.iterator(); ks.hasNext();) {
+			for (Iterator<String> ks = keywords.iterator(); ks.hasNext();) {
 				if (!uncomment_line(cms, confname, (String) ks.next(), comment))
 					ret = false;
 			}
@@ -606,16 +641,15 @@ public class FailOverBaseCase extends BaseTestCase {
 	protected int getVerifySuccessful() {
 		int ret = 0;
 		String verify = "cd " + FailOverBaseCase.test_bin + " && ";
-//		verify += " tail -10 datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
+		// verify +=
+		// " tail -10 datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $3}\'";
 		verify += " grep \"Successful\" datadbg0.log |awk \'{print $7}\' |tail -1";
 		log.debug("do verify on local");
 		STAFResult result = executeShell(stafhandle, "local", verify);
-		if (result.rc != 0)
-		{
-			log.debug("get result "+result );
+		if (result.rc != 0) {
+			log.debug("get result " + result);
 			ret = -1;
-		}
-		else {
+		} else {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
@@ -626,23 +660,21 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-	
+
 	protected int getVerifySuccessful(String machine, String path) {
 		int ret = 0;
 		String verify = "cd " + path + " && ";
 		verify += " grep \"Successful\" datadbg0.log |awk \'{print $7}\' |tail -1";
 		log.debug("do verify on local");
 		STAFResult result = executeShell(stafhandle, machine, verify);
-		if (result.rc != 0)
-		{
-			log.debug("get result "+result );
+		if (result.rc != 0) {
+			log.debug("get result " + result);
 			ret = -1;
-		}
-		else {
+		} else {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
-                log.debug(machine + ": " + ret);
+				log.debug(machine + ": " + ret);
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
@@ -673,5 +705,5 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-	
+
 }
