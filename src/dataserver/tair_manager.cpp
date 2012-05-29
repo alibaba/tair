@@ -138,6 +138,374 @@
       return true;
     }
 
+    int tair_manager::prefix_puts(request_prefix_puts *request, int heart_version)
+    {
+      int rc = TAIR_RETURN_SUCCESS;
+      tair_keyvalue_map *kvmap = request->kvmap;
+      tair_keyvalue_map::iterator it = kvmap->begin();
+      uint32_t ndone = 0;
+      response_mreturn *resp = new response_mreturn();
+      if (!(request->server_flag & TAIR_SERVERFLAG_DUPLICATE)) {
+        while (it != kvmap->end()) {
+          data_entry *key = it->first;
+          data_entry value;
+          int version = key->data_meta.version;
+          item_meta_info meta;
+          int ret = get_meta(request->area, *key, meta);
+          if (version != 0  && ret == TAIR_RETURN_SUCCESS && version != meta.version) {
+            log_warn("version not match, old: %d, new: %d", meta.version, version);
+            rc = TAIR_RETURN_VERSION_ERROR;
+            data_entry *skey = new data_entry();
+            int prefix_size = key->get_prefix_size();
+            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+            resp->add_key_code(skey, rc);
+          }
+          ++it;
+        }
+      }
+      it = kvmap->begin();
+      if (rc != TAIR_RETURN_VERSION_ERROR) {
+        while (it != kvmap->end()) {
+          data_entry *key = it->first;
+          data_entry *value = it->second;
+          key->server_flag = request->server_flag;
+
+          uint64_t target_server_id = 0;
+          if (should_proxy(*key, target_server_id))
+          {
+            rc = TAIR_RETURN_SHOULD_PROXY;
+            break;
+          }
+
+          //item_meta_info kmeta = key->data_meta;
+          //item_meta_info vmeta = value->data_meta;
+          rc = put(request->area, *key, *value, key->data_meta.edate, NULL, heart_version);
+          //key->data_meta = kmeta;
+          //value->data_meta = vmeta;
+          if (rc == TAIR_RETURN_SUCCESS) {
+            ++ndone;
+          } else {
+            data_entry *skey = new data_entry();
+            int prefix_size = key->get_prefix_size();
+            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+            resp->add_key_code(skey, rc);
+          }
+          ++it;
+        }
+      }
+
+      if (ndone > 0 && ndone < request->key_count) {
+        rc = TAIR_RETURN_PARTIAL_SUCCESS;
+      } else if (ndone == 0) {
+        //rc = TAIR_RETURN_FAILED;
+      }
+      resp->set_code(rc);
+      resp->config_version = heart_version;
+      resp->setChannelId(request->getChannelId());
+
+      int bucket_number = get_bucket_number(*request->kvmap->begin()->first);
+
+      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
+        resp->server_flag = TAIR_SERVERFLAG_DUPLICATE; //~ this works only on the sending side, 'cause resp won't encode server_flag
+        resp->bucket_id = bucket_number;
+        resp->server_id = local_server_ip::ip;
+        resp->packet_id = request->packet_id;
+      }
+      if (rc == TAIR_RETURN_SUCCESS) {
+        if ((request->server_flag & TAIR_SERVERFLAG_DUPLICATE) == 0) {
+          vector<uint64_t> slaves;
+          get_slaves(request->server_flag, bucket_number, slaves);
+          if (!slaves.empty()) {
+            delete resp;
+            resp = NULL;
+            log_debug("duplicate prefix_puts request to bucket %d", bucket_number);
+            rc = duplicator->duplicate_data(bucket_number, request, slaves, heart_version);
+          }
+        }
+      }
+      if (resp != NULL) {
+        if (request->get_connection()->postPacket(resp) == false) {
+          delete resp;
+        }
+      }
+      return rc;
+    }
+
+    int tair_manager::prefix_removes(request_prefix_removes *request, int heart_version)
+    {
+      int rc = TAIR_RETURN_SUCCESS;
+      response_mreturn *resp = new response_mreturn();
+
+      data_entry *key = request->key == NULL ?
+        *request->key_list->begin() : request->key;
+      int32_t bucket_number = get_bucket_number(*key);
+
+      if (request->key != NULL) {
+        key->server_flag = request->server_flag;
+        uint64_t target_server_id = 0L;
+        do {
+          if (should_proxy(*key, target_server_id)) {
+            rc = TAIR_RETURN_SHOULD_PROXY;
+            break; //~ would not do proxy
+          }
+          int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
+          if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
+            rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+            break;
+          }
+
+          item_meta_info meta = key->data_meta;
+          rc = remove(request->area, *key, NULL, heart_version);
+          key->data_meta = meta;
+          if (rc != TAIR_RETURN_SUCCESS) {
+            data_entry *skey = new data_entry();
+            int32_t prefix_size = key->get_prefix_size();
+            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+            resp->add_key_code(skey, rc);
+          }
+        } while (false);
+      } else if (request->key_list != NULL) {
+        tair_dataentry_set::iterator itr = request->key_list->begin();
+        size_t ndone = 0;
+        while (itr != request->key_list->end()) {
+          data_entry *key = *itr;
+          key->server_flag = request->server_flag;
+          uint64_t target_server_id = 0L;
+          if (should_proxy(*key, target_server_id)) {
+            rc = TAIR_RETURN_SHOULD_PROXY;
+            break; //~ would not do proxy
+          }
+          int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
+          if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
+            rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+            break;
+          }
+
+          item_meta_info meta = key->data_meta;
+          rc = remove(request->area, *key, NULL, heart_version);
+          key->data_meta = meta;
+          if (rc == TAIR_RETURN_SUCCESS) {
+            ++ndone;
+          } else {
+            data_entry *skey = new data_entry();
+            int32_t prefix_size = key->get_prefix_size();
+            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+            resp->add_key_code(skey, rc);
+          }
+          ++itr;
+        }
+        if (ndone > 0 && ndone < request->key_count) {
+          rc = TAIR_RETURN_PARTIAL_SUCCESS;
+        } else if (ndone == 0) {
+          //rc = TAIR_RETURN_FAILED;
+        }
+      }
+
+      resp->set_code(rc);
+      resp->config_version = heart_version;
+      resp->setChannelId(request->getChannelId());
+
+      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
+        resp->server_flag = TAIR_SERVERFLAG_DUPLICATE;
+        resp->bucket_id = bucket_number;
+        resp->server_id = local_server_ip::ip;
+        resp->packet_id = request->packet_id;
+      }
+      if (rc == TAIR_RETURN_SUCCESS) {
+        if ((request->server_flag & TAIR_SERVERFLAG_DUPLICATE) == 0) {
+          vector<uint64_t> slaves;
+          get_slaves(request->server_flag, bucket_number, slaves);
+          if (!slaves.empty()) {
+            delete resp;
+            resp = NULL;
+            log_debug("duplicate prefix removes request to bucket %d", bucket_number);
+            rc = duplicator->duplicate_data(bucket_number, request, slaves, heart_version);
+          }
+        }
+      }
+      if (resp != NULL) {
+        if (!request->get_connection()->postPacket(resp)) {
+          delete resp;
+        }
+      }
+      return rc;
+    }
+
+    int tair_manager::prefix_hides(request_prefix_hides *request, int heart_version)
+    {
+      int rc = TAIR_RETURN_SUCCESS;
+      response_mreturn *resp = new response_mreturn();
+
+      data_entry *key = request->key == NULL ?
+        *request->key_list->begin() : request->key;
+      int32_t bucket_number = get_bucket_number(*key);
+
+      if (request->key != NULL) {
+        key->server_flag = request->server_flag;
+        uint64_t target_server_id = 0L;
+        do {
+          if (should_proxy(*key, target_server_id)) {
+            rc = TAIR_RETURN_SHOULD_PROXY;
+            break; //~ would not do proxy
+          }
+          int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
+          if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
+            rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+            break;
+          }
+
+          item_meta_info meta = key->data_meta;
+          rc = hide(request->area, *key, NULL, heart_version);
+          key->data_meta = meta;
+          if (rc != TAIR_RETURN_SUCCESS) {
+            data_entry *skey = new data_entry();
+            int32_t prefix_size = key->get_prefix_size();
+            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+            resp->add_key_code(skey, rc);
+          }
+        } while (false);
+      } else if (request->key_list != NULL) {
+        tair_dataentry_set::iterator itr = request->key_list->begin();
+        size_t ndone = 0;
+        while (itr != request->key_list->end()) {
+          data_entry *key = *itr;
+          key->server_flag = request->server_flag;
+          uint64_t target_server_id = 0L;
+          if (should_proxy(*key, target_server_id)) {
+            rc = TAIR_RETURN_SHOULD_PROXY;
+            break; //~ would not do proxy
+          }
+          int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
+          if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
+            rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+            break;
+          }
+
+          item_meta_info meta = key->data_meta;
+          rc = hide(request->area, *key, NULL, heart_version);
+          key->data_meta = meta;
+          if (rc == TAIR_RETURN_SUCCESS) {
+            ++ndone;
+          } else {
+            data_entry *skey = new data_entry();
+            int32_t prefix_size = key->get_prefix_size();
+            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+            resp->add_key_code(skey, rc);
+          }
+          ++itr;
+        }
+        if (ndone > 0 && ndone < request->key_count) {
+          rc = TAIR_RETURN_PARTIAL_SUCCESS;
+        } else if (ndone == 0) {
+          //rc = TAIR_RETURN_FAILED;
+        }
+      }
+
+      resp->set_code(rc);
+      resp->config_version = heart_version;
+      resp->setChannelId(request->getChannelId());
+
+      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
+        resp->server_flag = TAIR_SERVERFLAG_DUPLICATE;
+        resp->bucket_id = bucket_number;
+        resp->server_id = local_server_ip::ip;
+        resp->packet_id = request->packet_id;
+      }
+      if (rc == TAIR_RETURN_SUCCESS) {
+        if ((request->server_flag & TAIR_SERVERFLAG_DUPLICATE) == 0) {
+          vector<uint64_t> slaves;
+          get_slaves(request->server_flag, bucket_number, slaves);
+          if (!slaves.empty()) {
+            delete resp;
+            resp = NULL;
+            log_debug("duplicate prefix removes request to bucket %d", bucket_number);
+            rc = duplicator->duplicate_data(bucket_number, request, slaves, heart_version);
+          }
+        }
+      }
+      if (resp != NULL) {
+        if (!request->get_connection()->postPacket(resp)) {
+          delete resp;
+        }
+      }
+      return rc;
+    }
+
+    int tair_manager::prefix_incdec(request_prefix_incdec *request, int heart_version)
+    {
+      int rc = TAIR_RETURN_SUCCESS;
+      response_prefix_incdec *resp = new response_prefix_incdec();
+      size_t ndone = 0;
+      request_prefix_incdec::key_counter_map_t *key_counter_map = request->key_counter_map;
+      request_prefix_incdec::key_counter_map_t::iterator it = key_counter_map->begin();
+      int32_t bucket_number = 0;
+      while (it != key_counter_map->end()) {
+        data_entry *key = it->first;
+        key->server_flag = request->server_flag;
+        counter_wrapper *wrapper = it->second;
+        int ret_value;
+        uint64_t target_server_id;
+        if (should_proxy(*key, target_server_id)) {
+          rc = TAIR_RETURN_SHOULD_PROXY;
+          break;
+        }
+        bucket_number = get_bucket_number(*key);
+        int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
+        if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
+          rc = TAIR_RETURN_WRITE_NOT_ON_MASTER;
+          break;
+        }
+        rc = add_count(request->area, *key, wrapper->count,
+            wrapper->init_value, &ret_value, wrapper->expire, NULL, heart_version);
+
+        data_entry *skey = new data_entry();
+        int prefix_size = key->get_prefix_size();
+        skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+        if (rc == TAIR_RETURN_SUCCESS) {
+          resp->add_key_value(skey, ret_value);
+          ++ndone;
+        } else {
+          resp->add_key_code(skey, rc);
+        }
+        ++it;
+      }
+      if (ndone == request->key_count) {
+        rc = TAIR_RETURN_SUCCESS;
+      } else if (ndone > 0) {
+        rc = TAIR_RETURN_PARTIAL_SUCCESS;
+      } else {
+        //rc = TAIR_RETURN_FAILED;
+      }
+
+      resp->set_code(rc);
+      resp->config_version = heart_version;
+      resp->setChannelId(request->getChannelId());
+      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
+        resp->server_flag = TAIR_SERVERFLAG_DUPLICATE;
+        resp->bucket_id = bucket_number;
+        resp->server_id = local_server_ip::ip;
+        resp->packet_id = request->packet_id;
+      }
+      if (rc == TAIR_RETURN_SUCCESS) {
+        if ((request->server_flag & TAIR_SERVERFLAG_DUPLICATE) == 0) {
+          vector<uint64_t> slaves;
+          get_slaves(request->server_flag, bucket_number, slaves);
+          if (!slaves.empty()) {
+            delete resp;
+            resp = NULL;
+            log_debug("duplicate prefix inc/dec request to bucekt %d", bucket_number);
+            rc = duplicator->duplicate_data(bucket_number, request, slaves, heart_version);
+          }
+        }
+      }
+      if (resp != NULL) {
+        if (!request->get_connection()->postPacket(resp)) {
+          delete resp;
+        }
+      }
+      return rc;
+    }
+
     int tair_manager::put(int area, data_entry &key, data_entry &value, int expire_time,base_packet *request,int heart_vesion)
     {
       if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
@@ -815,6 +1183,30 @@
 
     }
 
+    int tair_manager::get_meta(int area, data_entry &key, item_meta_info &meta)
+    {
+      bool has_merged = key.has_merged;
+      if (!has_merged) {
+        key.merge_area(area);
+      }
+
+      int rc = storage_mgr->get_meta(key, meta);
+      if (!has_merged) {
+        key.decode_area();
+      }
+      if (rc != TAIR_RETURN_NOT_SUPORTED) {
+        return rc;
+      }
+      //~ following would be expensive
+      data_entry data;
+      item_meta_info kmeta = key.data_meta;
+      rc = storage_mgr->get(area, key, data);
+      meta = key.data_meta;
+      key.data_meta = kmeta;
+
+      return rc;
+    }
+
     bool tair_manager::is_migrating()
     {
       return migrate_mgr->is_migrating();
@@ -1053,9 +1445,9 @@
       if (localmode || table_mgr->get_copy_count() == 1) return;
 
       if (server_flag == TAIR_SERVERFLAG_PROXY) {
-        slaves = table_mgr->get_slaves(bucket_number, true);
+        table_mgr->get_slaves(bucket_number, true).swap(slaves);
       } else {
-        slaves = (table_mgr->get_slaves(bucket_number, migrate_done_set.test(bucket_number)));
+        table_mgr->get_slaves(bucket_number, migrate_done_set.test(bucket_number)).swap(slaves);;
       }
     }
 

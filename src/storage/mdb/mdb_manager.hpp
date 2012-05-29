@@ -78,6 +78,8 @@ namespace tair {
 
     void get_stats(tair_stat * stat);
 
+    int get_meta(data_entry &key, item_meta_info &meta);
+
     void set_area_quota(int area, uint64_t quota);
     void set_area_quota(std::map<int, uint64_t> &quota_map);
 

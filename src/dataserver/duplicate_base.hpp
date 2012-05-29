@@ -17,6 +17,10 @@
 #include <vector>
 #include "base_packet.hpp"
 #include "data_entry.hpp"
+#include "prefix_puts_packet.hpp"
+#include "prefix_removes_packet.hpp"
+#include "prefix_hides_packet.hpp"
+#include "prefix_incdec_packet.hpp"
 
 namespace tair{
    class base_duplicator {
@@ -32,6 +36,19 @@ namespace tair{
                           int bucket_number, const std::vector<uint64_t>& des_server_ids,base_packet *request,int version)=0;
       virtual int direct_send(int area, const data_entry* key, const data_entry* value,int  expire_time,
             int bucket_number, const vector<uint64_t>& des_server_ids,uint32_t max_packet_id)=0;
+
+      virtual int duplicate_data(int32_t bucket_number, request_prefix_puts *request, vector<uint64_t> &slaves, int version) {
+        return TAIR_RETURN_SUCCESS;
+      }
+      virtual int duplicate_data(int32_t bucket_number, request_prefix_removes *request, vector<uint64_t> &slaves, int version) {
+        return TAIR_RETURN_SUCCESS;
+      }
+      virtual int duplicate_data(int32_t bucket_number, request_prefix_hides *request, vector<uint64_t> &slaves, int version) {
+        return TAIR_RETURN_SUCCESS;
+      }
+      virtual int duplicate_data(int32_t bucket_number, request_prefix_incdec *request, vector<uint64_t> &slaves, int version) {
+        return TAIR_RETURN_SUCCESS;
+      }
    };
 }
 #endif

@@ -26,6 +26,10 @@
 #include "BlockQueueEx.hpp"
 #include "put_packet.hpp"
 #include "scoped_wrlock.hpp"
+#include "prefix_puts_packet.hpp"
+#include "prefix_removes_packet.hpp"
+#include "prefix_hides_packet.hpp"
+#include "response_mreturn_packet.hpp"
 
 #include <queue>
 #include <map>
@@ -100,6 +104,7 @@ namespace tair {
           return TAIR_RETURN_DUPLICATE_REACK;
         }
 
+        //? what if the ack order is not sequential
         if(_acked==MAX_DUP_COUNT)
         {
           return 0;
@@ -185,6 +190,13 @@ namespace tair {
       int direct_send(int area, const data_entry* key, const data_entry* value,int  expire_time,
           int bucket_number, const vector<uint64_t>& des_server_ids,uint32_t max_packet_id);
 
+      int duplicate_data(int32_t bucket_number, request_prefix_puts *request, vector<uint64_t> &slaves, int version);
+      int duplicate_data(int32_t bucket_number, request_prefix_removes *request, vector<uint64_t> &slaves, int version);
+      int duplicate_data(int32_t bucket_number, request_prefix_hides *request, vector<uint64_t> &slaves, int version);
+      int duplicate_data(int32_t bucket_number, request_prefix_incdec *request, vector<uint64_t> &slaves, int version);
+
+      template <typename T>
+      int do_duplicate_data(int32_t bucket_number, T *request, vector<uint64_t> &slaves, int version);
 
       bool has_bucket_duplicate_done(int bucket_number);
 
@@ -205,5 +217,48 @@ namespace tair {
 
       atomic_t packet_id_creater;
   };
+
+  template <typename T>
+  int dup_sync_sender_manager::do_duplicate_data(int32_t bucket_number, T *request, vector<uint64_t> &slaves, int version)
+  {
+    size_t copy_count = slaves.size();
+    uint32_t packet_id = atomic_add_return(copy_count, &packet_id_creater);
+    if (packet_id == 0) {
+      atomic_add_return(copy_count, &packet_id_creater);
+    }
+
+    int ret = packets_mgr.addWaitNode(0, NULL, NULL, bucket_number, slaves, request, packet_id, version);
+    if (ret != TAIR_RETURN_SUCCESS) {
+      return ret;
+    }
+
+    for (size_t i = 0; i < copy_count; ++i) {
+      T *packet = NULL;
+      if (copy_count < 2) {
+        packet = new T;
+        packet->swap(*request);
+      } else {
+        packet = new T(*request);
+      }
+      packet->packet_id = packet_id;
+      packet->server_flag = TAIR_SERVERFLAG_DUPLICATE;
+      uint64_t des_svr = slaves[i];
+      std::string ip_str = tbsys::CNetUtil::addrToString(des_svr);
+      log_debug("duplicate packet %u to %s", packet_id, ip_str.c_str());
+      if (conn_mgr->sendPacket(des_svr, packet, NULL, (void*)((long)packet_id), true) == false) {
+        log_error("duplicate packet %u to %s busy", packet_id, ip_str.c_str());
+        delete packet;
+        ret = TAIR_RETURN_DUPLICATE_BUSY;
+        break;
+      }
+    }
+
+    if (ret != TAIR_RETURN_SUCCESS) {
+      packets_mgr.clear_waitnode(packet_id);
+      return ret;
+    }
+
+    return TAIR_DUP_WAIT_RSP;
+  }
 }
 #endif

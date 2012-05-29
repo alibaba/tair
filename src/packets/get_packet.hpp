@@ -189,9 +189,10 @@ namespace tair {
         }
       }
 
-      void swap(request_get &rhs) {
+      virtual void swap(request_get &rhs) {
         if (this == &rhs)
           return ;
+        std::swap(server_flag, rhs.server_flag);
         std::swap(area, rhs.area);
         std::swap(key_count, rhs.key_count);
         std::swap(key, rhs.key);

@@ -676,6 +676,26 @@ namespace tair {
     }
   }
 
+  int mdb_manager::get_meta(data_entry &key, item_meta_info &meta)
+  {
+    int ret = TAIR_RETURN_DATA_NOT_EXIST;
+    mdb_item *it = NULL;
+    bool expired = false;
+    if (!(expired = remove_if_expired(key, it)) && it != NULL) {
+      meta.keysize = it->key_len;
+      meta.valsize = it->data_len;
+      meta.version = it->version;
+      meta.edate = it->exptime;
+      meta.mdate = it->update_time;
+      meta.flag = ITEM_FLAGS(it->item_id);
+      ret = TAIR_RETURN_SUCCESS;
+    } else if (expired) {
+      ret = TAIR_RETURN_DATA_EXPIRED;
+    }
+
+    return ret;
+  }
+
   bool mdb_manager::init_buckets(const vector<int> &buckets)
   {
     return true;

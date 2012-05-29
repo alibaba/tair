@@ -118,7 +118,7 @@ namespace tair{
       if (0 == ret)
       {
         changeBucketCount(bucket_number, -1);
-        *ppNode= itr->second; 
+        *ppNode= itr->second;
         m_PkgWaitMap[index].erase(itr);
       }
       else
@@ -146,7 +146,6 @@ namespace tair{
       CDuplicatPkgMapIter itr = m_PkgWaitMap[index].find(max_packet_id);
       if (itr == m_PkgWaitMap[index].end()) return 0;
     }
-
     //now we should clear it.
     clear_waitnode(max_packet_id);
     return TAIR_RETURN_DUPLICATE_ACK_TIMEOUT;
@@ -233,6 +232,7 @@ namespace tair{
       int bucket_number, const vector<uint64_t>& des_server_ids, uint32_t max_packet_id)
   {
     unsigned _copy_count = des_server_ids.size();
+    //? what if `max_packet_id` is rounded up to 0, up there in `duplicate_data`
     if (0 == max_packet_id)
       max_packet_id = atomic_add_return(_copy_count, &packet_id_creater);
 
@@ -259,7 +259,7 @@ namespace tair{
 
       //and send it to slave
       log_debug("duplicate packet %d sent: %s", tmp_packet->packet_id,tbsys::CNetUtil::addrToString(des_server_ids[i]).c_str());
-	    if (conn_mgr->sendPacket(des_server_ids[i], tmp_packet, NULL, (void*)((long)max_packet_id), true) == false) 
+      if (conn_mgr->sendPacket(des_server_ids[i], tmp_packet, NULL, (void*)((long)max_packet_id), true) == false)
       {
         //duplicate sendpacket error.
         log_error("duplicate packet %d faile send: %s",
@@ -269,6 +269,26 @@ namespace tair{
       }
     }
     return TAIR_RETURN_SUCCESS;
+  }
+
+  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_puts *request, vector<uint64_t> &slaves, int version)
+  {
+    return do_duplicate_data(bucket_number, request, slaves, version);
+  }
+
+  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_removes *request, vector<uint64_t> &slaves, int version)
+  {
+    return do_duplicate_data(bucket_number, request, slaves, version);
+  }
+
+  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_hides *request, vector<uint64_t> &slaves, int version)
+  {
+    return do_duplicate_data(bucket_number, request, slaves, version);
+  }
+
+  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_incdec *request, vector<uint64_t> &slaves, int version)
+  {
+    return do_duplicate_data(bucket_number, request, slaves, version);
   }
 
   bool dup_sync_sender_manager::has_bucket_duplicate_done(int bucketNumber)
@@ -314,7 +334,7 @@ namespace tair{
           resp->value = pNode->inc_value_result ;
           resp->config_version = pNode->conf_version;
           resp->setChannelId(pNode->chid);
-          if (pNode->conn->postPacket(resp) == false) 
+          if (pNode->conn->postPacket(resp) == false)
           {
             delete resp;
             rv = TAIR_RETURN_DUPLICATE_SEND_ERROR;
@@ -379,6 +399,45 @@ namespace tair{
       }
 
       resp->free();
+    } else if ( pcode == TAIR_RESP_MRETURN_PACKET) {
+      response_mreturn *resp = dynamic_cast<response_mreturn*>(packet);
+      if (resp == NULL) {
+        log_error("bad packet %d", pcode);
+      } else {
+        log_debug("duplicate response packet %u, bucket = %d, server = %s", resp->packet_id, resp->bucket_id, tbsys::CNetUtil::addrToString(resp->server_id).c_str());
+        CPacket_wait_Nodes *pnode = NULL;
+        int ret = packets_mgr.doResponse(resp->bucket_id, resp->server_id, resp->packet_id, &pnode);
+        if (ret == TAIR_RETURN_SUCCESS && pnode != NULL) {
+          resp->server_flag = TAIR_SERVERFLAG_CLIENT;
+          resp->setChannelId(pnode->chid);
+          resp->config_version = pnode->conf_version;
+          if (pnode->conn->postPacket(resp) == false) {
+            delete resp;
+            ret = TAIR_RETURN_DUPLICATE_SEND_ERROR;
+          }
+        } else {
+          delete resp;
+        }
+      }
+    } else if (pcode == TAIR_RESP_PREFIX_INCDEC_PACKET) {
+      response_prefix_incdec *resp = dynamic_cast<response_prefix_incdec*>(packet);
+      if (resp == NULL) {
+        log_error("bad packet %d", pcode);
+      } else {
+        log_debug("duplicate response packet %u, bucket = %d, server = %s",
+            resp->packet_id, resp->bucket_id, tbsys::CNetUtil::addrToString(resp->server_id).c_str());
+        CPacket_wait_Nodes *pnode = NULL;
+        int ret = packets_mgr.doResponse(resp->bucket_id, resp->server_id, resp->packet_id, &pnode);
+        if (ret == TAIR_RETURN_SUCCESS && pnode != NULL) {
+          resp->server_flag = TAIR_SERVERFLAG_CLIENT;
+          resp->setChannelId(pnode->chid);
+          resp->config_version = pnode->conf_version;
+          if (!pnode->conn->postPacket(resp)) {
+            delete resp;
+            ret = TAIR_RETURN_DUPLICATE_SEND_ERROR;
+          }
+        }
+      }
     } else {
       log_warn("unknow packet! pcode: %d", pcode);
       packet->free();

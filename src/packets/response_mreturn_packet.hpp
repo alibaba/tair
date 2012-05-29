@@ -60,6 +60,11 @@ namespace tair {
           ++it;
         }
       }
+      if (server_flag != TAIR_SERVERFLAG_CLIENT) {
+        output->writeInt32(bucket_id);
+        output->writeInt32(packet_id);
+        output->writeInt64(server_id);
+      }
       return true;
     }
 
@@ -83,6 +88,9 @@ namespace tair {
           key_code_map->insert(make_pair(key, rc));
         }
       }
+      bucket_id = input->readInt32();
+      packet_id = input->readInt32();
+      server_id = input->readInt64();
       return true;
     }
 
@@ -126,6 +134,9 @@ namespace tair {
     uint32_t config_version;
     char msg[128];
     int key_count;
+    uint64_t server_id;
+    uint32_t packet_id;
+    int32_t  bucket_id;
     key_code_map_t *key_code_map;
   private:
     response_mreturn(const response_mreturn&);

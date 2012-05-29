@@ -71,7 +71,12 @@ AC_ARG_WITH([ldb],
 	   )
 AM_CONDITIONAL([WITH_LDB],[test x$with_ldb = xyes])
 AX_BOOST([1.30.0],,exit 1)
-
+AC_CHECK_LIB(readline, readline,
+             [
+              CXXFLAGS="${CXXFLAGS} -DHAVE_LIBREADLINE"
+              with_readline="yes"
+              ],, -ltermcap)
+AM_CONDITIONAL([WITH_READLINE], [test x$with_readline = xyes])
 
 TS_CHECK_TCMALLOC
 

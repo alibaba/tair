@@ -247,102 +247,24 @@ namespace tair {
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
-
       int rc = 0;
-      plugin::plugins_root* plugin_root = NULL;
-      uint64_t target_server_id = 0;
+      data_entry key = request->key == NULL ?
+        **(request->key_list->begin()) : *request->key;
+      plocker.lock(key);
+      rc = tair_mgr->prefix_hides(request, heart_beat->get_client_version());
+      plocker.unlock(key);
+      if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+        log_warn("prefix hides duplicate busy");
+        response_mreturn *resp = new response_mreturn();
+        resp->config_version = heart_beat->get_client_version();
+        resp->setChannelId(request->getChannelId());
+        resp->set_code(rc);
+        if (request->get_connection()->postPacket(resp) == false) {
+          delete resp;
+        }
+      }
+
       send_return = false;
-      response_mreturn *resp = new response_mreturn();
-
-      if (request->key_list != NULL) {
-        tair_dataentry_set *key_list = request->key_list;
-        tair_dataentry_set::iterator it = key_list->begin();
-        data_entry *mkey = *it;
-        plocker.lock(*mkey);
-        uint32_t ndone = 0;
-        while (it != request->key_list->end()) {
-          PROFILER_BEGIN("do request plugin");
-          int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-              TAIR_REQ_PREFIX_HIDES_PACKET, request->area, *it, NULL, plugin_root);
-          PROFILER_END();
-          if (tair_mgr->should_proxy(**it, target_server_id)) {
-            rc = TAIR_RETURN_SHOULD_PROXY;
-            break;
-          }
-          if (plugin_ret < 0) {
-            log_error("plugin return %d, skip excute", plugin_ret);
-            rc = TAIR_RETURN_PLUGIN_ERROR;
-          } else {
-            PROFILER_BEGIN("do prefix hides");
-            rc = tair_mgr->hide(request->area, **it, request, heart_beat->get_client_version());
-            PROFILER_END();
-            PROFILER_BEGIN("do response plugin");
-            tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-                TAIR_REQ_PREFIX_HIDES_PACKET, request->area, *it, NULL, plugin_root);
-            PROFILER_END();
-          }
-          if (rc == TAIR_RETURN_SUCCESS) {
-            ++ndone;
-          } else {
-            data_entry *skey = new data_entry();
-            int prefix_size = (*it)->get_prefix_size();
-            skey->set_data((*it)->get_data() + prefix_size, (*it)->get_size() - prefix_size);
-            resp->add_key_code(skey, rc);
-          }
-          ++it;
-        }
-        plocker.unlock(*mkey);
-        if (ndone > 0 && ndone < request->key_count) {
-          rc = TAIR_RETURN_PARTIAL_SUCCESS;
-        } else if (ndone == 0) {
-          //rc = rc;
-        }
-      } else if (request->key != NULL) {
-        PROFILER_START("prefix hides operation start");
-        request->key->server_flag = request->server_flag;
-        data_entry *mkey = request->key;
-        plocker.lock(*mkey);
-        do {
-          if (tair_mgr->should_proxy(*request->key, target_server_id)) {
-            rc = TAIR_RETURN_SHOULD_PROXY;
-            break;
-          } else {
-            PROFILER_BEGIN("do request plugin");
-            int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-                TAIR_REQ_PREFIX_HIDES_PACKET, request->area, request->key, NULL, plugin_root);
-            PROFILER_END();
-            if (plugin_ret < 0) {
-              log_error("plugin return %d, skip excute", plugin_ret);
-              rc = TAIR_RETURN_PLUGIN_ERROR;
-            }else {
-              PROFILER_BEGIN("do prefix hides");
-              rc = tair_mgr->hide(request->area, *(request->key),request,heart_beat->get_client_version());
-              PROFILER_END();
-
-              PROFILER_BEGIN("do response plugin");
-              tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-                  TAIR_REQ_PREFIX_HIDES_PACKET, request->area, (request->key), NULL, plugin_root);
-              PROFILER_END();
-            }
-            PROFILER_END();
-          }
-          if (rc != TAIR_RETURN_SUCCESS) {
-            data_entry *skey = new data_entry();
-            int prefix_size = request->key->get_prefix_size();
-            skey->set_data(request->key->get_data() + prefix_size, request->key->get_size() - prefix_size);
-            resp->add_key_code(skey, rc);
-          }
-        } while (false);
-        plocker.unlock(*mkey);
-      }
-      PROFILER_DUMP();
-      PROFILER_STOP();
-      resp->config_version = heart_beat->get_client_version();
-      resp->setChannelId(request->getChannelId());
-      resp->set_code(rc);
-      if (request->get_connection()->postPacket(resp) == false) {
-        delete resp;
-      }
       return rc;
    }
 
@@ -961,65 +883,23 @@ namespace tair {
       return TAIR_RETURN_SERVER_CAN_NOT_WORK;
     }
     if (request->key_count <= 0) {
-      log_error("prefix mput key count not greater than zero");
+      log_error("prefix puts key count not greater than zero");
       return TAIR_RETURN_ITEMSIZE_ERROR;
     }
-    tair_keyvalue_map *kvmap = request->kvmap;
-    tair_keyvalue_map::iterator it = kvmap->begin();
-    data_entry *mkey = it->first;
-    plocker.lock(*mkey);
-    uint32_t ndone = 0;
-    response_mreturn *resp = new response_mreturn();
-    while (it != kvmap->end()) {
-      data_entry *key = it->first;
-      data_entry value;
-      int version = key->data_meta.version;
-      item_meta_info meta = key->data_meta;
-      tair_mgr->get(request->area, *key, value); // any method to get meta info only?
-      if (version != 0 && version != key->data_meta.version) {
-        rc = TAIR_RETURN_VERSION_ERROR;
-        data_entry *skey = new data_entry();
-        int prefix_size = key->get_prefix_size();
-        skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
-        resp->add_key_code(skey, rc);
+    tair_keyvalue_map::iterator it = request->kvmap->begin();
+    data_entry mkey = *it->first;
+    plocker.lock(mkey);
+    rc = tair_mgr->prefix_puts(request, heart_beat->get_client_version());
+    plocker.unlock(mkey);
+    if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+      log_warn("prefix puts duplicate busy");
+      response_mreturn *resp = new response_mreturn();
+      resp->set_code(rc);
+      resp->setChannelId(request->getChannelId());
+      resp->config_version = heart_beat->get_client_version();
+      if (request->get_connection()->postPacket(resp) == false) {
+        delete resp;
       }
-      key->data_meta = meta;
-      ++it;
-    }
-    it = kvmap->begin();
-    if (rc != TAIR_RETURN_VERSION_ERROR) {
-      while (it != kvmap->end()) {
-        data_entry *key = it->first;
-        data_entry *value = it->second;
-
-        uint64_t target_server_id = 0;
-        if (tair_mgr->should_proxy(*key, target_server_id))
-        {
-          rc = TAIR_RETURN_SHOULD_PROXY;
-          break;
-        }
-
-        rc = tair_mgr->put(request->area, *key, *value, key->data_meta.edate, request, heart_beat->get_client_version());
-        if (rc == TAIR_RETURN_SUCCESS) {
-          ++ndone;
-        } else {
-          data_entry *skey = new data_entry();
-          int prefix_size = key->get_prefix_size();
-          skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
-          resp->add_key_code(skey, rc);
-        }
-        ++it;
-      }
-    }
-    plocker.unlock(*mkey);
-    if (ndone > 0 && ndone < request->key_count) {
-      rc = TAIR_RETURN_PARTIAL_SUCCESS;
-    }
-    resp->set_code(rc);
-    resp->config_version = heart_beat->get_client_version();
-    resp->setChannelId(request->getChannelId());
-    if (request->get_connection()->postPacket(resp) == false) {
-      delete resp;
     }
     send_return = false;
     return rc;
@@ -1030,172 +910,47 @@ namespace tair {
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
-
       int rc = 0;
-      plugin::plugins_root* plugin_root = NULL;
-      uint64_t target_server_id = 0;
+      data_entry key = request->key == NULL ?
+        **(request->key_list->begin()) : *request->key;
+      plocker.lock(key);
+      rc = tair_mgr->prefix_removes(request, heart_beat->get_client_version());
+      plocker.unlock(key);
+      if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+        log_warn("prefix removes duplicate busy");
+        response_mreturn *resp = new response_mreturn();
+        resp->config_version = heart_beat->get_client_version();
+        resp->setChannelId(request->getChannelId());
+        resp->set_code(rc);
+        if (request->get_connection()->postPacket(resp) == false) {
+          delete resp;
+        }
+      }
+
       send_return = false;
-      response_mreturn *resp = new response_mreturn();
-
-      if (request->key_list != NULL) {
-        tair_dataentry_set *key_list = request->key_list;
-        tair_dataentry_set::iterator it = key_list->begin();
-        uint32_t ndone = 0;
-        data_entry *mkey = *it;
-        plocker.lock(*mkey);
-        while (it != request->key_list->end()) {
-          PROFILER_BEGIN("do request plugin");
-          int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-              TAIR_REQ_PREFIX_REMOVES_PACKET, request->area, *it, NULL, plugin_root);
-          PROFILER_END();
-          if (tair_mgr->should_proxy(**it, target_server_id)) {
-            rc = TAIR_RETURN_SHOULD_PROXY;
-            break;
-          }
-          if (plugin_ret < 0) {
-            log_error("plugin return %d, skip excute", plugin_ret);
-            rc = TAIR_RETURN_PLUGIN_ERROR;
-          } else {
-            PROFILER_BEGIN("do prefix removes");
-            rc = tair_mgr->remove(request->area, **it, request, heart_beat->get_client_version());
-            PROFILER_END();
-            PROFILER_BEGIN("do response plugin");
-            tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-                TAIR_REQ_PREFIX_REMOVES_PACKET, request->area, *it, NULL, plugin_root);
-            PROFILER_END();
-          }
-          if (rc == TAIR_RETURN_SUCCESS) {
-            ++ndone;
-          } else {
-            data_entry *skey = new data_entry();
-            int prefix_size = (*it)->get_prefix_size();
-            skey->set_data((*it)->get_data() + prefix_size, (*it)->get_size() - prefix_size);
-            resp->add_key_code(skey, rc);
-          }
-          ++it;
-        }
-        plocker.unlock(*mkey);
-        if (ndone > 0 && ndone < request->key_count) {
-          rc = TAIR_RETURN_PARTIAL_SUCCESS;
-        } else if (ndone == 0) {
-          //rc = rc;
-        }
-      } else if (request->key != NULL) {
-        PROFILER_START("prefix removes operation start");
-        request->key->server_flag = request->server_flag;
-        data_entry *mkey = request->key;
-        plocker.lock(*mkey);
-        do {
-          if (tair_mgr->should_proxy(*request->key, target_server_id)) {
-            rc = TAIR_RETURN_SHOULD_PROXY;
-            break;
-          } else {
-            PROFILER_BEGIN("do request plugin");
-            int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-                TAIR_REQ_REMOVE_PACKET, request->area, request->key, NULL, plugin_root);
-            PROFILER_END();
-            if (plugin_ret < 0) {
-              log_error("plugin return %d, skip excute", plugin_ret);
-              rc = TAIR_RETURN_PLUGIN_ERROR;
-            }else {
-              PROFILER_BEGIN("do prefix removes");
-              rc = tair_mgr->remove(request->area, *(request->key),request,heart_beat->get_client_version());
-              PROFILER_END();
-
-              PROFILER_BEGIN("do response plugin");
-              tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-                  TAIR_REQ_REMOVE_PACKET, request->area, (request->key), NULL, plugin_root);
-              PROFILER_END();
-            }
-            PROFILER_END();
-          }
-          if (rc != TAIR_RETURN_SUCCESS) {
-            data_entry *skey = new data_entry();
-            int prefix_size = request->key->get_prefix_size();
-            skey->set_data(request->key->get_data() + prefix_size, request->key->get_size() - prefix_size);
-            resp->add_key_code(skey, rc);
-          }
-        } while (false);
-        plocker.unlock(*mkey);
-      }
-      PROFILER_DUMP();
-      PROFILER_STOP();
-      resp->config_version = heart_beat->get_client_version();
-      resp->setChannelId(request->getChannelId());
-      resp->set_code(rc);
-      if (request->get_connection()->postPacket(resp) == false) {
-        delete resp;
-      }
       return rc;
    }
 
    int request_processor::process(request_prefix_incdec *request, bool &send_return)
    {
-     int rc = 0;
+     int rc = TAIR_RETURN_SUCCESS;
      if (tair_mgr->is_working() == false) {
        rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
      }
-     plugin::plugins_root *plugin_root = NULL;
+     data_entry key = *request->key_counter_map->begin()->first;
+     plocker.lock(key);
+     rc = tair_mgr->prefix_incdec(request, heart_beat->get_client_version());
+     plocker.unlock(key);
      send_return = false;
-     response_prefix_incdec *resp = new response_prefix_incdec();
-     uint32_t ndone = 0;
-     if (request->key_count > 0) {
-       request_prefix_incdec::key_counter_map_t *key_counter_map = request->key_counter_map;
-       request_prefix_incdec::key_counter_map_t::iterator it = key_counter_map->begin();
-       data_entry *mkey = it->first;
-       plocker.lock(*mkey);
-       while (it != key_counter_map->end()) {
-         data_entry *key = it->first;
-         counter_wrapper *wrapper = it->second;
-         int ret_value;
-         uint64_t target_server_id;
-         if (tair_mgr->should_proxy(*key, target_server_id)) {
-           rc = TAIR_RETURN_SHOULD_PROXY;
-           break;
-         }
-         PROFILER_BEGIN("do request plugin");
-         int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-             TAIR_REQ_PREFIX_INCDEC_PACKET, request->area, key, NULL, plugin_root);
-         PROFILER_END();
-         if (plugin_ret < 0) {
-           log_error("plugin return %d, skip execute", plugin_ret);
-           rc = TAIR_RETURN_PLUGIN_ERROR;
-         } else {
-           PROFILER_BEGIN("do prefix incdec");
-           rc = tair_mgr->add_count(request->area, *key, wrapper->count, wrapper->init_value, &ret_value, wrapper->expire, request, heart_beat->get_client_version());
-           PROFILER_END();
-           PROFILER_BEGIN("do response plugin");
-           tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-               TAIR_REQ_PREFIX_INCDEC_PACKET, request->area, key, NULL, plugin_root);
-           PROFILER_END();
-         }
-         data_entry *skey = new data_entry();
-         int prefix_size = key->get_prefix_size();
-         skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
-         if (rc == TAIR_RETURN_SUCCESS) {
-           resp->add_key_value(skey, ret_value);
-           ++ndone;
-         } else {
-           resp->add_key_code(skey, rc);
-         }
-         ++it;
+     if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+       log_warn("prefix inc/dec duplicate busy");
+       response_prefix_incdec *resp = new response_prefix_incdec;
+       resp->set_code(rc);
+       resp->config_version = heart_beat->get_client_version();
+       resp->setChannelId(request->getChannelId());
+       if (request->get_connection()->postPacket(resp) == false) {
+         delete resp;
        }
-       plocker.unlock(*mkey);
-       if (ndone == request->key_count) {
-         rc = TAIR_RETURN_SUCCESS;
-       } else if (ndone > 0) {
-         rc = TAIR_RETURN_PARTIAL_SUCCESS;
-       } else {
-         //rc = rc;
-       }
-     }
-     PROFILER_DUMP();
-     PROFILER_STOP();
-     resp->config_version = heart_beat->get_client_version();
-     resp->setChannelId(request->getChannelId());
-     resp->set_code(rc);
-     if (request->get_connection()->postPacket(resp) == false) {
-       delete resp;
      }
 
      return rc;

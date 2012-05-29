@@ -25,6 +25,10 @@
 
 #include <tbsys.h>
 #include <tbnet.h>
+#ifdef HAVE_LIBREADLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
 
 #include "tair_client_api_impl.hpp"
 
@@ -79,6 +83,10 @@ namespace tair {
       void do_cmd_prefix_hides(VSTRING &params);
 
     private:
+#ifdef HAVE_LIBREADLINE
+      char *input(char *buffer, size_t size);
+      void update_history(const char *line);
+#endif
       str_cmdcall_map cmd_map;
 
       tair_client_impl client_helper;

@@ -38,6 +38,9 @@
 #include "lock_packet.hpp"
 #include "inc_dec_packet.hpp"
 #include "packet_streamer.hpp"
+#include "prefix_puts_packet.hpp"
+#include "prefix_removes_packet.hpp"
+#include "response_mreturn_packet.hpp"
 
 namespace tair {
    enum {
@@ -64,6 +67,10 @@ namespace tair {
 
       bool initialize(tbnet::Transport *transport, tair_packet_streamer *streamer);
 
+      int prefix_puts(request_prefix_puts *request, int version);
+      int prefix_removes(request_prefix_removes *request, int version);
+      int prefix_hides(request_prefix_hides *request, int version);
+      int prefix_incdec(request_prefix_incdec *request, int version);
       int put(int area, data_entry &key, data_entry &value, int expire_time,base_packet *request=NULL,int version=0);
       //int put(int area, data_entry &key, data_entry &value, int expire_time,request_put *request,int version);
       int add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,base_packet * request,int version);
@@ -115,6 +122,8 @@ namespace tair {
       void get_proxying_buckets(vector<uint32_t> &buckets);
 
       void do_dump(set<dump_meta_info> dump_meta_infos);
+
+      int get_meta(int area, data_entry &key, item_meta_info &meta);
 
       plugin::plugins_manager plugins_manager;
       tair::storage::storage_manager *get_storage_manager() { return storage_mgr; }

@@ -73,6 +73,10 @@ const int ITEM_HEAD_LENGTH = 2;
 
       virtual void get_stats(tair_stat * stat) = 0;
 
+      virtual int get_meta(data_entry &key, item_meta_info &meta) {
+        return TAIR_RETURN_NOT_SUPORTED;
+      }
+
       virtual void set_area_quota(int area, uint64_t quota) = 0;
       virtual void set_area_quota(std::map<int, uint64_t> &quota_map) = 0;
 

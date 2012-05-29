@@ -204,6 +204,9 @@
         case TAIR_REQ_PREFIX_INCDEC_PACKET:
           packet = new request_prefix_incdec();
           break;
+        case TAIR_RESP_PREFIX_INCDEC_PACKET:
+          packet = new response_prefix_incdec();
+          break;
         case TAIR_REQ_PREFIX_GETS_PACKET:
           packet = new request_prefix_gets();
           break;

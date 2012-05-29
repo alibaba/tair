@@ -246,10 +246,15 @@ namespace tair {
          }
       } else {
          while (done) {
+#ifdef HAVE_LIBREADLINE
+           char *line = input(buffer, CMD_MAX_LEN);
+           if (line == NULL) break;
+#else
             if (fprintf(stderr, "TAIR> ") < 0) break;
             if (fgets(buffer, CMD_MAX_LEN, stdin) == NULL) {
-               continue;
+              break;
             }
+#endif
             cmd_call this_cmd_call = parse_cmd(buffer, param);
             if (this_cmd_call == NULL) {
                fprintf(stderr, "unknown command.\n\n");
@@ -268,6 +273,48 @@ namespace tair {
 
       return true;
    }
+
+   //! you should duplicate the result
+#ifdef HAVE_LIBREADLINE
+   char* tair_client::input(char *buffer, size_t size) {
+     static const char *prompt = "[0;31;40mTAIR>[0;37;40m ";
+     char *line = readline(prompt);
+     if (line == NULL) return NULL; //~ EOF reveived
+     if (*line == '\0') {
+       free(line);
+       HIST_ENTRY *hist = previous_history();
+       if (hist != NULL) {
+         strncpy(buffer, hist->line, size);
+         return buffer;
+       }
+       while ((line = readline(prompt)) != NULL && *line == '\0') free(line);
+       if (line == NULL) return NULL;
+     }
+     update_history(line);
+     strncpy(buffer, line, size);
+     free(line);
+     return buffer;
+   }
+   void tair_client::update_history(const char *line) {
+     int i = 0;
+     HIST_ENTRY **the_history = history_list();
+     for (; i < history_length; ++i) {
+       HIST_ENTRY *hist = the_history[i];
+       if (strcmp(hist->line, line) == 0) {
+         break;
+       }
+     }
+     if (i == history_length) {
+       add_history(line);
+       return ;
+     }
+     HIST_ENTRY *hist = the_history[i];
+     for (; i < history_length - 1; ++i) {
+       the_history[i] = the_history[i+1];
+     }
+     the_history[i] = hist;
+   }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
    int64_t tair_client::ping(uint64_t server_id)
@@ -605,7 +652,7 @@ namespace tair {
    void tair_client::do_cmd_remove(VSTRING &param)
    {
       if (param.size() < 2U) {
-         print_help("mremove");
+         print_help("remove");
          return;
       }
 

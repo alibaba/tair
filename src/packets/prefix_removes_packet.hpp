@@ -23,11 +23,40 @@ namespace tair {
   public:
     request_prefix_removes() {
       setPCode(TAIR_REQ_PREFIX_REMOVES_PACKET);
+      packet_id = 0;
     }
 
     request_prefix_removes(request_prefix_removes &rhs) : request_remove(rhs) {
         setPCode(TAIR_REQ_PREFIX_REMOVES_PACKET);
+        packet_id = rhs.packet_id;
     }
+
+    bool encode(tbnet::DataBuffer *output) {
+      if (!request_remove::encode(output)) {
+        return false;
+      }
+      if (server_flag != TAIR_SERVERFLAG_CLIENT) {
+        output->writeInt32(packet_id);
+      }
+      return true;
+    }
+
+    bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) {
+      if (!request_remove::decode(input, header)) {
+        return false;
+      }
+      if (server_flag != TAIR_SERVERFLAG_CLIENT) {
+        packet_id = input->readInt32();
+      }
+      return true;
+    }
+
+    void swap(request_prefix_removes &rhs) {
+      request_remove::swap(rhs);
+      std::swap(packet_id, rhs.packet_id);
+    }
+  public:
+    uint32_t packet_id;
   };
 }
 

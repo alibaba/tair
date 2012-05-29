@@ -27,6 +27,7 @@ namespace tair {
       area = 0;
       pkey = NULL;
       key_count = 0;
+      packet_id = 0;
       key_counter_map = NULL;
     }
 
@@ -35,6 +36,7 @@ namespace tair {
       server_flag = rhs.server_flag;
       area = rhs.area;
       key_count = rhs.key_count;
+      packet_id = rhs.packet_id;
       if (rhs.pkey != NULL) {
         pkey = new data_entry(*rhs.pkey);
       } else {
@@ -61,6 +63,7 @@ namespace tair {
         server_flag = rhs.server_flag;
         area = rhs.area;
         key_count = rhs.key_count;
+        packet_id = rhs.packet_id;
         pkey = new data_entry(*rhs.pkey);
         key_counter_map = new key_counter_map_t;
         key_counter_map_t::const_iterator it = rhs.key_counter_map->begin();
@@ -107,6 +110,9 @@ namespace tair {
         it->second->encode(output);
         ++it;
       }
+      if (server_flag != TAIR_SERVERFLAG_CLIENT) {
+        output->writeInt32(packet_id);
+      }
       return true;
     }
 
@@ -134,6 +140,9 @@ namespace tair {
       if (key_count != key_counter_map->size()) {
         log_warn("duplicate key received, omitted");
         key_count = key_counter_map->size();
+      }
+      if (server_flag != TAIR_SERVERFLAG_CLIENT) {
+        packet_id = input->readInt32();
       }
 
       return true;
@@ -164,14 +173,22 @@ namespace tair {
       return pkey;
     }
 
+    void swap(request_prefix_incdec &rhs) {
+      std::swap(area, rhs.area);
+      std::swap(pkey, rhs.pkey);
+      std::swap(key_count, rhs.key_count);
+      std::swap(key_counter_map, rhs.key_counter_map);
+      std::swap(packet_id, rhs.packet_id);
+    }
+
   public:
     typedef __gnu_cxx::hash_map<data_entry*, counter_wrapper*,
-            data_entry_hash, data_entry_equal_to> key_counter_map_t;
-
+            tair::common::data_entry_hash, tair::common::data_entry_equal_to> key_counter_map_t;
     uint16_t      area;
     data_entry    *pkey;
     uint32_t      key_count;
     key_counter_map_t *key_counter_map;
+    uint32_t      packet_id;
   };
 
   class response_prefix_incdec : public base_packet {
@@ -182,6 +199,10 @@ namespace tair {
       code = 0;
       nsuccess = 0;
       nfailed = 0;
+      server_flag = 0;
+      bucket_id = 0;
+      server_id = 0L;
+      packet_id = 0;
       success_key_value_map = NULL;
       failed_key_code_map = NULL;
     }
@@ -203,23 +224,13 @@ namespace tair {
       key_code_map_t::iterator it;
 
       if (success_key_value_map != NULL) {
-        it = success_key_value_map->begin();
-        while (it != success_key_value_map->end()) {
-          data_entry *key = it->first;
-          ++it;
-          delete key;
-        }
+        tair::common::defree(*success_key_value_map);
         delete success_key_value_map;
         success_key_value_map = NULL;
       }
 
       if (failed_key_code_map != NULL) {
-        it = failed_key_code_map->end();
-        while (it != failed_key_code_map->end()) {
-          data_entry *key = it->first;
-          ++it;
-          delete key;
-        }
+        tair::common::defree(*failed_key_code_map);
         delete failed_key_code_map;
         failed_key_code_map = NULL;
       }
@@ -229,6 +240,11 @@ namespace tair {
       output->writeInt32(config_version);
       output->writeInt32(code);
       output->writeInt32(nsuccess);
+      if (server_flag != TAIR_SERVERFLAG_CLIENT) {
+        output->writeInt32(bucket_id);
+        output->writeInt64(server_id);
+        output->writeInt32(packet_id);
+      }
       key_code_map_t::iterator it;
       if (nsuccess > 0) {
         assert(success_key_value_map != NULL);
@@ -260,6 +276,9 @@ namespace tair {
       code = input->readInt32();
 
       nsuccess = input->readInt32();
+      bucket_id = input->readInt32();
+      server_id = input->readInt64();
+      packet_id = input->readInt32();
       if (nsuccess > 0) {
         success_key_value_map = new key_code_map_t;
         for (uint32_t i = 0; i < nsuccess; ++i) {
@@ -316,6 +335,9 @@ namespace tair {
       code = rhs.code;
       nsuccess = rhs.nsuccess;
       nfailed = rhs.nfailed;
+      bucket_id = rhs.bucket_id;
+      server_id = rhs.server_id;
+      packet_id = rhs.packet_id;
 
       key_code_map_t::const_iterator it;
       if (rhs.success_key_value_map != NULL) {
@@ -344,13 +366,14 @@ namespace tair {
     }
 
   public:
-    typedef __gnu_cxx::hash_map<data_entry*, int32_t,
-                      data_entry_hash, data_entry_equal_to> key_code_map_t;
 
     uint32_t          config_version;
     int32_t           code;
     uint32_t          nsuccess;
     uint32_t          nfailed;
+    int32_t           bucket_id;
+    uint64_t          server_id;
+    uint32_t          packet_id;
     key_code_map_t    *success_key_value_map;
     key_code_map_t    *failed_key_code_map;
   };
