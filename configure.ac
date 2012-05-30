@@ -1,4 +1,4 @@
-AC_INIT(tair, 2.3.1.4,ruohai@taobao.com)
+AC_INIT(tair, 2.3.1.5,ruohai@taobao.com)
 
 AM_INIT_AUTOMAKE(tair, 2.3.1.5)
 AC_PROG_CXX
