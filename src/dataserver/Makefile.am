@@ -67,4 +67,5 @@ tair_server_SOURCES=duplicate_manager.cpp item_manager.cpp stat_processor.cpp re
 		    tair_server.hpp	\
 		    tinyjson.hpp	\
 		    update_log.hpp \
-        prefix_locker.hpp
+				prefix_locker.hpp \
+				stat_processor.h

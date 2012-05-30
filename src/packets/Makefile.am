@@ -24,7 +24,8 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
         conf_heartbeat_packet.hpp  \
         data_server_ctrl_packet.hpp  \
         stat_cmd_packet.hpp \
-        flow_control.hpp \
+        flow_control_packet.hpp \
+        flow_view.hpp \
         dump_bucket_packet.hpp  \
         dump_packet.hpp  \
         duplicate_packet.hpp  \

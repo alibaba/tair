@@ -1,1 +1,1 @@
-SUBDIRS=storage
+SUBDIRS=storage include
