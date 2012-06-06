@@ -35,9 +35,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String put_count = "100000";
 	final static float put_count_float = 100000.0f;
 	// Server List
-	final String csarr[] = new String[] { "10.232.4.14", "10.232.4.15" };
-	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18" };
-	final String dsarr2[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18", "10.232.4.19" };
+	final String csarr[] = new String[] { "10.232.4.20", "10.232.4.21" };
+	final String dsarr[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24" };
+	final String dsarr2[] = new String[] { "10.232.4.20", "10.232.4.21", "10.232.4.22", "10.232.4.23", "10.232.4.24", "10.232.4.25" };
 	final List<String> csList = Arrays.asList(csarr);
 	final List<String> dsList = Arrays.asList(dsarr);
 	final List<String> dsList2 = Arrays.asList(dsarr2);
@@ -54,9 +54,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + opID + "_cs && sleep 5";
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_cfg_svr_iv && sleep 2";
+			cmd = "killall -9 tair_cfg_svr_hudson && sleep 2";
 		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep tair_cfg_svr_iv|wc -l";
+		cmd = "ps -ef|grep tair_cfg_svr_hudson|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
 			log.debug("cs rc!=0");
@@ -95,10 +95,10 @@ public class FailOverBaseCase extends BaseTestCase {
 		executeShell(stafhandle, machine, cmd);
 
 		if (opID.equals(FailOverBaseCase.stop) && type == 1)
-			cmd = "killall -9 tair_server_iv && sleep 2";
+			cmd = "killall -9 tair_server_hudson && sleep 2";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		int waittime = 0;
-		cmd = "ps -ef|grep tair_server_iv|wc -l";
+		cmd = "ps -ef|grep tair_server_hudson|wc -l";
 		while (waittime < 110) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {
