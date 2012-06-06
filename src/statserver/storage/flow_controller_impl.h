@@ -62,7 +62,7 @@ class FlowControllerImpl : public FlowController
 
   static void* BackgroundFunc(void *arg);
 
-  AreaFlow flows_[MAXAREA];  
+  AreaFlow flows_[MAXAREA + 1];  
   bool stop_;
   pthread_t bg_tid;
 
@@ -74,6 +74,11 @@ class FlowControllerImpl : public FlowController
   static const int DEFAULT_NET_LOWER = 15 * 1024 * 1024; // 15MB/s
   static const int DEFAULT_CNT_UPPER = 30000; // 30000/s
   static const int DEFAULT_CNT_LOWER = 30000; // 30000/s
+
+  static const int DEFAULT_TOTAL_NET_UPEER = 80 * 1024 * 1024; // 80 MB/s
+  static const int DEFAULT_TOTAL_NET_LOWER = 80 * 1024 * 1024; // 80 MB/s
+  static const int DEFAULT_TOTAL_CNT_UPPER = 60000; // 30000/s
+  static const int DEFAULT_TOTAL_CNT_LOWER = 60000; // 30000/s
 };
 
 

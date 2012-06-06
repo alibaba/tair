@@ -24,8 +24,11 @@ class flow_control_set: public base_packet
     return false;
   }
 
-  bool decode(tbnet::DataBuffer *input)
+  bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader* header)
   {
+    if (header->_dataLen < 16)
+      return false;
+
     type = static_cast<tair::stat::FlowType>(
         input->readInt32());
     lower = input->readInt32();

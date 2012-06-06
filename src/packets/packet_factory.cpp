@@ -192,6 +192,9 @@
         case TAIR_FLOW_CHECK:
           packet = new flow_check();
           break;
+        case TAIR_FLOW_CONTROL_SET:
+          packet = new flow_control_set();
+          break;
         case TAIR_RESP_FLOW_VIEW:
           packet = new flow_view_response();
           break;

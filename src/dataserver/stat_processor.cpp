@@ -71,7 +71,9 @@ uint32_t stat_processor::process(flow_control_set *request)
                           request->getType(),
                           request->getLower(),
                           request->getUpper());
-  response_return *response = new response_return();
+  Flowrate rate = flow_ctrl->GetFlowrate(request->getNamespace());   
+  flow_view_response *response = new flow_view_response();
+  response->set_flowrate(rate);
   return send_response(request, response);
 }
 
