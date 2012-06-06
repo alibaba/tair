@@ -73,12 +73,12 @@ class FlowControllerImpl : public FlowController
   static const int DEFAULT_NET_UPPER = 30 * 1024 * 1024; // 30MB/s
   static const int DEFAULT_NET_LOWER = 15 * 1024 * 1024; // 15MB/s
   static const int DEFAULT_CNT_UPPER = 30000; // 30000/s
-  static const int DEFAULT_CNT_LOWER = 30000; // 30000/s
+  static const int DEFAULT_CNT_LOWER = 20000; // 20000/s
 
-  static const int DEFAULT_TOTAL_NET_UPEER = 80 * 1024 * 1024; // 80 MB/s
-  static const int DEFAULT_TOTAL_NET_LOWER = 80 * 1024 * 1024; // 80 MB/s
-  static const int DEFAULT_TOTAL_CNT_UPPER = 60000; // 30000/s
-  static const int DEFAULT_TOTAL_CNT_LOWER = 60000; // 30000/s
+  static const int DEFAULT_TOTAL_NET_UPPER = 75 * 1024 * 1024; // 75 MB/s
+  static const int DEFAULT_TOTAL_NET_LOWER = 65 * 1024 * 1024; // 65 MB/s
+  static const int DEFAULT_TOTAL_CNT_UPPER = 50000; // 50000 ops
+  static const int DEFAULT_TOTAL_CNT_LOWER = 40000; // 40000 ops
 };
 
 

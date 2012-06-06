@@ -2,7 +2,7 @@
 #define TAIR_FLOW_CONTROL_PACKET_HPP
 
 #include "base_packet.hpp"
-#include "flow_controller.h"
+#include "flowrate.h"
 
 namespace tair {
 
@@ -21,7 +21,11 @@ class flow_control_set: public base_packet
 
   bool encode(tbnet::DataBuffer *output)
   {
-    return false;
+    output->writeInt32(type);
+    output->writeInt32(lower);
+    output->writeInt32(upper);
+    output->writeInt32(ns);
+    return true;
   }
 
   bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader* header)
@@ -64,11 +68,14 @@ class flow_check : public base_packet
 
   bool encode(tbnet::DataBuffer *output)
   {
-    return false;
+    output->writeInt32(ns);
+    return true;
   }
 
   bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
   {
+    if (header->_dataLen < 4)
+      return false;
     ns = input->readInt32();
     return true;
   }
@@ -103,7 +110,11 @@ class flow_control : public base_packet
 
   bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
   {
-    return false;
+    if (header->_dataLen < 8)
+      return false;
+    status = input->readInt32();
+    ns = input->readInt32();
+    return true;
   }
 
   void set_status(int s)
@@ -114,6 +125,16 @@ class flow_control : public base_packet
   void set_ns(int ns)
   {
     this->ns = ns;
+  }
+
+  int get_ns()
+  { 
+    return ns;
+  }
+
+  int get_status()
+  {
+    return status;
   }
 
  private:

@@ -1,18 +1,50 @@
 #include <cassert>
 #include <string.h>
+#include <errno.h>
 
+#include "log.hpp"
 #include "flow_controller_impl.h"
 #include "mutex_lock.h"
 
 #define ASSERTNS(ns) do { \
   assert(ns >= 0);        \
-  assert(ns < MAXAREA);   \
+  assert(ns <= MAXAREA);   \
 } while (false) 
 
 namespace tair
 {
 namespace stat
 {
+
+inline
+const char * FlowTypeStr(FlowType type) 
+{
+  switch (type) 
+  {
+   case IN:
+     return "IN";
+   case OUT:
+     return "OUT";
+   case CNT:
+     return "CNT";
+  }
+  return "UNKONW";
+}
+
+inline
+const char * FlowStatusStr(FlowStatus status)
+{
+  switch (status)
+  {
+   case UP:
+     return "UP";
+   case DOWN:
+     return "DOWN";
+   case KEEP:
+     return "KEEP";
+  }
+  return "UNKONW";
+}
 
 FlowControllerImpl::FlowControllerImpl(int ns)
     : stop_(false),
@@ -23,6 +55,9 @@ FlowControllerImpl::FlowControllerImpl(int ns)
   SetFlowLimit(-1, IN, DEFAULT_NET_LOWER, DEFAULT_NET_UPPER);
   SetFlowLimit(-1, OUT, DEFAULT_NET_LOWER, DEFAULT_NET_UPPER);
   SetFlowLimit(-1, CNT, DEFAULT_CNT_LOWER, DEFAULT_CNT_UPPER);
+  SetFlowLimit(MAXAREA, IN, DEFAULT_TOTAL_NET_UPPER, DEFAULT_TOTAL_NET_LOWER);
+  SetFlowLimit(MAXAREA, OUT, DEFAULT_TOTAL_NET_UPPER, DEFAULT_TOTAL_NET_LOWER);
+  SetFlowLimit(MAXAREA, CNT, DEFAULT_TOTAL_CNT_UPPER, DEFAULT_TOTAL_CNT_LOWER);
 }
 
 FlowController* FlowController::NewInstance() 
@@ -34,7 +69,7 @@ bool FlowControllerImpl::Initialize() {
   int ret = pthread_create(&bg_tid, NULL, BackgroundFunc, this);
   if (ret != 0) 
   {
-    //TODO: error log
+    log_error("create FlowController background thread faild: %s", strerror(errno));
   }
   return ret == 0;
 }
@@ -62,10 +97,14 @@ Flowrate FlowControllerImpl::GetFlowrate(int ns)
   AreaFlow &flow = flows_[ns];
   Flowrate rate = {atomic_read(&flow.in.last_per_second), 
                    atomic_read(&flow.out.last_per_second), 
-                   atomic_read(&flow.cnt.last_per_second)};
+                   atomic_read(&flow.cnt.last_per_second),
+                   flows_[ns].status};
   return rate;
 }
 
+/**
+ * @return ture is relaxed, (flow.status == DOWN)
+ */
 bool FlowControllerImpl::AddUp(Flow &flow, int size)
 {
   if (atomic_read(&flow.curt_quantity) + size < 0)
@@ -78,13 +117,13 @@ bool FlowControllerImpl::AddUp(Flow &flow, int size)
     int curt = atomic_add_return(size, &flow.curt_quantity);
     if (curt < 0) {
       atomic_sub(size, &flow.curt_quantity);
-      flow.status = UP; /// break here
+      flow.status = UP; // integer overflow
     }
     if (curt / cal_interval_second_ >= atomic_read(&flow.upper_bound))
       flow.status = UP;
   }
   // curt / spend
-  return flow.status == UP;
+  return flow.status == DOWN;
 }
 
 FlowStatus FlowControllerImpl::CalCurrentFlow(Flow &flow)
@@ -146,8 +185,21 @@ void FlowControllerImpl::BackgroundCalFlows()
     for (size_t ns = 0; ns < MAXAREA; ++ns)
     {
       FlowStatus status_in = CalCurrentFlow(flows_[ns].in);
+      if (status_in != DOWN)
+        log_info("Flow IN Limit: ns %d %s", ns, FlowStatusStr(status_in));
       FlowStatus status_out = CalCurrentFlow(flows_[ns].out);
+      if (status_out != DOWN)
+        log_info("Flow OUT Limit: ns %d %s", ns, FlowStatusStr(status_out));
       FlowStatus status_cnt = CalCurrentFlow(flows_[ns].cnt);
+      if (status_cnt != DOWN)
+        log_info("Flow IN Limit: ns %d %s", ns, FlowStatusStr(status_cnt));
+
+      log_debug("Flow input rate: ns %d; in %d %s; out %d %s; ops %d %s",
+          ns,
+          atomic_read(&flows_[ns].in.last_per_second), FlowStatusStr(status_in),
+          atomic_read(&flows_[ns].out.last_per_second), FlowStatusStr(status_out),
+          atomic_read(&flows_[ns].cnt.last_per_second), FlowStatusStr(status_cnt)
+      );
 
       FlowStatus temp = status_in > status_out ? status_in : status_out;
       flows_[ns].status = temp > status_cnt ? temp : status_cnt;
@@ -158,14 +210,22 @@ void FlowControllerImpl::BackgroundCalFlows()
 bool FlowControllerImpl::AddUp(int ns, int in, int out)
 {
   ASSERTNS(ns);
+  // AddUp total first
+  bool is_relaxed = false;
+  if (ns != MAXAREA)
+  {
+    is_relaxed = AddUp(MAXAREA, in, out);
+  }
   AreaFlow &flow = flows_[ns];
   bool limit = false;
-  limit = AddUp(flow.in, in) || limit; 
-  limit = AddUp(flow.out, out) || limit; 
-  limit = AddUp(flow.cnt, 1) || limit; 
+  limit = !AddUp(flow.in, in) || limit; 
+  limit = !AddUp(flow.out, out) || limit; 
+  limit = !AddUp(flow.cnt, 1) || limit; 
   if (limit == true)
     flow.status = UP;
-  return flow.status == UP;
+  log_debug("Add up: ns %d, in %d, out %d, status %s", 
+      ns, in, out, FlowStatusStr(flow.status));
+  return is_relaxed || flow.status == DOWN;
 }
 
 LimitBound FlowControllerImpl::GetLimitBound(int ns, FlowType type)
@@ -197,7 +257,7 @@ void FlowControllerImpl::SetFlowLimit(int ns, FlowType type, int lower, int uppe
 {
   if (lower > upper)
   {
-    // TODO: err log
+    log_error("%d > %d is invalid", lower, upper);
     return;
   }
   if (ns == -1)
@@ -208,22 +268,30 @@ void FlowControllerImpl::SetFlowLimit(int ns, FlowType type, int lower, int uppe
   else
   {
     ASSERTNS(ns);
+    log_info("set flow limit bound, ns %d; type %s; lower %d; upper %d", 
+        ns, FlowTypeStr(type), lower, upper);
     switch (type) 
     {
      case IN:
-      atomic_set(&flows_[ns].in.lower_bound, lower);
-      atomic_set(&flows_[ns].in.upper_bound, upper);
+      if (lower >= 0)
+        atomic_set(&flows_[ns].in.lower_bound, lower);
+      if (upper >= 0)
+        atomic_set(&flows_[ns].in.upper_bound, upper);
       break;
      case OUT:
-      atomic_set(&flows_[ns].out.lower_bound, lower);
-      atomic_set(&flows_[ns].out.upper_bound, upper);
+      if (lower >= 0)
+        atomic_set(&flows_[ns].out.lower_bound, lower);
+      if (upper >= 0)
+        atomic_set(&flows_[ns].out.upper_bound, upper);
       break;
      case CNT:
-      atomic_set(&flows_[ns].cnt.lower_bound, lower);
-      atomic_set(&flows_[ns].cnt.upper_bound, upper);
+      if (lower >= 0)
+        atomic_set(&flows_[ns].cnt.lower_bound, lower);
+      if (upper >= 0)
+        atomic_set(&flows_[ns].cnt.upper_bound, upper);
       break;
      default:
-      //TODO: errlog
+      log_error("unknow type %d", type);
       break;
     }
   }

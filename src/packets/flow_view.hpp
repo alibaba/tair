@@ -50,7 +50,7 @@ class flow_view_response : public base_packet
  
   size_t size() 
   {
-    return 12 + 16; // 16bytes tbnet packet header
+    return 16 + 16; // 16bytes tbnet packet header
   }
 
   bool encode(tbnet::DataBuffer *output)
@@ -58,12 +58,19 @@ class flow_view_response : public base_packet
     output->writeInt32(rate.in);
     output->writeInt32(rate.out);
     output->writeInt32(rate.cnt);
+    output->writeInt32(rate.status);
     return true;
   }
 
   bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
   {
-    return false;
+    if (header->_dataLen < 16)
+      return false;
+    rate.in = input->readInt32();
+    rate.out = input->readInt32();
+    rate.cnt = input->readInt32();
+    rate.status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+    return true;
   }
 
   void set_flowrate(const tair::stat::Flowrate &rate)

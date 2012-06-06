@@ -17,7 +17,9 @@ stat_processor::stat_processor(tair_manager *tair_mgr,
 {
 }
 
-uint32_t stat_processor::send_response(base_packet *request, base_packet *response, bool control_packet)
+uint32_t stat_processor::send_response(base_packet *request, 
+                                       base_packet *response, 
+                                       bool control_packet)
 {
   assert(request != NULL);
   assert(response != NULL);

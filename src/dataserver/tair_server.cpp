@@ -461,22 +461,25 @@ namespace tair {
       }
       stat_mgr->AddUp(stat.ip, stat.ns, stat.op, 
                       stat.in, stat.out);
-      flow_ctrl->AddUp(stat.ns, stat.in, stat.out);
-      tair::stat::FlowStatus status = flow_ctrl->IsOverflow(stat.ns);
-      if (status != tair::stat::DOWN)
+      bool is_relaxed = flow_ctrl->AddUp(stat.ns, stat.in, stat.out);
+      if (is_relaxed == false)
       {
-        tbnet::Connection *conn = packet->get_connection();
-        flow_control *ctrl_packet = new flow_control();
-        ctrl_packet->set_status(status);
-        ctrl_packet->set_ns(stat.ns);
-        ctrl_packet->setChannelId(-1);
-        int size = ctrl_packet->size();
-        if (conn->postPacket(ctrl_packet) == false)
+        tair::stat::FlowStatus status = flow_ctrl->IsOverflow(stat.ns);
+        if (status != tair::stat::DOWN)
         {
-          delete ctrl_packet;
-          size = 0;
+          tbnet::Connection *conn = packet->get_connection();
+          flow_control *ctrl_packet = new flow_control();
+          ctrl_packet->set_status(status);
+          ctrl_packet->set_ns(stat.ns);
+          ctrl_packet->setChannelId(-1);
+          int size = ctrl_packet->size();
+          if (conn->postPacket(ctrl_packet) == false)
+          {
+            delete ctrl_packet;
+            size = 0;
+          }
+          flow_ctrl->AddUp(0, 0, size);
         }
-        flow_ctrl->AddUp(0, 0, size);
       }
       return success;
    }

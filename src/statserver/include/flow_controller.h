@@ -8,22 +8,6 @@ namespace tair
 namespace stat 
 {
 
-enum FlowType
-{
-  IN, OUT, CNT
-};
-
-struct LimitBound
-{
-  int lower;
-  int upper;
-};
-
-enum FlowStatus
-{
-  DOWN = 0, KEEP = 1, UP = 2 
-};
-
 class FlowController
 {
  public:
@@ -39,6 +23,9 @@ class FlowController
 
   virtual LimitBound GetLimitBound(int ns, FlowType type) = 0;
 
+  /**
+   * @return true is relaxed
+   */
   virtual bool AddUp(int ns, int in, int out) = 0;
 
   virtual void SetFlowLimit(int ns, FlowType type, int lower, int upper) = 0;
