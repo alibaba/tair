@@ -3,17 +3,12 @@
  */
 package com.taobao.tairtest;
 
-import java.util.Arrays;
-import java.util.List;
+import static org.junit.Assert.*;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import com.ibm.staf.STAFResult;
-
-/**
- * @author dongpo
- *
- */
 public class FunctionDataServerTest3 extends FailOverBaseCase {
 	@Test
 	public void testFunction_01_add_ds_and_migration()
@@ -23,22 +18,22 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		int waitcnt=0;
 
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.error("group.conf has been changed!");
 
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failed!");
 		log.error("start cluster successful!");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "datasize", "100000"))fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "filename", "read.kv"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))fail("modify configure file failed!");
+		if(!modify_config_file("local", test_bin+toolconf, "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -54,16 +49,16 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("start ds successful!");
 
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
+		touch_file((String) csList.get(0), tair_bin+"etc/group.conf");
 		log.error("change group.conf and touch it");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//check migration stat of finish
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -73,10 +68,10 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "get"))fail("modify tool config file failed!");
+		if (!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))fail("modify tool config file failed!");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -99,22 +94,22 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		int waitcnt=0;
 
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.error("group.conf has been changed!");
 
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failed!");
 		log.error("start cluster successful!");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "datasize", "100000"))fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "filename", "read.kv"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))fail("modify configure file failed!");
+		if(!modify_config_file("local", test_bin+toolconf, "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -130,16 +125,16 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("start ds successful!");
 
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
+		touch_file((String) csList.get(0), tair_bin+"etc/group.conf");
 		log.error("change group.conf and touch it");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -151,7 +146,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		//write data while migration
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -164,7 +159,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 
 
 		//check migration stat of finish
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -174,10 +169,10 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "get"))fail("modify tool config file failed!");
+		if (!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))fail("modify tool config file failed!");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -200,22 +195,22 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		int waitcnt=0;
 
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.error("group.conf has been changed!");
 
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failed!");
 		log.error("start cluster successful!");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "datasize", "100000"))fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "filename", "read.kv"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))fail("modify configure file failed!");
+		if(!modify_config_file("local", test_bin+toolconf, "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -231,16 +226,16 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("start ds successful!");
 
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
+		touch_file((String) csList.get(0), tair_bin+"etc/group.conf");
 		log.error("change group.conf and touch it");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -250,10 +245,10 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("check migrate started!");
 
 		//get data while migration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "get"))fail("modify configure file failed!");
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))fail("modify configure file failed!");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -276,22 +271,22 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		int waitcnt=0;
 
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.error("group.conf has been changed!");
 
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failed!");
 		log.error("start cluster successful!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "put"))fail("modify configure file failed!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "datasize", "100000"))fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "filename", "read.kv"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))fail("modify configure file failed!");
+		if(!modify_config_file("local", test_bin+toolconf, "datasize", "100000"))fail("modify configure file failed");
+		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))fail("modify configure file failed");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -307,16 +302,16 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("start ds successful!");
 
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
-		touch_file((String) csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf");
+		touch_file((String) csList.get(0), tair_bin+"etc/group.conf");
 		log.error("change group.conf and touch it");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -326,10 +321,10 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("check migrate started!");
 
 		//remove data while migration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "rem"))fail("modify configure file failed!");
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "rem"))fail("modify configure file failed!");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>300)break;
@@ -341,7 +336,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("rem data over!");
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -351,10 +346,10 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 
 		//verify data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "get"))fail("modify configure file failed!");
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))fail("modify configure file failed!");
 		execute_data_verify_tool();
 
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -380,21 +375,21 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "datasize", "100000"))
+		if(!modify_config_file("local", test_bin+toolconf, "datasize", "100000"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		//write 100k data to cluster
 		execute_data_verify_tool();
 
 		//check verify
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -416,19 +411,19 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 
 		waitto(5);
 
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
+		if(check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log")!=0)fail("Already migration!");
 		//restart ds
 		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failed!");
 		log.error("Restart ds successful!");	
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"mdb_tool.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))
 			fail("modify configure file failed");	
 
 		//read data from cluster
 		execute_data_verify_tool();
 		//check verify
-		while(check_process("local", "mdb_tool")!=2)
+		while(check_process("local", toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -442,30 +437,34 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.error("Successfully Verified data!");	
 
 		//wait downtime
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//verify no migration
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=0)fail("Already migration!");
+		if(check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log")!=0)fail("Already migration!");
 		//end test
 		log.error("end function test case 06");
 	}
+	
+	@Before
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList,dsList);
 		execute_shift_tool("local", "conf5");
-		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
-		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
+		batch_uncomment(csList, tair_bin+"etc/group.conf", dsList, "#");
+		if(!batch_modify(csList, tair_bin+"etc/group.conf", "_copy_count", "3"))
 			fail("modify configure file failed");
-		if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "3"))
+		if(!batch_modify(dsList, tair_bin+"etc/group.conf", "_copy_count", "3"))
 			fail("modify configure file failed");
 	}
+	
+	@After
 	public void tearDown()
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList,dsList);
-		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+		batch_uncomment(csList, tair_bin+"etc/group.conf", dsList, "#");
 	}
 }
