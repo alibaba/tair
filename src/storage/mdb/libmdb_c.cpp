@@ -13,6 +13,7 @@
  *
  */
 
+#include "mdb_manager.hpp"
 #include "libmdb_c.hpp"
 
 using namespace tair;

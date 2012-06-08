@@ -49,7 +49,7 @@ namespace tair {
         {
           request_invalid *req = (request_invalid*) bp;
           request_invalid *post_req = NULL;
-          int ret = processor->process(req, post_req);
+          processor->process(req, post_req);
           if (post_req != NULL) {
             log_error("async invalid failed, add packet to RetryThread %d", 0);
             retry_thread->add_packet(post_req, 0);
@@ -61,7 +61,7 @@ namespace tair {
         {
           request_hide_by_proxy *req = (request_hide_by_proxy*) bp;
           request_hide_by_proxy *post_req = NULL;
-          int ret = processor->process(req, post_req);
+          processor->process(req, post_req);
           if (post_req != NULL) {
             log_error("async hide failed, add packet to RetryThread %d", 0);
             retry_thread->add_packet(post_req, 0);
@@ -73,7 +73,7 @@ namespace tair {
         {
           request_prefix_hides_by_proxy *req = (request_prefix_hides_by_proxy*) bp;
           request_prefix_hides_by_proxy *post_req = NULL;
-          int ret = processor->process(req, post_req);
+          processor->process(req, post_req);
           if (post_req != NULL) {
             log_error("async prefix hides failed, add packet to RetryThread %d", 0);
             retry_thread->add_packet(post_req, 0);
@@ -85,7 +85,7 @@ namespace tair {
         {
           request_prefix_invalids *req = (request_prefix_invalids*) bp;
           request_prefix_invalids *post_req = NULL;
-          int ret = processor->process(req, post_req);
+          processor->process(req, post_req);
           if (post_req != NULL) {
             log_error("async prefix invalids failed, add packet to RetryThread %d", 0);
             retry_thread->add_packet(post_req, 0);

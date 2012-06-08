@@ -39,6 +39,7 @@ libmdb_c_la_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
 					mem_pool.hpp \
 					libmdb_c.hpp \
 					libmdb_c.cpp
+include_HEADERS=mdb_factory.hpp mdb_manager.hpp libmdb_c.hpp
 
 noinst_PROGRAMS=mdbtest mdbSlabAndAreaTest mdbAreaTest libmdb_test_c
 mdbtest_SOURCES=mdb_test.cpp ../../common/stat_helper.cpp
