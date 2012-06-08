@@ -1,8 +1,8 @@
 package com.taobao.function.areaTest;
 
-import java.sql.Date;
+//import java.sql.Date;
 import java.util.Calendar;
-
+import static org.junit.Assert.*;
 import junit.framework.Assert;
 
 public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {

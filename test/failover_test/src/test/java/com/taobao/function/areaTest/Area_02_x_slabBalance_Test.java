@@ -1,10 +1,7 @@
 package com.taobao.function.areaTest;
 
 import java.util.Calendar;
-import java.util.List;
-
-import com.taobao.tairtest.FailOverBaseCase;
-
+import static org.junit.Assert.*;
 import junit.framework.Assert;
 
 public class Area_02_x_slabBalance_Test extends AreaTestBaseCase {

@@ -1,8 +1,7 @@
 package com.taobao.function.areaTest;
 
 import java.util.Calendar;
-
-import com.taobao.tairtest.FailOverBaseCase;
+import static org.junit.Assert.*;
 
 public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 	/*

@@ -1,5 +1,6 @@
 package com.taobao.function.areaTest;
 
+import static org.junit.Assert.*;
 
 public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 	/*
