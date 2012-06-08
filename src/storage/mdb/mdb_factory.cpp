@@ -21,18 +21,18 @@ namespace tair {
   storage::storage_manager * mdb_factory::create_mdb_manager()
   {
     bool use_share_mem = true;
-    const char* use_mem_type = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MDB_TYPE, "mdb_shm");
-    if (strcmp(use_mem_type, "mdb_shm") == 0)
+    mdb_param::mdb_type = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MDB_TYPE, "mdb_shm");
+    if (strcmp(mdb_param::mdb_type, "mdb_shm") == 0)
     {
       use_share_mem = true;
     }
-    else if (strcmp(use_mem_type, "mdb") == 0)
+    else if (strcmp(mdb_param::mdb_type, "mdb") == 0)
     {
       use_share_mem = false;
     }
     else
     {
-      TBSYS_LOG(ERROR, "invalid mdb use memory type: %s. only support mdb_shm or mdb.", use_mem_type);
+      TBSYS_LOG(ERROR, "invalid mdb use memory type: %s. only support mdb_shm or mdb.", mdb_param::mdb_type);
       return NULL;
     }
 

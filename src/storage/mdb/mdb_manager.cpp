@@ -676,6 +676,14 @@ namespace tair {
     }
   }
 
+  void mdb_manager::get_stat(int area, mdb_area_stat *stat)
+  {
+    if (stat == NULL && area < 0 && area >= TAIR_MAX_AREA_COUNT) {
+      return ;
+    }
+    memcpy(stat, area_stat[area], sizeof(mdb_area_stat));
+  }
+
   int mdb_manager::get_meta(data_entry &key, item_meta_info &meta)
   {
     int ret = TAIR_RETURN_DATA_NOT_EXIST;

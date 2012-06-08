@@ -84,15 +84,11 @@ namespace tair {
 
 #define ALIGN(x) ( ((x) + (mem_cache::ALIGN_SIZE-1)) & (~(mem_cache::ALIGN_SIZE-1)))
 #define ITEM_ID(_slab_size,_offset,_page_id,_slab_id)   \
-   ({                                                   \
-      uint64_t __slab_size = _slab_size;                \
-      uint64_t __offset = _offset;                      \
-      uint64_t __page_id = _page_id;                    \
-      uint64_t __slab_id = _slab_id;                    \
-      ((__slab_id & SLAB_ID_MASK) << 52                 \
-       |(__page_id & PAGE_ID_MASK)<<36                  \
-       |(__offset & OFFSET_MASK) << 20                  \
-       |(__slab_size & SLAB_SIZE_MASK));})
+  ({                                                   \
+   (((uint64_t)_slab_id) << 52                 \
+    |((uint64_t)_page_id)<<36                  \
+    |((uint64_t)_offset) << 20                  \
+    |((uint64_t)_slab_size));})
 
 #define ITEM_ADDR(base,item_id,page_size)                               \
    ({assert(item_id != 0);                                              \
@@ -184,7 +180,7 @@ namespace tair {
       const static int PARTIAL_PAGE_BUCKET = 10;        /* every 10 items */
       int partial_pages_bucket_no()
       {
-        return (per_slab + PARTIAL_PAGE_BUCKET - 1) / PARTIAL_PAGE_BUCKET;
+        return partial_pages_bucket_num;
       }
       page_info *PAGE_INFO(char *page)
       {
@@ -192,7 +188,7 @@ namespace tair {
       }
       uint32_t get_partial_page_id()
       {
-        for(int i = 0; i < partial_pages_bucket_no(); ++i) {
+        for(int i = 0; i < partial_pages_bucket_num; ++i) {
           if(partial_pages[i] != 0) {
             return partial_pages[i];
           }
@@ -202,7 +198,7 @@ namespace tair {
       uint32_t get_the_most_free_items_of_partial_page_id()
       {
         //the name is too long,but don't worry about this,
-        for(int i = partial_pages_bucket_no() - 1; i >= 0; --i) {
+        for(int i = partial_pages_bucket_num - 1; i >= 0; --i) {
           if(partial_pages[i] != 0) {
             return partial_pages[i];
           }
@@ -220,6 +216,7 @@ namespace tair {
       int slab_size;
       int per_slab;
       int page_size;
+      int partial_pages_bucket_num;
 
       struct item_list
       {

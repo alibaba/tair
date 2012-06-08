@@ -28,7 +28,7 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 
 AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB} ${TCMALLOC_LDFLAGS}
 
-LDADD=$(top_builddir)/src/storage/mdb/libmdb.a \
+LDADD=$(top_builddir)/src/storage/mdb/.libs/libmdb.a \
       $(top_builddir)/src/storage/fdb/libfdb.a \
       $(KDB_LDFLAGS) \
       $(LDB_LDFLAGS) \

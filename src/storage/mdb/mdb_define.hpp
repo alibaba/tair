@@ -23,6 +23,7 @@
 
 struct mdb_param
 {
+  static const char *mdb_type;
   static const char *mdb_path;
   static int64_t size;
   static int slab_base_size;

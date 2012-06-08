@@ -21,8 +21,7 @@ namespace tair {
   class mdb_factory {
   public:
     static storage::storage_manager * create_mdb_manager();
-      static storage::storage_manager * create_embedded_mdb();
-
+    static storage::storage_manager * create_embedded_mdb();
   };
 
 }                                /* tair */

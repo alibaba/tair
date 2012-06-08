@@ -316,6 +316,8 @@ namespace tair {
       slabmng->slab_id = i;
       slabmng->slab_size = start;
       slabmng->per_slab = (page_size - sizeof(page_info)) / start;
+      slabmng->partial_pages_bucket_num = (slabmng->per_slab+slab_manager::PARTIAL_PAGE_BUCKET-1)
+        / slab_manager::PARTIAL_PAGE_BUCKET;
       slabmng->page_size = page_size;
       slabmng->evict_index = 0;
       slabmng->evict_total_count = 0;
@@ -406,9 +408,10 @@ namespace tair {
 
     TBSYS_LOG(DEBUG, "alloc_new_item,area : %d", area);
     if(partial_pages_no > 0) {
-      TBSYS_LOG(DEBUG, "alloc from partial page:%u", get_partial_page_id());
-      assert(get_partial_page_id() > 0);
-      info = PAGE_INFO(this_mem_pool->index_to_page(get_partial_page_id()));
+      uint32_t partial_page_id = get_partial_page_id();
+      TBSYS_LOG(DEBUG, "alloc from partial page:%u", partial_page_id);
+      assert(partial_page_id > 0);
+      info = PAGE_INFO(this_mem_pool->index_to_page(partial_page_id));
       assert(info != 0);
       assert(info->free_nr > 0);
       assert(info->free_head != 0);
@@ -445,7 +448,7 @@ namespace tair {
       ++partial_pages_no;
     }
 
-    //TODO(maoqi),CLEAR_FLAGS(item_id); 
+    //TODO(maoqi),CLEAR_FLAGS(item_id);
 
     //page : m_free_pages -> m_partial_pages -> m_full_pages
     //every page will obey this rule,even though the page that has only one item.
@@ -469,11 +472,11 @@ namespace tair {
     item = id_to_item(item_id);
     assert(item != 0);
 
-   
+
     info->free_head = item->h_next;
-    
+
     TBSYS_LOG(DEBUG, "from page id:%u,now free:%d,free-head:%lu,id will be use:%lu", info->id, info->free_nr,info->free_head,item_id);
-   
+
     link_item(item, area);
 
     if (item->item_id != item_id)
@@ -481,7 +484,7 @@ namespace tair {
       TBSYS_LOG(ERROR,"why? overwrite? item->item_id [%lu],item_id[%lu]",item->item_id,item_id);
       assert(0);
     }
-    
+
     if (info->free_nr != 0 && info->free_head == 0)
     {
       TBSYS_LOG(ERROR,"the free nr of page is greater than 0,buf the free_head is zero");
@@ -634,12 +637,12 @@ namespace tair {
 
     item->h_next = info->free_head;
     info->free_head = item->item_id;
-    
+
 
     if(++info->free_nr == per_slab) {
       TBSYS_LOG(DEBUG, "this page is all free:%d,free_nr:%d", info->id, info->free_nr);
       --partial_pages_no;
-      
+
       if(free_pages_no + full_pages_no + partial_pages_no <= 1) {
         TBSYS_LOG(DEBUG, "only one page,don't free");
         link_page(info, free_pages);
@@ -652,7 +655,7 @@ namespace tair {
     else {
       link_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
     }
- 
+
     TBSYS_LOG(DEBUG, "after free:page id:%d,%p,info->free_nr:%d,info->free_head:%lu,SLAB_ID(id):%d,info->free_head->next : %lu",
         info->id,info,info->free_nr,info->free_head,SLAB_ID(item->item_id),item->h_next);
   }
@@ -744,9 +747,6 @@ namespace tair {
 
   void mem_cache::slab_manager::init_page(char *page, int index)
   {
-
-    memset(page, 0, page_size);
-
     page_info *info = PAGE_INFO(page);
     info->id = index;
     info->free_nr = per_slab;
@@ -756,20 +756,16 @@ namespace tair {
               per_slab, index,info->free_head);
 
     char *item_start = page + sizeof(page_info);
-    mdb_item *item = 0;
+    mdb_item *item = reinterpret_cast<mdb_item *>(item_start);
     for(int i = 0; i < per_slab; ++i) {
-      item = reinterpret_cast<mdb_item *>(item_start + i * slab_size);
       item->next = item->prev = 0;
       item->item_id = ITEM_ID(slab_size, i, index, slab_id);
       item->h_next = ITEM_ID(slab_size, i + 1, index, slab_id);
-    }
-    item->h_next = 0;
-
-    for(int i=0; i< per_slab;++i)
-    {
-      item = reinterpret_cast<mdb_item *>(item_start + i * slab_size);
       TBSYS_LOG(DEBUG,"in page [%d],the %dth item: %lu,h_next :%lu",info->id,i,item->item_id,item->h_next);
+      item = reinterpret_cast<mdb_item *>((char*)item + slab_size);
     }
+    item = reinterpret_cast<mdb_item *>((char*)item - slab_size);
+    item->h_next = 0;
   }
 
   void mem_cache::clear_page(slab_manager * slab_mng, char *page)

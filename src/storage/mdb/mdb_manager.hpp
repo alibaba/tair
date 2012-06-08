@@ -78,6 +78,8 @@ namespace tair {
 
     void get_stats(tair_stat * stat);
 
+    void get_stat(int area, mdb_area_stat *_stat);
+
     int get_meta(data_entry &key, item_meta_info &meta);
 
     void set_area_quota(int area, uint64_t quota);

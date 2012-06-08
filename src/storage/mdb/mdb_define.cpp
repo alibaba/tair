@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <time.h>
 
+const char *mdb_param::mdb_type = "mdb_shm";
 const char * mdb_param::mdb_path = "mdb_shm_path01";
 int64_t mdb_param::size = (1 << 31);
 int mdb_param::page_size = (1 << 20);

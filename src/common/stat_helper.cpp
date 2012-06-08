@@ -27,6 +27,7 @@ namespace tair {
       data_size = 0;
       sent = false;
       storage_mgr = NULL;
+      init();
    }
    stat_helper::~stat_helper()
     {
@@ -41,8 +42,6 @@ namespace tair {
 
    void stat_helper::run(tbsys::CThread *thread, void *arg)
    {
-      init();
-
       while (_stop == false) {
          reset();
          TAIR_SLEEP(_stop, 10);

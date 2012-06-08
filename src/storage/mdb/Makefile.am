@@ -8,7 +8,7 @@ AM_CPPFLAGS=-I${top_srcdir}/src \
 	    ${BOOST_CPPFLAGS}
 
 LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
-      $(TBLIB_ROOT)/lib/libtbsys.a 
+      $(TBLIB_ROOT)/lib/libtbsys.a
 
 
 shm_source_list=cache_hashmap.cpp \
@@ -18,9 +18,9 @@ shm_source_list=cache_hashmap.cpp \
 		../../common/data_dumpper.cpp
 
 AM_LDFLAGS=-lpthread -lz -static-libgcc $(BOOST_LDFLAGS) @BOOST_THREAD_LIB@  ${GCOV_LIB}
-noinst_LIBRARIES=libmdb.a
+lib_LTLIBRARIES=libmdb.la libmdb_c.la
 
-libmdb_a_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
+libmdb_la_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
 					cache_hashmap.hpp	\
 					mdb_define.hpp	\
 					mdb_factory.hpp	\
@@ -28,18 +28,34 @@ libmdb_a_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
 					mdb_stat.hpp	\
 					mem_cache.hpp   \
 					mem_pool.hpp
-#libmdb_a_LDFLAGS=${AM_LDFLAGS} 
+#libmdb_a_LDFLAGS=${AM_LDFLAGS}
+libmdb_c_la_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
+					cache_hashmap.hpp	\
+					mdb_define.hpp	\
+					mdb_factory.hpp	\
+					mdb_manager.hpp	\
+					mdb_stat.hpp	\
+					mem_cache.hpp   \
+					mem_pool.hpp \
+					libmdb_c.hpp \
+					libmdb_c.cpp
 
-noinst_PROGRAMS=mdbtest mdbSlabAndAreaTest mdbAreaTest 
-mdbtest_SOURCES=mdb_test.cpp ../../common/data_dumpper.cpp ../../common/stat_helper.cpp 
-mdbtest_LDADD=libmdb.a $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
+noinst_PROGRAMS=mdbtest mdbSlabAndAreaTest mdbAreaTest libmdb_test_c
+mdbtest_SOURCES=mdb_test.cpp ../../common/stat_helper.cpp
+mdbtest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
+mdbtest_LDFLAGS=-static
 
 #noinst_PROGRAMS=mdbSlabAndAreaTest
-mdbSlabAndAreaTest_SOURCES=mdb_slab_test.cpp ../../common/data_dumpper.cpp ../../common/stat_helper.cpp
+mdbSlabAndAreaTest_SOURCES=mdb_slab_test.cpp ../../common/stat_helper.cpp
 
-mdbSlabAndAreaTest_LDADD=libmdb.a $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
+mdbSlabAndAreaTest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
+mdbSlabAndAreaTest_LDFLAGS=-static
 
 #noinst_PROGRAMS=mdbAreaTest
-mdbAreaTest_SOURCES=mdb_area_test.cpp ../../common/data_dumpper.cpp ../../common/stat_helper.cpp 
-mdbAreaTest_LDADD=libmdb.a $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
+mdbAreaTest_SOURCES=mdb_area_test.cpp ../../common/stat_helper.cpp
+mdbAreaTest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
+mdbAreaTest_LDFLAGS=-static
 
+libmdb_test_c_SOURCES=libmdb_test_c.cpp ../../common/stat_helper.cpp
+libmdb_test_c_LDADD=libmdb_c.la $(LDADD) -lpthread -lrt @BOOST_THREAD_LIB@
+libmdb_test_c_LDFLAGS=-static
