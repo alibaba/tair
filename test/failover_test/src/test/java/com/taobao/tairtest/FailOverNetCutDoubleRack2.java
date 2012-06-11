@@ -37,7 +37,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -86,7 +86,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -96,9 +96,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
-		shutoff_net(csList.get(0), dsList2.get(5));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -176,7 +176,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -186,7 +186,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_equal(csList.get(0), start_migrate, migrateCount1);
@@ -196,9 +196,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -276,7 +276,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_equal(csList.get(0), start_migrate, migrateCount1);
@@ -286,7 +286,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -296,9 +296,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -374,7 +374,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -383,7 +383,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a2b1
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -392,11 +392,11 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));		
-		shutoff_net(csList.get(1), dsList2.get(2));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);		
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -467,7 +467,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -476,7 +476,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -485,7 +485,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -494,9 +494,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));		
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);		
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -567,7 +567,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -576,7 +576,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -585,7 +585,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -594,11 +594,11 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 		
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
-		shutoff_net(csList.get(0), csList.get(1));
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));		
-		shutoff_net(csList.get(1), dsList2.get(2));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);		
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -671,7 +671,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -681,7 +681,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_equal(csList.get(0), start_migrate, migrateCount1);
@@ -691,9 +691,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -873,7 +873,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_equal(csList.get(0), start_migrate, migrateCount1);
@@ -883,7 +883,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -893,9 +893,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -1053,7 +1053,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1062,7 +1062,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a2b1
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1071,11 +1071,11 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));		
-		shutoff_net(csList.get(1), dsList2.get(2));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);		
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1221,7 +1221,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1230,7 +1230,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1239,7 +1239,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1248,9 +1248,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));		
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);		
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1382,7 +1382,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1391,7 +1391,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_equal(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1400,7 +1400,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		///////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1409,11 +1409,11 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 		
 		///////////////////////////////////////////////////////////////////
 		//shut off: all
-		shutoff_net(csList.get(0), csList.get(1));
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));		
-		shutoff_net(csList.get(1), dsList2.get(2));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);		
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);	
 		wait_keyword_change(csList.get(0),start_migrate, init_migrateCount1 );
 		wait_keyword_change(csList.get(1),start_migrate, init_migrateCount2 );
@@ -1557,7 +1557,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b1
-		shutoff_net(csList.get(0), csList.get(1));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -1567,7 +1567,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -1577,9 +1577,9 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 
 		/////////////////////////////////////////////////////////////////////////////
 		//shut off: b1a2
-		shutoff_net(csList.get(1), dsList2.get(2));
-		shutoff_net(csList.get(0), dsList2.get(5));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		waitto(ds_down_time);
 
 		wait_keyword_change(csList.get(0), start_migrate, migrateCount1);
@@ -1734,7 +1734,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 		waitto(10);
 		
 		//shut off: a1b2
-		shutoff_net(csList.get(0), dsList2.get(3));
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
 //		waitto(ds_down_time/4);
 		
 		wait_keyword_equal(csList.get(0),start_migrate, init_migrateCount1);
@@ -1783,11 +1783,11 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase{
 		waitto(10);
 
 		//shut off: all
-		shutoff_net(csList.get(0), csList.get(1));
-		shutoff_net(csList.get(0), dsList2.get(3));
-		shutoff_net(csList.get(0), dsList2.get(5));
-		shutoff_net(csList.get(1), dsList2.get(2));
-		shutoff_net(csList.get(1), dsList2.get(4));
+		shutoff_net(csList.get(0), csport, csList.get(1), csport);
+		shutoff_net(csList.get(0), csport, dsList2.get(3), dsport);
+		shutoff_net(csList.get(0), csport, dsList2.get(5), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(2), dsport);
+		shutoff_net(csList.get(1), csport, dsList2.get(4), dsport);
 		
 		waitto(ds_down_time);
 		

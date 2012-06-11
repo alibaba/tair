@@ -41,6 +41,8 @@ public class FailOverBaseCase extends BaseTestCase{
     // server name
     protected static String csname;
     protected static String dsname;
+    protected static String csport;
+    protected static String dsport;
     protected static String toolname;
     protected static String toolconf;
     // distinguish if mdb needs touch
@@ -102,6 +104,8 @@ public class FailOverBaseCase extends BaseTestCase{
         kv_name = ps.getValue("public", "kv_name");
         csname = ps.getValue("public", "csname");
         dsname = ps.getValue("public", "dsname");
+        csport = ps.getValue("public", "csport");
+        dsport = ps.getValue("public", "dsport");
         toolname = ps.getValue("public", "toolname");
         toolconf = ps.getValue("public", "toolconf");
     }
@@ -488,85 +492,22 @@ public class FailOverBaseCase extends BaseTestCase{
         return ret;
     }
 
-    public void shutoff_net(String machine1, String machine2) {
-        log.debug("shut off net between " + machine1 + " and " + machine2);
-        boolean ret1 = false;
-        boolean ret2 = false;
-        boolean ret3 = false;
-        boolean ret4 = false;
+    public void shutoff_net(String machine1,String port1, String machine2, String port2) {
+        log.debug("shut off net between " + machine1 + ":" + port1 + " and " + machine2 + ":" + port2);
         String cmd = "ssh root@localhost " + "\"/sbin/iptables -A OUTPUT -d "
-            + machine2 + " -j DROP\"";
+            + machine2 + " -p tcp --dport " + port2 + " -j DROP && /sbin/iptables-save\"";
         STAFResult result = executeShell(stafhandle, machine1, cmd);
         if (result.rc != 0) {
-            ret1 = false;
-            // return ret1;
+            fail("shut off net between " + machine1 + " and " + machine2 + " failed!");
         } else {
-            cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
+            cmd = "ssh root@localhost " + "\"/sbin/iptables -A INPUT -s " + machine2 + " -p tcp --dport " + port1 + " -j DROP && /sbin/iptables-save\"";
             result = executeShell(stafhandle, machine1, cmd);
             if (result.rc != 0) {
-                ret1 = false;
-                // return ret1;
+                fail("shut off net between " + machine1 + " and " + machine2 + " failed!");
             } else {
-                ret1 = true;
-                // return ret1;
+                log.info("shut off net between " + machine1 + " and " + machine2 + " successful!");
             }
         }
-        cmd = "ssh root@localhost " + "\"/sbin/iptables -A OUTPUT -d "
-            + machine1 + " -j DROP\"";
-        result = executeShell(stafhandle, machine2, cmd);
-        if (result.rc != 0) {
-            ret2 = false;
-            // return ret2;
-        } else {
-            cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
-            result = executeShell(stafhandle, machine2, cmd);
-            if (result.rc != 0) {
-                ret2 = false;
-                // return ret2;
-            } else {
-                ret2 = true;
-                // return ret2;
-            }
-        }
-        cmd = "ssh root@localhost " + "\"/sbin/iptables -A INPUT -s "
-            + machine2 + " -j DROP\"";
-        result = executeShell(stafhandle, machine1, cmd);
-        if (result.rc != 0) {
-            ret3 = false;
-            // return ret3;
-        } else {
-            cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
-            result = executeShell(stafhandle, machine1, cmd);
-            if (result.rc != 0) {
-                ret3 = false;
-                // return ret3;
-            } else {
-                ret3 = true;
-                // return ret3;
-            }
-        }
-        cmd = "ssh root@localhost " + "\"/sbin/iptables -A INPUT -s "
-            + machine1 + " -j DROP\"";
-        result = executeShell(stafhandle, machine2, cmd);
-        if (result.rc != 0) {
-            ret4 = false;
-            // return ret4;
-        } else {
-            cmd = "ssh root@localhost " + "\"/sbin/iptables-save\"";
-            result = executeShell(stafhandle, machine2, cmd);
-            if (result.rc != 0) {
-                ret4 = false;
-                // return ret4;
-            } else {
-                ret4 = true;
-                // return ret4;
-            }
-        }
-        if (!ret1 || !ret2 || !ret3 || !ret4)
-            fail("shut off net between " + machine1 + " and " + machine2
-                    + " failure!");
-        log.error("shut off net between " + machine1 + " and " + machine2
-                + " successful!");
     }
 
     public boolean recover_net(String machine) {
