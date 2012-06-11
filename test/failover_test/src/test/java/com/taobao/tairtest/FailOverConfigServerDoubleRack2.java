@@ -15,28 +15,28 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_01_kill_master_cs_and_one_ds_on_master_rack() {
 		log.error("start config test Failover case 01");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		// write 100k data to cluster
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -55,42 +55,42 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		// wait 10s for duplicate
 		waitto(10);
 
-		if (!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_cs(csList.get(0), stop, 0))
 			fail("close master config server failed!");
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("master cs and one ds in master rack have been closed!");
 		waitto(ds_down_time);
 
 		// check migration stat of start
-		if (check_keyword((String) csList.get(1), start_migrate, tair_bin
+		if (check_keyword(csList.get(1), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
-		int version_count = check_keyword((String) csList.get(1),
+		int version_count = check_keyword(csList.get(1),
 				start_migrate, tair_bin + "logs/config.log");
 
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start data server failed!");
-		if (!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(0), start, 0))
 			fail("start master config server failed!");
 		log.error("master cs and one ds in master rack have been started!");
 		waitto(down_time);
 
-		if (check_keyword((String) csList.get(1), start_migrate, tair_bin
+		if (check_keyword(csList.get(1), start_migrate, tair_bin
 				+ "logs/config.log") != version_count + 1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -112,28 +112,28 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_02_kill_slave_cs_and_one_ds_on_slave_rack() {
 		log.error("start config test Failover case 02");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		// write 100k data to cluster
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -152,46 +152,46 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		// wait 5s for duplicate
 		waitto(10);
 
-		int versionCount = check_keyword((String) csList.get(0),
+		int versionCount = check_keyword(csList.get(0),
 				finish_rebuild, tair_bin + "logs/config.log");
 
-		if (!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(1), stop, 0))
 			fail("close data server failed!");
 		waitto(ds_down_time);
-		if (!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))
+		if (!control_cs(csList.get(1), stop, 0))
 			fail("close slave config server failed!");
 		waitto(down_time);
 		log.error("slave cs and one ds in slave rack have been closed!");
 
 		// check migration stat of start
-		if (check_keyword((String) csList.get(0), finish_rebuild, tair_bin
+		if (check_keyword(csList.get(0), finish_rebuild, tair_bin
 				+ "logs/config.log") != versionCount + 1)
 			fail("version not changed!");
 		log.error("version changed!");
 
-		int version_count = check_keyword((String) csList.get(0),
+		int version_count = check_keyword(csList.get(0),
 				start_migrate, tair_bin + "logs/config.log");
 
-		if (!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(1), start, 0))
 			fail("start slave config server failed!");
-		if (!control_ds((String) dsList.get(1), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(1), start, 0))
 			fail("start data server failed!");
 		log.error("slave cs and one ds in slave rack have been started!");
 		waitto(ds_down_time);
 
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != version_count + 1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -213,25 +213,25 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_03_kill_master_rack() {
 		log.error("start config test Failover case 03");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -248,24 +248,24 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 
 		waitto(10);
 
-		if (!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_cs(csList.get(0), stop, 0))
 			fail("close master config server failed!");
 		for (int i = 0; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if (!control_ds(dsList.get(i), stop, 0))
 				fail("close data server failed!");
 			waitto(ds_down_time);
 		}
 		log.error("master rack have been closed!");
 
 		// check migration stat of start
-		if (check_keyword((String) csList.get(1), start_migrate, tair_bin
+		if (check_keyword(csList.get(1), start_migrate, tair_bin
 				+ "logs/config.log") != dsList.size() / 2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// write data while migrating
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -279,32 +279,32 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("Write data over!");
 		waitto(10);
 
-		int version_count = check_keyword((String) csList.get(1),
+		int version_count = check_keyword(csList.get(1),
 				start_migrate, tair_bin + "logs/config.log");
 
 		for (int i = 0; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if (!control_ds(dsList.get(i), start, 0))
 				fail("start data server failed!");
 			waitto(ds_down_time);
 		}
-		if (!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(0), start, 0))
 			fail("start master config server failed!");
 		log.error("master rack have been started!");
 		waitto(down_time);
 
-		if (check_keyword((String) csList.get(1), start_migrate, tair_bin
+		if (check_keyword(csList.get(1), start_migrate, tair_bin
 				+ "logs/config.log") != version_count + dsList.size() / 2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -328,27 +328,27 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_04_kill_slave_rack() {
 		log.error("start config test Failover case 04");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -367,23 +367,23 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		waitto(10);
 
 		for (int i = 1; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if (!control_ds(dsList.get(i), stop, 0))
 				fail("close data server failed!");
 			waitto(ds_down_time);
 		}
-		if (!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))
+		if (!control_cs(csList.get(1), stop, 0))
 			fail("close slave config server failed!");
 		log.error("slave rack have been closed!");
 
 		// check migration stat of start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != dsList.size() / 2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// write data while migrating
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -397,33 +397,33 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("Write data over!");
 		waitto(10);
 
-		int version_count = check_keyword((String) csList.get(0),
+		int version_count = check_keyword(csList.get(0),
 				start_migrate, tair_bin + "logs/config.log");
 
 		for (int i = 1; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if (!control_ds(dsList.get(i), start, 0))
 				fail("start data server failed!");
 			waitto(down_time);
 		}
-		if (!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(1), start, 0))
 			fail("start slave config server failed!");
 		log.error("master rack have been started!");
 		// wait 10s for data server start
 		waitto(down_time);
 
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != version_count + dsList.size() / 2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -447,24 +447,24 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_05_kill_master_rack_and_one_ds_on_slave_rack() {
 		log.error("start config test Failover case 05");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -478,36 +478,36 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("Write data over!");
 		waitto(10);
 
-		if (!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_cs(csList.get(0), stop, 0))
 			fail("close master config server failed!");
 		for (int i = 0; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if (!control_ds(dsList.get(i), stop, 0))
 				fail("close data server failed!");
 			waitto(ds_down_time);
 		}
 
-		int version_count = check_keyword((String) csList.get(1),
+		int version_count = check_keyword(csList.get(1),
 				finish_rebuild, tair_bin + "logs/config.log");
-		int migrate_count = check_keyword((String) csList.get(1),
+		int migrate_count = check_keyword(csList.get(1),
 				start_migrate, tair_bin + "logs/config.log");
 
-		if (!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(1), stop, 0))
 			fail("close data server in slave rack failed!");
 		log.error("master rack and one ds in slave rack have been closed!");
 		waitto(ds_down_time);
 
 		// check migration stat of start
-		if (check_keyword((String) csList.get(1), finish_rebuild, tair_bin
+		if (check_keyword(csList.get(1), finish_rebuild, tair_bin
 				+ "logs/config.log") != version_count + 1)
 			fail("migrate not start!");
-		if (check_keyword((String) csList.get(1), start_migrate, tair_bin
+		if (check_keyword(csList.get(1), start_migrate, tair_bin
 				+ "logs/config.log") != migrate_count + 1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// write data while migrating
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -522,13 +522,13 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		waitto(10);
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -542,19 +542,19 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("Successfully Verified data!");
 
 		for (int i = 0; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if (!control_ds(dsList.get(i), start, 0))
 				fail("start data server failed!");
 			waitto(ds_down_time);
 		}
-		if (!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(0), start, 0))
 			fail("start master config server failed!");
 		log.error("master rack have been started!");
 		waitto(down_time);
 
-		if (check_keyword((String) csList.get(1), start_migrate, tair_bin
+		if (check_keyword(csList.get(1), start_migrate, tair_bin
 				+ "logs/config.log") != migrate_count + 1 + dsList.size() / 2)
 			fail("migrate not start!");
-		if (check_keyword((String) csList.get(1), finish_rebuild, tair_bin
+		if (check_keyword(csList.get(1), finish_rebuild, tair_bin
 				+ "logs/config.log") != version_count + 1 + dsList.size() / 2)
 			fail("version not change!");
 		log.error("check migrate started!");
@@ -562,7 +562,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -585,27 +585,27 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_06_kill_slave_rack_and_one_ds_on_master_rack() {
 		log.error("start config test Failover case 06");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -625,36 +625,36 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		waitto(10);
 
 		for (int i = 1; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if (!control_ds(dsList.get(i), stop, 0))
 				fail("close data server failed!");
 			waitto(ds_down_time);
 		}
-		if (!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))
+		if (!control_cs(csList.get(1), stop, 0))
 			fail("close slave config server failed!");
 		log.error("master rack and one ds in slave rack have been closed!");
 		waitto(down_time);
 
-		int version_count = check_keyword((String) csList.get(0),
+		int version_count = check_keyword(csList.get(0),
 				finish_rebuild, tair_bin + "logs/config.log");
-		int migrate_count = check_keyword((String) csList.get(0),
+		int migrate_count = check_keyword(csList.get(0),
 				start_migrate, tair_bin + "logs/config.log");
 
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server in master rack failed!");
 		waitto(ds_down_time);
 
 		// check migration stat of start
-		if (check_keyword((String) csList.get(0), finish_rebuild, tair_bin
+		if (check_keyword(csList.get(0), finish_rebuild, tair_bin
 				+ "logs/config.log") != version_count + 1)
 			fail("version not change!");
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != migrate_count + 1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		// write data while migrating
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -669,13 +669,13 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		waitto(10);
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -689,19 +689,19 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("Successfully Verified data!");
 
 		for (int i = 1; i < dsList.size(); i += 2) {
-			if (!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if (!control_ds(dsList.get(i), start, 0))
 				fail("start data server failed!");
 			waitto(ds_down_time);
 		}
-		if (!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(1), start, 0))
 			fail("start slave config server failed!");
 		log.error("slave rack have been started!");
 		waitto(down_time);
 
-		if (check_keyword((String) csList.get(0), finish_rebuild, tair_bin
+		if (check_keyword(csList.get(0), finish_rebuild, tair_bin
 				+ "logs/config.log") != version_count + 1 + dsList.size() / 2)
 			fail("version not change!");
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != migrate_count + 1 + dsList.size() / 2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
@@ -709,7 +709,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -732,23 +732,23 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_07_kill_one_ds_on_each_rack() {
 		log.error("start config test Failover case 07");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -765,38 +765,38 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		waitto(10);
 
 		// check if version changed after one ds stoped on master rack
-		// int version_count=check_keyword((String) csList.get(0),
+		// int version_count=check_keyword(csList.get(0),
 		// finish_rebuild, tair_bin+"logs/config.log");
-		int migrate_count = check_keyword((String) csList.get(0),
+		int migrate_count = check_keyword(csList.get(0),
 				start_migrate, tair_bin + "logs/config.log");
 
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server on master rack failed!");
 		waitto(ds_down_time);
 
-		// if(check_keyword((String) csList.get(0), finish_rebuild,
+		// if(check_keyword(csList.get(0), finish_rebuild,
 		// tair_bin+"logs/config.log")!=version_count+1)
 		// fail("version not changed after stop one ds on master rack!");
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != migrate_count + 1)
 			fail("migrate not start after stop one ds on master rack!");
 
 		// check if version changed after one ds stoped on slave rack
-		if (!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(1), stop, 0))
 			fail("close data server on slave rack failed!");
 		waitto(ds_down_time);
 
-		// if(check_keyword((String) csList.get(0), finish_rebuild,
+		// if(check_keyword(csList.get(0), finish_rebuild,
 		// tair_bin+"logs/config.log")!=version_count+2)
 		// fail("version not changed after stop one ds on slave rack!");
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != migrate_count + 2)
 			fail("migrate not start after stop one ds on master rack!");
 		log.error("migrate started!");
 
 		// write data while migrating
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -810,11 +810,11 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("Write data over!");
 		waitto(10);
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -827,24 +827,24 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		assertTrue("verify data failed!", datacnt / put_count_float > 1.6);
 		log.error("Successfully Verified data!");
 
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start ds on master rack failed!");
 		waitto(down_time);
-		if (!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(1), start, 0))
 			fail("start ds on slave rack failed!");
 		waitto(down_time);
 		log.error("the stoped ds on each rack have been started!");
 
-		// if(check_keyword((String) csList.get(0), finish_rebuild,
+		// if(check_keyword(csList.get(0), finish_rebuild,
 		// tair_bin+"logs/config.log")!=version_count+4)
 		// fail("version not changed after restart one ds on each rack!");
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != migrate_count + 4)
 			fail("migrate not start after restart one ds on each rack!");
 		log.error("migrate started!");
 
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -867,14 +867,14 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("start config test Failover case 08");
 		int waitcnt = 0;
 
-		if (!modify_config_file((String) csList.get(0), tair_bin
-				+ "etc/group.conf", "_accept_strategy", "1"))
+		if (!modify_config_file(csList.get(0), tair_bin
+				+ groupconf, "_accept_strategy", "1"))
 			fail("modify _accept_strategy failure");
 		log.error("_accept_strategy has been changed!");
 
 		// start cluster
 		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
-				FailOverBaseCase.start, 0))
+				start, 0))
 			fail("start cluster failure!");
 
 		log.error("Start Cluster Successful!");
@@ -882,21 +882,21 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		waitto(down_time);
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failure");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failure");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failure");
 
 		// write 100k data to cluster
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -911,17 +911,17 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("Write data over!");
 
 		// close ds
-		if (!control_ds((String) dsList.get(dsList.size() - 1),
-				FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(dsList.size() - 1),
+				start, 0))
 			fail("start ds failure!");
 		log.error("last data server has been started!");
 
 		waitto(2);
 		// check if strike migrate without touch configure file
-		while (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		while (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration start on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(2);
 			if (++waitcnt > 10)
 				break;
@@ -932,10 +932,10 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 
 		// wait migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -946,13 +946,13 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 
 		// check data
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failure");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -973,21 +973,23 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 
 	@Before
 	public void setUp() {
-		log.error("clean tool and cluster!");
-		clean_tool("local");
-		reset_cluster(csList, dsList);
-		if (!batch_modify(csList, tair_bin + "etc/group.conf", "_copy_count",
+        log.info("clean tool and cluster while setUp!");
+        clean_tool(local);
+        reset_cluster(csList, dsList);
+        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
+		if (!batch_modify(csList, tair_bin + groupconf, copycount,
 				"2"))
 			fail("modify configure file failure");
-		if (!batch_modify(dsList, tair_bin + "etc/group.conf", "_copy_count",
+		if (!batch_modify(dsList, tair_bin + groupconf, copycount,
 				"2"))
 			fail("modify configure file failure");
 	}
 
 	@After
 	public void tearDown() {
-		clean_tool("local");
-		log.error("clean tool and cluster!");
-		batch_uncomment(csList, tair_bin + "etc/group.conf", dsList, "#");
+		log.info("clean tool and cluster while tearDown!");
+        clean_tool(local);
+        reset_cluster(csList, dsList);
+        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 }

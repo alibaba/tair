@@ -30,6 +30,7 @@ public class FailOverBaseCase extends BaseTestCase{
     protected static int ds_down_time;
     protected static String put_count;
     protected static float put_count_float;
+    protected static String kv_name;
     // server list
     protected static List<String> csList;
     protected static List<String> dsList;
@@ -45,40 +46,46 @@ public class FailOverBaseCase extends BaseTestCase{
     // distinguish if mdb needs touch
     protected static int touch_flag;
     // server operation
+    final static String groupconf = "etc/group.conf";
     final static String start = "start";
     final static String stop = "stop";
+    final static String copycount = "_copy_count";
     // tool option
+    final static String actiontype= "actiontype";
+    final static String datasize = "datasize";
+    final static String filename = "filename";
     final static String put = "put";
     final static String get = "get";
     final static String rem = "rem";
+    // system option
+    final static String local = "local";
 
     @BeforeClass
-        public static void setUpClass() {
-            ConfParser parser = new ConfParser("failover.conf");
+    public static void setUpClass() {
+        ConfParser parser = new ConfParser("failover.conf");
 
-            // Read public configuration
-            readPublic(parser);
+        // Read public configuration
+        readPublic(parser);
 
-            // Read mdb configuration
-            if ("mdb".equals(db_type))
-                readMdbConf(parser);
+        // Read mdb configuration
+        if ("mdb".equals(db_type))
+            readMdbConf(parser);
 
-            // Read ldb configuration
-            else if ("ldb".equals(db_type))
-                readLdbConf(parser);
+        // Read ldb configuration
+        else if ("ldb".equals(db_type))
+            readLdbConf(parser);
 
-            // Read rdb configuration
-            else if ("rdb".equals(db_type))
-                readRdbConf(parser);
+        // Read rdb configuration
+        else if ("rdb".equals(db_type))
+            readRdbConf(parser);
 
-            // Read invalid configuration
-            else if ("invalid".equals(db_type))
-                readInvalidConf(parser);
-            else
-                assertTrue(
-                        "db_type error! it must be mdb | ldb | rdb | invalid, but actual "
-                        + db_type, false);
-
+        // Read invalid configuration
+        else if ("invalid".equals(db_type))
+            readInvalidConf(parser);
+        else
+            assertTrue(
+                    "db_type error! it must be mdb | ldb | rdb | invalid, but actual "
+                    + db_type, false);
         }
 
     private static void readPublic(ConfParser ps) {
@@ -92,6 +99,7 @@ public class FailOverBaseCase extends BaseTestCase{
         ds_down_time = Integer.parseInt(ps.getValue("public", "ds_down_time"));
         put_count = ps.getValue("public", "put_count");
         put_count_float = (float) Integer.parseInt(put_count);
+        kv_name = ps.getValue("public", "kv_name");
         csname = ps.getValue("public", "csname");
         dsname = ps.getValue("public", "dsname");
         toolname = ps.getValue("public", "toolname");
@@ -242,10 +250,10 @@ public class FailOverBaseCase extends BaseTestCase{
      *            0:normal 1:force
      * @return
      */
-    public boolean batch_control_cs(List cs_group, String opID, int type) {
+    public boolean batch_control_cs(List<String> cs_group, String opID, int type) {
         boolean ret = false;
-        for (Iterator it = cs_group.iterator(); it.hasNext();) {
-            if (!control_cs((String) it.next(), opID, type)) {
+        for (Iterator<String> it = cs_group.iterator(); it.hasNext();) {
+            if (!control_cs(it.next(), opID, type)) {
                 ret = false;
                 break;
             } else
@@ -261,10 +269,10 @@ public class FailOverBaseCase extends BaseTestCase{
      *            0:normal 1:force
      * @return
      */
-    public boolean batch_control_ds(List ds_group, String opID, int type) {
+    public boolean batch_control_ds(List<String> ds_group, String opID, int type) {
         boolean ret = false;
-        for (Iterator it = ds_group.iterator(); it.hasNext();) {
-            if (!control_ds((String) it.next(), opID, type)) {
+        for (Iterator<String> it = ds_group.iterator(); it.hasNext();) {
+            if (!control_ds(it.next(), opID, type)) {
                 ret = false;
                 break;
             } else
@@ -367,10 +375,10 @@ public class FailOverBaseCase extends BaseTestCase{
         return ret;
     }
 
-    public boolean batch_clean_data(List machines) {
+    public boolean batch_clean_data(List<String> machines) {
         boolean ret = true;
-        for (Iterator it = machines.iterator(); it.hasNext();) {
-            if (!clean_data((String) it.next()))
+        for (Iterator<String> it = machines.iterator(); it.hasNext();) {
+            if (!clean_data(it.next()))
                 ret = false;
         }
         return ret;
@@ -468,11 +476,11 @@ public class FailOverBaseCase extends BaseTestCase{
     }
 
     // /////////////////////////////////////////////////////////////////////////////////////////////
-    public boolean batch_modify(List machines, String confname, String key,
+    public boolean batch_modify(List<String> machines, String confname, String key,
             String value) {
         boolean ret = true;
-        for (Iterator it = machines.iterator(); it.hasNext();) {
-            if (!modify_config_file((String) it.next(), confname, key, value)) {
+        for (Iterator<String> it = machines.iterator(); it.hasNext();) {
+            if (!modify_config_file(it.next(), confname, key, value)) {
                 ret = false;
                 break;
             }
@@ -571,10 +579,10 @@ public class FailOverBaseCase extends BaseTestCase{
         return ret;
     }
 
-    public boolean batch_recover_net(List machines) {
+    public boolean batch_recover_net(List<String> machines) {
         boolean ret = true;
-        for (Iterator it = machines.iterator(); it.hasNext();) {
-            if (!recover_net((String) it.next())) {
+        for (Iterator<String> it = machines.iterator(); it.hasNext();) {
+            if (!recover_net(it.next())) {
                 ret = false;
                 break;
             }
@@ -675,7 +683,7 @@ public class FailOverBaseCase extends BaseTestCase{
         return ret;
     }
 
-    // if(!copy_file(csList.get(0), FailOverBaseCase.table_path +
+    // if(!copy_file(csList.get(0), table_path +
     // "group_1_server_table", local))fail("copy table file failed!");
     public boolean copy_file(String source_machine, String filename,
             String target_machine) {
@@ -738,13 +746,13 @@ public class FailOverBaseCase extends BaseTestCase{
         return ret;
     }
 
-    public boolean batch_uncomment(List machines, String confname,
+    public boolean batch_uncomment(List<String> machines, String confname,
             List keywords, String comment) {
         boolean ret = true;
-        for (Iterator ms = machines.iterator(); ms.hasNext();) {
-            String cms = (String) ms.next();
-            for (Iterator ks = keywords.iterator(); ks.hasNext();) {
-                if (!uncomment_line(cms, confname, (String) ks.next(), comment))
+        for (Iterator<String> ms = machines.iterator(); ms.hasNext();) {
+            String cms = ms.next();
+            for (Iterator<String> ks = keywords.iterator(); ks.hasNext();) {
+                if (!uncomment_line(cms, confname, ks.next(), comment))
                     ret = false;
             }
         }

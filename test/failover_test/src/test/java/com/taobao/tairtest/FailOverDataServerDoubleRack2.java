@@ -4,7 +4,6 @@
 package com.taobao.tairtest;
 
 import static org.junit.Assert.*;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,23 +15,23 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 	{ 
 		log.error("start DataServer test Failover case 05");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, put))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "datasize", put_count))
+		if(!modify_config_file(local, test_bin+toolconf, datasize, put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))
+		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -50,15 +49,15 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		waitto(10);
 
 		//close more data server in master rack 
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
-		if(!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if(!control_ds(dsList.get(2), stop, 0))
 			fail("close data server failed!");
 		log.error("all data server in master rack have been closed!");
 		waitto(ds_down_time);
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")==0)
+		while(check_keyword(csList.get(0), start_migrate, tair_bin+"logs/config.log")==0)
 		{
 			waitto(2);
 			if(++waitcnt>10)break;
@@ -68,20 +67,20 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		log.error("check migrate started!");
 
 		//start the 2 data server again
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if(!control_ds(dsList.get(0), start, 0))
 			fail("start data server failed!");
-		if(!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if(!control_ds(dsList.get(2), start, 0))
 			fail("start data server failed!");
 		log.error("all data server in master rack have been started!");
 		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -103,23 +102,23 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 	{ 
 		log.error("start DataServer test Failover case 25");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, put))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "datasize", put_count))
+		if(!modify_config_file(local, test_bin+toolconf, datasize, put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))
+		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -137,15 +136,15 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		waitto(10);
 
 		//close more data server in master rack 
-		if(!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if(!control_ds(dsList.get(1), stop, 0))
 			fail("close data server failed!");
-		if(!control_ds((String) dsList.get(3), FailOverBaseCase.stop, 0))
+		if(!control_ds(dsList.get(3), stop, 0))
 			fail("close data server failed!");
 		log.error("all data server in slave rack have been closed!");
 		waitto(ds_down_time);
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")==0)
+		while(check_keyword(csList.get(0), start_migrate, tair_bin+"logs/config.log")==0)
 		{
 			waitto(2);
 			if(++waitcnt>10)break;
@@ -155,21 +154,21 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		log.error("check migrate started!");
 
 		//start the 2 data server again
-		if(!control_ds((String) dsList.get(1), FailOverBaseCase.start, 0))
+		if(!control_ds(dsList.get(1), start, 0))
 			fail("start data server failed!");
-		if(!control_ds((String) dsList.get(3), FailOverBaseCase.start, 0))
+		if(!control_ds(dsList.get(3), start, 0))
 			fail("start data server failed!");
 		log.error("all data server in slave rack have been started!");
 		//wait for data server start
 		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -191,23 +190,23 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 	{ 
 		log.error("start DataServer test Failover case 25");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, put))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "datasize", put_count))
+		if(!modify_config_file(local, test_bin+toolconf, datasize, put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))
+		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -227,14 +226,14 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		//close all data server in master rack 
 		for(int i=0; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if(!control_ds(dsList.get(i), stop, 0))
 				fail("close data server failed!");
 			waitto(ds_down_time);
 		}
 		log.error("all data server in master rack have been closed!");
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=dsList.size()/2)
+		while(check_keyword(csList.get(0), start_migrate, tair_bin+"logs/config.log")!=dsList.size()/2)
 		{
 			waitto(2);
 			if(++waitcnt>10)break;
@@ -246,19 +245,19 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		//start the 2 data server again
 		for(int j=0; j<dsList.size(); j+=2)
 		{
-			if(!control_ds((String) dsList.get(j), FailOverBaseCase.start, 0))
+			if(!control_ds(dsList.get(j), start, 0))
 				fail("start data server failed!");
 		}
 		log.error("all data server in master rack have been started!");
 		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -280,23 +279,23 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 	{ 
 		log.error("start DataServer test Failover case 27");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "put"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, put))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "datasize", put_count))
+		if(!modify_config_file(local, test_bin+toolconf, datasize, put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", test_bin+toolconf, "filename", "read.kv"))
+		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -316,14 +315,14 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		//close all data server in master rack 
 		for(int i=1; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if(!control_ds(dsList.get(i), stop, 0))
 				fail("close data server failed!");
 			waitto(ds_down_time);
 		}
 		log.error("all data server in slave rack have been closed!");
 
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=dsList.size()/2)
+		while(check_keyword(csList.get(0), start_migrate, tair_bin+"logs/config.log")!=dsList.size()/2)
 		{
 			waitto(2);
 			if(++waitcnt>10)break;
@@ -335,19 +334,19 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 		//start the  2 data server again
 		for(int j=1; j<dsList.size(); j+=2)
 		{
-			if(!control_ds((String) dsList.get(j), FailOverBaseCase.start, 0))
+			if(!control_ds(dsList.get(j), start, 0))
 				fail("start data server failed!");
 		}
 		log.error("all data server in slave rack have been started!");
 		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", test_bin+toolconf, "actiontype", "get"))
+		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
 		//check verify
-		while(check_process("local", toolname)!=2)
+		while(check_process(local, toolname)!=2)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -367,20 +366,22 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase{
 	@Before
 	public void setUp()
 	{
-		log.error("clean tool and cluster!");
-		clean_tool("local");
-		reset_cluster(csList,dsList);
-		if(!batch_modify(csList, tair_bin+"etc/group.conf", "_copy_count", "2"))
+        log.info("clean tool and cluster while setUp!");
+        clean_tool(local);
+        reset_cluster(csList, dsList);
+        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
+		if(!batch_modify(csList, tair_bin+groupconf, copycount, "2"))
             fail("modify configure file failure");
-        if(!batch_modify(dsList, tair_bin+"etc/group.conf", "_copy_count", "2"))
+        if(!batch_modify(dsList, tair_bin+groupconf, copycount, "2"))
             fail("modify configure file failure");
 	}
 	
 	@After
 	public void tearDown()
 	{
-		clean_tool("local");
-		log.error("clean tool and cluster!");
-		batch_uncomment(csList, tair_bin+"etc/group.conf", dsList, "#");
+		log.info("clean tool and cluster while tearDown!");
+        clean_tool(local);
+        reset_cluster(csList, dsList);
+        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 }

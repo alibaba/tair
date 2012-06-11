@@ -4,7 +4,6 @@
 package com.taobao.tairtest;
 
 import static org.junit.Assert.*;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,28 +14,28 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_02_kill_out_time() {
 		log.error("start DataServer test Failover case 02");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		// write 100k data to cluster
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -56,7 +55,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(5);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 
 		log.error("first data server has been closed!");
@@ -65,10 +64,10 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(ds_down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -78,13 +77,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -106,7 +105,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_03_restart_in_migrate() {
 		log.error("start DataServer test Failover case 03");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -114,21 +113,21 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", "500000"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		// write 100k data to cluster
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(6);
 			if (++waitcnt > 100)
 				break;
@@ -148,17 +147,17 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 
 		log.error("first data server has been closed!");
 
 		// wait for migrate start
 		waitto(ds_down_time);
-		while (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		while (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration start on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -170,21 +169,21 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 
 		// restart ds
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("restart ds failed!");
 		log.error("restart ds successful!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish  on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(2);
 			if (++waitcnt > 300)
 				break;
@@ -196,13 +195,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 
 		// migrate need check data
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -223,27 +222,27 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_04_restart_after_migrate() {
 		log.error("start DataServer test Failover case 04");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 		log.error("wait system initialize ...");
 		waitto(down_time);
 		log.error("Start Cluster Successful!");
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		// write 100k data to cluster
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 100)
 				break;
@@ -263,7 +262,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 
@@ -271,10 +270,10 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(ds_down_time);
 
 		// wait migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -285,20 +284,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 
 		// restart ds
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("restart ds failed!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait second migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 2) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -309,13 +308,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,the seccond migration finished!");
 
 		// check data
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// read data from cluster
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -338,7 +337,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_06_kill_one_inMigrate_outtime() {
 		log.error("start DataServer test Failover case 06");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -346,20 +345,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -378,30 +377,30 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 
 		log.error("first data server has been closed!");
 		waitto(down_time);
 
 		// wait for migrate finish
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill another data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close second data server failed!");
 		log.error("second data server has been closed!");
 
 		waitto(ds_down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -412,13 +411,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 
 		// migrate need check data
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -442,7 +441,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_07_kill_one_inMigrate_inTime() {
 		log.error("start DataServer test Failover case 07");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -450,20 +449,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -483,43 +482,43 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close data server failed!");
 		log.error("second data server has been closed!");
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") == 0)
 			fail("Already migration!");
 		log.error("check migration not started!");
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(2), start, 0))
 			fail("start data server failed!");
 		log.error("second data server has been started");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -529,13 +528,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -559,7 +558,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_08_kill_one_inMigrate_restartFirst() {
 		log.error("start DataServer test Failover case 08");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -567,20 +566,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -600,40 +599,40 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close second data server failed!");
 		log.error("second data server has been closed!");
 		waitto(ds_down_time);
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -643,13 +642,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -672,7 +671,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_09_kill_one_inMigrate_restartBoth() {
 		log.error("start DataServer test Failover case 09");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -680,20 +679,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -713,51 +712,51 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(down_time);
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(1), stop, 0))
 			fail("close seconde data server failed!");
 		log.error("second data server has been closed!");
 		waitto(ds_down_time);
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(1), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(1), start, 0))
 			fail("start second data server failed!");
 		log.error("second data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -767,13 +766,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -796,7 +795,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_10_kill_one_afterMigrate_restartFirst() {
 		log.error("start DataServer test Failover case 10");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -804,20 +803,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -837,46 +836,46 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close seconde data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for second migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 2)
 			fail("migrate not started!");
 		log.error("check migration started!");
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -886,14 +885,14 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -918,7 +917,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_11_kill_one_afterMigrate_restartSecond() {
 		log.error("start DataServer test Failover case 11");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -926,20 +925,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -959,47 +958,47 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close seconde data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for second migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 2)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(2), start, 0))
 			fail("start second data server failed!");
 		log.error("second data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1009,14 +1008,14 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1041,7 +1040,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_12_kill_one_afterMigrate_restartBoth() {
 		log.error("start DataServer test Failover case 12");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1049,20 +1048,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1082,53 +1081,53 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close seconde data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for second migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 2)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(2), start, 0))
 			fail("start second data server failed!");
 		log.error("second data server has been started!");
 
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1138,13 +1137,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1167,7 +1166,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_23_kill_one_finishMigrate_restartFirst() {
 		log.error("start DataServer test Failover case 23");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1175,20 +1174,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1208,30 +1207,30 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		if (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1)
 			fail("migrate not start!");
 		log.error("check migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close seconde data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for first migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check if first migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1241,25 +1240,25 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		int finish_migrate_count = check_keyword((String) csList.get(0),
+		int finish_migrate_count = check_keyword(csList.get(0),
 				finish_migrate, tair_bin + "logs/config.log");
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for second migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != finish_migrate_count + 1) {
 			log.debug("check if second migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1269,13 +1268,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1298,7 +1297,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_13_kill_one_finishMigrate_restartSecond() {
 		log.error("start DataServer test Failover case 13");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1306,20 +1305,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1339,17 +1338,17 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for first migrate start
-		while (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		while (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration start on cs "
-					+ (String) csList.get(0) + " log ");
+					+ csList.get(0) + " log ");
 			waitto(2);
 			if (++waitcnt > 10)
 				break;
@@ -1360,17 +1359,17 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close seconde data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for second migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check first if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1380,25 +1379,25 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		int finish_migrate_count = check_keyword((String) csList.get(0),
+		int finish_migrate_count = check_keyword(csList.get(0),
 				finish_migrate, tair_bin + "logs/config.log");
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(2), start, 0))
 			fail("start second data server failed!");
 		log.error("second data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for second migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != finish_migrate_count + 1) {
 			log.debug("check second if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1408,13 +1407,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1437,7 +1436,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_14_kill_one_finishMigrate_restartBoth() {
 		log.error("start DataServer test Failover case 14");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1445,20 +1444,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1478,17 +1477,17 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close one data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		while (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		while (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if migration start on cs "
-					+ (String) csList.get(0) + " log ");
+					+ csList.get(0) + " log ");
 			waitto(2);
 			if (++waitcnt > 10)
 				break;
@@ -1499,17 +1498,17 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 
 		// kill second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close seconde data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for first migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check first if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1519,30 +1518,30 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		int finish_migrate_count = check_keyword((String) csList.get(0),
+		int finish_migrate_count = check_keyword(csList.get(0),
 				finish_migrate, tair_bin + "logs/config.log");
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(2), start, 0))
 			fail("start second data server failed!");
 		log.error("second data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for second migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != finish_migrate_count + 1) {
 			log.debug("check second if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1552,13 +1551,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1581,7 +1580,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_15_kill_twoDataServers_afterMigrate_restart() {
 		log.error("start DataServer test Failover case 15");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1589,20 +1588,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1622,22 +1621,22 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close first data server failed!");
 		log.error("first data server has been closed!");
 
 		// close second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close second data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		while (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		while (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check if migration start on cs "
-					+ (String) csList.get(0) + " log ");
+					+ csList.get(0) + " log ");
 			waitto(2);
 			if (++waitcnt > 10)
 				break;
@@ -1648,27 +1647,27 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(2), start, 0))
 			fail("start second data server failed!");
 		log.error("second data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for migrate finish
 		waitcnt = 0;
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check first if migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1678,14 +1677,14 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
 		waitcnt = 0;
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1707,7 +1706,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_16_kill_twoDataServers_finishMigrate_restart() {
 		log.error("start DataServer test Failover case 16");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1715,20 +1714,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1747,22 +1746,22 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close first data server failed!");
 		log.error("first data server has been closed!");
 
 		// close second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close second data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check if first migration finish on cs "
-					+ (String) csList.get(0) + " log ");
+					+ csList.get(0) + " log ");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1772,30 +1771,30 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		int finish_migrate_count = check_keyword((String) csList.get(0),
+		int finish_migrate_count = check_keyword(csList.get(0),
 				finish_migrate, tair_bin + "logs/config.log");
 
 		// restart first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start first data server failed!");
 		log.error("first data server has been started!");
 
 		// restart second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(2), start, 0))
 			fail("start second data server failed!");
 		log.error("second data server has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// wait for second migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != finish_migrate_count + 1) {
 			log.debug("check if second migration finish on cs "
-					+ (String) csList.get(0) + " log");
+					+ csList.get(0) + " log");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1805,13 +1804,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1833,7 +1832,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_18_kill_allDataServrs_restart_outTime() {
 		log.error("start DataServer test Failover case 18");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1841,20 +1840,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1874,7 +1873,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Write data over!");
 
 		// close all data servers
-		if (!batch_control_ds(dsList, FailOverBaseCase.stop, 0))
+		if (!batch_control_ds(dsList, stop, 0))
 			fail("close data servers failed!");
 		log.error("data servers has been closed!");
 
@@ -1882,23 +1881,23 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(ds_down_time);
 
 		// restart all data servers
-		if (!batch_control_ds(dsList, FailOverBaseCase.start, 0))
+		if (!batch_control_ds(dsList, start, 0))
 			fail("start data servers failed!");
 		log.error("data servers has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1921,7 +1920,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_21_kill_one_afterMigate() {
 		log.error("start DataServer test Failover case 21");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
 
 		log.error("wait system initialize ...");
@@ -1929,20 +1928,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Start Cluster Successful!");
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -1962,17 +1961,17 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(10);
 
 		// close first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close first data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate start
-		while (check_keyword((String) csList.get(0), start_migrate, tair_bin
+		while (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			log.debug("check if first migration start on cs "
-					+ (String) csList.get(0) + " log ");
+					+ csList.get(0) + " log ");
 			waitto(2);
 			if (++waitcnt > 10)
 				break;
@@ -1983,17 +1982,17 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 
 		// close second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close second data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// wait for migrate finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") == 0) {
 			log.debug("check if migration finish on cs "
-					+ (String) csList.get(0) + " log ");
+					+ csList.get(0) + " log ");
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -2003,13 +2002,13 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.error("down time arrived,migration finished!");
 
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2034,46 +2033,46 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// modify group configuration delete two ds
-		if (!comment_line((String) csList.get(0), tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 1), "#"))
+		if (!comment_line(csList.get(0), tair_bin + groupconf,
+				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
-		if (!comment_line((String) csList.get(1), tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 1), "#"))
+		if (!comment_line(csList.get(1), tair_bin + groupconf,
+				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
-		if (!comment_line((String) csList.get(0), tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 3), "#"))
+		if (!comment_line(csList.get(0), tair_bin + groupconf,
+				dsList.get(dsList.size() - 3), "#"))
 			fail("change group.conf failed!");
-		if (!comment_line((String) csList.get(1), tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 3), "#"))
+		if (!comment_line(csList.get(1), tair_bin + groupconf,
+				dsList.get(dsList.size() - 3), "#"))
 			fail("change group.conf failed!");
 		log.error("group.conf has been changed!");
 
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start ds failed");
-		if (!control_ds((String) dsList.get(1), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(1), start, 0))
 			fail("start ds failed");
-		if (!control_ds((String) dsList.get(3), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(3), start, 0))
 			fail("start ds failed");
 		waitto(down_time);
-		if (!batch_control_cs(csList, FailOverBaseCase.start, 0))
+		if (!batch_control_cs(csList, start, 0))
 			fail("batch start cs failed!");
 		log.error("start cluster successful!");
 
 		waitto(down_time);
 
 		// write verify data to cluster
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failed!");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failed");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failed");
 		execute_data_verify_tool();
 
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2087,29 +2086,29 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 				/ put_count_float > 0.9);
 		log.error("put data over!");
 
-		if (!control_ds((String) dsList.get(dsList.size() - 1),
-				FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(dsList.size() - 1),
+				start, 0))
 			fail("start ds failed!");
 		log.error("start ds1 successful!");
 
 		// uncomment cs group.conf
-		if (!uncomment_line((String) csList.get(0),
-				tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 1), "#"))
+		if (!uncomment_line(csList.get(0),
+				tair_bin + groupconf,
+				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
-		if (!uncomment_line((String) csList.get(1),
-				tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 1), "#"))
+		if (!uncomment_line(csList.get(1),
+				tair_bin + groupconf,
+				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// check migration stat of finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 1) {
 			waitto(3);
 			if (++waitcnt > 200)
@@ -2121,12 +2120,12 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("check migrate1 finished!");
 
 		// verify data
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify tool config file failed!");
 		execute_data_verify_tool();
 
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2140,29 +2139,29 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data 1!");
 
-		if (!control_ds((String) dsList.get(dsList.size() - 3),
-				FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(dsList.size() - 3),
+				start, 0))
 			fail("start ds failed!");
 		log.error("start ds2 successful!");
 
 		// uncomment cs group.conf
-		if (!uncomment_line((String) csList.get(0),
-				tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 3), "#"))
+		if (!uncomment_line(csList.get(0),
+				tair_bin + groupconf,
+				dsList.get(dsList.size() - 3), "#"))
 			fail("change group.conf failed!");
-		if (!uncomment_line((String) csList.get(1),
-				tair_bin + "etc/group.conf",
-				(String) dsList.get(dsList.size() - 3), "#"))
+		if (!uncomment_line(csList.get(1),
+				tair_bin + groupconf,
+				dsList.get(dsList.size() - 3), "#"))
 			fail("change group.conf failed!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		// check migration stat of finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 2) {
 			waitto(3);
 			if (++waitcnt > 200)
@@ -2176,7 +2175,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		// verify data
 		execute_data_verify_tool();
 
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2191,14 +2190,14 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Successfully Verified data2!");
 
 		// close first data server
-		if (!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(0), stop, 0))
 			fail("close first data server failed!");
 		log.error("first data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// check migration stat of finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 3) {
 			waitto(3);
 			if (++waitcnt > 200)
@@ -2212,7 +2211,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		// verify data
 		execute_data_verify_tool();
 
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2227,14 +2226,14 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Successfully Verified data3!");
 
 		// close second data server
-		if (!control_ds((String) dsList.get(2), FailOverBaseCase.stop, 0))
+		if (!control_ds(dsList.get(2), stop, 0))
 			fail("close second data server failed!");
 		log.error("second data server has been closed!");
 		// wait rebuild table
 		waitto(ds_down_time);
 
 		// check migration stat of finish
-		while (check_keyword((String) csList.get(0), finish_migrate, tair_bin
+		while (check_keyword(csList.get(0), finish_migrate, tair_bin
 				+ "logs/config.log") != 4) {
 			waitto(3);
 			if (++waitcnt > 200)
@@ -2248,7 +2247,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		// verify data
 		execute_data_verify_tool();
 
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2271,7 +2270,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
+		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failure!");
 
 		log.error("Start Cluster Successful!");
@@ -2280,20 +2279,20 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitto(down_time);
 
 		// change test tool's configuration
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "put"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, put))
 			fail("modify configure file failure");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"datasize", put_count))
+		if (!modify_config_file(local, test_bin + toolconf,
+				datasize, put_count))
 			fail("modify configure file failure");
-		if (!modify_config_file("local", test_bin + toolconf,
-				"filename", "read.kv"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				filename, kv_name))
 			fail("modify configure file failure");
 
 		execute_data_verify_tool();
 
 		// check verify
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2309,25 +2308,25 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// close some ds
 		if (!batch_control_ds(dsList.subList(0, dsList.size() - 1),
-				FailOverBaseCase.stop, 0))
+				stop, 0))
 			fail("close master cs failure!");
 		log.error("some ds has been closed, only one alive!");
 		waitto(ds_down_time);
 
 		// restart some ds
 		if (!batch_control_ds(dsList.subList(0, dsList.size() - 1),
-				FailOverBaseCase.start, 0))
+				start, 0))
 			fail("close master cs failure!");
 		log.error("closed ds has been started!");
 		waitto(5);
 		if (touch_flag != 0) {
-			touch_file((String) csList.get(0), tair_bin + "etc/group.conf");
-			touch_file((String) csList.get(1), tair_bin + "etc/group.conf");
+			touch_file(csList.get(0), tair_bin + groupconf);
+			touch_file(csList.get(1), tair_bin + groupconf);
 		}
 		waitto(down_time);
 
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2341,11 +2340,11 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.error("Write data over!");
 
 		// read data
-		if (!modify_config_file("local", test_bin + toolconf,
-				"actiontype", "get"))
+		if (!modify_config_file(local, test_bin + toolconf,
+				actiontype, get))
 			fail("modify configure file failure");
 		execute_data_verify_tool();
-		while (check_process("local", toolname) != 2) {
+		while (check_process(local, toolname) != 2) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;
@@ -2366,22 +2365,24 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 	@Before
 	public void setUp() {
-		log.error("clean tool and cluster!");
-		clean_tool("local");
-		reset_cluster(csList, dsList);
-		// execute_shift_tool("local", "conf5");//for kdb
-		if (!batch_modify(csList, tair_bin + "etc/group.conf", "_copy_count",
+        log.info("clean tool and cluster while setUp!");
+        clean_tool(local);
+        reset_cluster(csList, dsList);
+        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
+		// execute_shift_tool(local, "conf5");//for kdb
+		if (!batch_modify(csList, tair_bin + groupconf, copycount,
 				"2"))
 			fail("modify configure file failure");
-		if (!batch_modify(dsList, tair_bin + "etc/group.conf", "_copy_count",
+		if (!batch_modify(dsList, tair_bin + groupconf, copycount,
 				"2"))
 			fail("modify configure file failure");
 	}
 
 	@After
 	public void tearDown() {
-		clean_tool("local");
-		log.error("clean tool and cluster!");
-		batch_uncomment(csList, tair_bin + "etc/group.conf", dsList, "#");
+		log.info("clean tool and cluster while tearDown!");
+        clean_tool(local);
+        reset_cluster(csList, dsList);
+        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 }
