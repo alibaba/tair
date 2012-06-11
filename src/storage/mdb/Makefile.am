@@ -27,6 +27,7 @@ libmdb_la_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
 					mdb_manager.hpp	\
 					mdb_stat.hpp	\
 					mem_cache.hpp   \
+					../../common/stat_helper.cpp \
 					mem_pool.hpp
 #libmdb_a_LDFLAGS=${AM_LDFLAGS}
 libmdb_c_la_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
@@ -38,25 +39,26 @@ libmdb_c_la_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
 					mem_cache.hpp   \
 					mem_pool.hpp \
 					libmdb_c.hpp \
+					../../common/stat_helper.cpp \
 					libmdb_c.cpp
 include_HEADERS=mdb_factory.hpp mdb_manager.hpp libmdb_c.hpp
 
 noinst_PROGRAMS=mdbtest mdbSlabAndAreaTest mdbAreaTest libmdb_test_c
-mdbtest_SOURCES=mdb_test.cpp ../../common/stat_helper.cpp
+mdbtest_SOURCES=mdb_test.cpp
 mdbtest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
 mdbtest_LDFLAGS=-static
 
 #noinst_PROGRAMS=mdbSlabAndAreaTest
-mdbSlabAndAreaTest_SOURCES=mdb_slab_test.cpp ../../common/stat_helper.cpp
+mdbSlabAndAreaTest_SOURCES=mdb_slab_test.cpp
 
 mdbSlabAndAreaTest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
 mdbSlabAndAreaTest_LDFLAGS=-static
 
 #noinst_PROGRAMS=mdbAreaTest
-mdbAreaTest_SOURCES=mdb_area_test.cpp ../../common/stat_helper.cpp
+mdbAreaTest_SOURCES=mdb_area_test.cpp
 mdbAreaTest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
 mdbAreaTest_LDFLAGS=-static
 
-libmdb_test_c_SOURCES=libmdb_test_c.cpp ../../common/stat_helper.cpp
+libmdb_test_c_SOURCES=libmdb_test_c.cpp
 libmdb_test_c_LDADD=libmdb_c.la $(LDADD) -lpthread -lrt @BOOST_THREAD_LIB@
 libmdb_test_c_LDFLAGS=-static
