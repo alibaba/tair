@@ -30,7 +30,7 @@ class StatManagerMock : public StatManager
 
   Flowrate Measure(uint32_t ip, uint16_t ns, uint16_t op)
   {
-    Flowrate rate = {0, 0, 0};
+    Flowrate rate = {0, DOWN, 0, DOWN, 0, DOWN};
     return rate;
   }
 

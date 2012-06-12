@@ -21,14 +21,14 @@ class FlowController
 
   virtual Flowrate GetFlowrate(int ns) = 0;
 
-  virtual LimitBound GetLimitBound(int ns, FlowType type) = 0;
+  virtual FlowLimit GetFlowLimit(int ns, FlowType type) = 0;
 
   /**
    * @return true is relaxed
    */
   virtual bool AddUp(int ns, int in, int out) = 0;
 
-  virtual void SetFlowLimit(int ns, FlowType type, int lower, int upper) = 0;
+  virtual bool SetFlowLimit(int ns, FlowType type, int lower, int upper) = 0;
 };
 
 }

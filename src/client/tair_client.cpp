@@ -59,6 +59,8 @@ namespace tair {
       cmd_map["pgethidden"] = &tair_client::do_cmd_prefix_get_hidden;
       cmd_map["phide"] = &tair_client::do_cmd_prefix_hide;
       cmd_map["phides"] = &tair_client::do_cmd_prefix_hides;
+      cmd_map["flowlimit"] = &tair_client::do_cmd_set_flow_limit_bound;
+      cmd_map["flowrate"] = &tair_client::do_cmd_get_flow_rate;
       // cmd_map["additems"] = &tair_client::doCmdAddItems;
    }
 
@@ -454,6 +456,18 @@ namespace tair {
             "SYNOPSIS: phides area pkey skey1...skeyn\n"
             "DESCRIPTION: to hide multiple items with prefix\n");
       }
+      if (cmd == NULL || strcmp(cmd, "flowlimit") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: flowlimit ns lower upper type, example flowlimit 123 30000 40000 ops\n"
+            "DESCRIPTION: set or view flow limit bound\n");
+      }
+      if (cmd == NULL || strcmp(cmd, "flowrate") == 0) {
+        fprintf(stderr,
+            "------------------------------------------------\n"
+            "SYNOPSIS: flowrate ns \n"
+            "DESCRIPTION: view flow rate\n");
+      }
 
       fprintf(stderr, "\n");
    }
@@ -669,6 +683,131 @@ namespace tair {
       if (akey) free(akey);
       return ;
    }
+
+  const char * FlowStatusStr(tair::stat::FlowStatus status) {
+    switch (status) {
+     case tair::stat::UP:
+      return "UP";
+     case tair::stat::KEEP:
+      return "KEEP";
+     case tair::stat::DOWN:
+      return "DOWN";
+    }
+    return "UNKNOW";
+  }
+
+  void tair_client::do_cmd_get_flow_rate(VSTRING &param)
+  {
+    if (param.size() < 1U) {
+      print_help("flowrate"); 
+      return ;
+    }
+    int ns = atoi(param[0]);
+
+    set<uint64_t> servers;
+    client_helper.get_servers(servers);
+    size_t success = 0;
+    for (set<uint64_t>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
+      uint64_t addr = *iter;
+      tair::stat::Flowrate rate;
+      int ret = client_helper.get_flow(addr, ns, rate);
+
+      if (ret == 0) {
+        fprintf(stderr, "success %s \tns:%d \tin:%d,%s \tout:%d,%s \tops:%d,%s \tsummary:%s\n", 
+            tbsys::CNetUtil::addrToString(addr).c_str(), ns,
+            rate.in, FlowStatusStr(rate.in_status),
+            rate.out, FlowStatusStr(rate.out_status),
+            rate.ops, FlowStatusStr(rate.ops_status),
+            FlowStatusStr(rate.summary_status));
+        success++;
+      } else {
+        fprintf(stderr, "fail %s \terr:%d\n", tbsys::CNetUtil::addrToString(addr).c_str(), ret);
+      }
+    }
+    if (success == servers.size()) {
+      fprintf(stderr, "all success\n");
+    } else if (success == 0) {
+      fprintf(stderr, "all fail\n");
+    } else {
+      fprintf(stderr, "part success\n");
+    }
+  }
+
+  void tair_client::do_cmd_set_flow_limit_bound(VSTRING &param)
+  {
+    if (param.size() < 4U) {
+      print_help("flowlimit"); 
+      return ;
+    }
+    int ns = atoi(param[0]);
+    int lower = atoi(param[1]);
+    int upper = atoi(param[2]);
+
+    char *strtemp = NULL;
+    int typestr_len = 0;
+    char *typestr = canonical_key(param[3], &typestr, &typestr_len);
+    tair::stat::FlowType type = tair::stat::IN;
+    if (strncmp("in", typestr, 2) == 0)
+      type = tair::stat::IN;
+    else if (strncmp("out", typestr, 3) == 0)
+      type = tair::stat::OUT;
+    else if (strncmp("ops", typestr, 3) == 0)
+      type = tair::stat::OPS;
+    else {
+      fprintf(stderr, "unknow type:%s just support [in, out, ops]", typestr);
+      return ;
+    }
+    set_flow_limit_bound(ns, lower, upper, type);
+    if (strtemp != NULL)
+      free(strtemp);
+  }
+
+  const char * FlowTypeStr(tair::stat::FlowType type)
+  {
+    switch (type) {
+      case tair::stat::IN:
+        return "in";
+      case tair::stat::OUT:
+        return "out";
+      case tair::stat::OPS:
+        return "ops";
+    }
+    return "unknow";
+  }
+
+  void tair_client::set_flow_limit_bound(int ns, int lower, int upper, tair::stat::FlowType type)
+  {
+    set<uint64_t> servers;
+    client_helper.get_servers(servers);
+    size_t success = 0;
+    for (set<uint64_t>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
+      uint64_t addr = *iter;
+      int local_ns = ns;
+      int local_lower = lower;
+      int local_upper = upper;
+      tair::stat::FlowType local_type = type;
+      int ret = client_helper.set_flow_limit_bound(addr, local_ns, 
+          local_lower, 
+          local_upper, 
+          local_type);
+
+      if (ret == 0) {
+        fprintf(stderr, "success %s \tns:%d \tlower:%d \tupper:%d \ttype:%s\n", 
+            tbsys::CNetUtil::addrToString(addr).c_str(),
+            local_ns, local_lower, local_upper, FlowTypeStr(local_type));
+        success++;
+      } else {
+        fprintf(stderr, "fail %s \terr:%d\n", tbsys::CNetUtil::addrToString(addr).c_str(), ret);
+      }
+    }
+    if (success == servers.size()) {
+      fprintf(stderr, "all success\n");
+    } else if (success == 0) {
+      fprintf(stderr, "all fail\n");
+    } else {
+      fprintf(stderr, "part success\n");
+    }
+  }
 
    void tair_client::do_cmd_mremove(VSTRING &param)
    {

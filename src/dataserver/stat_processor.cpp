@@ -42,7 +42,7 @@ uint32_t stat_processor::process(stat_cmd_view_packet *request)
   tair::stat::Flowrate rate = stat_mgr->Measure(arg.ip, arg.ns, arg.op);
   arg.in  = rate.in;
   arg.out = rate.out;
-  arg.cnt = rate.cnt;
+  arg.cnt = rate.ops;
   stat_cmd_view_packet *response = new stat_cmd_view_packet();
   response->set_arg(arg);
   return send_response(request, response);
@@ -53,7 +53,7 @@ uint32_t stat_processor::process(flow_view_request *request)
   int view_ns = request->getNamespace();
   Flowrate rate = flow_ctrl->GetFlowrate(view_ns);   
   flow_view_response *response = new flow_view_response();
-  response->set_flowrate(rate);
+  response->setFlowrate(rate);
   return send_response(request, response);
 }
 
@@ -69,13 +69,20 @@ uint32_t stat_processor::process(flow_check *request)
 
 uint32_t stat_processor::process(flow_control_set *request)
 {
-  flow_ctrl->SetFlowLimit(request->getNamespace(),
+  bool ret = flow_ctrl->SetFlowLimit(request->getNamespace(),
                           request->getType(),
                           request->getLower(),
                           request->getUpper());
-  Flowrate rate = flow_ctrl->GetFlowrate(request->getNamespace());   
-  flow_view_response *response = new flow_view_response();
-  response->set_flowrate(rate);
+  flow_control_set *response = new flow_control_set();
+  response->setSuccess(ret);
+  if (request->getNamespace() != -1) {
+    FlowLimit limit = flow_ctrl->GetFlowLimit(request->getNamespace(), request->getType());
+    response->setType(request->getType());
+    response->setLimit(limit.lower, limit.upper);
+    response->setNamespace(request->getNamespace());
+  } else {
+    *response = *request;
+  }
   return send_response(request, response);
 }
 

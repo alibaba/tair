@@ -48,6 +48,7 @@
 #include "prefix_removes_packet.hpp"
 #include "response_mreturn_packet.hpp"
 #include "prefix_hides_packet.hpp"
+#include "flowrate.h"
 
 namespace tair {
 
@@ -141,6 +142,13 @@ namespace tair {
 
       int lock(int area, const data_entry& key, LockType type,
           TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
+
+      int set_flow_limit_bound(uint64_t addr, int &ns, 
+                                int &lower, int &upper, 
+                                tair::stat::FlowType &type);
+
+      int get_flow(uint64_t addr, int ns, 
+                   tair::stat::Flowrate &rate);
 
       template< typename IT >
         int add_items(int area,

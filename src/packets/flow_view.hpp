@@ -21,14 +21,21 @@ class flow_view_request : public base_packet
 
   bool encode(tbnet::DataBuffer *output)
   {
-    output->writeInt16(ns);
+    output->writeInt32(ns);
     return true;
   }
 
   bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
   {
+    if (header->_dataLen < 4)
+      return false;
     ns = input->readInt32();
     return true;
+  }
+
+  void setNamespace(int ns)
+  {
+    this->ns = ns;
   }
 
   uint32_t getNamespace()
@@ -50,32 +57,43 @@ class flow_view_response : public base_packet
  
   size_t size() 
   {
-    return 16 + 16; // 16bytes tbnet packet header
+    return 28 + 16; // 16bytes tbnet packet header
   }
 
   bool encode(tbnet::DataBuffer *output)
   {
     output->writeInt32(rate.in);
+    output->writeInt32(rate.in_status);
     output->writeInt32(rate.out);
-    output->writeInt32(rate.cnt);
-    output->writeInt32(rate.status);
+    output->writeInt32(rate.out_status);
+    output->writeInt32(rate.ops);
+    output->writeInt32(rate.ops_status);
+    output->writeInt32(rate.summary_status);
     return true;
   }
 
   bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
   {
-    if (header->_dataLen < 16)
+    if (header->_dataLen < 28)
       return false;
     rate.in = input->readInt32();
+    rate.in_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
     rate.out = input->readInt32();
-    rate.cnt = input->readInt32();
-    rate.status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+    rate.out_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+    rate.ops = input->readInt32();
+    rate.ops_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+    rate.summary_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
     return true;
   }
 
-  void set_flowrate(const tair::stat::Flowrate &rate)
+  void setFlowrate(const tair::stat::Flowrate &rate)
   {
     this->rate = rate;
+  }
+
+  tair::stat::Flowrate getFlowrate() 
+  {
+    return this->rate;
   }
 
  private:

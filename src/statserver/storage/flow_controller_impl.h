@@ -33,7 +33,7 @@ struct AreaFlow
 {
   Flow in;
   Flow out;
-  Flow cnt;
+  Flow ops;
   volatile FlowStatus status;
 };
 
@@ -49,9 +49,9 @@ class FlowControllerImpl : public FlowController
 
   virtual bool AddUp(int ns, int in, int out);
 
-  virtual void SetFlowLimit(int ns, FlowType type, int lower, int upper);
+  virtual bool SetFlowLimit(int ns, FlowType type, int lower, int upper);
 
-  virtual LimitBound GetLimitBound(int ns, FlowType type);
+  virtual FlowLimit GetFlowLimit(int ns, FlowType type);
 
   virtual bool Initialize();
 
@@ -72,13 +72,13 @@ class FlowControllerImpl : public FlowController
  private:
   static const int DEFAULT_NET_UPPER = 30 * 1024 * 1024; // 30MB/s
   static const int DEFAULT_NET_LOWER = 15 * 1024 * 1024; // 15MB/s
-  static const int DEFAULT_CNT_UPPER = 30000; // 30000/s
-  static const int DEFAULT_CNT_LOWER = 20000; // 20000/s
+  static const int DEFAULT_OPS_UPPER = 30000; // 30000/s
+  static const int DEFAULT_OPS_LOWER = 20000; // 20000/s
 
   static const int DEFAULT_TOTAL_NET_UPPER = 75 * 1024 * 1024; // 75 MB/s
   static const int DEFAULT_TOTAL_NET_LOWER = 65 * 1024 * 1024; // 65 MB/s
-  static const int DEFAULT_TOTAL_CNT_UPPER = 50000; // 50000 ops
-  static const int DEFAULT_TOTAL_CNT_LOWER = 40000; // 40000 ops
+  static const int DEFAULT_TOTAL_OPS_UPPER = 50000; // 50000 ops
+  static const int DEFAULT_TOTAL_OPS_LOWER = 40000; // 40000 ops
 };
 
 

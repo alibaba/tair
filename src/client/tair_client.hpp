@@ -31,6 +31,7 @@
 #endif
 
 #include "tair_client_api_impl.hpp"
+#include "flowrate.h"
 
 using namespace std;
 
@@ -59,7 +60,11 @@ namespace tair {
       void print_help(const char *cmd);
       char *canonical_key(char *key, char **akey, int *size);
 
+      void set_flow_limit_bound(int ns, int lower, int upper, tair::stat::FlowType type);
+
       int64_t ping(uint64_t server_id);
+      void do_cmd_get_flow_rate(VSTRING &param);
+      void do_cmd_set_flow_limit_bound(VSTRING &param);
       void  do_cmd_quit(VSTRING &param);
       void  do_cmd_help(VSTRING &param);
       void  do_cmd_put(VSTRING &param);

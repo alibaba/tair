@@ -386,12 +386,26 @@ namespace tair {
             send_return = false;
             break;
          }
+         case TAIR_FLOW_CONTROL_SET:
+         {
+           flow_control_set *request = dynamic_cast<flow_control_set *>(packet);
+           stat.out = stat_prc->process(request);
+           send_return = false;
+           break;
+         }
+         case TAIR_REQ_FLOW_VIEW:
+         {
+           flow_view_request *request = dynamic_cast<flow_view_request *>(packet);
+           stat.out = stat_prc->process(request);
+           send_return = false;
+           break;
+         }
          case TAIR_FLOW_CHECK:
          {
-            flow_check *check_request = (flow_check*)(packet);
-            stat.out = stat_prc->process(check_request);
-            send_return = false;
-            break;
+           flow_check *check_request = (flow_check*)(packet);
+           stat.out = stat_prc->process(check_request);
+           send_return = false;
+           break;
          }
          case TAIR_REQ_PREFIX_PUTS_PACKET:
          {

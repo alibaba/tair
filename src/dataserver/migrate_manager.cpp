@@ -491,7 +491,7 @@ namespace tair {
 
    void migrate_manager::do_server_list_changed()
    {
-      if(is_running == 1){
+      if(is_running == 1) {
          is_stopped = true;
       }
       while(is_running == 1) {

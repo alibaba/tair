@@ -11,7 +11,7 @@ namespace stat
 
 enum FlowType
 {
-  IN, OUT, CNT
+  IN, OUT, OPS
 };
 
 enum FlowStatus
@@ -19,7 +19,7 @@ enum FlowStatus
   DOWN = 0, KEEP = 1, UP = 2 
 };
 
-struct LimitBound
+struct FlowLimit 
 {
   int lower;
   int upper;
@@ -28,9 +28,13 @@ struct LimitBound
 struct Flowrate 
 {
   uint32_t in;
+  FlowStatus in_status;
   uint32_t out;
-  uint32_t cnt;
-  FlowStatus status;
+  FlowStatus out_status;
+  uint32_t ops;
+  FlowStatus ops_status;
+
+  FlowStatus summary_status;
 };
 
 }

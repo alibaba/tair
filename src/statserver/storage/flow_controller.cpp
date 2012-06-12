@@ -25,8 +25,8 @@ const char * FlowTypeStr(FlowType type)
      return "IN";
    case OUT:
      return "OUT";
-   case CNT:
-     return "CNT";
+   case OPS:
+     return "OPS";
   }
   return "UNKONW";
 }
@@ -54,10 +54,10 @@ FlowControllerImpl::FlowControllerImpl(int ns)
   bzero(flows_, sizeof(flows_));
   SetFlowLimit(-1, IN, DEFAULT_NET_LOWER, DEFAULT_NET_UPPER);
   SetFlowLimit(-1, OUT, DEFAULT_NET_LOWER, DEFAULT_NET_UPPER);
-  SetFlowLimit(-1, CNT, DEFAULT_CNT_LOWER, DEFAULT_CNT_UPPER);
+  SetFlowLimit(-1, OPS, DEFAULT_OPS_LOWER, DEFAULT_OPS_UPPER);
   SetFlowLimit(MAXAREA, IN, DEFAULT_TOTAL_NET_UPPER, DEFAULT_TOTAL_NET_LOWER);
   SetFlowLimit(MAXAREA, OUT, DEFAULT_TOTAL_NET_UPPER, DEFAULT_TOTAL_NET_LOWER);
-  SetFlowLimit(MAXAREA, CNT, DEFAULT_TOTAL_CNT_UPPER, DEFAULT_TOTAL_CNT_LOWER);
+  SetFlowLimit(MAXAREA, OPS, DEFAULT_TOTAL_OPS_UPPER, DEFAULT_TOTAL_OPS_LOWER);
 }
 
 FlowController* FlowController::NewInstance() 
@@ -96,8 +96,11 @@ Flowrate FlowControllerImpl::GetFlowrate(int ns)
   ASSERTNS(ns);
   AreaFlow &flow = flows_[ns];
   Flowrate rate = {atomic_read(&flow.in.last_per_second), 
+                   flow.in.status,
                    atomic_read(&flow.out.last_per_second), 
-                   atomic_read(&flow.cnt.last_per_second),
+                   flow.out.status,
+                   atomic_read(&flow.ops.last_per_second),
+                   flow.ops.status,
                    flows_[ns].status};
   return rate;
 }
@@ -190,19 +193,19 @@ void FlowControllerImpl::BackgroundCalFlows()
       FlowStatus status_out = CalCurrentFlow(flows_[ns].out);
       if (status_out != DOWN)
         log_info("Flow OUT Limit: ns %d %s", ns, FlowStatusStr(status_out));
-      FlowStatus status_cnt = CalCurrentFlow(flows_[ns].cnt);
-      if (status_cnt != DOWN)
-        log_info("Flow IN Limit: ns %d %s", ns, FlowStatusStr(status_cnt));
+      FlowStatus status_ops = CalCurrentFlow(flows_[ns].ops);
+      if (status_ops != DOWN)
+        log_info("Flow IN Limit: ns %d %s", ns, FlowStatusStr(status_ops));
 
       log_debug("Flow input rate: ns %d; in %d %s; out %d %s; ops %d %s",
           ns,
           atomic_read(&flows_[ns].in.last_per_second), FlowStatusStr(status_in),
           atomic_read(&flows_[ns].out.last_per_second), FlowStatusStr(status_out),
-          atomic_read(&flows_[ns].cnt.last_per_second), FlowStatusStr(status_cnt)
+          atomic_read(&flows_[ns].ops.last_per_second), FlowStatusStr(status_ops)
       );
 
       FlowStatus temp = status_in > status_out ? status_in : status_out;
-      flows_[ns].status = temp > status_cnt ? temp : status_cnt;
+      flows_[ns].status = temp > status_ops ? temp : status_ops;
     }
   }
 }
@@ -220,7 +223,7 @@ bool FlowControllerImpl::AddUp(int ns, int in, int out)
   bool limit = false;
   limit = !AddUp(flow.in, in) || limit; 
   limit = !AddUp(flow.out, out) || limit; 
-  limit = !AddUp(flow.cnt, 1) || limit; 
+  limit = !AddUp(flow.ops, 1) || limit; 
   if (limit == true)
     flow.status = UP;
   log_debug("Add up: ns %d, in %d, out %d, status %s", 
@@ -228,10 +231,15 @@ bool FlowControllerImpl::AddUp(int ns, int in, int out)
   return is_relaxed || flow.status == DOWN;
 }
 
-LimitBound FlowControllerImpl::GetLimitBound(int ns, FlowType type)
+FlowLimit FlowControllerImpl::GetFlowLimit(int ns, FlowType type)
 {
+  if (ns == -1) {
+    FlowLimit bound = {0, 0};
+    return bound;
+  }
+
   ASSERTNS(ns);
-  LimitBound bound = {0, 0};
+  FlowLimit bound = {0, 0};
   AreaFlow &flow = flows_[ns];
   switch (type)
   {
@@ -245,30 +253,45 @@ LimitBound FlowControllerImpl::GetLimitBound(int ns, FlowType type)
     bound.upper = atomic_read(&flow.out.upper_bound);
     break;
 
-   case CNT:
-    bound.lower = atomic_read(&flow.cnt.lower_bound);
-    bound.upper = atomic_read(&flow.cnt.upper_bound);
+   case OPS:
+    bound.lower = atomic_read(&flow.ops.lower_bound);
+    bound.upper = atomic_read(&flow.ops.upper_bound);
     break;
   }
   return bound;
 }
 
-void FlowControllerImpl::SetFlowLimit(int ns, FlowType type, int lower, int upper)
+bool FlowControllerImpl::SetFlowLimit(int ns, FlowType type, int lower, int upper)
 {
-  if (lower > upper)
+  if (lower < -1 || upper < -1) 
   {
-    log_error("%d > %d is invalid", lower, upper);
-    return;
+    log_error("invliad flow limit parameter, lower %d; upper %d", lower, upper);
+    return false;
   }
   if (ns == -1)
   {
+    bool success = true;
     for (size_t i = 0; i < MAXAREA; ++i)
-      SetFlowLimit(i, type, lower, upper);
+      if (SetFlowLimit(i, type, lower, upper) == false)
+        success = false;
+    return success;
   } 
   else
   {
+    FlowLimit limit = GetFlowLimit(ns, type);
+    if (upper != -1)
+      limit.upper = upper;
+    if (lower != -1)
+      limit.lower = lower;
+
+    if (limit.lower > limit.upper)
+    {
+      log_error("%d > %d is invalid", limit.lower, limit.upper);
+      return false;
+    }
+
     ASSERTNS(ns);
-    log_info("set flow limit bound, ns %d; type %s; lower %d; upper %d", 
+    log_info("set(or get) flow limit bound, ns %d; type %s; lower %d; upper %d", 
         ns, FlowTypeStr(type), lower, upper);
     switch (type) 
     {
@@ -284,17 +307,18 @@ void FlowControllerImpl::SetFlowLimit(int ns, FlowType type, int lower, int uppe
       if (upper >= 0)
         atomic_set(&flows_[ns].out.upper_bound, upper);
       break;
-     case CNT:
+     case OPS:
       if (lower >= 0)
-        atomic_set(&flows_[ns].cnt.lower_bound, lower);
+        atomic_set(&flows_[ns].ops.lower_bound, lower);
       if (upper >= 0)
-        atomic_set(&flows_[ns].cnt.upper_bound, upper);
+        atomic_set(&flows_[ns].ops.upper_bound, upper);
       break;
      default:
       log_error("unknow type %d", type);
       break;
     }
   }
+  return true;
 }
 
 }

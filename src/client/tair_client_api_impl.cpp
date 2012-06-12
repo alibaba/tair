@@ -39,6 +39,11 @@
 #include "get_migrate_machine.hpp"
 #include "data_server_ctrl_packet.hpp"
 #include "scoped_wrlock.hpp"
+#include "base_packet.hpp"
+#include "flow_control_packet.hpp"
+#include "flow_view.hpp"
+
+#include "flowrate.h"
 
 namespace tair {
 
@@ -1808,6 +1813,78 @@ FAIL:
     servers.swap(tmp);
   }
 
+  int tair_client_impl::get_flow(uint64_t addr, int ns, tair::stat::Flowrate &rate)
+  {
+    int ret = TAIR_RETURN_SEND_FAILED;
+    
+    flow_view_request *request = new flow_view_request();
+    request->setNamespace(ns);
+    flow_view_response *response = NULL;
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    do {
+      ret = send_request(addr, request, cwo->get_id());
+      if (ret != 0) {
+        delete request;
+        break;
+      }
+      base_packet *temp = NULL;
+      ret = get_response(cwo, 1, temp);
+      if (ret < 0 || temp == 0) {
+        break;
+      }
+      if(temp->getPCode() != TAIR_RESP_FLOW_VIEW) {
+        ret = TAIR_RETURN_FAILED;
+        break;
+      }
+
+      response = dynamic_cast<flow_view_response *>(temp);
+      rate = response->getFlowrate();
+    } while (false);
+    this_wait_object_manager->destroy_wait_object(cwo);
+
+    return ret;
+  }
+
+  int tair_client_impl::set_flow_limit_bound(uint64_t addr, int &ns, int &lower, int &upper, tair::stat::FlowType &type)
+  {
+    int ret = TAIR_RETURN_SEND_FAILED;
+
+    flow_control_set *request = new flow_control_set();
+    request->setNamespace(ns);
+    request->setLimit(lower, upper);
+    request->setType(type);
+    flow_control_set *response = NULL;
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    do {
+      ret = send_request(addr, request, cwo->get_id());
+      if(ret != 0) {
+        delete request;
+        break;
+      }
+      base_packet *temp = NULL;
+      ret = get_response(cwo, 1, temp);
+      if (ret < 0 || temp == 0) {
+        break;
+      } 
+      if(temp->getPCode() != TAIR_FLOW_CONTROL_SET) {
+        ret = TAIR_RETURN_FAILED;
+        break;
+      }
+
+      response = dynamic_cast<flow_control_set *>(temp);
+      ns = response->getNamespace();
+      lower = response->getLower();
+      upper = response->getUpper();
+      type = response->getType();
+      if (response->isSuccess() == false)
+        ret = TAIR_RETURN_FAILED;
+    } while (false);
+    this_wait_object_manager->destroy_wait_object(cwo);
+
+    return ret;
+  }
 
   // @override IPacketHandler
   tbnet::IPacketHandler::HPRetCode tair_client_impl::handlePacket(tbnet::Packet *packet, void *args)
@@ -2329,7 +2406,7 @@ OUT:
 #endif
 
 
-  int tair_client_impl::get_response(wait_object *cwo,int wait_count,base_packet*& tpacket)
+  int tair_client_impl::get_response(wait_object *cwo, int wait_count, base_packet*& tpacket)
 
   {
     int ret = TAIR_RETURN_SUCCESS;
