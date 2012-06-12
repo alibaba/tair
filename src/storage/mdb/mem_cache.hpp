@@ -99,12 +99,7 @@ namespace tair {
    ITEM_ADDR(this_mem_pool->get_pool_addr(),id,this_mem_pool->get_page_size())
 
 
-#define itemid_equal(lhs,rhs)                                           \
-   ({                                                                   \
-      ((SLAB_ID(lhs) == SLAB_ID(rhs)) &&                                \
-       (PAGE_ID(lhs) == PAGE_ID(rhs)) &&                                \
-       (PAGE_OFFSET(lhs) == PAGE_OFFSET(rhs)) && (SLAB_SIZE(lhs) == SLAB_SIZE(rhs))); \
-   })
+#define itemid_equal(lhs,rhs) ((lhs) == (rhs))
 
   class mdb_manager;
 
@@ -188,12 +183,7 @@ namespace tair {
       }
       uint32_t get_partial_page_id()
       {
-        for(int i = 0; i < partial_pages_bucket_num; ++i) {
-          if(partial_pages[i] != 0) {
-            return partial_pages[i];
-          }
-        }
-        return 0;
+        return partial_pages[first_partial_page_index];
       }
       uint32_t get_the_most_free_items_of_partial_page_id()
       {
@@ -210,6 +200,36 @@ namespace tair {
         return this_item_list[area].item_head;
       }
 
+      void link_partial_page(page_info *info) {
+        int bucket = info->free_nr / PARTIAL_PAGE_BUCKET;
+        if (partial_pages[bucket] == 0) {
+          ++partial_bucket_count;
+        }
+        link_page(info, partial_pages[bucket]);
+        if (bucket < first_partial_page_index ||
+            (first_partial_page_index == 0 && partial_pages[0] == 0)) {
+          first_partial_page_index = bucket;
+        }
+      }
+
+      void unlink_partial_page(page_info *info) {
+        int bucket = info->free_nr / PARTIAL_PAGE_BUCKET;
+        unlink_page(info, partial_pages[bucket]);
+        if (first_partial_page_index == bucket && partial_pages[bucket] == 0) {
+          --partial_bucket_count;
+          if (partial_bucket_count == 0) {
+            first_partial_page_index = 0;
+            return ;
+          }
+          for (int i = bucket + 1; i < partial_pages_bucket_num; ++i) {
+            if (partial_pages[i] != 0) {
+              first_partial_page_index = i;
+              break;
+            }
+          }
+        }
+      }
+
       mem_pool *this_mem_pool;
       mem_cache *cache;
       uint32_t slab_id;
@@ -217,6 +237,8 @@ namespace tair {
       int per_slab;
       int page_size;
       int partial_pages_bucket_num;
+      int first_partial_page_index; //~ index of first bucket holding partial pages
+      uint32_t partial_bucket_count; //~ actual number of buckets holding partial pages
 
       struct item_list
       {

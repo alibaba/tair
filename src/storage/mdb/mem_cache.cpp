@@ -272,12 +272,14 @@ namespace tair {
 
   mem_cache::slab_manager * mem_cache::get_slabmng(int size)
   {
-    std::vector<slab_manager *>::iterator it = slab_managers.begin();
-    for(; it != slab_managers.end(); ++it) {
-      if((*it)->slab_size >= size)        //found
+    slab_manager *mgr = NULL;
+    for (size_t i = 0; i < slab_managers.size(); ++i) {
+      if (slab_managers[i]->slab_size >= size) {
+        mgr = slab_managers[i];
         break;
+      }
     }
-    return it != slab_managers.end()? (*it) : 0;
+    return mgr;
   }
 
   bool mem_cache::slab_initialize()
@@ -322,6 +324,8 @@ namespace tair {
       slabmng->evict_index = 0;
       slabmng->evict_total_count = 0;
       slabmng->item_total_count = 0;
+      slabmng->first_partial_page_index = 0;
+      slabmng->partial_bucket_count = 0;
       slabmng->partial_pages =
         reinterpret_cast< uint32_t *>(next_slab_addr + sizeof(slab_manager));
 
@@ -418,7 +422,7 @@ namespace tair {
       assert(info->free_nr <= per_slab);
 
       item_id = info->free_head;
-      unlink_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
+      unlink_partial_page(info);
     }
     else if(free_pages_no > 0) {
       TBSYS_LOG(DEBUG, "alloc from free page : %u", free_pages);
@@ -463,7 +467,7 @@ namespace tair {
     else {
       TBSYS_LOG(DEBUG, "link into partial_pages[%d]",
                 info->free_nr / PARTIAL_PAGE_BUCKET);
-      link_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
+      link_partial_page(info);
     }
 
     assert(item_id > 0);
@@ -625,7 +629,7 @@ namespace tair {
     }
     else {
       assert(info->free_head != 0);
-      unlink_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
+      unlink_partial_page(info);
     }
 
     item->prev = 0;
@@ -653,7 +657,7 @@ namespace tair {
       }
     }
     else {
-      link_page(info, partial_pages[info->free_nr / PARTIAL_PAGE_BUCKET]);
+      link_partial_page(info);
     }
 
     TBSYS_LOG(DEBUG, "after free:page id:%d,%p,info->free_nr:%d,info->free_head:%lu,SLAB_ID(id):%d,info->free_head->next : %lu",

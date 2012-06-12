@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <pthread.h>
+#include <map>
 
 #include "libmdb_c.hpp"
 
@@ -50,12 +51,13 @@ typedef struct {
 } proc_param_t;
 
 typedef struct {
-  int         nproc;
+  uint32_t    nproc;
   int         area;
   uint64_t    quota;
   uint32_t    item_count;
   uint32_t    key_size;
-  uint32_t    value_size;
+  uint32_t    max_value_size;
+  uint32_t    min_value_size;
   uint64_t    mem_size;
   const char  *mem_type;
   const char  *shm_path;
@@ -186,7 +188,8 @@ void parse_args(int argc, char **argv) {
   args.quota = args.mem_size>>2;
   args.item_count = 1<<16;
   args.key_size = 16;
-  args.value_size = 64;
+  args.max_value_size = 64;
+  args.min_value_size = 64;
   args.mem_type = "mdb_shm";
   args.shm_path = "/libmdb_shm";
   args.action_type = "put";
@@ -222,7 +225,10 @@ void parse_args(int argc, char **argv) {
       args.key_size = atoi(optarg);
       break;
     case 'v':
-      args.value_size = atoi(optarg);
+      sscanf(optarg, "%u-%u", &args.min_value_size, &args.max_value_size);
+      if (args.max_value_size < args.min_value_size) {
+        std::swap(args.max_value_size, args.min_value_size);
+      }
       break;
     case 'q':
       args.quota = atoll(optarg);
@@ -256,15 +262,20 @@ char *genk(int size, uint64_t seq, bool is_rand) {
 }
 
 char *genv(int size) {
-  static bool init = false;
-  if (!init) {
-    for (int i = 0; i < size; ++i) {
-      vbuf[i] = rand()%mod + ' ';
-    }
-    vbuf[size-1] = 0;
-    init = true;
+  static std::map<int, char*> vmap; //~ normally not too large, won't free
+  std::map<int, char*>::iterator it = vmap.find(size);
+  char *value = NULL;
+  if (it != vmap.end()) {
+    value = (char*)malloc(size);
+    //for (int i = 0; i < size; ++i) {
+      //value[i] = rand()%mod + ' ';
+    //}
+    //value[size-1] = 0;
+    vmap.insert(std::make_pair(size, value));
+  } else {
+    value = it->second;
   }
-  return vbuf;
+  return value;
 }
 
 void test_put(mdb_t db, int id) {
@@ -278,15 +289,17 @@ void test_put(mdb_t db, int id) {
   time_t s = time(NULL);
   fprintf(stderr, "start: process %d, pid: %d\n", id, getpid());
   fprintf(stderr, "key_start: %"PRIu64", key_end: %"PRIu64"\n", proc_params[id].key_start, proc_params[id].key_end);
+  uint32_t range = args.max_value_size - args.min_value_size;
   for (int i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
     key.data = genk(args.key_size, i, random);
     key.size = args.key_size;
-    value.data = genv(args.value_size);
-    value.size = args.value_size;
+    uint32_t value_size = args.min_value_size + (i % range);
+    value.data = genv(value_size);
+    value.size = value_size;
 
-    pthread_mutex_lock(mtx);
+    //pthread_mutex_lock(mtx);
     int rc = mdb_put(db, args.area, &key, &value, 0, 1, 0);
-    pthread_mutex_unlock(mtx);
+    //pthread_mutex_unlock(mtx);
     if (rc == 0) {
       ++put_result.nsuccess;
     } else {
