@@ -149,6 +149,7 @@ namespace tair {
       float factor;
     };
 
+#pragma pack(8)
     struct slab_manager
     {
       slab_manager(mem_pool * pool,
@@ -236,9 +237,6 @@ namespace tair {
       int slab_size;
       int per_slab;
       int page_size;
-      int partial_pages_bucket_num;
-      int first_partial_page_index; //~ index of first bucket holding partial pages
-      uint32_t partial_bucket_count; //~ actual number of buckets holding partial pages
 
       struct item_list
       {
@@ -261,8 +259,11 @@ namespace tair {
       uint32_t free_pages;
       uint32_t full_pages;
       uint32_t *partial_pages;
-
+      int partial_pages_bucket_num;
+      int first_partial_page_index; //~ index of first bucket holding partial pages
+      uint32_t partial_bucket_count; //~ actual number of buckets holding partial pages
     };
+#pragma pack()
     static const int MEMCACHE_META_LEN =
       sizeof(slab_manager) * TAIR_SLAB_LARGEST;
 
