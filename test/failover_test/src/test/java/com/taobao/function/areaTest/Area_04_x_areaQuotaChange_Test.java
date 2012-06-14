@@ -2,6 +2,9 @@ package com.taobao.function.areaTest;
 
 import java.util.Calendar;
 import static org.junit.Assert.*;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
 
 public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 	/*
@@ -14,6 +17,7 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 	// 1M
 	final static int SIZE1M512 = 2331;
 
+    @Test
 	public void testQuotaChanged_01_enlarge_quota() {
 		log.error("start area quota changed test case 01");
 
@@ -62,6 +66,7 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 		log.error("end area quota changed test case 01");
 	}
 
+    @Test
 	public void testQuotaChanged_02_reduce_quota_less_then_datasize() {
 		log.error("start area quota changed test case 02");
 
@@ -116,6 +121,8 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 
 		log.error("end area quota changed test case 02");
 	}
+
+    @Test
 	public void testQuotaChanged_03_reduce_quota_equals_datasize() {
 		log.error("start area quota changed test case 03");
 
@@ -170,6 +177,8 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 
 		log.error("end area quota changed test case 03");
 	}
+
+    @Test
 	public void testQuotaChanged_04_reduce_quota_bigger_than_onedatasize_less_than_twodatasize() {
 		log.error("start area quota changed test case 04");
 
@@ -224,15 +233,16 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 
 		log.error("end area quota changed test case 04");
 	}
-	// 把系统都启动起来
-	public void setUp() {
+	
+    @Before
+    public void setUp() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList, dsList);
 
 	}
 
-	// 清理
+    @After
 	public void tearDown() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");

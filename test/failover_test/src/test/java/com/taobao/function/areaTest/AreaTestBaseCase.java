@@ -11,11 +11,11 @@ import com.taobao.tairtest.BaseTestCase;
 
 public class AreaTestBaseCase extends BaseTestCase {
 	//directory
-	final static String tair_bin="/home/admin/tair_bin_sync/";
+	final static String tair_bin="/home/admin/tair_bin/";
 	final static String test_bin="/home/admin/baoni/function/";
 	//mechine
-	final String csarr[]=new String[]{"10.232.4.14","10.232.4.15"};
-	final String dsarr[]=new String[]{"10.232.4.14"};
+	final String csarr[]=new String[]{"10.232.4.20","10.232.4.21"};
+	final String dsarr[]=new String[]{"10.232.4.20"};
 	final List csList=Arrays.asList(csarr);
 	final List dsList=Arrays.asList(dsarr);
 	//Parameters
@@ -95,7 +95,7 @@ public class AreaTestBaseCase extends BaseTestCase {
 	public boolean verifySuccess(int successNum,String PutOrGetOrRem){
 		int ret=0;
 		String verify="cd "+test_bin+" && ";
-		verify+="tail -4 "+PutOrGetOrRem+".log|grep \""+PutOrGetOrRem+"\"|awk -F \" \" \'{print $2}\'";
+		verify+="tail -6 "+PutOrGetOrRem+".log|grep \""+PutOrGetOrRem+"\"|awk -F \" \" \'{print $2}\'";
 		STAFResult result=executeShell(stafhandle, "local", verify);
 		if(result.rc!=0)
 		{
@@ -165,7 +165,7 @@ public class AreaTestBaseCase extends BaseTestCase {
 	public int checkSlab(String machine,int slab_size)
 	{
 		int ret=0;
-		String cmd="cd /home/admin/tair_bin/bin && ./mdbshm_reader.py -f /dev/shm/mdb_shm_path01|grep \"^"+slab_size+"\"|awk -F \" \" \'{print $4}\'";
+		String cmd="cd /home/admin/tair_bin/bin && ./mdbshm_reader.py -f /dev/shm/mdb_shm_hudson|grep \"^"+slab_size+"\"|awk -F \" \" \'{print $4}\'";
 		log.debug("check slab item count:"+cmd+" on "+machine+" in slab:"+slab_size);
 		STAFResult result=executeShell(stafhandle, machine, cmd);
 		if(result.rc!=0)
@@ -223,9 +223,9 @@ public class AreaTestBaseCase extends BaseTestCase {
 		cmd+="./tair.sh "+opID+"_cs && ";
 		cmd+="sleep 5";
 		if(opID.equals(AreaTestBaseCase.stop)&&type==1)
-			cmd="killall -9 tair_cfg_svr && sleep 2";
+			cmd="killall -9 tair_cfg_svr_hudson && sleep 2";
 		executeShell(stafhandle, machine, cmd);
-		cmd="ps -ef|grep tair_cfg_svr|wc -l";
+		cmd="ps -ef|grep tair_cfg_svr_hudson|wc -l";
 		STAFResult result=executeShell(stafhandle, machine, cmd);
 		if(result.rc!=0)
 		{
@@ -251,54 +251,13 @@ public class AreaTestBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
+
 	/**
 	 * @param machine
 	 * @param opID
 	 * @param type 0:normal 1:force
 	 * @return
 	 */
-/*	public boolean control_ds(String machine,String opID, int type)
-	{
-		log.debug("control ds:"+machine+" "+opID+" type="+type);
-		boolean ret=false;
-		String cmd="cd "+tair_bin+" && ";
-		cmd+="./tair.sh "+opID+"_ds && ";
-		cmd+="sleep 5";
-		if(opID.equals(AreaTestBaseCase.stop)&&type==1)
-			cmd="killall -9 tair_server && sleep 2";
-		executeShell(stafhandle, machine, cmd);
-		cmd="ps -ef|grep tair_server";
-		STAFResult result=executeShell(stafhandle, machine, cmd);
-		log.debug("*********ps s*********");
-		log.debug(getShellOutput(result).trim());
-		log.debug("*********ps e*********");
-		cmd="ps -ef|grep tair_server|wc -l";
-		result=executeShell(stafhandle, machine, cmd);
-		if(result.rc!=0)
-		{
-			log.debug("ds rc!=0");
-			ret=false;
-		}
-		else
-		{
-			String stdout=getShellOutput(result);
-			log.debug("------------ds ps result--------------"+stdout);
-			if (opID.equals(AreaTestBaseCase.start)&&(new Integer(stdout.trim())).intValue()!=3)
-			{
-				ret=false;
-			}
-			else if(opID.equals(AreaTestBaseCase.stop)&&(new Integer(stdout.trim())).intValue()!=2)
-			{
-				ret=false;
-			}
-			else
-			{
-				ret=true;
-			}
-		}
-		return ret;
-	}*/
-
     public boolean control_ds(String machine, String opID, int type) 
     {
         log.debug("control ds:" + machine + " " + opID + " type=" + type);
@@ -316,10 +275,10 @@ public class AreaTestBaseCase extends BaseTestCase {
         }
         executeShell(stafhandle, machine, cmd);
         if (opID.equals(AreaTestBaseCase.stop) && type == 1)
-            cmd = "killall -9 tair_server && sleep 2";
+            cmd = "killall -9 tair_server_hudson && sleep 2";
         STAFResult result = executeShell(stafhandle, machine, cmd);
         int waittime = 0;
-        cmd = "ps -ef|grep tair_server|wc -l";
+        cmd = "ps -ef|grep tair_server_hudson|wc -l";
         while (waittime < 110) 
         {
             result = executeShell(stafhandle, machine, cmd);

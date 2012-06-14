@@ -3,6 +3,9 @@ package com.taobao.function.areaTest;
 import java.util.Calendar;
 import static org.junit.Assert.*;
 import junit.framework.Assert;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
 
 public class Area_02_x_slabBalance_Test extends AreaTestBaseCase {
 	/*
@@ -17,6 +20,7 @@ public class Area_02_x_slabBalance_Test extends AreaTestBaseCase {
 	// 1M
 	final static int SIZE1M512 = 2331;
 
+    @Test
 	public void testSlabBalance_01_slab_balance() {
 		log.error("start slab balance test case 01");
 
@@ -68,8 +72,7 @@ public class Area_02_x_slabBalance_Test extends AreaTestBaseCase {
 		log.error("end slab balance test case 01");
 	}
 
-	
-	// 把系统都启动起来
+    @Before
 	public void setUp() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
@@ -77,7 +80,7 @@ public class Area_02_x_slabBalance_Test extends AreaTestBaseCase {
 
 	}
 
-	// 清理
+    @After
 	public void tearDown() {
 		log.error("clean tool and cluster!");
 //		clean_tool("local");

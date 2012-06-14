@@ -1,6 +1,9 @@
 package com.taobao.function.areaTest;
 
 import static org.junit.Assert.*;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
 
 public class Area_00_x_size_Test extends AreaTestBaseCase {
 	/*
@@ -15,6 +18,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 //	final static int D1024KB=1024;
 //	final static int D1MB=1048576;
 	
+    @Test
 	public void test_01_quota_512KB_data_512B()
 	{
 		log.error("start size test case 01");
@@ -57,6 +61,8 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
         assertTrue(verifySuccess(1166,Get));
 		log.error("end cluster test failover case 01");
 	}
+
+    @Test
 	public void test_02_quota_512KB_data_1024B()
 	{
 		log.error("start size test case 02");
@@ -100,6 +106,8 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
         
 		log.error("end cluster test failover case 02");
 	}
+
+    @Test
 	public void test_03_quota_512KB_data_512B_and_data_1024()
 	{
 		log.error("start size test case 03");
@@ -150,7 +158,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 		log.error("end cluster test failover case 03");
 	}
 	
-	
+	@Test
 	public void test_04_quota_256MB_data_1025B_full()
 	{
 		log.error("start size test case 04");
@@ -188,6 +196,8 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
         assertTrue(modify_config_file(csList.get(0).toString(),AreaTestBaseCase.tair_bin+"etc/dataserver.conf","slab_mem_size","256"));
 		log.error("end cluster test failover case 04");
 	}
+
+    @Test
 	public void test_05_quota_1MB_data_512B()
 	{
 		log.error("start size test case 05");
@@ -232,7 +242,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 		log.error("end cluster test failover case 05");
 	}
 	
-	 //把系统都启动起来
+    @Before
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
@@ -241,12 +251,14 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
         
 	}
 	
-	//清理
+    @After
 	public void tearDown()
 	{
-		log.error("clean tool and cluster!");
-	    clean_tool("local");
-	    reset_cluster(csList,dsList);
+        log.error("clean tool and cluster!");
+        clean_tool("local");
+        reset_cluster(csList,dsList);
+        assertTrue(changeHourRange(dsList.get(0).toString(), "slab", 5, 7));
+        assertTrue(changeHourRange(dsList.get(0).toString(), "expired", 2, 4));
 	}
 
 }

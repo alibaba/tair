@@ -1,6 +1,9 @@
 package com.taobao.function.areaTest;
 
 import static org.junit.Assert.*;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
 
 public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 	/*
@@ -23,7 +26,7 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 	//quota 1M
 	final static int SIZE1M512=2331;
 	
-	
+    @Test
 	public void testAreaEliminate_01_area_full_expireDate_eliminated()
 	{
 		log.error("start area eliminate test case 01");
@@ -117,6 +120,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 01");
 	}
+
+    @Test
 	public void testAreaEliminate_02_area_full_no_slab_system_isnotfull()
 	{
 		log.error("start area eliminate test case 02");
@@ -185,6 +190,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 02");
 	}
+
+    @Test
 	public void testAreaEliminate_03_area_full_no_slab_system_full()
 	{
 		log.error("start area eliminate test case 03");
@@ -259,6 +266,7 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		log.error("end area eliminate test case 03");
 	}
 	
+    @Test
 	public void testAreaEliminate_04_area_isnotfull_system_isnotfull()
 	{
 		log.error("start area eliminate test case 04");
@@ -309,7 +317,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 04");
 	}
-	
+
+    @Test
 	public void testAreaEliminate_05_area_isnotfull_has_slabdata_system_isfull()
 	{
 		log.error("start area eliminate test case 05");
@@ -375,6 +384,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 05");
 	}
+
+    @Test
 	public void testAreaEliminate_06_area_isnotfull_hasno_slabdata_system_isfull()
 	{
 		log.error("start area eliminate test case 06");
@@ -445,6 +456,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 06");
 	}
+
+    @Test
 	public void testAreaEliminate_07_area_bigger_than_quota_area_isfull_has_slabdate()
 	{
 		log.error("start area eliminate test case 07");
@@ -506,8 +519,7 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		getDate(0,SIZECOMBINE1024,SIZECOMBINE1024+1);
 		assertTrue(verifySuccess(0,Get));
-		log.error("area0's fiset data of 1024KB size has been eliminated");
-		
+		log.error("area0's fiset data of 1024KB size has been eliminated");	
 		
 		//get the area1's data
 		getDate(1,0,2);
@@ -516,6 +528,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 07");
 	}
+
+    @Test
 	public void testAreaEliminate_08_area_bigger_than_quota_area_isfull_has_no_slabdate()
 	{
 		log.error("start area eliminate test case 08");
@@ -587,6 +601,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 08");
 	}
+
+    @Test
 	public void testAreaEliminate_09_area_bigger_than_quota_area_isnotfull_has_no_slabdate_system_nofull()
 	{
 		log.error("start area eliminate test case 09");
@@ -663,6 +679,7 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		log.error("end area eliminate test case 09");
 	}
 	
+    @Test
 	public void testAreaEliminate_10_area_bigger_than_quota_area_isnotfull_has_no_slabdate_system_full()
 	{
 		log.error("start area eliminate test case 10");
@@ -752,7 +769,8 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
 		
 		log.error("end area eliminate test case 10");
 	}
-	 //把系统都启动起来
+
+    @Before
 	public void setUp()
 	{
 		log.error("clean tool and cluster!");
@@ -761,13 +779,14 @@ public class Area_01_x_areaEliminate_Test extends AreaTestBaseCase {
         
 	}
 	
-	//清理
+    @After
 	public void tearDown()
 	{
-		log.error("clean tool and cluster!");
-		clean_tool("local");
-		reset_cluster(csList,dsList);
-		
+        log.error("clean tool and cluster!");
+        clean_tool("local");
+        reset_cluster(csList,dsList);
+        assertTrue(changeHourRange(dsList.get(0).toString(), "slab", 5, 7));
+        assertTrue(changeHourRange(dsList.get(0).toString(), "expired", 2, 4));
 	}
 
 }

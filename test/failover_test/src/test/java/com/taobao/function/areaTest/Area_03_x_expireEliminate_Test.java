@@ -4,6 +4,9 @@ package com.taobao.function.areaTest;
 import java.util.Calendar;
 import static org.junit.Assert.*;
 import junit.framework.Assert;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
 
 public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 	/*
@@ -13,6 +16,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 	final static int D1024B = 960;
 	final static int num = 10000;
 
+    @Test
 	public void testExpireEliminate_01_expireDate_eliminated_ontime() {
 		log.error("start expire eliminate test case 01");
 
@@ -109,7 +113,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		log.error("end expire eliminate test case 01");
 	}
 
-	// 把系统都启动起来
+    @Before
 	public void setUp() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
@@ -117,7 +121,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 
 	}
 
-	// 清理
+    @After
 	public void tearDown() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
