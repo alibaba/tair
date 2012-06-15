@@ -154,11 +154,11 @@ namespace tair {
         size_t total = 1 + 2 + 4;
         if (key_count > 0) {
           if (key_list == NULL) {
-            total += key->get_size() + 40;
+            total += key->encoded_size(); 
           } else {
             for (tair_dataentry_set::iterator it = key_list->begin(); 
                 it != key_list->end(); ++it) {
-              total += (*it)->get_size() + 40;
+              total += (*it)->encoded_size();
             }
           }
         }
@@ -400,18 +400,15 @@ namespace tair {
  
       virtual size_t size()
       {
-        if (fixed_size != 0)
-          return fixed_size;
-
         size_t total = 4 + 4 + 4;
         if (key_count > 0) {
           if (key_data_map == NULL) {
             // key or val never be null 
-            total += key->get_size() + data->get_size(); 
+            total += key->encoded_size() + data->encoded_size(); 
           } else {
             for (tair_keyvalue_map::iterator it=key_data_map->begin(); 
                 it!=key_data_map->end(); ++it) {
-              total += it->first->get_size() + it->second->get_size();
+              total += it->first->encoded_size() + it->second->encoded_size();
             }
           }
         }

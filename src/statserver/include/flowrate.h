@@ -11,7 +11,7 @@ namespace stat
 
 enum FlowType
 {
-  IN, OUT, OPS
+  IN = 0, OUT = 1, OPS = 2
 };
 
 enum FlowStatus

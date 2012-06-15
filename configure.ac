@@ -13,7 +13,7 @@ AC_ARG_WITH([release],
 			   [use optimize (default is NO)]),
 			   [
 			    if test "$withval" = "yes"; then
-				    CXXFLAGS="-O2 -finline-functions -Wall -DBOOST_SPIRIT_THREADSAFE -D__USE_LARGEFILE64 -D_FILE_OFFSET_BITS=64 -D_LARGE_FILE -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -DNDEBUG"
+				    CXXFLAGS="-g -O2 -finline-functions -Wall -DBOOST_SPIRIT_THREADSAFE -D__USE_LARGEFILE64 -D_FILE_OFFSET_BITS=64 -D_LARGE_FILE -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -DNDEBUG"
 			    fi
 			    ],
 			    [CXXFLAGS="-g -Wall -DBOOST_SPIRIT_THREADSAFE -D__USE_LARGEFILE64 -D_FILE_OFFSET_BITS=64 -D_LARGE_FILE  -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -DTAIR_DEBUG"]
@@ -25,7 +25,7 @@ AC_ARG_WITH([profile],
 			   [enable code coverage(default is NO)]),
 			   [
 			    if test "$withval" = "yes"; then
-				    CXXFLAGS="-fprofile-arcs -ftest-coverage ${CXXFLAGS}"
+				    CXXFLAGS="-g -fprofile-arcs -ftest-coverage ${CXXFLAGS}"
 				    GCOV_LIB=-lgcov
 			    fi
 			    ])
@@ -57,8 +57,7 @@ AM_CONDITIONAL([WITH_KDB],[test x$with_kdb = xyes])
 
 AC_ARG_WITH([ldb],
 		AS_HELP_STRING([--with-ldb],
-			[with ldb (default is NO)]),
-		[
+			[with ldb (default is NO)]), [
 		if test "$withval" = "yes"; then
 		with_ldb=yes
  		# configure leveldb && snappy

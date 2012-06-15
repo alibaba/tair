@@ -55,9 +55,9 @@ FlowControllerImpl::FlowControllerImpl(int ns)
   SetFlowLimit(-1, IN, DEFAULT_NET_LOWER, DEFAULT_NET_UPPER);
   SetFlowLimit(-1, OUT, DEFAULT_NET_LOWER, DEFAULT_NET_UPPER);
   SetFlowLimit(-1, OPS, DEFAULT_OPS_LOWER, DEFAULT_OPS_UPPER);
-  SetFlowLimit(MAXAREA, IN, DEFAULT_TOTAL_NET_UPPER, DEFAULT_TOTAL_NET_LOWER);
-  SetFlowLimit(MAXAREA, OUT, DEFAULT_TOTAL_NET_UPPER, DEFAULT_TOTAL_NET_LOWER);
-  SetFlowLimit(MAXAREA, OPS, DEFAULT_TOTAL_OPS_UPPER, DEFAULT_TOTAL_OPS_LOWER);
+  SetFlowLimit(MAXAREA, IN, DEFAULT_TOTAL_NET_LOWER, DEFAULT_TOTAL_NET_UPPER);
+  SetFlowLimit(MAXAREA, OUT, DEFAULT_TOTAL_NET_LOWER, DEFAULT_TOTAL_NET_UPPER);
+  SetFlowLimit(MAXAREA, OPS, DEFAULT_TOTAL_OPS_LOWER, DEFAULT_TOTAL_OPS_UPPER);
 }
 
 FlowController* FlowController::NewInstance() 
@@ -185,28 +185,37 @@ void FlowControllerImpl::BackgroundCalFlows()
     mutex_->UnLock();
     if (stop_)
       break;
+    log_debug("calculating flow");
     for (size_t ns = 0; ns < MAXAREA; ++ns)
     {
-      FlowStatus status_in = CalCurrentFlow(flows_[ns].in);
+      AreaFlow &flow  = flows_[ns];
+      FlowStatus status_in = CalCurrentFlow(flow.in);
       if (status_in != DOWN)
         log_info("Flow IN Limit: ns %d %s", ns, FlowStatusStr(status_in));
-      FlowStatus status_out = CalCurrentFlow(flows_[ns].out);
+      FlowStatus status_out = CalCurrentFlow(flow.out);
       if (status_out != DOWN)
         log_info("Flow OUT Limit: ns %d %s", ns, FlowStatusStr(status_out));
-      FlowStatus status_ops = CalCurrentFlow(flows_[ns].ops);
+      FlowStatus status_ops = CalCurrentFlow(flow.ops);
       if (status_ops != DOWN)
         log_info("Flow IN Limit: ns %d %s", ns, FlowStatusStr(status_ops));
 
-      log_debug("Flow input rate: ns %d; in %d %s; out %d %s; ops %d %s",
-          ns,
-          atomic_read(&flows_[ns].in.last_per_second), FlowStatusStr(status_in),
-          atomic_read(&flows_[ns].out.last_per_second), FlowStatusStr(status_out),
-          atomic_read(&flows_[ns].ops.last_per_second), FlowStatusStr(status_ops)
-      );
+      if (TBSYS_LOGGER._level >= TBSYS_LOG_LEVEL_DEBUG && 
+          (atomic_read(&flow.in.last_per_second) != 0 ||
+          atomic_read(&flow.out.last_per_second) != 0 ||
+          atomic_read(&flow.ops.last_per_second) != 0))
+      {
+        log_debug("Flow rate: ns %d; in %d %s; out %d %s; ops %d %s",
+            ns,
+            atomic_read(&flow.in.last_per_second), FlowStatusStr(status_in),
+            atomic_read(&flow.out.last_per_second), FlowStatusStr(status_out),
+            atomic_read(&flow.ops.last_per_second), FlowStatusStr(status_ops)
+         );
+      }
 
       FlowStatus temp = status_in > status_out ? status_in : status_out;
-      flows_[ns].status = temp > status_ops ? temp : status_ops;
+      flow.status = temp > status_ops ? temp : status_ops;
     }
+    log_debug("calculating end");
   }
 }
 

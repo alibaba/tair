@@ -32,6 +32,7 @@ namespace tair {
 
       void encode(tbnet::DataBuffer *output) const
      {
+         // 29 bytes 
          output->writeInt16(magic);
          output->writeInt16(checksum);
          output->writeInt16(keysize);

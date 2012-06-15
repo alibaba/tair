@@ -365,6 +365,11 @@ namespace tair
        inline bool is_alloc() const {
          return alloc;
        }
+
+       size_t encoded_size() {
+         return 40 + get_size();
+       }
+
        void encode(tbnet::DataBuffer *output) const
        {
          output->writeInt8(has_merged);

@@ -42,7 +42,12 @@ namespace tair {
 
       size_t size() 
       {
-        return 1 + 2 + 2 + 4 + key.get_size() + data.get_size() + 16;
+        return 1 + 2 + 2 + 4 + key.encoded_size() + data.encoded_size() + 16;
+      }
+
+      virtual uint16_t ns() 
+      {
+        return area;
       }
 
       ~request_put()

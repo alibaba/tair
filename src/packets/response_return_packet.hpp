@@ -84,6 +84,17 @@ namespace tair {
          return msg;
       }
 
+      virtual size_t size()
+      {
+        // config_version 4 byte
+        // code 4 byte
+        // msg len 4 byte
+        // msg strlen(len)
+        size_t len = strlen(msg);
+        if (len > 0) len += 1;
+        return 12 + len; 
+      }
+
    public:
       int code;
       char msg[128];

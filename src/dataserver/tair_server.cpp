@@ -244,6 +244,7 @@ namespace tair {
       stat.ns = (uint16_t)packet->ns();
       stat.op = (uint16_t)packet->getPCode();
       stat.in = (uint32_t)packet->size();
+      stat.out = 0;
 
       int pcode = packet->getPCode();
 

@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#include "log.hpp"
+
 namespace flstorage
 {
 class RWLock
@@ -73,7 +75,15 @@ class Mutex
     struct timespec ts;
     gettimeofday(&tv, NULL);
     ts.tv_sec = tv.tv_sec + second;
-    pthread_cond_timedwait(&cond_, &lock_, &ts); 
+    int rc = pthread_cond_timedwait(&cond_, &lock_, &ts); 
+    if (rc == ETIMEDOUT) 
+    {
+      log_debug("time pass: %s", strerror(rc));
+    } 
+    else if (rc != 0) 
+    {
+      log_error("cond wait error: %s", strerror(rc));
+    }
   }
 
   void Signal()
