@@ -71,10 +71,9 @@ class Mutex
 
   void Wait(time_t second)
   {
-    struct timeval tv;
     struct timespec ts;
-    gettimeofday(&tv, NULL);
-    ts.tv_sec = tv.tv_sec + second;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    ts.tv_sec += second;
     int rc = pthread_cond_timedwait(&cond_, &lock_, &ts); 
     if (rc == ETIMEDOUT) 
     {

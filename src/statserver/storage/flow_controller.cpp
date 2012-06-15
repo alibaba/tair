@@ -65,7 +65,8 @@ FlowController* FlowController::NewInstance()
   return new FlowControllerImpl(0);
 }
 
-bool FlowControllerImpl::Initialize() {
+bool FlowControllerImpl::Initialize() 
+{
   int ret = pthread_create(&bg_tid, NULL, BackgroundFunc, this);
   if (ret != 0) 
   {
@@ -101,7 +102,7 @@ Flowrate FlowControllerImpl::GetFlowrate(int ns)
                    flow.out.status,
                    atomic_read(&flow.ops.last_per_second),
                    flow.ops.status,
-                   flows_[ns].status};
+                   flow.status};
   return rate;
 }
 
