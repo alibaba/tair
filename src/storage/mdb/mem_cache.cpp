@@ -212,13 +212,11 @@ namespace tair {
     return;
   }
 
-//TODO
-  void mem_cache::keep_area_quota(int area, int exceed)
+  void mem_cache::keep_area_quota(int area, uint64_t exceed)
   {
     assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
-    assert(exceed > 0);
 
-    int exceed_bytes = exceed;
+    uint64_t exceed_bytes = exceed;
     bool first_round = true;
 
     while(exceed_bytes > 0) {
@@ -237,7 +235,11 @@ namespace tair {
 
         //ok,we will delete one mdb_item
         mdb_item *item = id_to_item((*it)->this_item_list[area].item_tail);
-        exceed_bytes -= (item->key_len + item->data_len);
+        if (exceed_bytes >= (item->key_len + item->data_len)) {
+          exceed_bytes -= (item->key_len + item->data_len);
+        } else {
+          exceed_bytes = 0;
+        }
         manager->__remove(item);
 
         if(exceed_bytes <= 0) {

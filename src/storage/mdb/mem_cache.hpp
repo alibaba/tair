@@ -139,7 +139,7 @@ namespace tair {
     bool is_quota_exceed(int area);
     void calc_slab_balance_info(std::map<int, int > &adjust_info);
     void balance_slab_done();
-    void keep_area_quota(int area, int exceed);
+    void keep_area_quota(int area, uint64_t exceed);
 
     struct mdb_cache_info
     {
