@@ -39,6 +39,7 @@ void      parse_args(int argc, char **argv);
 void      test_put(mdb_t db, int id);
 void      test_get(mdb_t db, int id);
 void      test_del(mdb_t db, int id);
+void      test_lookup(mdb_t db, int id);
 void      disp_stat(mdb_stat_t *stat);
 char      *genk(int size, uint64_t seq, bool rand);
 char      *genv(int size);
@@ -120,6 +121,8 @@ main(int argc, char **argv) {
         test_get(db, i);
       } else if (strcmp(args.action_type, "del") == 0) {
         test_del(db, i);
+      } else if (strcmp(args.action_type, "lookup") == 0) {
+        test_lookup(db, i);
       } else {
         fprintf(stderr, "action type %s not supported\n", args.action_type);
       }
@@ -290,6 +293,7 @@ void test_put(mdb_t db, int id) {
   fprintf(stderr, "start: process %d, pid: %d\n", id, getpid());
   fprintf(stderr, "key_start: %"PRIu64", key_end: %"PRIu64"\n", proc_params[id].key_start, proc_params[id].key_end);
   uint32_t range = args.max_value_size - args.min_value_size;
+  if (range == 0) range = 1;
   for (int i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
     key.data = genk(args.key_size, i, random);
     key.size = args.key_size;
@@ -358,6 +362,30 @@ void test_del(mdb_t db, int id) {
   time_t e = time(NULL);
   fprintf(stderr, "end: process %d, pid: %d\n", id, getpid());
   fprintf(stderr, "avg qps: %lu, time consumed: %ld\n", (proc_params[id].key_end-proc_params[id].key_start)/(e-s), e - s);
+}
+
+void test_lookup(mdb_t db, int id) {
+  data_entry_t key;
+  result_t lookup_result = {0LL,0LL};
+  time_t s = time(NULL);
+  fprintf(stderr, "start: process %d, pid: %d\n", id, getpid());
+  fprintf(stderr, "key_start: %"PRIu64", key_end: %"PRIu64"\n", proc_params[id].key_start, proc_params[id].key_end);
+  for (int i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
+    key.data = genk(args.key_size, i, false);
+    key.size = args.key_size;
+    pthread_mutex_lock(mtx);
+    bool rc = mdb_lookup(db, 0, &key);
+    pthread_mutex_unlock(mtx);
+    if (rc == true) {
+      ++lookup_result.nsuccess;
+    } else {
+      ++lookup_result.nfail;
+    }
+  }
+  time_t e = time(NULL);
+  fprintf(stderr, "end: process %d, pid: %d\n", id, getpid());
+  fprintf(stderr, "avg qps: %lu, time consumed: %ld, exist: %lu, nonexist: %lu\n",
+      (proc_params[id].key_end-proc_params[id].key_start)/(e-s), e - s, lookup_result.nsuccess, lookup_result.nfail);
 }
 
 void disp_stat(mdb_stat_t *stat) {

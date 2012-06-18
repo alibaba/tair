@@ -68,7 +68,7 @@ extern "C" {
   /*
    * put
    * @param db: mdb instance into which you insert the entry
-   * @param area: also called namespace, used to separate keys
+   * @param area: also called namespace, used to isolate keys
    * @param version: version of the entry, maintained by mdb, increased by one every update
    * @param version_care: whether you care about the version
    * @param expire: lifetime of the entry, by seconds, absolute or relative
@@ -94,6 +94,10 @@ extern "C" {
   int       mdb_add_count(mdb_t db, int area, const data_entry_t *key, int count,
                           int init_value, int expire, int *result);
   /*
+   * test existence
+   */
+  bool      mdb_lookup(mdb_t db, int area, const data_entry_t *key);
+  /*
    * clear the whole entries of one area
    * if area equals -1, every area would be cleared
    */
@@ -114,11 +118,6 @@ extern "C" {
    * see if one area's occupation exceeds its quota
    */
   bool      mdb_is_quota_exceed(mdb_t db, int area);
-  /*
-   * you would never need this
-   */
-  void      mdb_assign_static_param(const mdb_param_t *param);
-
 #ifdef __cplusplus
 }
 #endif

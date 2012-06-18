@@ -271,6 +271,11 @@ namespace tair {
     return do_add_count(key, count,init_value,allow_negative,expire_time,result_value);
   }
 
+  bool mdb_manager::lookup(int bucket_num, data_entry &key)
+  {
+    boost::mutex::scoped_lock guard(mem_locker);
+    return do_lookup(key);
+  }
 
   void mdb_manager::set_area_quota(int area, uint64_t quota)
   {
@@ -662,6 +667,23 @@ namespace tair {
     rc= do_put(key, old_value, true, expired);
 
     return rc;
+  }
+
+  bool mdb_manager::do_lookup(data_entry &key)
+  {
+    if (key.area != KEY_AREA(key.get_data())) {
+      TBSYS_LOG(ERROR, "key.area[%d] != KEY_AREA(key.get_data())[%d]",key.area,KEY_AREA(key.get_data()));
+      return false;
+    }
+    mdb_item *it = hashmap->find(key.get_data(), key.get_size());
+    if (it == NULL) {
+      return false;
+    }
+    if (it->exptime != 0 && it->exptime < time(NULL)) {
+      __remove(it);
+      return false;
+    }
+    return true;
   }
 
   void mdb_manager::get_stats(tair_stat * stat)

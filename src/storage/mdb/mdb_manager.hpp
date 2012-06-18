@@ -50,6 +50,7 @@ namespace tair {
     int remove(int bucket_num, data_entry & key, bool version_care);
     int add_count(int bucket_num,data_entry &key, int count, int init_value,
             bool allow_negative,int expire_time,int &result_value);
+    bool lookup(int bucket_num, data_entry &key);
 
     // raw put/get/remove for embedded cache use
     // Not consider any meta, just key ==> value, cause operating those stuff is up to cache-user.
@@ -119,6 +120,7 @@ namespace tair {
     int do_remove(data_entry & key, bool version_care);
     int do_add_count(data_entry &key, int count, int init_value,
             bool not_negative,int expired ,int &result_value);
+    bool do_lookup(data_entry &key);
 
     char *open_shared_mem(const char *path, int64_t size);
     bool remove_if_exists(data_entry & key);

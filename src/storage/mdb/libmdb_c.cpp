@@ -18,6 +18,8 @@
 
 using namespace tair;
 
+static void mdb_assign_static_param(const mdb_param_t *param);
+
 mdb_t mdb_init(const mdb_param_t *param) {
   mdb_assign_static_param(param);
   bool use_shm = true;
@@ -97,6 +99,13 @@ int mdb_add_count(mdb_t db, int area, const data_entry_t *key, int count,
   mkey.merge_area(area);
   mdb_manager *_db = reinterpret_cast<mdb_manager*>(db);
   return _db->add_count(0, mkey, count, init_value, true, expire, *result);
+}
+
+bool mdb_lookup(mdb_t db, int area, const data_entry_t *key) {
+  data_entry mkey(key->data, key->size, false);
+  mkey.merge_area(area);
+  mdb_manager *_db = reinterpret_cast<mdb_manager*>(db);
+  return _db->lookup(0, mkey);
 }
 
 int mdb_clear(mdb_t db, int area) {
