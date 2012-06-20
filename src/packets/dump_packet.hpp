@@ -26,7 +26,7 @@ namespace tair {
          setPCode(TAIR_REQ_DUMP_PACKET);
       }
 
-      request_dump(request_dump &packet)
+      request_dump(request_dump &packet) : base_packet(packet)
       {
          setPCode(TAIR_REQ_DUMP_PACKET);
          info_set = packet.info_set;

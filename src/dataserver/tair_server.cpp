@@ -315,7 +315,9 @@ namespace tair {
          {
             request_dump *npacket = (request_dump*)packet;
             if (npacket->get_direction() == DIRECTION_RECEIVE) {
-               async_task_queue_thread.push(new request_dump(*npacket));
+              request_dump *tpacket = new request_dump(*npacket);
+              tpacket->set_direction(DIRECTION_SEND);
+               async_task_queue_thread.push(tpacket);
             } else {
                tair_mgr->do_dump(npacket->info_set);
             }
