@@ -50,10 +50,8 @@ namespace tair {
 
    void stat_helper::init()
    {
-      log_warn("total_size is %d", STAT_TOTAL_SIZE);
       stat = (tair_stat *)malloc(STAT_TOTAL_SIZE);
       assert (stat != NULL);
-      log_warn("total_size is %d", STAT_TOTAL_SIZE);
 
       memset(stat, 0, STAT_TOTAL_SIZE);
 

@@ -56,6 +56,7 @@ namespace tair {
 #define OFFSET_MASK ((1<<16)-1)
 #define PAGE_ID_MASK ((1<<16)-1)
 #define SLAB_ID_MASK ((1<<8)-1)
+#define FLAGS_MASK 0x0FFFFFFFFFFFFFFF
 
 #define ITEM_KEY(it) (&((it)->data[0]))
 #define ITEM_DATA(it) (&((it)->data[0]) + (it)->key_len)
@@ -70,7 +71,7 @@ namespace tair {
 #define TEST_COUNTER(x) ((x) & (1ULL<<60))
 #define SET_COUNTER(x) ((x)|= (1ULL<<60))
 #define CLEAR_COUNTER(x) ((x) &= (~(1ULL<<60)))
-#define CLEAR_FLAGS(x) ((x) &= (~(0xFULL << 60)))
+#define CLEAR_FLAGS(x) ((x) &= FLAGS_MASK)
 #define ITEM_FLAGS(x)                           \
    ({                                           \
       uint64_t __item_id = x;                   \
@@ -98,8 +99,7 @@ namespace tair {
 #define id_to_item(id)                                                  \
    ITEM_ADDR(this_mem_pool->get_pool_addr(),id,this_mem_pool->get_page_size())
 
-
-#define itemid_equal(lhs,rhs) ((lhs) == (rhs))
+#define itemid_equal(lhs, rhs) ( ((lhs) & FLAGS_MASK) == ((lhs) & FLAGS_MASK) )
 
   class mdb_manager;
 
