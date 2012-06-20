@@ -28,7 +28,7 @@ namespace tair {
       }
 
 
-      request_remove_area(request_remove_area &packet)
+      request_remove_area(request_remove_area &packet) : base_packet(packet)
       {
          setPCode(TAIR_REQ_REMOVE_AREA_PACKET);
          area = packet.area;

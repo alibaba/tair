@@ -290,7 +290,9 @@ namespace tair {
          {
             request_remove_area *npacket = (request_remove_area*)packet;
             if (npacket->get_direction() == DIRECTION_RECEIVE) {
-               async_task_queue_thread.push(new request_remove_area(*npacket));
+              request_remove_area *tpacket = new request_remove_area(*npacket);
+              tpacket->set_direction(DIRECTION_SEND);
+               async_task_queue_thread.push(tpacket);
             } else {
                if (tair_mgr->clear(npacket->area) == false) {
                   ret = EXIT_FAILURE;

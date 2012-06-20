@@ -186,9 +186,10 @@ void destroy(mdb_t db) {
 
 void parse_args(int argc, char **argv) {
   args.nproc = 2;
-  args.area = 0;
+  args.area = 3;
   args.mem_size = 1LL<<30;
-  args.quota = args.mem_size>>2;
+  //args.quota = args.mem_size>>2;
+  args.quota = 0;
   args.item_count = 1<<16;
   args.key_size = 16;
   args.max_value_size = 64;
@@ -327,7 +328,7 @@ void test_get(mdb_t db, int id) {
     value.data = NULL;
     value.size = 0;
     pthread_mutex_lock(mtx);
-    int rc = mdb_get(db, 0, &key, &value, NULL, NULL);
+    int rc = mdb_get(db, args.area, &key, &value, NULL, NULL);
     pthread_mutex_unlock(mtx);
     if (rc == 0) {
       ++get_result.nsuccess;
@@ -351,7 +352,7 @@ void test_del(mdb_t db, int id) {
     key.data = genk(args.key_size, i, false);
     key.size = args.key_size;
     pthread_mutex_lock(mtx);
-    int rc = mdb_del(db, 0, &key, false);
+    int rc = mdb_del(db, args.area, &key, false);
     pthread_mutex_unlock(mtx);
     if (rc == 0) {
       ++del_result.nsuccess;
@@ -374,7 +375,7 @@ void test_lookup(mdb_t db, int id) {
     key.data = genk(args.key_size, i, false);
     key.size = args.key_size;
     pthread_mutex_lock(mtx);
-    bool rc = mdb_lookup(db, 0, &key);
+    bool rc = mdb_lookup(db, args.area, &key);
     pthread_mutex_unlock(mtx);
     if (rc == true) {
       ++lookup_result.nsuccess;
