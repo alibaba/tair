@@ -29,6 +29,8 @@
 #include "mdb_define.hpp"
 #include "util.hpp"
 
+#include <map>
+
 using namespace tair;
 using namespace std;
 using namespace boost;
@@ -81,6 +83,12 @@ namespace tair {
                           mem_pool::MDB_STATINFO_START +
                           i * sizeof(mdb_area_stat));
     }
+
+    map<uint32_t, uint64_t>::const_iterator it = mdb_param::default_area_capacity.begin();
+    for(; it != mdb_param::default_area_capacity.end(); ++it) {
+      area_stat[it->first]->quota = it->second;
+    }
+
     chkexprd_thread.start(this, NULL);
     chkslab_thread.start(this, NULL);
     return true;

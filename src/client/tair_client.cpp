@@ -26,6 +26,7 @@ namespace tair {
    tair_client::tair_client()
    {
       is_config_server = false;
+      is_data_server = false;
       //server_id = 0;
       //m_slaveServerId = 0;
       group_name = NULL;
@@ -132,6 +133,7 @@ namespace tair {
                   return false;
                }
                server_addr = optarg;
+               is_data_server = true;
                //server_id = tbsys::CNetUtil::strToAddr(optarg, TAIR_SERVER_DEFAULT_PORT);
             }
                break;
@@ -209,8 +211,12 @@ namespace tair {
       if (is_config_server) {
          done = client_helper.startup(server_addr, slave_server_addr, group_name);
       } else {
-         //done = client_helper.startup(server_id);
-         done = false;
+        if(is_data_server) {
+          done = client_helper.directup(server_addr);
+        } else {
+          //done = client_helper.startup(server_id);
+          done = false;
+        }
       }
       if (done == false) {
          fprintf(stderr, "%s cann't connect.\n", server_addr);
@@ -321,9 +327,9 @@ namespace tair {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
    int64_t tair_client::ping(uint64_t server_id)
    {
-		 if (server_id == 0ul) {
-			 return 0L;
-		 }
+       if (server_id == 0ul) {
+          return 0L;
+       }
      int ping_count = 10;
      int64_t total = 0;
      for (int i = 0; i < ping_count; ++i) {
@@ -848,49 +854,54 @@ namespace tair {
       return ;
    }
 
-   void tair_client::do_cmd_stat(VSTRING &param) {
+   void tair_client::do_cmd_stat(VSTRING &param)
+   {
+      if (is_data_server) {
+         fprintf(stderr, "direct connect to ds, can not use stat\n");
+         return;
+      }
 
-	map<string, string> out_info;
-	map<string, string>::iterator it;
-	string group = group_name;
-	client_helper.query_from_configserver(request_query_info::Q_AREA_CAPACITY, group, out_info);
-	fprintf(stderr,"%20s %20s\n","area","quota");
-	for (it=out_info.begin(); it != out_info.end(); it++) {
-		fprintf(stderr,"%20s %20s\n", it->first.c_str(), it->second.c_str());
-	}
-	fprintf(stderr,"\n");
+      map<string, string> out_info;
+      map<string, string>::iterator it;
+      string group = group_name;
+      client_helper.query_from_configserver(request_query_info::Q_AREA_CAPACITY, group, out_info);
+      fprintf(stderr,"%20s %20s\n","area","quota");
+      for (it=out_info.begin(); it != out_info.end(); it++) {
+         fprintf(stderr,"%20s %20s\n", it->first.c_str(), it->second.c_str());
+      }
+      fprintf(stderr,"\n");
 
-	fprintf(stderr,"%20s %20s\n","server","status");
-	client_helper.query_from_configserver(request_query_info::Q_DATA_SEVER_INFO, group, out_info);
-	for (it=out_info.begin(); it != out_info.end(); it++) {
-		fprintf(stderr,"%20s %20s\n", it->first.c_str(), it->second.c_str());
-	}
-	fprintf(stderr,"\n");
+      fprintf(stderr,"%20s %20s\n","server","status");
+      client_helper.query_from_configserver(request_query_info::Q_DATA_SEVER_INFO, group, out_info);
+      for (it=out_info.begin(); it != out_info.end(); it++) {
+         fprintf(stderr,"%20s %20s\n", it->first.c_str(), it->second.c_str());
+      }
+      fprintf(stderr,"\n");
 
-	fprintf(stderr,"%20s %20s\n","server","ping");
-    set<uint64_t> servers;
-    client_helper.get_servers(servers);
-    for (set<uint64_t>::iterator it = servers.begin(); it != servers.end(); ++it) {
-      int64_t ping_time = ping(*it);
-      fprintf(stderr,"%20s %20lf\n", tbsys::CNetUtil::addrToString(*it).c_str(), ping_time / 1000.);
-    }
-	fprintf(stderr,"\n");
+      fprintf(stderr,"%20s %20s\n","server","ping");
+       set<uint64_t> servers;
+       client_helper.get_servers(servers);
+       for (set<uint64_t>::iterator it = servers.begin(); it != servers.end(); ++it) {
+         int64_t ping_time = ping(*it);
+         fprintf(stderr,"%20s %20lf\n", tbsys::CNetUtil::addrToString(*it).c_str(), ping_time / 1000.);
+       }
+      fprintf(stderr,"\n");
 
-	for (it=out_info.begin(); it != out_info.end(); it++) {
-		map<string, string> out_info2;
-		map<string, string>::iterator it2;
-        uint64_t server_id = tbsys::CNetUtil::strToAddr(it->first.c_str(), 0);
-		client_helper.query_from_configserver(request_query_info::Q_STAT_INFO, group, out_info2, server_id);
-		for (it2=out_info2.begin(); it2 != out_info2.end(); it2++) {
-			fprintf(stderr,"%s : %s %s\n",it->first.c_str(), it2->first.c_str(), it2->second.c_str());
-		}
-	}
-	map<string, string> out_info2;
-	map<string, string>::iterator it2;
-	client_helper.query_from_configserver(request_query_info::Q_STAT_INFO, group, out_info2, 0);
-	for (it2=out_info2.begin(); it2 != out_info2.end(); it2++) {
-		fprintf(stderr,"%s %s\n", it2->first.c_str(), it2->second.c_str());
-	}
+      for (it=out_info.begin(); it != out_info.end(); it++) {
+         map<string, string> out_info2;
+         map<string, string>::iterator it2;
+           uint64_t server_id = tbsys::CNetUtil::strToAddr(it->first.c_str(), 0);
+         client_helper.query_from_configserver(request_query_info::Q_STAT_INFO, group, out_info2, server_id);
+         for (it2=out_info2.begin(); it2 != out_info2.end(); it2++) {
+            fprintf(stderr,"%s : %s %s\n",it->first.c_str(), it2->first.c_str(), it2->second.c_str());
+         }
+      }
+      map<string, string> out_info2;
+      map<string, string>::iterator it2;
+      client_helper.query_from_configserver(request_query_info::Q_STAT_INFO, group, out_info2, 0);
+      for (it2=out_info2.begin(); it2 != out_info2.end(); it2++) {
+         fprintf(stderr,"%s %s\n", it2->first.c_str(), it2->second.c_str());
+      }
 
    }
 

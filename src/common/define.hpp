@@ -130,6 +130,9 @@
 #define TAIR_CHECK_EXPIRED_HOUR_RANGE "check_expired_hour_range"
 #define TAIR_CHECK_SLAB_HOUR_RANGE    "check_slab_hour_range"
 
+//eg: mdb_default_capacity_size=0,1073741824;1,100
+#define TAIR_MDB_DEFAULT_CAPACITY     "mdb_default_capacity_size"
+
 #define TAIR_ULOG_DIR                   "ulog_dir"
 #define TAIR_ULOG_MIGRATE_BASENAME      "ulog_migrate_base_name"
 #define TAIR_ULOG_MIGRATE_DEFAULT_BASENAME   "tair_ulog_migrate"

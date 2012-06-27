@@ -270,6 +270,12 @@ namespace tair {
       available_server_ids.clear();
    }
 
+   void table_manager::set_table_for_localmode()
+   {
+      copy_count = 1u;
+      bucket_count = 1u;
+   }
+
    uint32_t table_manager::get_version() const
    {
       return table_version;

@@ -56,6 +56,7 @@ namespace tair {
       uint32_t get_bucket_count() const;
       uint32_t get_hash_table_size() const;
       void clear_available_server();
+      void set_table_for_localmode();
       /////////////////////////////////
 
    private:

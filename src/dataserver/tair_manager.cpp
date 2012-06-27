@@ -112,8 +112,9 @@
 
       // init the storage manager for stat helper
       TAIR_STAT.set_storage_manager(storage_mgr);
-      // is allow dec to negative?
+      // is dataserver use localmode
       localmode = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_LOCAL_MODE, 0);
+      // is allow dec to negative?
       uint32_t _allow_negative = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_COUNT_NEGATIVE, TAIR_COUNT_NEGATIVE_MODE);
       not_allow_count_negative = (0 == _allow_negative);
 
@@ -134,6 +135,12 @@
       dump_mgr = new tair::storage::dump_manager(storage_mgr);
 
       status = STATUS_INITED;
+
+      // if localmode, init the table with bucket_count = 1, force set the status to STATUS_CAN_WORK
+      if(localmode) {
+        table_mgr->set_table_for_localmode();
+        status = STATUS_CAN_WORK;
+      }
 
       return true;
     }
@@ -1222,6 +1229,9 @@
       if (key.server_flag == TAIR_SERVERFLAG_PROXY || localmode)
         return false; // if this is proxy, dont proxy
 
+      if(localmode)
+        return false;
+
       int bucket_number = get_bucket_number(key);
       bool is_migrated = migrate_done_set.test(bucket_number);
       if (is_migrated) {
@@ -1246,6 +1256,9 @@
 
     void tair_manager::update_server_table(uint64_t *server_table, int server_table_size, uint32_t server_table_version, int32_t data_need_remove, vector<uint64_t> &current_state_table, uint32_t copy_count, uint32_t bucket_count)
     {
+      if (localmode == true)
+        return;
+
       tbsys::CThreadGuard update_table_guard(&update_server_table_mutex);
 
       log_debug("updateServerTable, size: %d", server_table_size);
@@ -1462,6 +1475,11 @@
       }
 
       return flag;
+    }
+
+    bool tair_manager::is_localmode()
+    {
+      return localmode;
     }
 
   }

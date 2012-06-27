@@ -133,7 +133,7 @@ namespace tair {
 
    tbnet::IPacketHandler::HPRetCode heartbeat_thread::handlePacket(tbnet::Packet *packet, void *args)
    {
-      if (!packet->isRegularPacket()) { //
+      if (!packet->isRegularPacket()) {
          tbnet::ControlPacket *cp = (tbnet::ControlPacket*)packet;
          log_error("ControlPacket, cmd:%d", cp->getCommand());
          return tbnet::IPacketHandler::FREE_CHANNEL;
@@ -201,7 +201,7 @@ namespace tair {
                plugins_updater* pud = new plugins_updater(tair_mgr, resp->plugins_dll_names);
                pud->start(); //this will delete itself
             }
-            if (need_set && !resp->vec_area_capacity_info.empty()) {
+            if (need_set && !resp->vec_area_capacity_info.empty() && !tair_mgr->is_localmode()) {
                char area_arry[TAIR_MAX_AREA_COUNT];
                memset(area_arry, 0, sizeof(area_arry));
                log_error("_areaCapacityVersion = %u", resp->area_capacity_version);

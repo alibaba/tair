@@ -73,6 +73,10 @@ namespace tair {
       mdb_param::chkslab_time_high = 7;
     }
 
+    std::vector<const char *> str_area_capacity_list =
+      TBSYS_CONFIG.getStringList(TAIRSERVER_SECTION, TAIR_MDB_DEFAULT_CAPACITY);
+    parse_area_capacity_list(str_area_capacity_list);
+
     mdb_param::size *= (1 << 20);        //in MB
 
     assert(mdb_param::size > 0);
@@ -115,6 +119,26 @@ namespace tair {
 
   }
 
+  void mdb_factory::parse_area_capacity_list(std::vector<const char *>&a_c)
+  {
+    for(std::vector<const char *>::iterator it = a_c.begin();
+        it != a_c.end(); it++) {
+      log_debug("parse area capacity list: %s", *it);
+      std::vector<char *>info;
+      char tmp_str[strlen(*it) + 1];
+      strcpy(tmp_str, *it);
+      tbsys::CStringUtil::split(tmp_str, ";", info);
+      for(uint32_t i = 0; i < info.size(); i++) {
+        char *p = strchr(info[i], ',');
+        if(p) {
+          uint32_t area = strtoll(info[i], NULL, 10);
+          uint64_t capacity = strtoll(p + 1, NULL, 10);
+          mdb_param::default_area_capacity[area] = capacity;
+          log_debug("area %u capacity %" PRI64_PREFIX "u", area, capacity);
+        }
+      }
+    }
+  }
 }
 
 /* tair */

@@ -128,6 +128,8 @@ namespace tair {
       plugin::plugins_manager plugins_manager;
       tair::storage::storage_manager *get_storage_manager() { return storage_mgr; }
 
+      bool is_localmode();
+
    private:
       tair::storage::storage_manager *get_storage_manager(data_entry &key);
       uint32_t get_bucket_number(data_entry &key);

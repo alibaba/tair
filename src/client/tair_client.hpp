@@ -101,6 +101,7 @@ namespace tair {
       char *cmd_line;
       char *cmd_file_name;
       bool is_config_server;
+      bool is_data_server;
       bool is_cancel;
       int key_format;
       int default_area;

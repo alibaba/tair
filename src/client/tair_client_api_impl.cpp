@@ -152,9 +152,14 @@ namespace tair {
       return false;
     }
 
+    my_server_list.push_back(data_server);
+
     if(inited) return true;
     CScopedRwLock __scoped_lock(&m_init_mutex,true);
     if(inited) return true;
+
+    bucket_count = 1;
+    copy_count = 1;
 
     start_tbnet();
 
@@ -162,7 +167,7 @@ namespace tair {
     this->data_server = data_server;
     this->direct = true;
 
-    return true;
+    return tbnet::ConnectionManager::isAlive(data_server);
   }
 
 
@@ -261,13 +266,9 @@ FAIL_1:
     }
 
     vector<uint64_t> server_list;
-    if(!this->direct) {
-      if ( !get_server_id(key, server_list)) {
-        TBSYS_LOG(DEBUG, "can not find serverId, return false");
-        return -1;
-      }
-    } else {
-      server_list.push_back(this->data_server);
+    if ( !get_server_id(key, server_list)) {
+      TBSYS_LOG(DEBUG, "can not find serverId, return false");
+      return -1;
     }
 
     TBSYS_LOG(DEBUG,"put to server:%s",tbsys::CNetUtil::addrToString(server_list[0]).c_str());
@@ -422,13 +423,9 @@ FAIL:
     }
 
     vector<uint64_t> server_list;
-    if (!this->direct) {
-      if ( !get_server_id(key, server_list)) {
-        TBSYS_LOG(DEBUG, "can not find serverId, return false");
-        return -1;
-      }
-    } else {
-      server_list.push_back(this->data_server);
+    if ( !get_server_id(key, server_list)) {
+      TBSYS_LOG(DEBUG, "can not find serverId, return false");
+      return -1;
     }
 
     TBSYS_LOG(DEBUG,"get from server:%s",tbsys::CNetUtil::addrToString(server_list[0]).c_str());
@@ -2343,6 +2340,11 @@ OUT:
 
   bool tair_client_impl::get_server_id(const data_entry &key,vector<uint64_t>& server)
   {
+    if (this->direct) {
+      server.push_back(this->data_server);
+      return true;
+    }
+
     uint32_t hash;
     int prefix_size = key.get_prefix_size();
     if (prefix_size == 0) {

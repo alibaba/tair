@@ -20,6 +20,7 @@
 #define TAIR_SLAB_ALIGN_BYTES        8
 #define TAIR_SLAB_HASH_MAXDEPTH      8
 
+#include <map>
 
 struct mdb_param
 {
@@ -36,6 +37,8 @@ struct mdb_param
 
   static int chkslab_time_low;
   static int chkslab_time_high;
+
+  static std::map<uint32_t, uint64_t> default_area_capacity;
 };
 
 bool hour_range(int min, int max);

@@ -31,6 +31,7 @@ int mdb_param::chkexprd_time_high = 4;
 int mdb_param::chkslab_time_low = 5;
 int mdb_param::chkslab_time_high = 7;
 
+std::map<uint32_t, uint64_t>  mdb_param::default_area_capacity;
 
 bool
 hour_range(int min, int max)
