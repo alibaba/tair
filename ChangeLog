@@ -27,3 +27,10 @@ version 2.3.1.4
 增加前缀key功能：可以把具有相同前缀的key放到同一台ds上，并能做到一定的事务功能。
 * 2. 增加invalid功能：支持双机房容灾。删数据需要使用invalid，而不是delete。
 * 3. 增加hide功能：提供数据隐藏功能，正常get无法读取到，且支持双机房。
+
+2012-06-27
+version 2.3.1.5
+* feature:
+* 1. 增加localmode模式: 客户端直连data server进行数据读写。
+* 2. 完成了客户端工具中-s参数，使用-s参数可以直连data server。
+
