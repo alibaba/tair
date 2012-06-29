@@ -187,8 +187,14 @@ void FlowControllerImpl::BackgroundCalFlows()
     if (stop_)
       break;
     log_debug("calculating flow");
-    for (size_t ns = 0; ns < MAXAREA; ++ns)
+    for (size_t ns = 0; ns <= MAXAREA; ++ns)
     {
+      // ns == MAXAREA (1024), is summary number
+      if (ns == MAXAREA) 
+      {
+        log_debug("cal Summary Flow rate");
+      }
+
       AreaFlow &flow  = flows_[ns];
       FlowStatus status_in = CalCurrentFlow(flow.in);
       if (status_in != DOWN)
