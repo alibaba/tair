@@ -228,6 +228,8 @@ namespace tair {
               break;
             }
           }
+        } else if ( partial_pages[bucket] == 0) {
+          --partial_bucket_count;
         }
       }
 

@@ -753,6 +753,7 @@ namespace tair {
 
   void mem_cache::slab_manager::init_page(char *page, int index)
   {
+    memset(page, 0, page_size);
     page_info *info = PAGE_INFO(page);
     info->id = index;
     info->free_nr = per_slab;
