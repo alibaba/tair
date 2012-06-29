@@ -96,13 +96,15 @@ Flowrate FlowControllerImpl::GetFlowrate(int ns)
 {
   ASSERTNS(ns);
   AreaFlow &flow = flows_[ns];
-  Flowrate rate = {atomic_read(&flow.in.last_per_second), 
-                   flow.in.status,
-                   atomic_read(&flow.out.last_per_second), 
-                   flow.out.status,
-                   atomic_read(&flow.ops.last_per_second),
-                   flow.ops.status,
-                   flow.status};
+  Flowrate rate = {
+                     atomic_read(&flow.in.last_per_second), 
+                     flow.in.status,
+                     atomic_read(&flow.out.last_per_second), 
+                     flow.out.status,
+                     atomic_read(&flow.ops.last_per_second),
+                     flow.ops.status,
+                     flow.status
+                  };
   return rate;
 }
 
@@ -119,7 +121,8 @@ bool FlowControllerImpl::AddUp(Flow &flow, int size)
   else
   {
     int curt = atomic_add_return(size, &flow.curt_quantity);
-    if (curt < 0) {
+    if (curt < 0) 
+    {
       atomic_sub(size, &flow.curt_quantity);
       flow.status = UP; // integer overflow
     }

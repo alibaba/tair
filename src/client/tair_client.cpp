@@ -719,12 +719,12 @@ namespace tair {
       int ret = client_helper.get_flow(addr, ns, rate);
 
       if (ret == 0) {
-        fprintf(stderr, "success %s \tns:%d \tin:%d,%s \tout:%d,%s \tops:%d,%s \tsummary:%s\n", 
+        fprintf(stderr, "success %s \tns:%d \tin:%d,%s \tout:%d,%s \tops:%d,%s \tstatus:%s\n", 
             tbsys::CNetUtil::addrToString(addr).c_str(), ns,
             rate.in, FlowStatusStr(rate.in_status),
             rate.out, FlowStatusStr(rate.out_status),
             rate.ops, FlowStatusStr(rate.ops_status),
-            FlowStatusStr(rate.summary_status));
+            FlowStatusStr(rate.status));
         success++;
       } else {
         fprintf(stderr, "fail %s \terr:%d\n", tbsys::CNetUtil::addrToString(addr).c_str(), ret);

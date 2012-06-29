@@ -34,7 +34,7 @@ struct Flowrate
   uint32_t ops;
   FlowStatus ops_status;
 
-  FlowStatus summary_status;
+  FlowStatus status;
 };
 
 }

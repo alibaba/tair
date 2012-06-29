@@ -68,7 +68,7 @@ class flow_view_response : public base_packet
     output->writeInt32(rate.out_status);
     output->writeInt32(rate.ops);
     output->writeInt32(rate.ops_status);
-    output->writeInt32(rate.summary_status);
+    output->writeInt32(rate.status);
     return true;
   }
 
@@ -82,7 +82,7 @@ class flow_view_response : public base_packet
     rate.out_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
     rate.ops = input->readInt32();
     rate.ops_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
-    rate.summary_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+    rate.status = static_cast<tair::stat::FlowStatus>(input->readInt32());
     return true;
   }
 
