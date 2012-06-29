@@ -118,6 +118,15 @@ extern "C" {
    * see if one area's occupation exceeds its quota
    */
   bool      mdb_is_quota_exceed(mdb_t db, int area);
+  /*
+   * set log file
+   */
+  void      mdb_log_file(const char *log);
+  /*
+   * set log level
+   * @param level: 'error', 'warn', 'info', 'debug', case insensitive
+   */
+  void      mdb_log_level(const char *level);
 #ifdef __cplusplus
 }
 #endif

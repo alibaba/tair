@@ -79,15 +79,11 @@ static char   *kbuf = NULL;
 static char   *vbuf = NULL;
 static int    mod = '~' - ' ' + 1;
 static pthread_mutex_t *mtx = NULL;
-static int    nproc_done = 0;
+static uint32_t nproc_done = 0;
 
 int
 main(int argc, char **argv) {
   parse_args(argc, argv);
-  TBSYS_LOGGER.setLogLevel("warn");
-  if (args.log != NULL) {
-    TBSYS_LOGGER.setFileName(args.log);
-  }
   signal(SIGCHLD, sig_chld_handler);
 
   mdb_t db = init();
@@ -103,7 +99,7 @@ main(int argc, char **argv) {
   }
   uint64_t seq = 0LL;
   uint64_t step = args.item_count/args.nproc;
-  for (int i = 0; i < args.nproc; ++i) {
+  for (size_t i = 0; i < args.nproc; ++i) {
     //~ prep
     uint64_t start = seq;
     uint64_t end = seq + step;
@@ -114,6 +110,10 @@ main(int argc, char **argv) {
     pid_t pid;
     if ((pid = fork()) == 0) {
       //~ children
+      mdb_log_level("warn");
+      if (args.log != NULL) {
+        mdb_log_file(args.log);
+      }
       srand(time(NULL) + getpid());
       if (strcmp(args.action_type, "put") == 0) {
         test_put(db, i);
@@ -126,7 +126,7 @@ main(int argc, char **argv) {
       } else {
         fprintf(stderr, "action type %s not supported\n", args.action_type);
       }
-      fprintf(stderr, "exit(%d)\n", i);
+      fprintf(stderr, "exit(%lu)\n", i);
       exit(i);
     } else if (pid > 0) {
       //~ parent
@@ -295,7 +295,7 @@ void test_put(mdb_t db, int id) {
   fprintf(stderr, "key_start: %"PRIu64", key_end: %"PRIu64"\n", proc_params[id].key_start, proc_params[id].key_end);
   uint32_t range = args.max_value_size - args.min_value_size;
   if (range == 0) range = 1;
-  for (int i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
+  for (size_t i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
     key.data = genk(args.key_size, i, random);
     key.size = args.key_size;
     uint32_t value_size = args.min_value_size + (i % range);
@@ -322,7 +322,7 @@ void test_get(mdb_t db, int id) {
   time_t s = time(NULL);
   fprintf(stderr, "start: process %d, pid: %d\n", id, getpid());
   fprintf(stderr, "key_start: %"PRIu64", key_end: %"PRIu64"\n", proc_params[id].key_start, proc_params[id].key_end);
-  for (int i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
+  for (size_t i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
     key.data = genk(args.key_size, i, false);
     key.size = args.key_size;
     value.data = NULL;
@@ -348,7 +348,7 @@ void test_del(mdb_t db, int id) {
   time_t s = time(NULL);
   fprintf(stderr, "start: process %d, pid: %d\n", id, getpid());
   fprintf(stderr, "key_start: %"PRIu64", key_end: %"PRIu64"\n", proc_params[id].key_start, proc_params[id].key_end);
-  for (int i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
+  for (size_t i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
     key.data = genk(args.key_size, i, false);
     key.size = args.key_size;
     pthread_mutex_lock(mtx);
@@ -371,7 +371,7 @@ void test_lookup(mdb_t db, int id) {
   time_t s = time(NULL);
   fprintf(stderr, "start: process %d, pid: %d\n", id, getpid());
   fprintf(stderr, "key_start: %"PRIu64", key_end: %"PRIu64"\n", proc_params[id].key_start, proc_params[id].key_end);
-  for (int i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
+  for (size_t i = proc_params[id].key_start; i < proc_params[id].key_end; ++i) {
     key.data = genk(args.key_size, i, false);
     key.size = args.key_size;
     pthread_mutex_lock(mtx);

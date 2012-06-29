@@ -143,6 +143,16 @@ bool mdb_is_quota_exceed(mdb_t db, int area) {
   return _db->is_quota_exceed(area);
 }
 
+void mdb_log_file(const char *log) {
+  if (log == NULL) return ;
+  TBSYS_LOGGER.setFileName(log);
+}
+
+void mdb_log_level(const char *level) {
+  if (level == NULL) return ;
+  TBSYS_LOGGER.setLogLevel(level);
+}
+
 void mdb_assign_static_param(const mdb_param_t *param) {
   if (param->mdb_type != NULL) {
     mdb_param::mdb_type = param->mdb_type;
