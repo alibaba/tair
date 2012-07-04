@@ -1,10 +1,10 @@
 
 [invalserver]
 port=5196
-process_thread_num=4
-async_thread_num=4
+process_thread_num=16
+async_thread_num=8
 client_timeout=500
-log_level=info
+log_level=warn
 ignore_zero_area=0
 dev_name=eth0
 log_file=logs/inval.log

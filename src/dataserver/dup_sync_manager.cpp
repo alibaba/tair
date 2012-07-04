@@ -399,16 +399,17 @@ namespace tair{
       }
 
       resp->free();
-    } else if ( pcode == TAIR_RESP_MRETURN_PACKET) {
-      response_mreturn *resp = dynamic_cast<response_mreturn*>(packet);
-      if (resp == NULL) {
+    } else if ( pcode == TAIR_RESP_MRETURN_DUP_PACKET) {
+      response_mreturn_dup *resp_dup = dynamic_cast<response_mreturn_dup*>(packet);
+      if (resp_dup == NULL) {
         log_error("bad packet %d", pcode);
       } else {
-        log_debug("duplicate response packet %u, bucket = %d, server = %s", resp->packet_id, resp->bucket_id, tbsys::CNetUtil::addrToString(resp->server_id).c_str());
+        log_debug("duplicate response packet %u, bucket = %d, server = %s", resp_dup->packet_id, resp_dup->bucket_id, tbsys::CNetUtil::addrToString(resp_dup->server_id).c_str());
         CPacket_wait_Nodes *pnode = NULL;
-        int ret = packets_mgr.doResponse(resp->bucket_id, resp->server_id, resp->packet_id, &pnode);
+        int ret = packets_mgr.doResponse(resp_dup->bucket_id, resp_dup->server_id, resp_dup->packet_id, &pnode);
+        response_mreturn *resp = new response_mreturn();
+        resp->swap(*resp_dup);
         if (ret == TAIR_RETURN_SUCCESS && pnode != NULL) {
-          resp->server_flag = TAIR_SERVERFLAG_CLIENT;
           resp->setChannelId(pnode->chid);
           resp->config_version = pnode->conf_version;
           if (pnode->conn->postPacket(resp) == false) {

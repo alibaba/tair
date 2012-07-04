@@ -15,6 +15,7 @@ AM_LDFLAGS=-lz -lrt -lpthread -ldl  ${GCOV_LIB}
 include_HEADERS= packet_factory.hpp base_packet.hpp \
 		 duplicate_packet.hpp \
 		 items_packet.hpp \
+		 query_info_packet.hpp \
 		 put_packet.hpp get_packet.hpp \
 		 response_return_packet.hpp
 

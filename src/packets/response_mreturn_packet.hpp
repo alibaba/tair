@@ -60,11 +60,6 @@ namespace tair {
           ++it;
         }
       }
-      if (server_flag != TAIR_SERVERFLAG_CLIENT) {
-        output->writeInt32(bucket_id);
-        output->writeInt32(packet_id);
-        output->writeInt64(server_id);
-      }
       return true;
     }
 
@@ -88,9 +83,6 @@ namespace tair {
           key_code_map->insert(make_pair(key, rc));
         }
       }
-      bucket_id = input->readInt32();
-      packet_id = input->readInt32();
-      server_id = input->readInt64();
       return true;
     }
 
@@ -129,18 +121,59 @@ namespace tair {
       return msg;
     }
 
+    void swap(response_mreturn &rhs) {
+      std::swap(code, rhs.code);
+      std::swap(config_version, rhs.config_version);
+      std::swap(key_count, rhs.key_count);
+      std::swap(key_code_map, rhs.key_code_map);
+    }
   public:
     int code;
     uint32_t config_version;
     char msg[128];
     int key_count;
-    uint64_t server_id;
-    uint32_t packet_id;
-    int32_t  bucket_id;
     key_code_map_t *key_code_map;
   private:
     response_mreturn(const response_mreturn&);
     response_mreturn& operator=(const response_mreturn&);
+  };
+  /*
+   * class response_mreturn_dup, used in duplicatation only
+   */
+  class response_mreturn_dup : public response_mreturn {
+  public:
+    response_mreturn_dup() {
+      setPCode(TAIR_RESP_MRETURN_DUP_PACKET);
+      server_id = 0;
+      packet_id = 0;
+      bucket_id = 0;
+    }
+    ~response_mreturn_dup() { }
+
+    bool encode(tbnet::DataBuffer *output) {
+      if (!response_mreturn::encode(output)) {
+        return false;
+      }
+      output->writeInt32(bucket_id);
+      output->writeInt32(packet_id);
+      output->writeInt64(server_id);
+      return true;
+    }
+
+    bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) {
+      if (!response_mreturn::decode(input, header)) {
+        return false;
+      }
+      bucket_id = input->readInt32();
+      packet_id = input->readInt32();
+      server_id = input->readInt64();
+      return true;
+    }
+
+  public:
+    uint64_t server_id;
+    uint32_t packet_id;
+    int32_t  bucket_id;
   };
 }
 

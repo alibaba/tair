@@ -222,6 +222,9 @@
         case TAIR_RESP_MRETURN_PACKET:
           packet = new response_mreturn();
           break;
+        case TAIR_RESP_MRETURN_DUP_PACKET:
+          packet = new response_mreturn_dup();
+          break;
         case TAIR_REQ_PREFIX_HIDES_PACKET:
           packet = new request_prefix_hides();
           break;

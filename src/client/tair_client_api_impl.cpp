@@ -762,10 +762,6 @@ FAIL:
 FAIL:
 
     this_wait_object_manager->destroy_wait_object(cwo);
-
-    TBSYS_LOG(INFO, "remove failure: %s:%s",
-        tbsys::CNetUtil::addrToString(server_list[0]).c_str(),
-        get_error_msg(ret));
     return ret;
   }
 

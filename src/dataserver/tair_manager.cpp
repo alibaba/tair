@@ -151,7 +151,19 @@
       tair_keyvalue_map *kvmap = request->kvmap;
       tair_keyvalue_map::iterator it = kvmap->begin();
       uint32_t ndone = 0;
-      response_mreturn *resp = new response_mreturn();
+      response_mreturn *resp = NULL;
+
+      int bucket_number = get_bucket_number(*request->kvmap->begin()->first);
+      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
+        response_mreturn_dup *resp_dup = new response_mreturn_dup();
+        resp_dup->bucket_id = bucket_number;
+        resp_dup->server_id = local_server_ip::ip;
+        resp_dup->packet_id = request->packet_id;
+        resp = resp_dup;
+      } else {
+        resp = new response_mreturn();
+      }
+
       if (!(request->server_flag & TAIR_SERVERFLAG_DUPLICATE)) {
         while (it != kvmap->end()) {
           data_entry *key = it->first;
@@ -210,14 +222,6 @@
       resp->config_version = heart_version;
       resp->setChannelId(request->getChannelId());
 
-      int bucket_number = get_bucket_number(*request->kvmap->begin()->first);
-
-      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
-        resp->server_flag = TAIR_SERVERFLAG_DUPLICATE; //~ this works only on the sending side, 'cause resp won't encode server_flag
-        resp->bucket_id = bucket_number;
-        resp->server_id = local_server_ip::ip;
-        resp->packet_id = request->packet_id;
-      }
       if (rc == TAIR_RETURN_SUCCESS) {
         if ((request->server_flag & TAIR_SERVERFLAG_DUPLICATE) == 0) {
           vector<uint64_t> slaves;
@@ -241,11 +245,21 @@
     int tair_manager::prefix_removes(request_prefix_removes *request, int heart_version)
     {
       int rc = TAIR_RETURN_SUCCESS;
-      response_mreturn *resp = new response_mreturn();
 
       data_entry *key = request->key == NULL ?
         *request->key_list->begin() : request->key;
       int32_t bucket_number = get_bucket_number(*key);
+
+      response_mreturn *resp = NULL;
+      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
+        response_mreturn_dup *resp_dup = new response_mreturn_dup();
+        resp_dup->bucket_id = bucket_number;
+        resp_dup->server_id = local_server_ip::ip;
+        resp_dup->packet_id = request->packet_id;
+        resp = resp_dup;
+      } else {
+        resp = new response_mreturn();
+      }
 
       if (request->key != NULL) {
         key->server_flag = request->server_flag;
@@ -312,12 +326,6 @@
       resp->config_version = heart_version;
       resp->setChannelId(request->getChannelId());
 
-      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
-        resp->server_flag = TAIR_SERVERFLAG_DUPLICATE;
-        resp->bucket_id = bucket_number;
-        resp->server_id = local_server_ip::ip;
-        resp->packet_id = request->packet_id;
-      }
       if (rc == TAIR_RETURN_SUCCESS) {
         if ((request->server_flag & TAIR_SERVERFLAG_DUPLICATE) == 0) {
           vector<uint64_t> slaves;
@@ -341,11 +349,21 @@
     int tair_manager::prefix_hides(request_prefix_hides *request, int heart_version)
     {
       int rc = TAIR_RETURN_SUCCESS;
-      response_mreturn *resp = new response_mreturn();
 
       data_entry *key = request->key == NULL ?
         *request->key_list->begin() : request->key;
       int32_t bucket_number = get_bucket_number(*key);
+
+      response_mreturn *resp = NULL;
+      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
+        response_mreturn_dup *resp_dup = new response_mreturn_dup();
+        resp_dup->bucket_id = bucket_number;
+        resp_dup->server_id = local_server_ip::ip;
+        resp_dup->packet_id = request->packet_id;
+        resp = resp_dup;
+      } else {
+        resp = new response_mreturn();
+      }
 
       if (request->key != NULL) {
         key->server_flag = request->server_flag;
@@ -412,12 +430,6 @@
       resp->config_version = heart_version;
       resp->setChannelId(request->getChannelId());
 
-      if (request->server_flag & TAIR_SERVERFLAG_DUPLICATE) {
-        resp->server_flag = TAIR_SERVERFLAG_DUPLICATE;
-        resp->bucket_id = bucket_number;
-        resp->server_id = local_server_ip::ip;
-        resp->packet_id = request->packet_id;
-      }
       if (rc == TAIR_RETURN_SUCCESS) {
         if ((request->server_flag & TAIR_SERVERFLAG_DUPLICATE) == 0) {
           vector<uint64_t> slaves;
