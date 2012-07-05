@@ -19,6 +19,7 @@ public class FailOverBaseCase {
 	
 	// Directory
 	final static String tair_bin = "/home/admin/tair_bin_import/";
+//	final static String test_bin = "/home/admin/ashu/recovery/java/fastdump/TairTool/";
 	final static String test_bin = "/home/admin/ashu/recovery/fastdump/";
 	// Server Operation
 	final static String start = "start";
