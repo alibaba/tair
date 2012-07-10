@@ -497,7 +497,7 @@ namespace tair {
             delete ctrl_packet;
             size = 0;
           }
-          flow_ctrl->AddUp(0, 0, size);
+          // don't addup flow control. flow_ctrl->AddUp(0, 0, 0);
         }
       }
       return success;

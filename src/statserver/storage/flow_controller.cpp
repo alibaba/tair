@@ -207,7 +207,7 @@ void FlowControllerImpl::BackgroundCalFlows()
         log_info("Flow OUT Limit: ns %d %s", ns, FlowStatusStr(status_out));
       FlowStatus status_ops = CalCurrentFlow(flow.ops);
       if (status_ops != DOWN)
-        log_info("Flow IN Limit: ns %d %s", ns, FlowStatusStr(status_ops));
+        log_info("Flow OPS Limit: ns %d %s", ns, FlowStatusStr(status_ops));
 
       if (TBSYS_LOGGER._level >= TBSYS_LOG_LEVEL_DEBUG && 
           (atomic_read(&flow.in.last_per_second) != 0 ||
