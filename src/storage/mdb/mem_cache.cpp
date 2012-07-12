@@ -742,6 +742,11 @@ namespace tair {
         evict_index = 0;
       }
 
+      /*
+       * !TODO
+       * when compiled with `-O2' & `-DNDEBUG', this `if' might be optimized out,
+       * cause of the possible infinite loop
+       */
       if(++times > TAIR_MAX_AREA_COUNT) {
         assert(false);                //shoudn't be here,just in case
       }

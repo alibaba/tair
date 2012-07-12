@@ -99,7 +99,7 @@ namespace tair {
 #define id_to_item(id)                                                  \
    ITEM_ADDR(this_mem_pool->get_pool_addr(),id,this_mem_pool->get_page_size())
 
-#define itemid_equal(lhs, rhs) ( ((lhs) & FLAGS_MASK) == ((lhs) & FLAGS_MASK) )
+#define itemid_equal(lhs, rhs) ( ((lhs) & FLAGS_MASK) == ((rhs) & FLAGS_MASK) )
 
   class mdb_manager;
 
