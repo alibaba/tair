@@ -249,4 +249,24 @@ namespace tair {
     }
     return ret;
   }
+
+  void RequestProcessor::dump_key(const tair_dataentry_set &keyset, const char *msg) {
+    if (msg == NULL) {
+      msg = "error";
+    }
+    tair_dataentry_set::const_iterator it = keyset.begin();
+    while (it != keyset.end()) {
+      dump_key(**it, msg);
+      ++it;
+    }
+  }
+
+  void RequestProcessor::dump_key(const data_entry &key, const char *msg) {
+    if (msg == NULL) {
+      msg = "error";
+    }
+    char *d_str = util::string_util::bin2ascii(key.get_data(), key.get_size(), NULL, 0);
+    log_error("%s, key: %s", msg, d_str);
+    free(d_str);
+  }
 }

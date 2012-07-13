@@ -282,7 +282,7 @@ namespace tair {
     //~ set the number of threads to handle the requests.
     task_queue_thread.setThreadParameter(thread_count, this, NULL);
     retry_thread.setThreadParameter(&invalid_loader, &processor);
-    thread_count = TBSYS_CONFIG.getInt(INVALSERVER_SECTION, "async_thread_num", 4);
+    thread_count = TBSYS_CONFIG.getInt(INVALSERVER_SECTION, "async_thread_num", 8);
     async_thread.setThreadParameter(&invalid_loader, &retry_thread, &processor, thread_count);
     return true;
   }

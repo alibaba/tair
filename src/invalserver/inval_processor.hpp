@@ -21,6 +21,8 @@ namespace tair {
     int process(request_hide_by_proxy *req, request_hide_by_proxy *&post_req);
     int process(request_prefix_hides_by_proxy *req, request_prefix_hides_by_proxy *&post_req);
     int process(request_prefix_invalids *req, request_prefix_invalids *&post_req);
+    void dump_key(const tair_dataentry_set &keyset, const char *msg);
+    void dump_key(const data_entry &key, const char *msg);
   private:
     InvalLoader *invalid_loader;
   };

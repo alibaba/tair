@@ -63,6 +63,23 @@ namespace tair
             return ret;
          }
 
+         static char *bin2ascii(char *str, int size, char *ret = NULL, int msize = 0) {
+           if (ret == NULL) {
+             msize = size * 3 + 5;
+             ret = (char*) malloc(msize);
+           }
+           unsigned char *p = (unsigned char*)str;
+           int i = 0;
+           while (size-- > 0 && i < msize - 4) {
+             if (*p >= '!' && *p <= '~') { //~ printable, excluding space
+               i += sprintf(ret + i, "%c", *p++);
+             } else {
+               i += sprintf(ret + i, "\\%02X", *p++);
+             }
+           }
+           ret[i] = '\0';
+           return ret;
+         }
          static void conv_raw_string(const char *str, char *result, int *size)
          {
             int index = 0;

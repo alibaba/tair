@@ -69,7 +69,16 @@ namespace tair {
               log_error("add invalid packet to RetryThread %d", index + 1);
               add_packet(post_req, index + 1);
             } else {
-              log_error("invalid RetryFailedFinally");
+              log_error("invalid RetryFailedFinally, keys would be dumped");
+              char msg[256];
+              snprintf(msg, sizeof(msg), "prefix invalid failed, group: %s, area: %d",
+                  post_req->group_name, post_req->area);
+              if (post_req->key != NULL) {
+                processor->dump_key(*post_req->key, msg);
+              } else if (post_req->key_list != NULL) {
+                processor->dump_key(*post_req->key_list, msg);
+              }
+              delete post_req;
             }
           } else {
             log_error("invalid success in RetryThread %d", index);
@@ -87,7 +96,16 @@ namespace tair {
               log_error("add hide packet to RetryThread %d", index + 1);
               add_packet(post_req, index + 1);
             } else {
-              log_error("hide RetryFailedFinally");
+              log_error("hide RetryFailedFinally, keys would be dumped");
+              char msg[256];
+              snprintf(msg, sizeof(msg), "prefix hide failed, group: %s, area: %d",
+                  post_req->group_name, post_req->area);
+              if (post_req->key != NULL) {
+                processor->dump_key(*post_req->key, msg);
+              } else if (post_req->key_list != NULL) {
+                processor->dump_key(*post_req->key_list, msg);
+              }
+              delete post_req;
             }
           } else {
             log_error("hide success in RetryThread %d", index);
@@ -105,7 +123,16 @@ namespace tair {
               log_error("add prefix hides packet to RetryThread %d", index + 1);
               add_packet(post_req, index + 1);
             } else {
-              log_error("prefix hides RetryFailedFinally");
+              log_error("prefix hides RetryFailedFinally, keys would be dumped");
+              char msg[256];
+              snprintf(msg, sizeof(msg), "prefix hides failed, group: %s, area: %d",
+                  post_req->group_name, post_req->area);
+              if (post_req->key != NULL) {
+                processor->dump_key(*post_req->key, msg);
+              } else if (post_req->key_list != NULL) {
+                processor->dump_key(*post_req->key_list, msg);
+              }
+              delete post_req;
             }
           } else {
             log_error("prefix hides success in RetryThread %d", index);
@@ -123,7 +150,16 @@ namespace tair {
               log_error("add prefix invalids packet to RetryThread %d", index + 1);
               add_packet(post_req, index + 1);
             } else {
-              log_error("prefix invalids RetryFailedFinally");
+              log_error("prefix invalids RetryFailedFinally, keys would be dumped");
+              char msg[256];
+              snprintf(msg, sizeof(msg), "prefix invalids failed, group: %s, area: %d",
+                  post_req->group_name, post_req->area);
+              if (post_req->key != NULL) {
+                processor->dump_key(*post_req->key, msg);
+              } else if (post_req->key_list != NULL) {
+                processor->dump_key(*post_req->key_list, msg);
+              }
+              delete post_req;
             }
           } else {
             log_error("prefix invalids success in RetryThread %d", index);
