@@ -21,7 +21,6 @@
 #include <tbsys.h>
 #include <tbnet.h>
 #include "base_packet.hpp"
-#include "BlockQueueEx.hpp"
 
 using namespace std;
 using namespace __gnu_cxx;
@@ -54,7 +53,6 @@ namespace tair {
          {
            init();
            m_callback_func=_func;
-           //m_argnum=1;
            m_args=parg;
            m_cmd=_cmd;
          }
@@ -158,7 +156,6 @@ namespace tair {
             except_pcode = null_pcode;
 
             m_callback_func=NULL;
-            //m_argnum=0;
             m_args=NULL;
             m_cmd=0;
          }
@@ -179,51 +176,17 @@ namespace tair {
          int done_count;
        private: //below is callback function
          void (*m_callback_func)(int retcode, void* parg);
-         //unsigned short m_argnum;
          void* m_args;
          int m_cmd;
       };
 
-#ifndef __PACKET_TIME_OUT_HINT
-#define __PACKET_TIME_OUT_HINT
-      class CPacket_Timeout_hint
-      {
-        public:
-          uint32_t packet_id; 
-          time_t expired;
-      };
-      typedef BlockQueueEx<CPacket_Timeout_hint * > CWaitPacketQueue;
-#endif
-
-      class wait_object_manager : public tbsys::Runnable{
-      public:
-      //@override Runnable
-      void run(tbsys::CThread *thread, void *arg)
-      {
-        UNUSED(thread);
-        UNUSED(arg);
-        while (!_stop) 
-        {
-          try 
-          {   
-            CPacket_Timeout_hint * _pkg=dup_wait_queue.get(2000); //2s
-            if(!_pkg) continue;
-            handle_timeout_packet(_pkg);
-            delete _pkg;
-          }   
-          catch(...)
-          {   
-            log_warn("unknow error! get timeoutqueue error!");
-          } 
-        }
-      }
+      class wait_object_manager {
       public:
          wait_object_manager()
          {
            wait_object_seq_id = 1;
            handle_async_wait_object=NULL;
            m_callback_arg =NULL;
-           _stop=true;
            is_async=false;
            //need't start the timeout thread.
          }
@@ -233,15 +196,11 @@ namespace tair {
            wait_object_seq_id = 1;
            handle_async_wait_object=_call_func;
            m_callback_arg=_caller;
-           _stop=false;
            is_async=true;
-           timeout_thread.start(this, NULL);
          }
 
          ~wait_object_manager()
          {
-           _stop=true;
-           timeout_thread.join();
            tbsys::CThreadGuard guard(&mutex);
            hash_map<int, wait_object*>::iterator it;
            for (it=wait_object_map.begin(); it!=wait_object_map.end(); ++it) {
@@ -270,15 +229,6 @@ namespace tair {
          {
            wait_object *cwo = new wait_object(cmd,_pfunc,parg);
            add_new_wait_object(cwo);
-           //log_debug("add new [%d] waitobj", cwo->id);
-           //keep it in timewait.
-
-           CPacket_Timeout_hint  *phint=new CPacket_Timeout_hint();
-           phint->packet_id=cwo->id;
-           phint->expired=(timeout>TAIR_MAX_CLIENT_OP_TIME||0==timeout)?TAIR_CLIENT_OP_TIME:timeout;
-           phint->expired+=time(NULL);
-           dup_wait_queue.put(phint);
-
            return cwo;
          }
 
@@ -329,28 +279,14 @@ namespace tair {
             cwo->id = wait_object_seq_id;;
             wait_object_map[cwo->id] = cwo;
          }
-        void handle_timeout_packet(CPacket_Timeout_hint  * phint)
-        {
-          time_t _now=time(NULL);
-          int _left=phint->expired-_now;
-          if(_left>0)
-          {
-            sleep(_left>TAIR_SERVER_OP_TIME?TAIR_SERVER_OP_TIME:_left);
-          }
-          //no it's timeout.
-          wakeup_wait_object(phint->packet_id,NULL);
-          usleep(300);
-        }
+
       private:
          hash_map<int, wait_object*> wait_object_map;
          int wait_object_seq_id;
          tbsys::CThreadMutex mutex;
       private:
          //atomic_t packet_id_creater;
-         bool _stop;
          bool is_async;
-         tbsys::CThread timeout_thread;
-	       CWaitPacketQueue dup_wait_queue;
          int (*handle_async_wait_object)(void * phandler,wait_object * obj);
          void *m_callback_arg ;
       };
