@@ -17,6 +17,7 @@
 #ifndef TAIR_HEART_BEAT_THREAD_H
 #define TAIR_HEART_BEAT_THREAD_H
 
+#include <pthread.h>
 #include <tbsys.h>
 #include <tbnet.h>
 #include "tair_manager.hpp"
@@ -79,6 +80,7 @@ namespace tair {
 
       void run(tbsys::CThread *thread, void *arg)
       {
+         pthread_detach(pthread_self());
          if (server_list_count > 0 && tair_mgr != NULL) {
             tair_mgr->update_server_table(server_list, server_list_count, server_version,
                                           data_need_move, current_state_table,
@@ -112,6 +114,7 @@ namespace tair {
       }
       void run(tbsys::CThread *thread, void *arg)
       {
+         pthread_detach(pthread_self());
          if (tair_mgr->plugins_manager.chang_plugins_to(plugins_dll_names_list)){
             log_info("change plugins ok");
          }else {

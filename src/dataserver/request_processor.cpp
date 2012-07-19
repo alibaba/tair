@@ -141,10 +141,8 @@ namespace tair {
          }
          if(count == request->key_count){
             rc = TAIR_RETURN_SUCCESS;
-         }else if(count > 0){
+         }else{
             rc = TAIR_RETURN_PARTIAL_SUCCESS;
-         }else {
-            rc = TAIR_RETURN_FAILED;
          }
       } else if (request->key != NULL) {
          PROFILER_START("get operation start");
