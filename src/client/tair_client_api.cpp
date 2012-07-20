@@ -417,6 +417,31 @@ namespace tair {
   {
     return impl->get_server_with_key(key,servers);
   }
+
+  int tair_client_api::get_tmp_down_server(vector<string> &group, vector<string> &down_servers)
+  {
+    return impl->op_cmd_to_cs(TAIR_SERVER_CMD_GET_TMP_DOWN_SERVER, &group, &down_servers);
+  }
+
+  int tair_client_api::reset_server(const char* group, std::vector<std::string>* dss)
+  {
+    int ret = TAIR_RETURN_FAILED;
+    if (impl != NULL && group != NULL)
+    {
+      std::vector<std::string> params;
+      params.push_back(group);
+      if (dss != NULL)
+      {
+        for (vector<string>::iterator it = dss->begin(); it != dss->end(); ++it)
+        {
+          params.push_back(*it);
+        }
+      }
+      ret = impl->op_cmd_to_cs(TAIR_SERVER_CMD_RESET_DS, &params, NULL);
+    }
+    return ret;
+  }
+
   bool tair_client_api::get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const
   {
     return impl->get_group_name_list(id1, id2, groupnames);

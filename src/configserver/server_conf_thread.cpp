@@ -229,6 +229,16 @@ namespace tair {
             log_warn("HOST DOWN: %s lastTime is %u now is %u ",
                      tbsys::CNetUtil::addrToString(sit->second->server_id).
                      c_str(), sit->second->last_time, heartbeat_curr_time);
+
+            // if (need add down server config) then set downserver in group.conf
+            if (sit->second->group_info_data->get_pre_load_flag() == 1)
+            {
+              log_error("add down host: %s lastTime is %u now is %u ",
+                  tbsys::CNetUtil::addrToString(sit->second->server_id).
+                  c_str(), sit->second->last_time, heartbeat_curr_time);
+              sit->second->group_info_data->add_down_server(sit->second->server_id);
+              sit->second->group_info_data->set_force_send_table();
+            }
           }
         }
       }
@@ -1144,6 +1154,148 @@ namespace tair {
         group_info_rw_locker.unlock();
       }
 
+      return ret;
+    }
+
+    void server_conf_thread::do_op_cmd(request_op_cmd *req) {
+      int rc = TAIR_RETURN_SUCCESS;
+      response_op_cmd *resp = new response_op_cmd();
+      // only master can op cmd
+      if(master_config_server_id != util::local_server_ip::ip) {
+        rc = TAIR_RETURN_FAILED;
+      } else {
+        const char *group_file_name = TBSYS_CONFIG.getString(CONFSERVER_SECTION, TAIR_GROUP_FILE, NULL);
+        ServerCmdType cmd = req->cmd;
+        switch (cmd) {
+        case TAIR_SERVER_CMD_GET_TMP_DOWN_SERVER:
+        {
+          rc = get_group_config_value(resp, req->params, group_file_name, TAIR_TMP_DOWN_SERVER, "");
+          break;
+        }
+        case TAIR_SERVER_CMD_GET_GROUP_STATUS:
+        {
+          rc = get_group_config_value(resp, req->params, group_file_name, TAIR_GROUP_STATUS, "off");
+          break;
+        }
+        case TAIR_SERVER_CMD_SET_GROUP_STATUS:
+        {
+          rc = set_group_status(resp, req->params, group_file_name);
+          break;
+        }
+        case TAIR_SERVER_CMD_RESET_DS:
+        {
+          rc = do_reset_ds_packet(resp, req->params);
+          break;
+        }
+        default:
+        {
+          log_error("unknown command %d received", cmd);
+          rc = TAIR_RETURN_FAILED;
+          break;
+        }
+        }
+      }
+      resp->code = rc;
+      resp->setChannelId(req->getChannelId());
+      if (req->get_connection()->postPacket(resp) == false) {
+        delete resp;
+      }
+    }
+
+    int server_conf_thread::get_group_config_value(response_op_cmd *resp,
+                                                   const vector<string> &params, const char *group_file_name,
+                                                   const char *config_key, const char* default_value) {
+      if (group_file_name == NULL) {
+        log_error("group_file_name is NULL");
+        return TAIR_RETURN_FAILED;
+      }
+      if (config_key == NULL) {
+        log_error("get config value but key is NULL");
+        return TAIR_RETURN_FAILED;
+      }
+      tbsys::CConfig config;
+      if (config.load((char*) group_file_name) == EXIT_FAILURE) {
+        log_error("load group file %s failed", group_file_name);
+        return TAIR_RETURN_FAILED;
+      }
+
+      for (size_t i = 0; i < params.size(); ++i) {
+        const char *config_value = config.getString(params[i].c_str(), config_key, default_value);
+        if (config_value == NULL) {
+          config_value = "none";
+        }
+        char buf[128];
+        snprintf(buf, sizeof(buf), "%s: %s=%s", params[i].c_str(), config_key, config_value);
+        resp->infos.push_back(string(buf));
+      }
+
+      return TAIR_RETURN_SUCCESS;
+    }
+
+    int server_conf_thread::set_group_status(response_op_cmd *resp,
+        const vector<string> &params, const char *group_file_name) {
+      if (group_file_name == NULL) {
+        log_error("group_file_name is NULL");
+        return TAIR_RETURN_FAILED;
+      }
+      if (params.size() != 2) {
+        log_error("set group status but have no group/status");
+        return TAIR_RETURN_FAILED;
+      }
+
+      log_info("set group status: %s = %s", params[0].c_str(), params[1].c_str());
+      return util::file_util::change_conf(group_file_name, params[0].c_str(), TAIR_GROUP_STATUS, params[1].c_str());
+    }
+
+    int server_conf_thread::do_reset_ds_packet(response_op_cmd* resp, const vector<string>& params)
+    {
+      int ret = TAIR_RETURN_SUCCESS;
+      if (params.size() <= 0)
+      {
+        log_error("reset ds cmd but no group parameter");
+        return TAIR_RETURN_FAILED;
+      }
+
+      const char* cmd_group = params[0].c_str();
+      group_info_map::iterator mit = group_info_map_data.find(cmd_group);
+      if (mit == group_info_map_data.end())
+      {
+        log_error("rest ds cmd but invalid group name: %s", cmd_group);
+        return TAIR_RETURN_FAILED;
+      }
+
+      vector<uint64_t> ds_ids;
+      vector<string>::const_iterator it = params.begin();
+      ++it;
+      log_info("resetds group: %s, requeset resetds size: %d", cmd_group, params.size() - 1);
+      for (; it != params.end(); it++)
+      {
+        log_info("reset ds: %s", it->c_str());
+        uint64_t ds_id = tbsys::CNetUtil::strToAddr(it->c_str(), 0);
+        // check ds's status: must be alive
+        server_info_rw_locker.rdlock();
+        server_info_map::iterator mit =
+          data_server_info_map.find(ds_id);
+        if (mit == data_server_info_map.end())
+        {
+          server_info_rw_locker.unlock();
+          log_error("can not find reset ds: %s", it->c_str());
+          return TAIR_RETURN_FAILED;
+        }
+        else if (mit->second->status != server_info::ALIVE)
+        {
+          server_info_rw_locker.unlock();
+          log_error("reset ds: %s status is: %d illegal", it->c_str(), mit->second->status);
+          return TAIR_RETURN_FAILED;
+        }
+        server_info_rw_locker.unlock();
+        ds_ids.push_back(ds_id);
+      }
+      group_info_rw_locker.wrlock();
+      mit->second->clear_down_server(ds_ids);
+      mit->second->inc_version();
+      mit->second->set_force_send_table();
+      group_info_rw_locker.unlock();
       return ret;
     }
 

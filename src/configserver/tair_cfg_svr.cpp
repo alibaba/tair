@@ -308,6 +308,13 @@ namespace tair {
           send_ret = false;
         }
         break;
+      case TAIR_REQ_OP_CMD_PACKET:
+        {
+          request_op_cmd *req = (request_op_cmd*) packet;
+          my_server_conf_thread.do_op_cmd(req);
+          send_ret = false;
+          break;
+        }
       default:
         log_error("unknow packet pcode: %d", pcode);
       }

@@ -857,12 +857,9 @@ namespace tair {
     }
     ftruncate(fd, size);
     ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if(ptr == MAP_FAILED) {
-      return 0;
-    }
-    return static_cast<char *>(ptr);
+    close(fd);
+    return (MAP_FAILED == ptr) ? 0 : static_cast<char *>(ptr);
   }
-
 
   void mdb_manager::remove_deleted_item()
   {

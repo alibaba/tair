@@ -451,6 +451,17 @@ namespace tair {
        * @return  copy count
        */
       uint32_t get_copy_count() const;
+      /**
+       * @param group: group names of which you wanna know the tmp down server
+       * @param down_servers: return tmp down server, in the format of 'group_1: tmp_down_server=xx'
+       */
+      int get_tmp_down_server(vector<string> &group, vector<string> &down_servers);
+
+      /**
+       * @param group: group to reset
+       * @param dss  : if not NULL, then reset ds whose address is specified in `dss
+       */
+      int reset_server(const char* group, vector<string>* dss = NULL);
 
       const char *get_error_msg(int ret);
 

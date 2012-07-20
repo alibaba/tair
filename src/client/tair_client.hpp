@@ -87,6 +87,8 @@ namespace tair {
       void do_cmd_prefix_hide(VSTRING &params);
       void do_cmd_prefix_hides(VSTRING &params);
 
+      void do_cmd_gettmpdownsvr(VSTRING &params);
+      void do_cmd_resetserver(VSTRING &params);
     private:
 #ifdef HAVE_LIBREADLINE
       char *input(char *buffer, size_t size);

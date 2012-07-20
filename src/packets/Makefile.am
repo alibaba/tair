@@ -64,5 +64,6 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
 				prefix_invalids_packet.hpp \
 				prefix_get_hiddens_packet.hpp \
 				lock_packet.hpp \
+				op_cmd_packet.hpp \
 			  packet_streamer.hpp \
 			  packet_streamer.cpp

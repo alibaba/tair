@@ -82,6 +82,10 @@ namespace tair {
     assert(mdb_param::size > 0);
     assert(mdb_param::page_size > 0);
 
+    // assert total mdb size is rounding to page_size.
+    if (mdb_param::size % mdb_param::page_size != 0) {
+       mdb_param::size = mdb_param::page_size * (mdb_param::size / mdb_param::page_size + 1); //round up
+    }
     assert((mdb_param::factor - 1.0) > 0.0);
 
     TBSYS_LOG(DEBUG, "size:%lu,page_size:%d,m_factor:%f,m_hash_shift:%d",

@@ -40,7 +40,6 @@
 #define IS_ADDCOUNT_TYPE(flag) (((flag) & TAIR_ITEM_FLAG_ADDCOUNT) == TAIR_ITEM_FLAG_ADDCOUNT)
 #define IS_ITEM_TYPE(flag) ( ((flag) & TAIR_ITEM_FLAG_ITEM) )
 #define IS_DELETED(flag) ( ((flag) & TAIR_ITEM_FLAG_DELETED) )
-// #define IS_LOCKED(flag) ( ((flag) & TAIR_ITEM_FLAG_LOCKED) )
 
 #define CAN_OVERRIDE(old_flag,new_flag)         \
    ({                                           \
@@ -227,6 +226,12 @@
 #define TAIR_DEFAULT_BUCKET_NUMBER      (1023)
 #define TAIR_STR_REPORT_INTERVAL        "_report_interval"
 #define TAIR_DEFAULT_REPORT_INTERVAL    (5)       //means 5 seconds
+#define TAIR_MULTI_GROUPS               "groups"
+#define TAIR_GROUP_STATUS               "group_status"
+#define TAIR_GROUP_STATUS_ON            "on"
+#define TAIR_PRE_LOAD_FLAG              "_pre_load_flag" // 1: need preload; 0: no need; default 0
+#define TAIR_TMP_DOWN_SERVER            "tmp_down_server"
+#define TAIR_CONFIG_VALUE_DELIMITERS    " ;"
 
 #define TAIR_SERVER_OP_TIME             (4)
 #define TAIR_CLIENT_OP_TIME             (2)
@@ -260,7 +265,7 @@ enum {
    TAIR_RETURN_SUCCESS = 0,
    TAIR_DUP_WAIT_RSP = 133,
 
-   TAIR_RETURN_NOT_SUPORTED= -4001,
+   TAIR_RETURN_NOT_SUPPORTED= -4001,
    TAIR_RETURN_PROXYED = -4000,
    TAIR_RETURN_FAILED = -3999,
    TAIR_RETURN_DATA_NOT_EXIST = -3998,
@@ -334,6 +339,22 @@ namespace {
    const int TAIR_OPERATION_UNLOCK    = 8;
    const int TAIR_DUPLICATE_BUSY_RETRY_COUNT = 10;
 }
+
+typedef enum {
+  TAIR_SERVER_CMD_NONE = 0,
+  TAIR_SERVER_CMD_FLUSH_MMT,
+  TAIR_SERVER_CMD_RESET_DB,
+  TAIR_SERVER_CMD_RESET_DS,
+  TAIR_SERVER_CMD_GET_GROUP_STATUS,
+  TAIR_SERVER_CMD_GET_TMP_DOWN_SERVER,
+  TAIR_SERVER_CMD_SET_GROUP_STATUS,
+} ServerCmdType;
+
+typedef enum {
+  TAIR_CLUSTER_TYPE_NONE = 0,
+  TAIR_CLUSTER_TYPE_SINGLE_CLUSTER,
+  TAIR_CLUSTER_TYPE_MULTI_CLUSTER,
+} TairClusterType;
 
 #endif
 /////////////

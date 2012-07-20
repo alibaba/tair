@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "hash.hpp"
+#include "define.hpp"
+#include "log.hpp"
 namespace tair
 {
    namespace util
@@ -113,6 +115,11 @@ namespace tair
       class local_server_ip {
       public:
          static uint64_t ip;
+      };
+
+      class file_util {
+      public:
+        static int change_conf(const char *group_file_name, const char *section_name, const char *key, const char *value);
       };
    }
 

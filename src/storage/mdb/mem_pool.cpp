@@ -34,13 +34,16 @@ namespace tair {
     assert(static_cast<int>(sizeof(mem_pool_impl)) <=
            mem_pool::MEM_HASH_METADATA_START);
 
-      impl = reinterpret_cast<mem_pool_impl *>(pool);
-      impl->initialize(pool, page_size, total_pages, meta_len);
+    impl = reinterpret_cast<mem_pool_impl *>(pool);
+    impl->initialize(pool, page_size, total_pages, meta_len);
   }
 
   mem_pool::~mem_pool()
   {
-    munmap(impl->pool, impl->page_size * impl->total_pages);
+    if (impl->pool != NULL)
+    {
+      munmap(impl->pool, static_cast<int64_t>(impl->page_size) * impl->total_pages);
+    }
   }
 
   char *mem_pool::alloc_page()

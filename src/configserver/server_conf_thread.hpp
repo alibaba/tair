@@ -33,6 +33,7 @@
 #include "get_migrate_machine.hpp"
 #include "wait_object.hpp"
 #include "packet_streamer.hpp"
+#include "op_cmd_packet.hpp"
 
 namespace tair {
   namespace config_server {
@@ -89,6 +90,8 @@ namespace tair {
       void get_migrating_machines(request_get_migrate_machine * req,
                                   response_get_migrate_machine * resp);
 
+      void do_op_cmd(request_op_cmd *req);
+
     private:
       enum
       {
@@ -111,6 +114,14 @@ namespace tair {
                                  int size, int modified_time);
       void read_group_file_to_packet(response_get_server_table * resp);
       void send_group_file_packet();
+
+      int get_group_config_value(response_op_cmd *resp,
+                                 const vector<string> &params, const char *group_file_name,
+                                 const char *config_key, const char* default_value);
+      int set_group_status(response_op_cmd *resp,
+          const vector<string> &params, const char *group_file_name);
+
+      int do_reset_ds_packet(response_op_cmd *resp, const std::vector<std::string>& params);
 
     private:
       group_info_map group_info_map_data;

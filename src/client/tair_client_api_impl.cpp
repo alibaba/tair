@@ -1526,6 +1526,48 @@ FAIL:
 
   }
 
+  int tair_client_impl::op_cmd_to_cs(ServerCmdType cmd, std::vector<std::string>* params,
+                                     std::vector<std::string>* ret_values)
+  {
+    if (config_server_list.empty() || config_server_list[0] == 0L) {
+      log_error("no configserver available");
+      return TAIR_RETURN_FAILED;
+    }
+
+    request_op_cmd *req = new request_op_cmd();
+    req->cmd = cmd;
+    if (params != NULL) {
+      req->params = *params;
+    }
+
+    response_op_cmd *resp = NULL;
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    uint64_t master = config_server_list[0];
+
+    int ret = TAIR_RETURN_SEND_FAILED;
+    base_packet *tpacket = NULL;
+    do {
+      if ((ret = send_request(master, req, cwo->get_id())) != TAIR_RETURN_SUCCESS) {
+        delete req;
+        break;
+      }
+      if ((ret = get_response(cwo, 1, tpacket)) < 0) {
+        break;
+      }
+      resp = dynamic_cast<response_op_cmd*>(tpacket);
+      if (resp == NULL) {
+        ret = TAIR_RETURN_FAILED;
+        break;
+      }
+      ret = resp->code;
+      if (ret_values != NULL) {
+        *ret_values = resp->infos;
+      }
+    } while (false);
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return ret;
+  }
 
   int tair_client_impl::remove_items(int area,
       const data_entry &key,
@@ -1809,7 +1851,7 @@ FAIL:
   int tair_client_impl::get_flow(uint64_t addr, int ns, tair::stat::Flowrate &rate)
   {
     int ret = TAIR_RETURN_SEND_FAILED;
-    
+
     flow_view_request *request = new flow_view_request();
     request->setNamespace(ns);
     flow_view_response *response = NULL;
@@ -1860,7 +1902,7 @@ FAIL:
       ret = get_response(cwo, 1, temp);
       if (ret < 0 || temp == 0) {
         break;
-      } 
+      }
       if(temp->getPCode() != TAIR_FLOW_CONTROL_SET) {
         ret = TAIR_RETURN_FAILED;
         break;

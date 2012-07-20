@@ -58,7 +58,7 @@ const int ITEM_HEAD_LENGTH = 2;
       virtual int add_count(int bucket_num,data_entry &key, int count, int init_value,
                 bool allow_negative,int expire_time,int &result_value)
       {
-          return TAIR_RETURN_NOT_SUPORTED;
+          return TAIR_RETURN_NOT_SUPPORTED;
       }
 
       virtual int clear(int area) = 0;
@@ -74,7 +74,7 @@ const int ITEM_HEAD_LENGTH = 2;
       virtual void get_stats(tair_stat * stat) = 0;
 
       virtual int get_meta(data_entry &key, item_meta_info &meta) {
-        return TAIR_RETURN_NOT_SUPORTED;
+        return TAIR_RETURN_NOT_SUPPORTED;
       }
 
       virtual void set_area_quota(int area, uint64_t quota) = 0;

@@ -150,12 +150,20 @@ namespace tair {
         return need_send_server_table;
       }
 
+      int get_pre_load_flag() const
+      {
+        return pre_load_flag;
+      }
+
       void send_server_table_packet(uint64_t slave_server_id);
       void find_available_server();
       void inc_version(const uint32_t inc_step = 1);
       void do_proxy_report(const request_heartbeat & req);
       void set_stat_info(uint64_t server_id, const node_stat_info &);
       void get_stat_info(uint64_t server_id, node_stat_info &) const;
+
+      int add_down_server(uint64_t server_id);
+      int clear_down_server(const vector<uint64_t>& server_ids);
     private:
       group_info(const group_info &);
       group_info & operator =(const group_info &);
@@ -198,6 +206,7 @@ namespace tair {
       int server_down_time;
       float diff_ratio;
       uint64_t pos_mask;
+      int pre_load_flag;  // 1: need preload; 0: no need; default 0
       std::set<uint64_t> available_server;
 
       std::set<uint64_t> reported_serverid;
@@ -207,6 +216,7 @@ namespace tair {
       mutable tbsys::CRWSimpleLock stat_info_rw_locker;        //node_stat_info has its own lock, this only for the map stat_info
       uint32_t interval_seconds;
 
+      std::set<uint64_t> tmp_down_server;  //save tmp down server in DATA_PRE_LOAD_MODE
       tbsys::CThreadMutex hash_table_set_mutex;
 
     };

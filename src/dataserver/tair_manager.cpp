@@ -669,7 +669,7 @@
       //check if it's support add_count or it's a mdb enginer.
       int rc=storage_mgr->add_count(bucket_number,mkey,count,init_value,not_allow_count_negative,expire_time,*result_value);
 
-      if(TAIR_RETURN_NOT_SUPORTED!=rc)
+      if(TAIR_RETURN_NOT_SUPPORTED!=rc)
       {
         //if add_count success,now just mdb supported add_count.
         if (rc == TAIR_RETURN_SUCCESS )
@@ -1213,7 +1213,7 @@
       if (!has_merged) {
         key.decode_area();
       }
-      if (rc != TAIR_RETURN_NOT_SUPORTED) {
+      if (rc != TAIR_RETURN_NOT_SUPPORTED) {
         return rc;
       }
       //~ following would be expensive

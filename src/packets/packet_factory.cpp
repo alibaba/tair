@@ -47,6 +47,7 @@
 #include "get_hidden_packet.hpp"
 #include "stat_cmd_packet.hpp"
 #include "flow_view.hpp"
+#include "op_cmd_packet.hpp"
 
 #include "prefix_puts_packet.hpp"
 #include "prefix_incdec_packet.hpp"
@@ -69,6 +70,12 @@
         case TAIR_REQ_MUPDATE_PACKET:
           packet = new tair::request_mupdate();
           break;
+         case TAIR_REQ_OP_CMD_PACKET:
+           packet = new tair::request_op_cmd();
+           break;
+         case TAIR_RESP_OP_CMD_PACKET:
+           packet = new response_op_cmd();
+           break;
         case TAIR_REQ_GET_PACKET:
           packet = new request_get();
           break;
