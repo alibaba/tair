@@ -43,7 +43,7 @@ libmdb_c_la_SOURCES=${shm_source_list} mdb_factory.cpp mdb_define.cpp \
 					libmdb_c.cpp
 include_HEADERS=mdb_factory.hpp mdb_manager.hpp libmdb_c.hpp
 
-noinst_PROGRAMS=mdbtest mdbSlabAndAreaTest mdbAreaTest libmdb_test_c
+noinst_PROGRAMS=mdbtest mdbSlabAndAreaTest mdbAreaTest lazyClearTest libmdb_test_c
 mdbtest_SOURCES=mdb_test.cpp
 mdbtest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
 mdbtest_LDFLAGS=-static
@@ -54,6 +54,10 @@ mdbSlabAndAreaTest_SOURCES=mdb_slab_test.cpp
 mdbSlabAndAreaTest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@
 mdbSlabAndAreaTest_LDFLAGS=-static
 
+#noinst_PROGRAMS=lazyClearTest
+lazyClearTest_SOURCES=lazy_clear_test.cpp
+lazyClearTest_LDADD=libmdb_c.la $(LDADD) -lpthread -lrt @BOOST_THREAD_LIB@
+lazyClearTest_LDFLAGS=-static
 #noinst_PROGRAMS=mdbAreaTest
 mdbAreaTest_SOURCES=mdb_area_test.cpp
 mdbAreaTest_LDADD=libmdb.la $(LDADD) -lpthread -lrt  @BOOST_THREAD_LIB@

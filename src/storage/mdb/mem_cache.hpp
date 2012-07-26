@@ -123,6 +123,15 @@ namespace tair {
     int get_slabs_count();
     uint64_t get_item_head(int slabid, int area);
 
+    //get the timestamp of the area
+    inline uint32_t get_area_timestamp(int area) const {
+      return *(area_timestamp + area);
+    }
+
+    //set the timestamp of the area
+    inline void set_area_timestamp(int area, uint32_t current_time){
+      *(area_timestamp + area) = current_time;
+    }
     void display_statics();
     static const int ALIGN_SIZE = 8;
     struct page_info
@@ -285,6 +294,9 @@ namespace tair {
 
     mdb_cache_info *cache_info;
     std::vector<slab_manager *> slab_managers;
+    //the timestamp of the area
+    uint32_t *area_timestamp;
+
     mem_pool *this_mem_pool;
     mdb_manager *manager;
     static data_dumpper item_dump;

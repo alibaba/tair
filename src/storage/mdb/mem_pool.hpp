@@ -51,6 +51,7 @@ namespace tair {
       return impl->free_pages;
     }
     static const int MAX_PAGES_NO = 65536;
+    static const int MDB_VERSION_INFO_START = 12288;  //12k
     static const int MEM_HASH_METADATA_START = 16384;        //16K
     static const int MDB_STATINFO_START = 32768;        //32K
     static const int MEM_POOL_METADATA_LEN = 524288;        // 512K

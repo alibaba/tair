@@ -40,7 +40,6 @@ namespace tair {
 
   bool mdb_manager::initialize(bool use_share_mem /*=true*/ )
   {
-
     char *pool = 0;
     if(use_share_mem)
     {
@@ -52,11 +51,11 @@ namespace tair {
       assert(pool != 0);
       //attention: if size is too large,memset will be a very time-consuming operation.
       memset(pool, 0, mdb_param::size);
-
     }
     if(pool == 0) {
       return false;
     }
+
 
     int meta_len = (1 << 20) + mem_cache::MEMCACHE_META_LEN;        //cachehashmap will alloc space by itself
 
@@ -88,6 +87,11 @@ namespace tair {
     for(; it != mdb_param::default_area_capacity.end(); ++it) {
       area_stat[it->first]->quota = it->second;
     }
+
+    //mdb's version
+    mdb_version =
+      reinterpret_cast<uint32_t *> (this_mem_pool->get_pool_addr() + mem_pool::MDB_VERSION_INFO_START);
+    *mdb_version = 1;
 
     chkexprd_thread.start(this, NULL);
     chkslab_thread.start(this, NULL);
@@ -253,8 +257,7 @@ namespace tair {
     bool ret = false;
     if(it != 0)
     {
-      if(it->exptime != 0
-         && it->exptime < static_cast<uint32_t> (time(NULL)))
+      if(is_item_expired(it, static_cast<uint32_t> (time(NULL))))
       {
         log_debug("this item is expired");
         __remove(it);
@@ -344,25 +347,9 @@ namespace tair {
       }
     }else{
       assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
-      for(int i = 0; i < cache->get_slabs_count(); ++i) {
-        {
-          boost::mutex::scoped_lock guard(mem_locker);
-          uint64_t item_head = cache->get_item_head(i, area);
-          while(item_head != 0) {
-            mdb_item *item = id_to_item(item_head);
-            if(item == 0) {
-              //should not be here
-              break;
-            }
-            item_head = item->next;
-            //if(ITEM_AREA(item) != area){
-            //       continue;
-            //}
-            __remove(item);
-          }
-        }
-        usleep(100);
-      }
+      boost::mutex::scoped_lock guard(mem_locker);
+      TBSYS_LOG(DEBUG,"clear all the items in the area =%u",area);
+      cache->set_area_timestamp(area, static_cast<uint32_t> (time(NULL)));
     }
     TBSYS_LOG(INFO, "end clear");
     return 0;
@@ -404,8 +391,7 @@ namespace tair {
       //     __remove(it);
       //     continue;
       //}
-
-      if(it->exptime != 0 && it->exptime <= crrnt_time) {
+      if(is_item_expired(it, crrnt_time)) {
         item_head = it->h_next;
         __remove(it);
         continue;
@@ -476,7 +462,7 @@ namespace tair {
       //if(test_flag(it->item_id, TAIR_ITEM_FLAG_DELETED)) {        // in migrate
         //old_flag = TAIR_ITEM_FLAG_DELETED;
       //}
-      if(it->exptime != 0 && it->exptime < crrnt_time) {        //expired
+      if(is_item_expired(it, crrnt_time)) {
         __remove(it);
         version = 0;
         it = 0;
@@ -687,7 +673,7 @@ namespace tair {
     if (it == NULL) {
       return false;
     }
-    if (it->exptime != 0 && it->exptime < time(NULL)) {
+    if(is_item_expired(it, static_cast<uint32_t> (time(NULL)))) {
       __remove(it);
       return false;
     }
@@ -755,16 +741,13 @@ namespace tair {
           continue;
         }
         uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
-
         while(item_head != 0) {
           mdb_item *it = id_to_item(item_head);
           item_head = it->h_next;
-
-          if(it->exptime != 0 && it->exptime <= crrnt_time) {
+          if(is_item_expired(it, crrnt_time)) {
             __remove(it);
             continue;
           }
-
           uint32_t server_hash =
             util::string_util::mur_mur_hash(ITEM_KEY(it) + 2,
                 it->key_len - 2);
@@ -805,8 +788,7 @@ namespace tair {
     mdb_item *it = hashmap->find(key.get_data(), key.get_size());
     bool ret = false;
     if(it != 0) {                //found
-      if(it->exptime != 0
-          && it->exptime<static_cast<uint32_t> (time(NULL))) {
+      if(is_item_expired(it, static_cast<uint32_t> (time(NULL)))) {
         TBSYS_LOG(DEBUG, "this item is expired");
         __remove(it);
         ret = true;
@@ -895,7 +877,7 @@ namespace tair {
         while(item_head != 0) {
           mdb_item *it = id_to_item(item_head);
           item_head = it->h_next;
-          if(it->exptime != 0 && it->exptime <= crrnt_time) {
+          if(is_item_expired(it, crrnt_time)) {
             ++del_count;
             release_space += SLAB_SIZE(it->item_id);
             __remove(it);
@@ -1020,8 +1002,6 @@ namespace tair {
     }
     return;
   }
-
-
 #ifdef TAIR_DEBUG
   map<int, int> mdb_manager::get_slab_size()
   {

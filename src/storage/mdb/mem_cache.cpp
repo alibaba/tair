@@ -29,11 +29,18 @@ namespace tair {
       reinterpret_cast <
       mdb_cache_info * >(this_mem_pool->get_pool_addr() +
                          mem_pool::MEM_POOL_METADATA_LEN);
+    char *area_timestamp_start_addr = this_mem_pool->get_pool_addr() +
+         mem_pool::MDB_STATINFO_START + sizeof(mdb_area_stat) * TAIR_MAX_AREA_COUNT;
+    area_timestamp = reinterpret_cast<uint32_t *> (area_timestamp_start_addr);
+
     if(cache_info->inited != 1)
     {
       cache_info->max_slab_id = max_slab_id;
       cache_info->base_size = base_size;
       cache_info->factor = factor;
+      //init the timestamp
+      memset(area_timestamp, 0, sizeof(uint32_t) * TAIR_MAX_AREA_COUNT);
+
       slab_initialize();
     }
     else
@@ -290,8 +297,7 @@ namespace tair {
       cache_info->base_size = ALIGN(sizeof(mdb_item) + 16);        /* at least 16 bytes */
     }
     char *slab_start_addr =
-      this_mem_pool->get_pool_addr() + mem_pool::MEM_POOL_METADATA_LEN +
-      sizeof(mdb_cache_info);
+      this_mem_pool->get_pool_addr() + mem_pool::MEM_POOL_METADATA_LEN + sizeof(mdb_cache_info);
 
     TBSYS_LOG(DEBUG, "pool:%p,slab_start:%p", this_mem_pool->get_pool_addr(),
               slab_start_addr);
@@ -356,8 +362,8 @@ namespace tair {
   bool mem_cache::get_slab_info()
   {
     char *next_slab_addr =
-      this_mem_pool->get_pool_addr() + mem_pool::MEM_POOL_METADATA_LEN +
-      sizeof(mdb_cache_info);
+      this_mem_pool->get_pool_addr() + mem_pool::MEM_POOL_METADATA_LEN + sizeof(mdb_cache_info);
+
     for(int i = 0; i <= cache_info->max_slab_id; ++i) {
       slab_manager *slabmng = reinterpret_cast<slab_manager *>(next_slab_addr);
       slabmng->this_mem_pool = this_mem_pool;

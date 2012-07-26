@@ -128,6 +128,12 @@ namespace tair {
 
     bool is_chkexprd_time();
     bool is_chkslab_time();
+
+    inline bool is_item_expired(mdb_item* it, uint32_t current_time) {
+      return (it->exptime != 0 && it->exptime < current_time)
+             || (it->update_time < cache->get_area_timestamp(ITEM_AREA(it)));
+    }
+
     void run_chkslab();
     void run_chkexprd_deleted();
     void balance_slab();
@@ -151,6 +157,7 @@ namespace tair {
 
     //area_stat m_stat;
     mdb_area_stat *area_stat[TAIR_MAX_AREA_COUNT];
+    uint32_t* mdb_version;
   };
 }                                /* tair */
 #endif
