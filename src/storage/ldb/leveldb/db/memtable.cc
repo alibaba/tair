@@ -149,4 +149,4 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
   return false;
 }
 
-}
+}  // namespace leveldb

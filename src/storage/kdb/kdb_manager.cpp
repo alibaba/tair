@@ -28,9 +28,9 @@ namespace tair {
       {
         buckets_map = new kdb_buckets_map();
         // mdb share memory engine requires 256MB memory at least
-        //int cache_size = TBSYS_CONFIG.getInt(TAIRKDB_SECTION, KDB_CACHE_SIZE, 256);
-        //assert(cache_size >= 256);
-        //memory_cache = mdb_factory::create_embedded_mdb(cache_size, 1.2);
+        // int cache_size = TBSYS_CONFIG.getInt(TAIRKDB_SECTION, KDB_CACHE_SIZE, 256);
+        // assert(cache_size >= 256);
+        //memory_cache = mdb_factory::create_embedded_mdb();
       }
 
       kdb_manager::~kdb_manager()

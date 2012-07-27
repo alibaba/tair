@@ -64,9 +64,10 @@ namespace tair {
       const data_entry &key,
       const data_entry &data,
       int expire,
-      int version)
+      int version,
+      bool fill_cache)
   {
-    int ret = impl->put(area,key,data,expire,version);
+      int ret = impl->put(area,key,data,expire,version, fill_cache);
     if (TAIR_RETURN_SUCCESS == ret) {
       cache_type *cache = cache_impl[area];
       if (cache != NULL) {

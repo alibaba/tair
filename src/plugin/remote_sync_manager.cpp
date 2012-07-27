@@ -335,7 +335,7 @@ namespace tair{
           {
             pnode=new async_call_node(packet_id,pkey,this);
             log_debug("call tairclient put,pkgid=%d",packet_id);
-            rv=m_remote_tairclient.put(area, *pkey, *value,0,0,&callback_sync_response,(void *)pnode); 
+            rv=m_remote_tairclient.put(area, *pkey, *value,0,0,false,&callback_sync_response,(void *)pnode); 
           }
           break;
         case TAIR_REQ_REMOVE_PACKET: 
@@ -383,7 +383,7 @@ namespace tair{
           {
             pnode=new async_call_node(packet_id,pkey,this);
             log_debug("call tairclient put,pkgid=%d",packet_id);
-            rv=m_remote_tairclient.put(pkey->area, *pkey, *pvalue,0,0,&callback_sync_response,(void *)pnode); 
+            rv=m_remote_tairclient.put(pkey->area, *pkey, *pvalue,0,0, false, &callback_sync_response,(void *)pnode); 
             delete pvalue;
           }
           break;

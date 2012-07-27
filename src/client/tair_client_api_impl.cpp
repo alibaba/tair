@@ -42,8 +42,8 @@
 #include "base_packet.hpp"
 #include "flow_control_packet.hpp"
 #include "flow_view.hpp"
-
 #include "flowrate.h"
+#include "op_cmd_packet.hpp"
 
 namespace tair {
 
@@ -250,7 +250,7 @@ FAIL_1:
   int tair_client_impl::put(int area,
       const data_entry &key,
       const data_entry &data,
-      int expired, int version,
+      int expired, int version, bool fill_cache,
       TAIRCALLBACKFUNC pfunc,void * parg )
   {
     if( !(key_entry_check(key)) || (!data_entry_check(data))){
@@ -278,6 +278,8 @@ FAIL_1:
     request_put *packet = new request_put();
     packet->area = area;
     packet->key = key;
+    // set fill cache flag
+    packet->key.data_meta.flag = fill_cache ? TAIR_CLIENT_PUT_PUT_CACHE_FLAG : TAIR_CLIENT_PUT_SKIP_CACHE_FLAG;
     packet->data = data;
     packet->expired = expired;
     packet->version = version;
@@ -340,7 +342,7 @@ FAIL:
     value.set_data(buf, INCR_DATA_SIZE, false);
     // force set count type flag
     value.data_meta.flag = TAIR_ITEM_FLAG_ADDCOUNT;
-    return put(area, key, value, expire, version, pfunc, parg);
+    return put(area, key, value, expire, version, true, pfunc, parg);
   }
 
   int tair_client_impl::lock(int area, const data_entry &key, LockType type,
@@ -1567,6 +1569,106 @@ FAIL:
 
     this_wait_object_manager->destroy_wait_object(cwo);
     return ret;
+  }
+
+  int tair_client_impl::op_cmd_to_ds(ServerCmdType cmd, std::vector<std::string>* params, const char* dest_server_addr)
+  {
+    std::map<uint64_t, request_op_cmd*> request_map;
+    std::map<uint64_t, request_op_cmd*>::iterator it;
+
+    if (dest_server_addr != NULL) {       // specify server_id
+      uint64_t dest_server_id = tbsys::CNetUtil::strToAddr(dest_server_addr, 0);
+      if (dest_server_id == 0) {
+        log_error("invalid dest_server_addr: %s", dest_server_addr);
+      } else {
+        request_op_cmd *packet = new request_op_cmd();
+        packet->cmd = cmd;
+        if (params != NULL) {
+          packet->params = *params;
+        }
+        request_map[dest_server_id] = packet;
+      }
+    } else {                    // send request to all server
+      for (uint32_t i=0; i<my_server_list.size(); i++) {
+        uint64_t server_id = my_server_list[i];
+        if (server_id == 0) {
+          continue;
+        }
+        it = request_map.find(server_id);
+        if (it == request_map.end()) {
+          request_op_cmd *packet = new request_op_cmd();
+          packet->cmd = cmd;
+          if (params != NULL) {
+            packet->params = *params;
+          }
+          request_map[server_id] = packet;
+        }
+      }
+    }
+
+    if (request_map.empty()) {
+      log_error("no request");
+      return TAIR_RETURN_FAILED;
+    }
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+
+    int send_count = 0;
+    int ret = TAIR_RETURN_SEND_FAILED;
+    it = request_map.begin();
+    while (it != request_map.end()) {
+      uint64_t server_id = it->first;
+      request_op_cmd *packet = it->second;
+      TBSYS_LOG(INFO, "request_op_cmd %d=>%s", cmd, tbsys::CNetUtil::addrToString(server_id).c_str());
+
+      if ((ret = send_request(server_id,packet,cwo->get_id())) != TAIR_RETURN_SUCCESS) {
+        log_error("send request_op_cmd request fail: %s", tbsys::CNetUtil::addrToString(server_id).c_str());
+        request_map.erase(it++);
+        delete packet;
+      } else {
+        ++send_count;
+        it++;
+      }
+    }
+
+    vector<base_packet*> tpk;
+    if ((ret = get_response(cwo, send_count, tpk)) < 1) {
+      this_wait_object_manager->destroy_wait_object(cwo);
+      TBSYS_LOG(ERROR, "all requests are failed, ret: %d", ret);
+      return ret == 0 ? TAIR_RETURN_FAILED : ret;
+    }
+
+    int fail_request = 0;
+    vector<base_packet*>::iterator bp_iter = tpk.begin();
+    for (; bp_iter != tpk.end(); ++bp_iter)
+    {
+      if ((*bp_iter)->getPCode() == TAIR_RESP_RETURN_PACKET)
+      {
+        response_return* tpacket = dynamic_cast<response_return*>(*bp_iter);
+        if (tpacket != NULL)
+        {
+          ret = tpacket->get_code();
+          if (TAIR_RETURN_SUCCESS != ret)
+          {
+            if (TAIR_RETURN_SERVER_CAN_NOT_WORK == ret)
+            {
+              new_config_version = tpacket->config_version;
+              send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+            }
+            log_error("get response fail: ret: %d", ret);
+            ++fail_request;
+          }
+        }
+      }
+      else
+      {
+        log_error("not get response packet: %d", (*bp_iter)->getPCode());
+        ++fail_request;
+      }
+    }
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return fail_request > 0 ? TAIR_RETURN_PARTIAL_SUCCESS : TAIR_RETURN_SUCCESS;
   }
 
   int tair_client_impl::remove_items(int area,

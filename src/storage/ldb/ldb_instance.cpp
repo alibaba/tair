@@ -14,12 +14,16 @@
  *
  */
 
+#include <leveldb/env.h>
+#include <util/config.h>
+
 #include "common/define.hpp"
 #include "common/util.hpp"
 #include "storage/storage_manager.hpp"
 #include "storage/mdb/mdb_manager.hpp"
 #include "ldb_instance.hpp"
 #include "ldb_comparator.hpp"
+#include "ldb_bloom.cpp"
 
 namespace tair
 {
@@ -30,26 +34,24 @@ namespace tair
       using namespace tair::common;
 
       LdbInstance::LdbInstance()
-        : index_(0), db_version_care_(true), mutex_(NULL), db_(NULL), cache_(NULL), put_fill_cache_(false),
-          scan_it_(NULL), still_have_(true), gc_(this)
+        : index_(0), db_version_care_(true), mutex_(NULL), db_(NULL), cache_(NULL),
+          scan_it_(NULL), scan_bucket_(-1), still_have_(true), gc_(this)
       {
         db_path_[0] = '\0';
-        scan_end_key_ = std::string(LDB_KEY_META_SIZE, '\0');
         stat_manager_ = new STAT_MANAGER_MAP();
       }
 
       LdbInstance::LdbInstance(int32_t index, bool db_version_care,
-                               storage::storage_manager* cache, bool put_fill_cache)
+                               storage::storage_manager* cache)
         : index_(index), db_version_care_(db_version_care), mutex_(NULL), db_(NULL),
           cache_(dynamic_cast<tair::mdb_manager*>(cache)),
-          put_fill_cache_(put_fill_cache), scan_it_(NULL), still_have_(true), gc_(this)
+          scan_it_(NULL), scan_bucket_(-1), still_have_(true), gc_(this)
       {
         if (cache_ != NULL)
         {
           mutex_ = new tbsys::CThreadMutex[LOCKER_SIZE];
         }
         db_path_[0] = '\0';
-        scan_end_key_ = std::string(LDB_KEY_META_SIZE, '\0');
         stat_manager_ = new STAT_MANAGER_MAP();
       }
 
@@ -68,6 +70,22 @@ namespace tair
             delete it->second;
           }
           delete stat_manager_;
+        }
+
+        // delete allocated env.
+        if (options_.env != NULL)
+        {
+          delete options_.env;
+        }
+        // delete allocated comparator
+        if (options_.comparator != NULL)
+        {
+          delete options_.comparator;
+        }
+        // delete allocated filter policy
+        if (options_.filter_policy != NULL)
+        {
+          delete options_.filter_policy;
         }
       }
 
@@ -96,11 +114,13 @@ namespace tair
             }
             else
             {
-              leveldb::Options options;
-              sanitize_option(options);
+              sanitize_option();
 
-              log_info("init ldb %d: max_open_file: %d, write_buffer: %d", index_, options.max_open_files, options.write_buffer_size);
-              leveldb::Status status = leveldb::DB::Open(options, db_path_, &db_);
+              log_warn("init ldb %d: max_open_file: %d, write_buffer: %d, use_bloomfilter: %s, use_mmap: %s",
+                       index_, options_.max_open_files, options_.write_buffer_size,
+                       options_.filter_policy != NULL ? "yes" : "no",
+                       options_.kUseMmapRandomAccess ? "yes" : "no");
+              leveldb::Status status = leveldb::DB::Open(options_, db_path_, &db_);
 
               if (!status.ok())
               {
@@ -116,12 +136,6 @@ namespace tair
                 else if (!(ret = gc_.start()))
                 {
                   log_error("start gc factory fail. destroy db");
-                }
-                else if (!(ret =
-                           cache_stat_.start(db_path_,
-                                             TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_CACHE_STAT_FILE_SIZE, (20*1<<20)))))
-                {
-                  log_error("start cache stat fail. destroy db");
                 }
 
                 if (!ret)
@@ -222,7 +236,8 @@ namespace tair
           delete db_;
           db_ = NULL;
         }
-        for (STAT_MANAGER_MAP_ITER it = stat_manager_->begin(); it != stat_manager_->end(); ++it)
+        STAT_MANAGER_MAP* tmp_stat_manager = stat_manager_;
+        for (STAT_MANAGER_MAP_ITER it = tmp_stat_manager->begin(); it != tmp_stat_manager->end(); ++it)
         {
           it->second->stop();
         }
@@ -233,7 +248,7 @@ namespace tair
         stop();
         gc_.destroy();
 
-        leveldb::Status status = leveldb::DestroyDB(db_path_, leveldb::Options());
+        leveldb::Status status = leveldb::DestroyDB(db_path_, options_);
         if (!status.ok())
         {
           log_error("remove ldb database fail. path: %s, error: %s", db_path_, status.ToString().c_str());
@@ -271,25 +286,29 @@ namespace tair
 
         LdbKey ldb_key(key.get_data(), key.get_size(), bucket_number, edate);
         LdbItem ldb_item;
+        PROFILER_BEGIN("db lock");
         tbsys::CThreadGuard mutex_guard(get_mutex(key));
+        PROFILER_END();
         std::string db_value;
         int rc = TAIR_RETURN_SUCCESS;
 
         // db version care
-        if (db_version_care_)
+        if (db_version_care_ && version_care)
         {
-          rc = do_get(ldb_key, db_value, false, false); // not fill cache or update cache stat
-
+          PROFILER_BEGIN("db get");
+          rc = do_get(ldb_key, db_value, true/* get from cache */,
+                      false/* not fill cache */, false/* not update cache stat */);
+          PROFILER_END();
           if (TAIR_RETURN_SUCCESS == rc)
           {
             ldb_item.assign(const_cast<char*>(db_value.data()), db_value.size());
             // ldb already check expired. no need here.
-            cdate = ldb_item.meta().cdate_; // set back the create time
+            cdate = ldb_item.cdate(); // set back the create time
             if (version_care)
             {
               // item care version, check version
               if (key.data_meta.version != 0
-                  && key.data_meta.version != ldb_item.meta().version_)
+                  && key.data_meta.version != ldb_item.version())
               {
                 rc = TAIR_RETURN_VERSION_ERROR;
               }
@@ -310,22 +329,27 @@ namespace tair
 
         if (rc == TAIR_RETURN_SUCCESS)
         {
-          ldb_item.meta().flag_ = value.data_meta.flag;
-          ldb_item.meta().cdate_ = cdate;
-          ldb_item.meta().mdate_ = mdate;
-          ldb_item.meta().edate_ = edate;
+          ldb_item.meta().base_.meta_version_ = META_VER_PREFIX;
+          ldb_item.meta().base_.flag_ = value.data_meta.flag;
+          ldb_item.meta().base_.cdate_ = cdate;
+          ldb_item.meta().base_.mdate_ = mdate;
+          ldb_item.meta().base_.edate_ = edate;
+          ldb_item.set_prefix_size(key.get_prefix_size());
           if (version_care)
           {
-            ldb_item.meta().version_++;
+            ldb_item.meta().base_.version_++;
           }
           else
           {
-            ldb_item.meta().version_ = key.data_meta.version;
+            ldb_item.meta().base_.version_ = key.data_meta.version;
           }
 
           ldb_item.set(value.get_data(), value.get_size());
+          log_debug ("meta_version:%u ,prefix_size %u, totlesize:%u, valuesize:%u",ldb_item.meta().base_.meta_version_, key.get_prefix_size(), ldb_item.size(), value.get_size());
 
-          rc = do_put(ldb_key, ldb_item);
+          PROFILER_BEGIN("db put");
+          rc = do_put(ldb_key, ldb_item, SHOULD_PUT_FILL_CACHE(key.data_meta.flag));
+          PROFILER_END();
 
           if (TAIR_RETURN_SUCCESS == rc)
           {
@@ -335,16 +359,107 @@ namespace tair
           }
 
           //update key's meta info
-          key.data_meta.flag = ldb_item.meta().flag_;
-          key.data_meta.cdate = ldb_item.meta().cdate_;
+          key.data_meta.flag = ldb_item.flag();
+          key.data_meta.cdate = ldb_item.cdate();
           key.data_meta.edate = edate;
-          key.data_meta.mdate = ldb_item.meta().mdate_;
-          key.data_meta.version = ldb_item.meta().version_;
+          key.data_meta.mdate = ldb_item.mdate();
+          key.data_meta.version = ldb_item.version();
           key.data_meta.keysize = key.get_size();
           key.data_meta.valsize = value.get_size();
         }
 
-        log_debug("ldb::put %d, key len: %d, value len: %d", rc, key.get_size(), value.get_size());
+        log_debug("ldb::put %d, key len: %d, key prefix len:%d , value len: %d", rc, key.get_size(), key.get_prefix_size(), value.get_size());
+        return rc;
+      }
+
+      inline void LdbInstance::add_prefix(LdbKey& ldb_key, int prefix_size)
+      {
+        ldb_key.incr_key(prefix_size);
+      }
+
+      int LdbInstance::get_range(int bucket_number, data_entry& key_start, data_entry& key_end, int offset, int limit, std::vector<data_entry*> &result)
+      {
+        assert(db_ != NULL);
+        int totle_size=0;
+
+        leveldb::Iterator *iter;
+        int rc = TAIR_RETURN_SUCCESS;
+        int count = 0;
+        LdbKey ldb_key;
+        LdbItem ldb_item;
+
+        log_debug("start range. startkey size:%d prefixsize:%d key:%s,%s.", key_start.get_size(), key_start.get_prefix_size(), key_start.get_data() +4, key_start.get_data()+2+key_start.get_prefix_size());
+        if ( limit > read_options_.range_max_limit){
+          limit = read_options_.range_max_limit;
+          log_debug("limit:%d out of bound, set to %d ", limit, read_options_.range_max_limit);
+        }
+
+        leveldb::ReadOptions scan_read_options = read_options_;
+        scan_read_options.fill_cache = false;
+        //tbsys::CThreadGuard mutex_guard(get_mutex(key_start));
+        iter = db_->NewIterator(scan_read_options);
+
+        LdbKey ldbkey(key_start.get_data(), key_start.get_size(), bucket_number);
+        LdbKey ldbendkey(key_end.get_data(), key_end.get_size(), bucket_number);
+
+        // if key_end's skey is "",  add_prefix to key_end for scan all prefix. 4 means 2B area & 2B '00 04' flag
+        if (key_end.get_size()- key_end.get_prefix_size() == 4)
+        {
+          add_prefix(ldbendkey, key_end.get_prefix_size()); 
+        }
+        leveldb::Slice slice_key_start(ldbkey.data(), ldbkey.size());
+        leveldb::Slice slice_key_end(ldbendkey.data(), ldbendkey.size());
+
+        //iterate all keys
+        for(iter->Seek(slice_key_start) ;iter->Valid() && count < limit; iter->Next() ) 
+        {
+          leveldb::Slice slice_iter_key(iter->key().data(), iter->key().size());
+          if (options_.comparator->Compare(slice_iter_key,slice_key_end) >= 0) 
+            break;
+          ldb_key.assign(const_cast<char*>(iter->key().data()), iter->key().size());
+          ldb_item.assign(const_cast<char*>(iter->value().data()), iter->value().size());
+          if (ldb_item.prefix_size() != key_start.get_prefix_size())
+          {
+            log_debug("iter key skip. size:%d prefixsize:%d key:%s,%s. iter prefixsize:%d", key_start.get_size(), key_start.get_prefix_size(), key_start.get_data() +4, key_start.get_data()+2+key_start.get_prefix_size(), ldb_item.prefix_size());
+            continue;
+          }
+
+          if (offset > 0)
+          {
+            offset --;
+            continue; 
+          }
+
+          data_entry *nkey = new data_entry(ldb_key.key() + key_start.get_prefix_size() + LDB_KEY_AREA_SIZE,  
+                                            ldb_key.key_size() - key_start.get_prefix_size() - LDB_KEY_AREA_SIZE, true);
+          data_entry *nvalue = new data_entry(ldb_item.value(), ldb_item.value_size(), true);
+
+          nkey->data_meta.flag = nvalue->data_meta.flag = ldb_item.flag();
+          nkey->data_meta.mdate = nvalue->data_meta.mdate = ldb_item.mdate();
+          nkey->data_meta.cdate = nvalue->data_meta.cdate = ldb_item.cdate();
+          nkey->data_meta.edate = nvalue->data_meta.edate = ldb_item.edate();
+          nkey->data_meta.version = nvalue->data_meta.version = ldb_item.version();
+          nkey->data_meta.valsize = nvalue->data_meta.valsize = ldb_item.value_size();
+          nkey->data_meta.keysize = nvalue->data_meta.keysize = ldb_key.key_size();
+
+          result.push_back(nkey);
+          result.push_back(nvalue);
+
+          count++;
+
+          totle_size += ldb_key.size() + ldb_item.size();
+          if (totle_size >  read_options_.range_max_size)
+            break;
+        }
+
+        if(iter != NULL) 
+        {
+          delete iter;
+        }
+
+        if (0 == count)
+          rc = TAIR_RETURN_DATA_NOT_EXIST;
+
         return rc;
       }
 
@@ -356,8 +471,20 @@ namespace tair
         LdbItem ldb_item;
         std::string db_value;
 
-        tbsys::CThreadGuard mutex_guard(get_mutex(key));
-        int rc = do_get(ldb_key, db_value, true);
+        // first get from cache, no need lock here
+        PROFILER_BEGIN("direct cache get");
+        int rc = do_cache_get(ldb_key, db_value, true/* update stat */);
+        PROFILER_END();
+        // cache miss, but not expired, cause cache expired, db expired too.
+        if (rc != TAIR_RETURN_SUCCESS && rc != TAIR_RETURN_DATA_EXPIRED)
+        {
+          PROFILER_BEGIN("db lock");
+          tbsys::CThreadGuard mutex_guard(get_mutex(key));
+          PROFILER_END();
+          PROFILER_BEGIN("db get");
+          rc = do_get(ldb_key, db_value, false/* not get from cache */, true/* fill cache */);
+          PROFILER_END();
+        }
 
         if (TAIR_RETURN_SUCCESS == rc)
         {
@@ -366,19 +493,21 @@ namespace tair
           value.set_data(ldb_item.value(), ldb_item.value_size());
 
           // update meta info
-          key.data_meta.flag = value.data_meta.flag = ldb_item.meta().flag_;
-          key.data_meta.cdate = value.data_meta.cdate = ldb_item.meta().cdate_;
-          key.data_meta.edate = value.data_meta.edate = ldb_item.meta().edate_;
-          key.data_meta.mdate = value.data_meta.mdate = ldb_item.meta().mdate_;
-          key.data_meta.version = value.data_meta.version = ldb_item.meta().version_;
+          key.data_meta.flag = value.data_meta.flag = ldb_item.flag();
+          key.data_meta.cdate = value.data_meta.cdate = ldb_item.cdate();
+          key.data_meta.edate = value.data_meta.edate = ldb_item.edate();
+          key.data_meta.mdate = value.data_meta.mdate = ldb_item.mdate();
+          key.data_meta.version = value.data_meta.version = ldb_item.version();
           key.data_meta.keysize = value.data_meta.keysize = key.get_size();
           key.data_meta.valsize = value.data_meta.valsize = ldb_item.value_size();
+          key.set_prefix_size(ldb_item.prefix_size());
         }
 
-        log_debug("ldb::get %d, key len: %d, value len: %d", rc, key.get_size(), value.get_size());
+        log_debug("ldb::get rc: %d, key len: %d, key prefix len:%d , value len: %d, meta_version:%u ", rc, key.get_size(), key.get_prefix_size(), value.get_size(), ldb_item.meta().base_.meta_version_);
 
         return rc;
       }
+
 
       int LdbInstance::remove(int bucket_number, tair::common::data_entry& key, bool version_care)
       {
@@ -391,15 +520,16 @@ namespace tair
         std::string db_value;
         tbsys::CThreadGuard mutex_guard(get_mutex(key));
 
-        if (db_version_care_)
+        if (db_version_care_ && version_care)
         {
-          rc = do_get(ldb_key, db_value, false, false);
+          rc = do_get(ldb_key, db_value, true/* get from cache */,
+                      false/* not fill cache */, false/* not update cache stat */);
           if (TAIR_RETURN_SUCCESS == rc)
           {
             ldb_item.assign(const_cast<char*>(db_value.data()), db_value.size());
             if (version_care &&
                 key.data_meta.version != 0 &&
-                key.data_meta.version != ldb_item.meta().version_)
+                key.data_meta.version != ldb_item.version())
             {
               rc = TAIR_RETURN_VERSION_ERROR;
             }
@@ -415,9 +545,80 @@ namespace tair
           }
         }
 
-        log_debug("ldb::get %d, key len: %d", rc, key.get_size());
+        log_debug("ldb::remove %d, key len: %d", rc, key.get_size());
 
         return rc;
+      }
+
+      int LdbInstance::op_cmd(ServerCmdType cmd, std::vector<std::string>& params)
+      {
+        assert(db_ != NULL);
+        int ret = TAIR_RETURN_SUCCESS;
+        log_warn("op cmd %d, param size: %d", cmd, params.size());
+
+        switch (cmd) {
+        case TAIR_SERVER_CMD_FLUSH_MMT:
+        {
+#if 0
+          leveldb::Status status = db_->ForceCompactMemTable();
+          if (!status.ok())
+          {
+            log_error("op cmd flush mem fail: %s", status.ToString().c_str());
+            ret = TAIR_RETURN_FAILED;
+          }
+#endif
+          break;
+        }
+        case TAIR_SERVER_CMD_RESET_DB: // just rename here
+        {
+#if 0
+          // delete directory may cost too much time. we just rename here.
+          // if (!DirectoryOp::delete_directory_recursively(db_path_))
+          // {
+          //   log_error("delete db path fail: %s", db_path_);
+          //   ret = TAIR_RETURN_FAILED;
+          // }
+          // just rename to back db path
+          std::string back_db_path = get_back_path(db_path_);
+          if (::access(db_path_, F_OK) != 0)
+          {
+            // just consider it's ok. maybe ::access fail because other reason.
+            log_warn("resetdb but orignal db path is not exist: %s, ignore it.", db_path_);
+          }
+          else if (::rename(db_path_, back_db_path.c_str()) != 0)
+          {
+            log_error("rename db %s to back db %s fail. error: %s", db_path_, back_db_path.c_str(), strerror(errno));
+            ret = TAIR_RETURN_FAILED;
+          }
+#endif
+          break;
+        }
+        case TAIR_SERVER_CMD_PAUSE_GC:
+        {
+          gc_.pause_gc();
+          break;
+        }
+        case TAIR_SERVER_CMD_RESUME_GC:
+        {
+          gc_.resume_gc();
+          break;
+        }
+        case TAIR_SERVER_CMD_STAT_DB:
+        {
+          ret = stat_db();
+          break;
+        }
+        case TAIR_SERVER_CMD_SET_CONFIG:
+        {
+          ret = set_config(params);
+          break;
+        }
+        default:
+        {
+          break;
+        }
+        }
+        return ret;
       }
 
       bool LdbInstance::begin_scan(int bucket_number)
@@ -448,7 +649,7 @@ namespace tair
 
         if (ret)
         {
-          LdbKey::build_key_meta(const_cast<char*>(scan_end_key_.data()), bucket_number+1);
+          scan_bucket_ = bucket_number;
           still_have_ = true;
         }
         return ret;
@@ -460,6 +661,7 @@ namespace tair
         {
           delete scan_it_;
           scan_it_ = NULL;
+          scan_bucket_ = -1;
         }
         return true;
       }
@@ -471,7 +673,7 @@ namespace tair
         static const int32_t migrate_batch_size =
           TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_MIGRATE_BATCH_SIZE, 1048576); // 1M default
         static const int32_t migrate_batch_count = 
-          TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_MIGRATE_BATCH_COUNT, 2000); // 1000 default
+          TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_MIGRATE_BATCH_COUNT, 2000); // 2000 default
 
         if (NULL == scan_it_)
         {
@@ -485,22 +687,30 @@ namespace tair
 
           while (batch_size < migrate_batch_size && batch_count < migrate_batch_count && scan_it_->Valid())
           {
-            if (scan_it_->key().ToString() < scan_end_key_)
+            // match bucket
+            if (LdbKey::decode_bucket_number(scan_it_->key().data() + LDB_EXPIRED_TIME_SIZE) == scan_bucket_)
             {
               ldb_key.assign(const_cast<char*>(scan_it_->key().data()), scan_it_->key().size());
               ldb_item.assign(const_cast<char*>(scan_it_->value().data()), scan_it_->value().size());
 
               key_size = ldb_key.key_size();
               value_size = ldb_item.value_size();
+              if (key_size >= TAIR_MAX_KEY_SIZE_WITH_AREA || key_size < 1 || value_size >= TAIR_MAX_DATA_SIZE || value_size < 1)
+              {
+                log_error("kv size invalid: k: %d, v: %d [%d %d] [%x %x %s]", key_size, value_size, scan_it_->key().size(), scan_it_->value().size(), *(ldb_key.key()), *(ldb_key.key()+1), ldb_key.key() + 2);
+                ::sleep(2);
+              }
               total_size = ITEM_HEADER_LEN + key_size + value_size;
               item_data_info* data = (item_data_info*) new char[total_size];
+              data->header.magic = MAGIC_ITEM_META_LDB_PREFIX;
               data->header.keysize = key_size;
-              data->header.version = ldb_item.meta().version_;
+              data->header.version = ldb_item.version();
               data->header.valsize = value_size;
-              data->header.flag = ldb_item.meta().flag_;
-              data->header.cdate = ldb_item.meta().cdate_;
-              data->header.mdate = ldb_item.meta().mdate_;
-              data->header.edate = ldb_item.meta().edate_;
+              data->header.flag = ldb_item.flag();
+              data->header.cdate = ldb_item.cdate();
+              data->header.mdate = ldb_item.mdate();
+              data->header.edate = ldb_item.edate();
+              data->header.prefixsize = ldb_item.prefix_size();
 
               memcpy(data->m_data, ldb_key.key(), key_size);
               memcpy(data->m_data+key_size, ldb_item.value(), value_size);
@@ -530,21 +740,25 @@ namespace tair
       {
         if (NULL != db_)        // not init now, no stat
         {
-          log_debug("ldb bucket get stat %p", stat);
-          std::string stat_value;
-          if (get_db_stat(db_, stat_value, "stats"))
+          if (TBSYS_LOGGER._level > TBSYS_LOG_LEVEL_WARN)
           {
-            log_warn("ldb status: %s", stat_value.c_str());
-          }
-          else
-          {
-            log_error("get ldb status fail, uncompleted status: %s", stat_value.c_str());
+            log_debug("ldb bucket get stat %p", stat);
+            std::string stat_value;
+            if (get_db_stat(db_, stat_value, "stats"))
+            {
+              log_info("ldb status: %s", stat_value.c_str());
+            }
+            else
+            {
+              log_error("get ldb status fail, uncompleted status: %s", stat_value.c_str());
+            }
           }
 
           if (stat != NULL)
           {
             // get all stat information
-            for (STAT_MANAGER_MAP_ITER it = stat_manager_->begin(); it != stat_manager_->end(); ++it)
+            STAT_MANAGER_MAP* tmp_stat_manager = stat_manager_;
+            for (STAT_MANAGER_MAP_ITER it = tmp_stat_manager->begin(); it != tmp_stat_manager->end(); ++it)
             {
               tair_pstat *pstat = it->second->get_stat();
               for (int i = 0; i < TAIR_MAX_AREA_COUNT; i++)
@@ -555,28 +769,98 @@ namespace tair
               }
             }
           }
-          if (cache_ != NULL)
-          {
-            // lock hold, static is ok.
-            static cache_stat ldb_cache_stat[TAIR_MAX_AREA_COUNT];
-            cache_->raw_get_stats(ldb_cache_stat);
-            cache_stat_.save(ldb_cache_stat, TAIR_MAX_AREA_COUNT);
-          }
         }
+      }
+
+      // get all sstable's range infomation etc.
+      int LdbInstance::stat_db()
+      {
+        int ret = TAIR_RETURN_SUCCESS;
+        std::string stat_value;
+        if (get_db_stat(db_, stat_value, "ranges"))
+        {
+          fprintf(stderr, "==== statdb instance %d ====\n%s", index_, stat_value.c_str());
+        }
+        else
+        {
+          log_error("get db range stat fail");
+          ret = TAIR_RETURN_FAILED;
+        }
+        return ret;
+      }
+
+      int LdbInstance::set_config(std::vector<std::string>& params)
+      {
+        int ret = TAIR_RETURN_SUCCESS;
+        if (params.size() < 2)
+        {
+          log_error("set config but invalid params size: %d", params.size());
+          ret = TAIR_RETURN_FAILED;
+        }
+        // leveldb::config is global static actually
+        else
+        {
+          std::string& config_key = params[0];
+          std::string& config_value = params[1];
+          log_warn("set config: %s = %s", config_key.c_str(), config_value.c_str());
+          if (config_key == LDB_LIMIT_COMPACT_LEVEL_COUNT)
+          {
+            int count = atoi(config_value.c_str());
+            if (count >= leveldb::config::kNumLevels)
+            {
+              log_error("invalid value %s to set %s, ignore it.", config_value.c_str(), config_key.c_str());
+              ret = TAIR_RETURN_FAILED;
+            }
+            else
+            {
+              leveldb::config::kLimitCompactLevelCount = count;
+            }
+          }
+          else if (config_key == LDB_LIMIT_COMPACT_COUNT_INTERVAL)
+          {
+            int count = atoi(config_value.c_str());
+            if (count < 0)
+            {
+              log_error("invalid value %s to set %s, ignore it.", config_value.c_str(), config_key.c_str());
+              ret = TAIR_RETURN_FAILED;
+            }
+            else
+            {
+              leveldb::config::kLimitCompactCountInterval = count;
+            }
+          }
+          else if (config_key == LDB_LIMIT_COMPACT_TIME_INTERVAL)
+          {
+            leveldb::config::kLimitCompactTimeInterval = atoi(config_value.c_str());;
+          }
+          else if (config_key == LDB_LIMIT_COMPACT_TIME_RANGE)
+          {
+            int time_start = 0, time_end = 0;
+            util::time_util::get_time_range(config_value.c_str(),
+                                            time_start,
+                                            time_end);
+            leveldb::config::SetLimitCompactTimeRange(time_start, time_end);
+          }
+          else if (config_key == LDB_LIMIT_DELETE_OBSOLETE_FILE_INTERVAL)
+          {
+            leveldb::config::kLimitDeleteObsoleteFileInterval = atoi(config_value.c_str());
+          }
+          else if (config_key == LDB_DO_SEEK_COMPACTION)
+          {
+            leveldb::config::kDoSeekCompaction = (strcasecmp(config_value.c_str(), "on") == 0);
+          }
+          // ignore unknown config
+        }
+        return ret;
       }
 
       int LdbInstance::clear_area(int32_t area)
       {
         int ret = TAIR_RETURN_SUCCESS;
-        // clear cache.
-        if (cache_ != NULL)
-        {
-          cache_->clear(area);  // area maybe -1, means clean expired items
-        }
-
         if (area >= 0)
         {
-          for (STAT_MANAGER_MAP_ITER it = stat_manager_->begin(); it != stat_manager_->end(); ++it)
+          STAT_MANAGER_MAP* tmp_stat_manager = stat_manager_;
+          for (STAT_MANAGER_MAP_ITER it = tmp_stat_manager->begin(); it != tmp_stat_manager->end(); ++it)
           {
             it->second->stat_reset(area); // clear stat value for this area.
           }
@@ -587,14 +871,17 @@ namespace tair
 
       bool LdbInstance::exist(int32_t bucket_number)
       {
-        return stat_manager_->find(bucket_number) != stat_manager_->end();
+        STAT_MANAGER_MAP* tmp_stat_manager = stat_manager_;
+        return tmp_stat_manager->find(bucket_number) != tmp_stat_manager->end();
       }
 
-      int LdbInstance::do_put(LdbKey& ldb_key, LdbItem& ldb_item)
+      int LdbInstance::do_put(LdbKey& ldb_key, LdbItem& ldb_item, bool fill_cache)
       {
         int rc = TAIR_RETURN_SUCCESS;
+        PROFILER_BEGIN("db db put");
         leveldb::Status status = db_->Put(write_options_, leveldb::Slice(ldb_key.data(), ldb_key.size()),
                                           leveldb::Slice(ldb_item.data(), ldb_item.size()));
+        PROFILER_END();
         if (!status.ok())
         {
           log_error("update ldb item fail. %s", status.ToString().c_str());
@@ -602,10 +889,14 @@ namespace tair
         }
         else if (cache_ != NULL)
         {
-          if (put_fill_cache_)
+          // client's requsting fill_cache
+          if (fill_cache)
           {
+            log_debug("fill cache");
+            PROFILER_BEGIN("db cache put");
             rc = cache_->raw_put(ldb_key.key(), ldb_key.key_size(), ldb_item.data(), ldb_item.size(),
-                                 ldb_item.meta().flag_, ldb_item.meta().edate_);
+                                 ldb_item.flag(), ldb_item.edate());
+            PROFILER_END();
             if (rc != TAIR_RETURN_SUCCESS) // what happend
             {
               log_error("::put. put cache fail, rc: %d", rc);
@@ -613,7 +904,10 @@ namespace tair
           }
           else
           {
+            log_debug("not fill cache");
+            PROFILER_BEGIN("db cache remove");
             rc = cache_->raw_remove(ldb_key.key(), ldb_key.key_size());
+            PROFILER_END();
             if (rc != TAIR_RETURN_SUCCESS && rc != TAIR_RETURN_DATA_NOT_EXIST) // what happened ?
             {
               log_error("::put. remove cache fail: %d", rc);
@@ -628,32 +922,44 @@ namespace tair
         return rc;
       }
 
-      int LdbInstance::do_get(LdbKey& ldb_key, std::string& value, bool fill_cache, bool update_stat)
+      int LdbInstance::do_cache_get(LdbKey& ldb_key, std::string& value, bool update_stat)
       {
         int rc = TAIR_RETURN_FAILED;
         if (cache_ != NULL)
         {
+          PROFILER_BEGIN("db cache get");
           rc = cache_->raw_get(ldb_key.key(), ldb_key.key_size(), value, update_stat);
+          PROFILER_END();
           if (TAIR_RETURN_SUCCESS == rc) // cache hit
           {
             log_debug("ldb cache hit");
           }
         }
+        return rc;
+      }
+
+      int LdbInstance::do_get(LdbKey& ldb_key, std::string& value, bool from_cache, bool fill_cache, bool update_stat)
+      {
+        int rc = from_cache ? do_cache_get(ldb_key, value, update_stat) : TAIR_RETURN_FAILED;
 
         // cache miss, but not expired, cause cache expired, db expired too.
         if (rc != TAIR_RETURN_SUCCESS && rc != TAIR_RETURN_DATA_EXPIRED)
         {
+          PROFILER_BEGIN("db db get");
           leveldb::Status status = db_->Get(read_options_, leveldb::Slice(ldb_key.data(), ldb_key.size()),
                                             &value);
+          PROFILER_END();
           if (status.ok())
           {
             rc = TAIR_RETURN_SUCCESS;
             if (fill_cache && cache_ != NULL)     // fill cache
             {
+              PROFILER_BEGIN("db cache put");
               LdbItem ldb_item;
               ldb_item.assign(const_cast<char*>(value.data()), value.size());
               int tmp_rc = cache_->raw_put(ldb_key.key(), ldb_key.key_size(), ldb_item.data(), ldb_item.size(),
-                                           ldb_item.meta().flag_, ldb_item.meta().edate_);
+                                           ldb_item.flag(), ldb_item.edate());
+              PROFILER_END();
               if (tmp_rc != TAIR_RETURN_SUCCESS) // ignore return value.
               {
                 log_debug("::get. put cache fail, rc: %d", tmp_rc);
@@ -698,8 +1004,9 @@ namespace tair
 
       void LdbInstance::stat_add(int32_t bucket_number, int32_t area, int32_t data_size, int32_t use_size, int32_t item_count)
       {
-        STAT_MANAGER_MAP_ITER stat_it = stat_manager_->find(bucket_number);
-        if (stat_it != stat_manager_->end())
+        STAT_MANAGER_MAP* tmp_stat_manager = stat_manager_;
+        STAT_MANAGER_MAP_ITER stat_it = tmp_stat_manager->find(bucket_number);
+        if (stat_it != tmp_stat_manager->end())
         {
           stat_it->second->stat_add(area, data_size, use_size, item_count);
         }
@@ -707,32 +1014,56 @@ namespace tair
 
       void LdbInstance::stat_sub(int32_t bucket_number, int32_t area, int32_t data_size, int32_t use_size, int32_t item_count)
       {
-        STAT_MANAGER_MAP_ITER stat_it = stat_manager_->find(bucket_number);
-        if (stat_it != stat_manager_->end())
+        STAT_MANAGER_MAP* tmp_stat_manager = stat_manager_;
+        STAT_MANAGER_MAP_ITER stat_it = tmp_stat_manager->find(bucket_number);
+        if (stat_it != tmp_stat_manager->end())
         {
           stat_it->second->stat_sub(area, data_size, use_size, item_count);
         }
       }
 
-      void LdbInstance::sanitize_option(leveldb::Options& options)
+      void LdbInstance::sanitize_option()
       {
-        options.error_if_exists = false; // exist is ok
-        options.create_if_missing = true; // create if not exist
-        options.comparator = LdbComparator(&gc_); // self-defined comparator
-        options.paranoid_checks = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_PARANOID_CHECK, 0) > 0;
-        options.max_open_files = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_MAX_OPEN_FILES, 655350);
-        options.write_buffer_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_WRITE_BUFFER_SIZE, 4194304); // 4M
-        options.block_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BLOCK_SIZE, 4096); // 4K
-        options.block_restart_interval = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BLOCK_RESTART_INTERVAL, 16); // 16
-        options.compression = static_cast<leveldb::CompressionType>(TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_COMPRESSION, leveldb::kSnappyCompression));
-        options.kL0_CompactionTrigger = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_L0_COMPACTION_TRIGGER, 4);
-        options.kL0_SlowdownWritesTrigger = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_L0_SLOWDOWN_WRITE_TRIGGER, 8);
-        options.kL0_StopWritesTrigger = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_L0_STOP_WRITE_TRIGGER, 12);
-        options.kMaxMemCompactLevel = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_MAX_MEMCOMPACT_LEVEL, 2);
-        options.kTargetFileSize = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_TARGET_FILE_SIZE, 2097152);
-        options.kBaseLevelSize = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BASE_LEVEL_SIZE, 10485760);
+        options_.error_if_exists = false; // exist is ok
+        options_.create_if_missing = true; // create if not exist
+        options_.comparator = new LdbComparatorImpl(&gc_); // self-defined comparator
+        // can use one static filterpolicy instance
+        options_.filter_policy = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USE_BLOOMFILTER, 0) > 0 ?
+          new LdbBloomFilterPolicy(TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BLOOMFILTER_BITS_PER_KEY, 10)) : NULL;
+        options_.paranoid_checks = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_PARANOID_CHECK, 0) > 0;
+        options_.max_open_files = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_MAX_OPEN_FILES, 655350);
+        options_.write_buffer_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_WRITE_BUFFER_SIZE, 4<<20); // 4M
+        options_.block_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BLOCK_SIZE, 4<<10); // 4K
+        options_.block_cache_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BLOCK_CACHE_SIZE, 8<<20); // 8M
+        options_.block_restart_interval = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BLOCK_RESTART_INTERVAL, 16); // 16
+        options_.compression = static_cast<leveldb::CompressionType>(TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_COMPRESSION, leveldb::kSnappyCompression));
+        options_.kL0_CompactionTrigger = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_L0_COMPACTION_TRIGGER, 4);
+        options_.kL0_SlowdownWritesTrigger = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_L0_SLOWDOWN_WRITE_TRIGGER, 8);
+        options_.kL0_StopWritesTrigger = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_L0_STOP_WRITE_TRIGGER, 12);
+        options_.kMaxMemCompactLevel = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_MAX_MEMCOMPACT_LEVEL, 2);
+        options_.kTargetFileSize = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_TARGET_FILE_SIZE, 2<<20); // 2M
+        options_.kArenaBlockSize = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_ARENABLOCK_SIZE, 4<<10); // 4K
+        options_.kBaseLevelSize = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BASE_LEVEL_SIZE, 10<<20); // 10M
+        options_.kFilterBaseLg = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_FILTER_BASE_LOGARITHM, 12); // 1<<12 == block_size
+        options_.kUseMmapRandomAccess = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USE_MMAP_RANDOM_ACCESS, 0) > 0; // false
+        options_.kLimitCompactLevelCount = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_LIMIT_COMPACT_LEVEL_COUNT, 0);
+        options_.kLimitCompactCountInterval = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_LIMIT_COMPACT_COUNT_INTERVAL, 0);
+        options_.kLimitCompactTimeInterval = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_LIMIT_COMPACT_TIME_INTERVAL, 0);
+        std::string time_range = TBSYS_CONFIG.getString(TAIRLDB_SECTION, LDB_LIMIT_COMPACT_TIME_RANGE, "0-0");
+        util::time_util::get_time_range(time_range.c_str(),
+                                        options_.kLimitCompactTimeStart,
+                                        options_.kLimitCompactTimeEnd);
+        options_.kLimitDeleteObsoleteFileInterval = TBSYS_CONFIG.getInt(TAIRLDB_SECTION,
+                                                                        LDB_LIMIT_DELETE_OBSOLETE_FILE_INTERVAL, 0);
+        options_.kDoSeekCompaction = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_DO_SEEK_COMPACTION, 1) > 0;
+
+        // Env::Default() is a global static instance.
+        // We allocate one env to one leveldb instance here.
+        options_.env = leveldb::Env::Instance();
         read_options_.verify_checksums = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_READ_VERIFY_CHECKSUMS, 0) != 0;
         read_options_.fill_cache = true;
+        read_options_.range_max_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_RANGE_MAX_SIZE, 1<<20); // 1M
+        read_options_.range_max_limit = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_RANGE_MAX_LIMIT, 1000); // 1000
         write_options_.sync = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_WRITE_SYNC, 0) != 0;
         // remainning avaliable config: comparator, env, block cache.
       }

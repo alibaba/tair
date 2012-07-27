@@ -36,6 +36,8 @@
 #include "prefix_hides_packet.hpp"
 #include "prefix_get_hiddens_packet.hpp"
 #include "prefix_locker.hpp"
+#include "op_cmd_packet.hpp"
+#include "get_range_packet.hpp"
 
 namespace tair {
   class request_processor {
@@ -45,6 +47,7 @@ namespace tair {
 
     int process(request_put *request, bool &send_return, uint32_t &resp_size);
     int process(request_get *request, bool &send_return, uint32_t &resp_size);
+    int process(request_get_range *request, bool &send_return);
     int process(request_hide *request, bool &send_return);
     int process(request_get_hidden *request, bool &send_return);
     int process(request_remove *request, bool &send_return);
@@ -63,6 +66,7 @@ namespace tair {
     int process(request_prefix_gets* request, bool &send_return);
     int process(request_prefix_hides *request, bool &send_return);
     int process(request_prefix_get_hiddens *request, bool &send_return);
+    int process(request_op_cmd *request, bool &send_return);
 
   private:
     bool do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet);

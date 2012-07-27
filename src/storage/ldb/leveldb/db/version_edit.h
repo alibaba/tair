@@ -15,7 +15,10 @@ namespace leveldb {
 class VersionSet;
 
 struct FileMetaData {
-  int refs;
+  // int refs;
+  // 'refs will be updated in VersionSet::LogAppApply()::Apply()/SaveTo() and ~Version().
+  // we use AtomicCount to make previous situation to be lockfree.
+  port::AtomicCount<uint32_t> refs;
   int allowed_seeks;          // Seeks allowed until compaction
   uint64_t number;
   uint64_t file_size;         // File size in bytes
@@ -102,6 +105,6 @@ class VersionEdit {
   std::vector< std::pair<int, FileMetaData> > new_files_;
 };
 
-}
+}  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_DB_VERSION_EDIT_H_

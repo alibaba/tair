@@ -48,7 +48,7 @@ extern int FindFile(const InternalKeyComparator& icmp,
 // largest==NULL represents a key largest than all keys in the DB.
 // REQUIRES: If disjoint_sorted_files, files[] contains disjoint ranges
 //           in sorted order.
-  extern bool SomeFileOverlapsRange(
+extern bool SomeFileOverlapsRange(
     const InternalKeyComparator& icmp,
     bool disjoint_sorted_files,
     const std::vector<FileMetaData*>& files,
@@ -71,10 +71,6 @@ class Version {
   };
   Status Get(const ReadOptions&, const LookupKey& key, std::string* val,
              GetStats* stats);
-
-  bool GetValue(Iterator* iter, const Slice& user_key,
-                std::string* value,
-                Status* s);
 
   // Adds "stats" into the current state.  Returns true if a new
   // compaction may need to be triggered, false otherwise.
@@ -120,6 +116,9 @@ class Version {
   // Return a human readable string that describes this version's contents.
   std::string DebugString() const;
 
+  // Return all range of sstable, print base 'key_printer
+  void GetAllRange(std::string& str, void (*key_printer)(const Slice&, std::string&));
+
  private:
   friend class Compaction;
   friend class VersionSet;
@@ -130,7 +129,13 @@ class Version {
   VersionSet* vset_;            // VersionSet to which this Version belongs
   Version* next_;               // Next version in linked list
   Version* prev_;               // Previous version in linked list
-  int refs_;                    // Number of live refs to this version
+  // refs_ is port::AtomicCount but we still need mutex protect refs_/dummy_versions
+  // to avoid that version has been Unref() to destroy point when iteratoring
+  // dummy_versions_(addLiveFiles()).
+  // We can modify refs_ when doing compaction freely because addLiveFiles() is just in
+  // this process.
+  // int refs_;                    // Number of live refs to this version
+  port::AtomicCount<uint32_t> refs_; // Number of live refs to this version
 
   // List of files per level
   std::vector<FileMetaData*> files_[config::kNumLevels];
@@ -185,10 +190,15 @@ class VersionSet {
   uint64_t ManifestFileNumber() const { return manifest_file_number_; }
 
   // Allocate and return a new file number
-  uint64_t NewFileNumber() { return next_file_number_++; }
+  // uint64_t NewFileNumber() { return next_file_number_++; }
+  uint64_t NewFileNumber() { return next_file_number_.GetAndInc(); }
 
   // Return the next filenumber
-  uint64_t NextFileNumber() const { return next_file_number_; }
+  // uint64_t NextFileNumber() const { return next_file_number_; }
+  uint64_t NextFileNumber() const { return next_file_number_.Get(); }
+
+  // Set next filenumber
+  void SetNextFileNumber(uint64_t file_number) { next_file_number_.Set(file_number); }
 
   // Return the smallest filenumber
   uint64_t SmallestFileNumber() const;
@@ -200,12 +210,14 @@ class VersionSet {
   int64_t NumLevelBytes(int level) const;
 
   // Return the last sequence number.
-  uint64_t LastSequence() const { return last_sequence_; }
+  // uint64_t LastSequence() const { return last_sequence_; }
+  uint64_t LastSequence() const { return last_sequence_.Get(); }
 
   // Set the last sequence number to s.
   void SetLastSequence(uint64_t s) {
-    assert(s >= last_sequence_);
-    last_sequence_ = s;
+    assert(s >= last_sequence_.Get());
+    // last_sequence_ = s;
+    last_sequence_.Set(s);
   }
 
   // Mark the specified file number as used.
@@ -255,12 +267,12 @@ class VersionSet {
   // Returns true iff some level needs a compaction.
   bool NeedsCompaction() const {
     Version* v = current_;
-    return (v->compaction_score_ >= 1) || (v->file_to_compact_ != NULL);
+    return (v->compaction_score_ >= 1) || (config::kDoSeekCompaction && v->file_to_compact_ != NULL);
   }
 
   // Add all files listed in any live version to *live.
   // May also mutate some internal state.
-  void AddLiveFiles(std::set<uint64_t>* live);
+  void AddLiveFiles(std::set<uint64_t>* live, port::Mutex* mu);
 
   // Return the approximate offset in the database of the data for
   // "key" as of version "v".
@@ -280,6 +292,10 @@ class VersionSet {
   friend class Version;
 
   void Finalize(Version* v);
+
+  bool ShouldLimitCompact(int level);
+  bool LimitCompactByLevel(int level);
+  bool LimitCompactByInterval();
 
   void GetRange(const std::vector<FileMetaData*>& inputs,
                 InternalKey* smallest,
@@ -302,11 +318,19 @@ class VersionSet {
   const Options* const options_;
   TableCache* const table_cache_;
   const InternalKeyComparator icmp_;
-  uint64_t next_file_number_;
+  port::AtomicCount<uint64_t> next_file_number_;
+  // uint64_t next_file_number_;
   uint64_t manifest_file_number_;
-  uint64_t last_sequence_;
+  port::AtomicCount<uint64_t> last_sequence_;
+  // uint64_t last_sequence_;
   uint64_t log_number_;
   uint64_t prev_log_number_;  // 0 or backing store for memtable being compacted
+  uint64_t has_limited_compact_count_;
+  // compaction(especially seek-compaction by Db::Get()) may be triggered very frequently,
+  // so only limiting compaction count may make us got this situation soon(maybe
+  // just next MaybeScheduleCompaction()), so we need limit compaction for a specified time.
+  uint64_t first_limited_compact_time_;
+  int32_t current_max_level_;
 
   // Opened lazily
   WritableFile* descriptor_file_;
@@ -396,6 +420,6 @@ class Compaction {
   size_t level_ptrs_[config::kNumLevels];
 };
 
-}
+}  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_DB_VERSION_SET_H_

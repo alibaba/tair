@@ -13,6 +13,7 @@ namespace leveldb {
 class Cache;
 class Comparator;
 class Env;
+class FilterPolicy;
 class Logger;
 class Snapshot;
 
@@ -97,6 +98,9 @@ struct Options {
   // Default: NULL
   Cache* block_cache;
 
+  // total block cache size (byte unit)
+  int64_t block_cache_size;
+
   // Approximate size of user data packed per block.  Note that the
   // block size specified here corresponds to uncompressed data.  The
   // actual size of the unit read from disk may be smaller if
@@ -128,34 +132,78 @@ struct Options {
   // efficiently detect that and will switch to uncompressed mode.
   CompressionType compression;
 
+  // If non-NULL, use the specified filter policy to reduce disk reads.
+  // Many applications will benefit from passing the result of
+  // NewBloomFilterPolicy() here.
+  //
+  // Default: NULL
+  const FilterPolicy* filter_policy;
+
   // sort of config that is used in db but not get by passed option ..
 
-// Level-0 compaction is started when we hit this many files.
+  // Level-0 compaction is started when we hit this many files.
   int kL0_CompactionTrigger;
 
-// Soft limit on number of level-0 files.  We slow down writes at this point.
+  // Soft limit on number of level-0 files.  We slow down writes at this point.
   int kL0_SlowdownWritesTrigger;
 
-// Maximum number of level-0 files.  We stop writes at this point.
+  // Maximum number of level-0 files.  We stop writes at this point.
   int kL0_StopWritesTrigger;
 
-// Maximum level to which a new compacted memtable is pushed if it
-// does not create overlap.  We try to push to level 2 to avoid the
-// relatively expensive level 0=>1 compactions and to avoid some
-// expensive manifest file operations.  We do not push all the way to
-// the largest level since that can generate a lot of wasted disk
-// space if the same key space is being repeatedly overwritten.
+  // Maximum level to which a new compacted memtable is pushed if it
+  // does not create overlap.  We try to push to level 2 to avoid the
+  // relatively expensive level 0=>1 compactions and to avoid some
+  // expensive manifest file operations.  We do not push all the way to
+  // the largest level since that can generate a lot of wasted disk
+  // space if the same key space is being repeatedly overwritten.
   int kMaxMemCompactLevel;
 
-// sstable size
+  // sstable size
   int kTargetFileSize;
 
-// Maximum bytes of overlaps in grandparent (i.e., level+2) before we
-// stop building a single file in a level->level+1 compaction.
+  // Maximum bytes of overlaps in grandparent (i.e., level+2) before we
+  // stop building a single file in a level->level+1 compaction.
   int64_t kMaxGrandParentOverlapBytes;
 
-// arena block size
+  // arena block size
+  int kArenaBlockSize;
+
+  // filter base logarithm
+  // kFilterBase size will be 1 << kFilterBaseLg.
+  // kFilterBase must be not larger than block_size(actually CAN be, just minimize filter).
+  // kFilterBase == block_size will have no redundant space used(See filter_block.cc).
+  // Default: that makes kFilterBase == block_size
+  int kFilterBaseLg;
+
+  // base size for each level.
+  // level-0 & level-1 : kBaseLevelSize
+  // level-2.. : kBaseLevelSize * 10 * (level - 1)
+  // Default: 10M
   int kBaseLevelSize;
+  
+  // whether use mmap() to speed randomly accessing file(sstable)
+  // Default: fasle
+  bool kUseMmapRandomAccess;
+
+  // how many highest levels to limit compaction
+  int kLimitCompactLevelCount;
+  // limit compaction ratio: allow doing one compaction every kLimitCompactInterval.
+  int kLimitCompactCountInterval;
+  // limit compaction time interval (s)
+  int kLimitCompactTimeInterval;
+  // start time to limit compaction
+  int kLimitCompactTimeStart;
+  // end time to limit compaction
+  int kLimitCompactTimeEnd;
+
+  // Db will delete obsolete files when finishing one compaction.
+  // DeleteObsoleteFiles() cost too much and does NOT need been done
+  // each compaction actually, so wen can do this action each 'delete_obsolete_file_interval
+  // times compaction.
+  int kLimitDeleteObsoleteFileInterval;
+
+  // whether do compaction scheduled by seek count over-threshold
+  bool kDoSeekCompaction;
 
   // Create an Options object with default values for all fields.
   Options();
@@ -180,10 +228,20 @@ struct ReadOptions {
   // Default: NULL
   const Snapshot* snapshot;
 
+  // max response KV size when using get_range operation 
+  // Default: 1M
+  int range_max_size;
+
+  // max response KV count limit when using get_range operation 
+  // Default: 1000
+  int range_max_limit;
+
   ReadOptions()
       : verify_checksums(false),
         fill_cache(true),
-        snapshot(NULL) {
+        snapshot(NULL) ,
+        range_max_size(1<<20),
+        range_max_limit(1000){
   }
 };
 
@@ -207,24 +265,11 @@ struct WriteOptions {
   // Default: false
   bool sync;
 
-  // If "post_write_snapshot" is non-NULL, and the write succeeds,
-  // *post_write_snapshot will be modified to point to a snapshot of
-  // the DB state immediately after this write.  The caller must call
-  // DB::ReleaseSnapshot(*post_write_snapshotsnapshot) when the
-  // snapshot is no longer needed.
-  //
-  // If "post_write_snapshot" is non-NULL, and the write fails,
-  // *post_write_snapshot will be set to NULL.
-  //
-  // Default: NULL
-  const Snapshot** post_write_snapshot;
-
   WriteOptions()
-      : sync(false),
-        post_write_snapshot(NULL) {
+      : sync(false) {
   }
 };
 
-}
+}  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_INCLUDE_OPTIONS_H_

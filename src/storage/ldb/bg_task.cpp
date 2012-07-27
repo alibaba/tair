@@ -41,6 +41,7 @@ namespace tair
         if (should_compact())
         {
           do_compact();
+          is_compacting_ = false;
         }
       }
 
@@ -52,7 +53,7 @@ namespace tair
           db_ = db;
 
           const char* time_range = TBSYS_CONFIG.getString(TAIRLDB_SECTION, LDB_COMPACT_RANGE, "2-7");
-          if (!get_time_range(time_range, min_time_, max_time_))
+          if (!util::time_util::get_time_range(time_range, min_time_, max_time_))
           {
             log_warn("config compact hour range error: %s, use default 2-7", time_range);
           }
@@ -68,7 +69,12 @@ namespace tair
       bool LdbCompactTask::should_compact()
       {
         tbsys::CThreadGuard guard(&lock_);
-        return !is_compacting_ && is_compact_time() && need_compact();
+        bool ret = db_->gc_factory()->can_gc() && !is_compacting_ && is_compact_time() && need_compact();
+        if (ret)
+        {
+          is_compacting_ = true;
+        }
+        return ret;
       }
 
       bool LdbCompactTask::need_compact()
@@ -93,14 +99,13 @@ namespace tair
         // 2. Expired items has nothing to do with range and filenumber, so if we want to compact over all expired
         //    items, we can do nothing except compacting the whole db(that's expensive). Maybe some statics can
         //    join in the strategy.
-
         compact_for_gc();
         compact_for_expired();
       }
 
       void LdbCompactTask::compact_for_gc()
       {
-        if (!db_->gc_factory()->empty())
+        if (db_->gc_factory()->can_gc() && !db_->gc_factory()->empty())
         {
           bool all_done = false;
           compact_gc(GC_BUCKET, all_done);
@@ -147,7 +152,7 @@ namespace tair
             uint32_t start_time = time(NULL);
             DUMP_GCNODE(info, gc_node, "compact for gc type: %d, start: %u", gc_type, start_time);
 
-            leveldb::Slice comp_start(start_key), comp_end(end_key);;
+            leveldb::Slice comp_start(start_key), comp_end(end_key);
             leveldb::Status status = db_->db()->
               CompactRangeSelfLevel(gc_node.file_number_, &comp_start, &comp_end);
 
@@ -171,53 +176,8 @@ namespace tair
 
       bool LdbCompactTask::is_compact_time()
       {
-        return (min_time_ != max_time_) && is_in_range(min_time_, max_time_);
+        return (min_time_ != max_time_) && util::time_util::is_in_range(min_time_, max_time_);
       }
-
-      bool LdbCompactTask::get_time_range(const char* str, int32_t& min, int32_t& max)
-      {
-        bool ret = str != NULL;
-
-        if (ret)
-        {
-          int32_t tmp_min = 0, tmp_max = 0;
-          char buf[32];
-          char* max_p = strncpy(buf, str, sizeof(buf));
-          char* min_p = strsep(&max_p, "-~");
-
-          if (min_p != NULL && min_p[0] != '\0')
-          {
-            tmp_min = atoi(min_p);
-          }
-          if (max_p != NULL && max_p[0] != '\0')
-          {
-            tmp_max = atoi(max_p);
-          }
-
-          if ((ret = tmp_min >= 0 && tmp_max >= 0))
-          {
-            min = tmp_min;
-            max = tmp_max;
-          }
-        }
-
-        return ret;
-      }
-
-      bool LdbCompactTask::is_in_range(int32_t min, int32_t max)
-      {
-        time_t t = time(NULL);
-        struct tm *tm = localtime((const time_t*) &t);
-        bool reverse = false;
-        if (min > max)
-        {
-          std::swap(min, max);
-          reverse = true;
-        }
-        bool in_range = tm->tm_hour >= min && tm->tm_hour <= max;
-        return reverse ? !in_range : in_range;
-      }
-
 
       ////////// BgTask
       BgTask::BgTask() : timer_(0), compact_task_(0)
@@ -246,6 +206,7 @@ namespace tair
         if (timer_ != 0)
         {
           stop_compact_task();
+          timer_->destroy();
           timer_ = 0;
         }
       }

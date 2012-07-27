@@ -72,7 +72,7 @@ namespace tair {
             ("%s - item: {meta_offset=%u, bucket_index=%u, parent_off=%u, is_right=%d, is_new=%d, ItemIndex{left=%u, right=%u, size: %u, offset: %lu, hashcode: %llu}, ItemMeta{keysize=%u, valsize=%u, padsize=%u, version=%u, flag=%d, cdate=%u, mdata=%u, edate=%u}",
              hit, meta_offset, bucket_index, parent_off, is_right, is_new,
              meta.left, meta.right, meta.size, meta.offset, meta.hashcode,
-             data.keysize, data.valsize, data.padsize, data.version,
+             data.keysize, data.valsize, data.prefixsize, data.version,
              data.flag, data.cdate, data.mdate, data.edate);
         }
       };

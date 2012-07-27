@@ -47,6 +47,7 @@
 #include "get_hidden_packet.hpp"
 #include "stat_cmd_packet.hpp"
 #include "flow_view.hpp"
+#include "get_range_packet.hpp"
 #include "op_cmd_packet.hpp"
 
 #include "prefix_puts_packet.hpp"
@@ -244,6 +245,12 @@
         case TAIR_REQ_PREFIX_GET_HIDDENS_PACKET:
           packet = new request_prefix_get_hiddens();
           break;
+         case TAIR_REQ_GET_RANGE_PACKET:
+            packet = new request_get_range();
+            break;
+         case TAIR_RESP_GET_RANGE_PACKET:
+            packet = new response_get_range();
+            break;
         default:
           log_error("createpacket error: pcode=%d", pcode);
           break;

@@ -191,6 +191,9 @@ namespace tair
 
         void debug_string();
         void clear() { gc_buckets_.clear(); gc_areas_.clear();}
+        void pause_gc();
+        void resume_gc();
+        bool can_gc() { return can_gc_; }
 
       private:
         void set_gc_info(GcNode& node);
@@ -210,11 +213,12 @@ namespace tair
         int apply_add_gc_node(GcType type, const GcNode& node);
 
       private:
-        tbsys::CThreadMutex lock_;
+        tbsys::CRWLock lock_;
         LdbInstance* db_;
         GC_MAP gc_buckets_;
         GC_MAP gc_areas_;
         GcLog* log_;
+        bool can_gc_;
       };
     }
   }

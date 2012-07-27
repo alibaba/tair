@@ -353,22 +353,26 @@ namespace tair
       void CacheStat::print_stat(int32_t area, const cache_stat* stat)
       {
         fprintf(stderr,
-                "%6d %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %6.2lf %8s %8s %8s %8s\n",
+                "%6d %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %6.2lf %8s %8s %8s %8s %8"PRI64_PREFIX"u %8"PRI64_PREFIX"u %6.2lf\n",
                 area, stat->evict_count, stat->remove_count, stat->put_count,
                 stat->get_count, stat->hit_count,
                 0 == stat->get_count ? 0.00 : static_cast<double>(stat->hit_count)/stat->get_count,
                 tbsys::CStringUtil::formatByteSize(stat->item_count).c_str(),
                 tbsys::CStringUtil::formatByteSize(stat->data_size).c_str(),
-                tbsys::CStringUtil::formatByteSize(stat->space_usage).c_str(),
-                tbsys::CStringUtil::formatByteSize(stat->quota).c_str()
+                tbsys::CStringUtil::formatByteSize(GET_LDB_STAT_CACHE_SPACE_USAGE(stat)).c_str(),
+                tbsys::CStringUtil::formatByteSize(GET_LDB_STAT_CACHE_QUOTA(stat)).c_str(),
+                GET_LDB_STAT_BLOOM_GET_COUNT(stat), GET_LDB_STAT_BLOOM_GET_COUNT(stat) - GET_LDB_STAT_BLOOM_MISS_COUNT(stat),
+                GET_LDB_STAT_BLOOM_GET_COUNT(stat) == 0 ? 0.0 :
+                static_cast<double>(GET_LDB_STAT_BLOOM_GET_COUNT(stat) - GET_LDB_STAT_BLOOM_MISS_COUNT(stat)) / GET_LDB_STAT_BLOOM_GET_COUNT(stat)
           );
       }
 
       void CacheStat::print_head()
       {
         fprintf(stderr, "-------------------------------------------------------------------------------\n");
-        fprintf(stderr, "%6s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s\n",
-                "Area", "Evic", "Remove", "Put", "Get", "Hit", "HitRatio", "ItemCount", "DataSize", "UseSize", "Quota");
+        fprintf(stderr, "%6s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s\n",
+                "Area", "Evic", "Remove", "Put", "Get", "Hit", "HitRatio", "ItemCount", "DataSize", "UseSize", "Quota",
+                "BF-Get", "BF-Hit","BF-Ratio");
         fprintf(stderr, "-------------------------------------------------------------------------------\n");
       }
 

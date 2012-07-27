@@ -85,6 +85,7 @@ namespace tair {
           const data_entry &data,
           int expire,
           int version,
+          bool fill_cache = true,
           TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
 
       //the caller will release the memory
@@ -214,6 +215,8 @@ namespace tair {
 
       // cmd operated directly to configserver
       int op_cmd_to_cs(ServerCmdType cmd, std::vector<std::string>* params, std::vector<std::string>* ret_values);
+      int op_cmd_to_ds(ServerCmdType cmd, std::vector<std::string>* params, const char* dest_server_addr = NULL);
+
       void force_change_dataserver_status(uint64_t server_id, int cmd);
       void get_migrate_status(uint64_t server_id,vector<pair<uint64_t,uint32_t> >& result);
       void query_from_configserver(uint32_t query_type, const string group_name, map<string, string>&, uint64_t server_id = 0);

@@ -11,10 +11,10 @@ config_server=192.168.1.2:5198
 #storage_engine:
 #
 # mdb 
-# fdb
-# kdb 
+# kdb
+# ldb
 #
-storage_engine=kdb
+storage_engine=mdb
 local_mode=0
 #
 #mdb_type:
@@ -48,6 +48,7 @@ ulog_file_number=3
 ulog_file_size=64
 check_expired_hour_range=2-4
 check_slab_hour_range=5-7
+dup_sync=1
 
 [fdb]
 # in MB
@@ -64,3 +65,89 @@ map_size=10485760      # the size of the internal memory-mapped region
 bucket_size=1048583    # the number of buckets of the hash table
 record_align=128       # the power of the alignment of record size
 data_dir=data/kdb      # the directory of kdb's data
+
+[ldb]
+#### ldb manager config
+## data dir prefix, db path will be data/ldbxx, "xx" means db instance index.
+## so if ldb_db_instance_count = 2, then leveldb will init in
+## /data/ldb1/ldb/, /data/ldb2/ldb/. We can mount each disk to
+## data/ldb1, data/ldb2, so we can init each instance on each disk.
+data_dir=/data/ldb
+## leveldb instance count, buckets will be well-distributed to instances
+ldb_db_instance_count=1
+## whether support version strategy.
+## if yes, put will do get operation to update existed items's meta info(version .etc),
+## get unexist item is expensive for leveldb. set 0 to disable if nobody even care version stuff.
+ldb_db_version_care=1
+## compact time range, 1-1 means do no compaction at all
+ldb_compact_range = 3-6
+## backgroud task check compact interval
+ldb_check_compact_interval = 5
+## use cache, cache mdb's config depends on mdb's config item(mdb_type, slab_mem_size, etc)
+ldb_use_cache=1
+## cache stat can't report configserver, record stat locally, stat file size.
+## file will be rotate when file size is over this.
+ldb_cache_stat_file_size=20971520
+## migrate item batch size one time (1M)
+ldb_migrate_batch_size = 3145728
+## migrate item batch count.
+## real batch migrate items depends on the smaller size/count
+ldb_migrate_batch_count = 5000
+## use blommfilter
+ldb_use_bloomfilter=1
+## use mmap to speed up random acess file(sstable),may cost much memory
+ldb_use_mmap_random_access=0
+## how many highest levels to limit compaction
+ldb_limit_compact_level_count=0
+## limit compaction ratio: allow doing one compaction every ldb_limit_compact_interval
+## 0 means limit all compaction
+ldb_limit_compact_count_interval=0
+## limit compaction time interval
+## 0 means limit all compaction
+ldb_limit_compact_time_interval=0
+## limit compaction time range, start == end means doing limit the whole day.
+ldb_limit_compact_time_range=6-1
+## limit delete obsolete files when finishing one compaction
+ldb_limit_delete_obsolete_file_interval=0
+## whether trigger compaction by seek
+ldb_do_seek_compaction=1
+
+#### leveldb config (Waring: you should know what you're doing.)
+## one leveldb instance max open files(actually table_cache_ capacity, consider as working set)
+ldb_max_open_files=65535
+## whether return fail when occure fail when init/load db, and
+## if true, read data when compactiong will verify checksum
+ldb_paranoid_check=0
+## memtable size
+ldb_write_buffer_size=33554432
+## sstable size
+ldb_target_file_size=8388608
+## max file size in each level. level-n (n > 0): (n - 1) * 10 * ldb_base_level_size
+ldb_base_level_size=134217728
+## sstable's block size
+# ldb_block_size=4096
+##block cache size
+ldb_block_cache_size=16777216
+## arena used by memtable, arena block size
+#ldb_arenablock_size=4096
+## key is prefix-compressed period in block,
+## this is period length(how many keys will be prefix-compressed period)
+# ldb_block_restart_interval=16
+## specifid compression method (snappy only now)
+# ldb_compression=1
+## compact when sstables count in level-0 is over this trigger
+ldb_l0_compaction_trigger=2
+## write will slow down when sstables count in level-0 is over this trigger
+ldb_l0_slowdown_write_trigger=32
+## write will stop(wait until trigger down)
+ldb_l0_stop_write_trigger=64
+## when write memtable, max level to up maybe
+# ldb_max_memcompact_level=2
+## read verify checksum
+ldb_read_verify_checksums=0
+## write sync log. (one write will sync log once, expensive)
+ldb_write_sync=0
+## bits per key when use bloom filter
+#ldb_bloomfilter_bits_per_key=10
+## filter data base logarithm. filterbasesize=1<<ldb_filter_base_logarithm
+#ldb_filter_base_logarithm=12

@@ -21,10 +21,9 @@
 #include "tbnet.h"
 #include "util.hpp"
 #include "item_data_info.hpp"
-//#include "define.hpp"
+#include "define.hpp"
 //#include "log.hpp"
-#define PREFIX_KEY_OFFSET 	22
-#define PREFIX_KEY_MASK 		0x3FFFFF
+
 namespace tair
 {
    namespace common {
@@ -39,9 +38,8 @@ namespace tair
        {
          alloc = false;
          data = NULL;
-         m_true_data = NULL;
 
-         set_data(entry.data, entry.size, entry.alloc);
+         set_data(entry.data, entry.size, entry.alloc, entry.has_merged);
          prefix_size = entry.prefix_size;
          has_merged = entry.has_merged;
          has_meta_merged = entry.has_meta_merged;
@@ -55,7 +53,7 @@ namespace tair
        {
          if (this == &entry)
            return *this;
-         set_data(entry.data, entry.size, entry.alloc);
+         set_data(entry.data, entry.size, entry.alloc, entry.has_merged);
          prefix_size = entry.prefix_size;
          has_merged = entry.has_merged;
          has_meta_merged = entry.has_meta_merged;
@@ -71,7 +69,7 @@ namespace tair
        {
          assert(this != &entry);
 
-         set_data(entry.data, entry.size, true);
+         set_data(entry.data, entry.size, true, entry.has_merged);
          prefix_size = entry.prefix_size;
          has_merged = entry.has_merged;
          has_meta_merged = entry.has_meta_merged;
@@ -173,7 +171,7 @@ namespace tair
          if(has_merged) {
            return;
          }
-         if(size < 0) return;
+         if(size <= 0) return;
          //now should check is alloc by me. I have 2 extra head.
          if(m_true_size==size+2)
          {
@@ -186,14 +184,13 @@ namespace tair
          {
            //data set by  set_alloced_data or alloc=false,should realloc
            m_true_size=size+2;
-           m_true_data=(char *)malloc(m_true_size+1);
+           m_true_data=(char *)malloc(m_true_size);
 
            //memset(m_true_data, 0, m_true_size+1);
            m_true_data[0] = (_area & 0xFF);
            m_true_data[1] = ((_area >> 8) & 0xFF);
 
            memcpy(m_true_data+2, data, size);
-           *(m_true_data+m_true_size+1) = '\0';
 
            if(alloc) {free(data);data=NULL;}
            //reset flags;
@@ -271,19 +268,28 @@ namespace tair
          alloc = true;
        }
 
-       void set_data(const char *new_data, int new_size, bool _need_alloc = true)
+       void set_data(const char *new_data, int new_size, bool _need_alloc = true, bool _has_merged = false)
        {
          free_data();
          if(_need_alloc)
          {
            if(new_size > 0)
            {
-             m_true_size=new_size+2;//add area
-             m_true_data=(char *)malloc(m_true_size+1);
+             m_true_size= _has_merged ? new_size : new_size+2;//add area
+             m_true_data=(char *)malloc(m_true_size);
              assert(m_true_data!= NULL);
              this->alloc = true;
-             data=m_true_data+2;
-             size = m_true_size-2;
+             if (_has_merged)
+             {
+                data = m_true_data;
+                size = m_true_size;
+             } 
+             else
+             {
+                data = m_true_data+2;
+                size = m_true_size-2;
+                m_true_data[0]=m_true_data[1]=0xFF;
+             }
 
              if(new_data)
              {
@@ -292,8 +298,6 @@ namespace tair
              {
                memset(data, 0, size);
              }
-             m_true_data[0]=m_true_data[1]=0xFF;
-             *(data + size) = '\0';
            }
          } else {
            m_true_data=data = (char *) new_data;
@@ -306,6 +310,13 @@ namespace tair
          return data;
        }
 
+       inline char *get_prefix() const
+       {
+         if (prefix_size>0) 
+           return has_merged ? data+2 : data;
+         else 
+           return NULL;
+       }
 
        inline int get_size() const
        {
@@ -388,7 +399,7 @@ namespace tair
          free_data();
          uint8_t temp_merged = input->readInt8();
          int _area = input->readInt32();
-         if(_area<0 || _area>=1024) return false;
+         if(_area<0 || _area>=TAIR_MAX_AREA_COUNT) return false;
          uint16_t flag = input->readInt16();
          data_meta.decode(input);
 
@@ -396,7 +407,7 @@ namespace tair
          size = (msize & PREFIX_KEY_MASK);
          prefix_size = (msize >> PREFIX_KEY_OFFSET);
          if (size > 0) {
-           set_data(NULL, size);
+           set_data(NULL, size, true, temp_merged);
            input->readBytes(get_data(), size);
          }
          has_merged = temp_merged;

@@ -54,9 +54,6 @@ namespace tair
         void compact_gc(GcType gc_type, bool& all_done);
         void compact_for_expired();
 
-        bool get_time_range(const char* str, int32_t& min, int32_t& max);
-        bool is_in_range(int32_t min, int32_t max);
-
       private:
         LdbInstance* db_;
         int32_t min_time_;

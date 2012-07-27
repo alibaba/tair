@@ -270,7 +270,7 @@ namespace tair
           }
           else if (file_size < GC_LOG_HEADER_SIZE)
           {
-            log_error("gc log file is invalid, less than header size: %"PRI64_PREFIX"d", file_size);
+            log_info("gc log file is invalid, less than header size: %"PRI64_PREFIX"d", file_size);
             count = 0;
           }
           else
@@ -306,7 +306,7 @@ namespace tair
       }
 
 //////////////////////////////
-      LdbGcFactory::LdbGcFactory(LdbInstance* db) : db_(db)
+      LdbGcFactory::LdbGcFactory(LdbInstance* db) : db_(db), can_gc_(false)
       {
         assert(db_ != NULL);
         log_ = new GcLog();
@@ -323,7 +323,7 @@ namespace tair
 
       bool LdbGcFactory::start()
       {
-        tbsys::CThreadGuard guard(&lock_);
+        tbsys::CWLockGuard guard(lock_);
         bool ret = db_ != NULL && db_->db_path();
         if (!ret)
         {
@@ -345,7 +345,7 @@ namespace tair
 
       void LdbGcFactory::stop()
       {
-        tbsys::CThreadGuard guard(&lock_);
+        tbsys::CWLockGuard guard(lock_);
         if (db_ != NULL)
         {
           if (empty())
@@ -360,6 +360,18 @@ namespace tair
           log_->stop();
           db_ = NULL;
         }
+      }
+
+      void LdbGcFactory::pause_gc()
+      {
+        log_error("pause gc");
+        can_gc_ = false;
+      }
+
+      void LdbGcFactory::resume_gc()
+      {
+        log_error("resume gc");
+        can_gc_ = true;
       }
 
       void LdbGcFactory::destroy()
@@ -398,7 +410,7 @@ namespace tair
 
       int LdbGcFactory::add(int32_t key, GcType type)
       {
-        tbsys::CThreadGuard guard(&lock_);
+        tbsys::CWLockGuard guard(lock_);
         int ret = TAIR_RETURN_SUCCESS;
         log_info("add gc key: %d, type: %d", key, type);
 
@@ -420,7 +432,7 @@ namespace tair
 
       int LdbGcFactory::add(const std::vector<int32_t>& keys, GcType type)
       {
-        tbsys::CThreadGuard guard(&lock_);
+        tbsys::CWLockGuard guard(lock_);
         int ret = TAIR_RETURN_SUCCESS;
 
         log_info("add gc keys size: %zd, type: %d", keys.size(), type);
@@ -442,7 +454,7 @@ namespace tair
 
       int LdbGcFactory::remove(const GcNode& node, GcType type)
       {
-        tbsys::CThreadGuard guard(&lock_);
+        tbsys::CWLockGuard guard(lock_);
         int ret = TAIR_RETURN_SUCCESS;
         if (!empty(type))
         {
@@ -468,7 +480,7 @@ namespace tair
 
       void LdbGcFactory::try_evict()
       {
-        tbsys::CThreadGuard guard(&lock_);
+        tbsys::CWLockGuard guard(lock_);
         log_info("before try gc evict. buckets: %d, areas: %d", gc_buckets_.size(), gc_areas_.size());
         if (!empty())
         {
@@ -489,7 +501,7 @@ namespace tair
 
       GcNode LdbGcFactory::pick_gc_node(GcType type)
       {
-        tbsys::CThreadGuard guard(&lock_);
+        tbsys::CRLockGuard guard(lock_);
         GcNode node(-1);
         switch (type) {
         case GC_BUCKET:
@@ -505,7 +517,7 @@ namespace tair
         return node;
       }
 
-      // user should hold lock_
+      // user should hold CRLockGuard(lock_)
       bool LdbGcFactory::need_gc(int32_t key, uint64_t sequence, const GC_MAP& container)
       {
         GC_MAP_CONST_ITER it = container.find(key);
@@ -549,7 +561,11 @@ namespace tair
       void LdbGcFactory::set_gc_info(GcNode& node)
       {
         get_db_stat(db_->db(), node.sequence_, "sequence");
-        get_db_stat(db_->db(), node.file_number_, "largest-filenumber");
+        // @@ TEMPORARILY CHANGE FOR SAFE @@
+        // 'cause leveldb's compaction may NOT gc keys, so filenumber is not considered here.
+        node.file_number_ = ~0UL;
+        // get_db_stat(db_->db(), node.file_number_, "largest-filenumber");
+        // @@ TEMPORARILY CHANGE FOR SAFE @@
         node.when_ = time(NULL);
       }
 

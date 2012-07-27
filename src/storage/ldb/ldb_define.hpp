@@ -18,6 +18,7 @@
 #define TAIR_STORAGE_LDB_DEFINE_H
 
 #include "leveldb/db.h"
+#include "common/define.hpp"
 
 namespace leveldb
 {
@@ -33,8 +34,11 @@ namespace tair
       const static int LDB_EXPIRED_TIME_SIZE = sizeof(uint32_t);
       const static int LDB_KEY_BUCKET_NUM_SIZE = 3;
       const static int LDB_KEY_META_SIZE = LDB_KEY_BUCKET_NUM_SIZE + LDB_EXPIRED_TIME_SIZE;
+      const static int LDB_KEY_AREA_SIZE = 2;
       const static int MAX_BUCKET_NUMBER = (1 << 24) - 2;
+      const static int LDB_FILTER_SKIP_SIZE = LDB_EXPIRED_TIME_SIZE;
 
+      extern void ldb_key_printer(const leveldb::Slice& key, std::string& output);
       extern bool get_db_stat(leveldb::DB* db, std::string& value, const char* property);
       extern bool get_db_stat(leveldb::DB* db, uint64_t& value, const char* property);
       extern int32_t get_level_num(leveldb::DB* db);
@@ -107,7 +111,18 @@ namespace tair
         {
           return data_size_ > LDB_KEY_META_SIZE ? (data_size_ - LDB_KEY_META_SIZE) : 0;
         }
-
+        inline void incr_key(int index)
+        {
+          index += LDB_KEY_META_SIZE + LDB_KEY_AREA_SIZE - 1; 
+          while (index > 0)
+            if ((uint8_t)data_[index] != 0xFF)
+            {
+              data_[index]++ ;
+              break;
+            }
+            else
+              index --;
+        }
         static void build_key_meta(char* buf, int32_t bucket_number, uint32_t expired_time = 0)
         {
           // consistent key len SCAN_KEY_LEN
@@ -126,6 +141,11 @@ namespace tair
           {
             buf[LDB_KEY_BUCKET_NUM_SIZE - i - 1] = (bucket_number >> (i*8)) & 0xFF;
           }
+        }
+
+        inline int32_t get_bucket_number()
+        {
+          return decode_bucket_number(data_ + LDB_EXPIRED_TIME_SIZE);
         }
 
         static int32_t decode_bucket_number(const char* buf)
@@ -178,25 +198,45 @@ namespace tair
       };
 
 #pragma pack(4)
-      struct LdbItemMeta
+      struct LdbItemMetaBase
       {
-        LdbItemMeta() : flag_(0), version_(0), cdate_(0), mdate_(0), edate_(0) {}
-        uint8_t  reserved_;     // just reserved
+        LdbItemMetaBase() : meta_version_(0), flag_(0), version_(0), cdate_(0), mdate_(0), edate_(0){}
+        uint8_t  meta_version_; // meta data version
         uint8_t  flag_;         // flag
         uint16_t version_;      // version
         uint32_t cdate_;        // create time
         uint32_t mdate_;        // modify time
         uint32_t edate_;        // expired time(for meta when get value. dummy with key)
       };
+
+      struct LdbItemMeta   // change value() and set() ,if you want to add new metadata 
+      {
+        LdbItemMeta():  prefix_size_(0) 
+        { 
+          memset(&base_, 0, sizeof(LdbItemMetaBase)); 
+        }
+        struct LdbItemMetaBase base_;
+        uint16_t prefix_size_;  // prefix key size(for getRange conflict detect)
+        uint16_t reserved;  // 
+      };
+
 #pragma pack()
 
       const int32_t LDB_ITEM_META_SIZE = sizeof(LdbItemMeta);
+      const int32_t LDB_ITEM_META_BASE_SIZE = sizeof(LdbItemMetaBase); // add prefix_size_ at the end of the value
+
+      enum 
+      {
+        META_VER_BASE = 0, 
+        META_VER_PREFIX ,
+      };
 
       class LdbItem
       {
       public:
         LdbItem() : meta_(), data_(NULL), data_size_(0), alloc_(false)
         {
+
         }
         ~LdbItem()
         {
@@ -208,11 +248,18 @@ namespace tair
         {
           if (value_data != NULL && value_size > 0)
           {
+            char *metap = reinterpret_cast<char *>(&meta_);
+            int real_meta_size = LDB_ITEM_META_BASE_SIZE;
+            LdbItemMetaBase *metabp = reinterpret_cast<LdbItemMetaBase *>(&meta_);
             free();
-            data_size_ = value_size + LDB_ITEM_META_SIZE;
+            if ( META_VER_PREFIX == metabp->meta_version_ )
+              real_meta_size = LDB_ITEM_META_SIZE;
+            else if ( META_VER_BASE == metabp->meta_version_ )
+              real_meta_size = LDB_ITEM_META_BASE_SIZE;
+            data_size_ = value_size + real_meta_size;
             data_ = new char[data_size_];
-            memcpy(data_, &meta_, LDB_ITEM_META_SIZE);
-            memcpy(data_ + LDB_ITEM_META_SIZE, value_data, value_size);
+            memcpy(data_, metap, real_meta_size);
+            memcpy(data_ +  real_meta_size, value_data, value_size);
             alloc_ = true;
           }
         }
@@ -243,15 +290,46 @@ namespace tair
         }
         inline char* value()
         {
-          return NULL != data_ ? data_ + LDB_ITEM_META_SIZE : NULL;
+          return NULL != data_ ? ( meta_.base_.meta_version_ ==  META_VER_PREFIX ? 
+            data_ + LDB_ITEM_META_SIZE : data_ + LDB_ITEM_META_BASE_SIZE ): NULL;
         }
         inline int32_t value_size()
         {
-          return data_size_ > LDB_ITEM_META_SIZE ? data_size_ - LDB_ITEM_META_SIZE : 0;
+          return data_size_ > LDB_ITEM_META_SIZE ? ( meta_.base_.meta_version_ ==  META_VER_PREFIX ?
+                     data_size_ - LDB_ITEM_META_SIZE : data_size_ - LDB_ITEM_META_BASE_SIZE  )  : 0;
         }
-        inline LdbItemMeta& meta()
+        inline LdbItemMeta& meta() 
         {
           return meta_;
+        }
+        inline uint16_t prefix_size() const 
+        {
+          return meta_.base_.meta_version_ >=  META_VER_PREFIX ? meta_.prefix_size_ : 0;
+        }
+        inline void set_prefix_size(uint16_t size)
+        {
+          if (meta_.base_.meta_version_ >=  META_VER_PREFIX) 
+            meta_.prefix_size_ = size ;
+        }
+        inline uint32_t cdate() const 
+        {
+          return meta_.base_.cdate_;
+        }
+        inline uint32_t mdate() const 
+        {
+          return meta_.base_.mdate_;
+        }
+        inline uint32_t edate() const 
+        {
+          return meta_.base_.edate_;
+        }
+        inline uint16_t version() const 
+        {
+          return meta_.base_.version_;
+        }
+        inline uint8_t flag() const 
+        {
+          return meta_.base_.flag_;
         }
 
       private:

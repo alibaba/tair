@@ -11,13 +11,13 @@
 
 namespace leveldb {
 
+struct BlockContents;
 class Comparator;
 
 class Block {
  public:
   // Initialize the block with the specified contents.
-  // Takes ownership of data[] and will delete[] it when done.
-  Block(const char* data, size_t size);
+  explicit Block(const BlockContents& contents);
 
   ~Block();
 
@@ -30,6 +30,7 @@ class Block {
   const char* data_;
   size_t size_;
   uint32_t restart_offset_;     // Offset in data_ of restart array
+  bool owned_;                  // Block owns data_[]
 
   // No copying allowed
   Block(const Block&);
@@ -38,6 +39,6 @@ class Block {
   class Iter;
 };
 
-}
+}  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_TABLE_BLOCK_H_

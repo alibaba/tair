@@ -65,6 +65,13 @@ namespace tair {
 
       cmd_map["gettmpdownsvr"] = &tair_client::do_cmd_gettmpdownsvr;
       cmd_map["resetserver"] = &tair_client::do_cmd_resetserver;
+      cmd_map["set_migrate_wait"] = &tair_client::do_cmd_set_migrate_wait_ms;
+      cmd_map["stat_db"] = &tair_client::do_cmd_stat_db;
+      cmd_map["release_mem"] = &tair_client::do_cmd_release_mem;
+      cmd_map["pause_gc"] = &tair_client::do_cmd_pause_gc;
+      cmd_map["resume_gc"] = &tair_client::do_cmd_resume_gc;
+      cmd_map["set_config"] = &tair_client::do_cmd_set_config;
+      // cmd_map["additems"] = &tair_client::doCmdAddItems;
    }
 
    tair_client::~tair_client()
@@ -406,7 +413,7 @@ namespace tair {
                  "SYNOPSIS   : dump dumpinfo.txt\n"
                  "DESCRIPTION: dumpinfo.txt is a config file of dump,syntax:\n"
                  "area start_time end_time,eg:"
-                 "10 2008-12-09 12:08:07 2008-12-10 12:10:00"
+                 "10 2008-12-09 12:08:07 2008-12-10 12:10:00\n"
             );
       }
 
@@ -493,6 +500,16 @@ namespace tair {
                  "DESCRIPTION: clear the all or some specified by `ds_addr down server in group, namely 'tmp_down_server' in group.conf\n"
                  "\tgroup: groupname to reset\n"
                  "\tds_addr: dataserver to reset\n"
+            );
+      }
+
+      if (cmd == NULL || strcmp(cmd, "set_migrate_wait") == 0) {
+         fprintf(stderr,
+                 "------------------------------------------------\n"
+                 "SYNOPSIS   : set_migrate_wait time_ms [ds_addr]\n"
+                 "DESCRIPTION: set migrate wait  time ms to all or one specified by `ds_addr\n"
+                 "\ttime_ms : time in ms unit\n"
+                 "\tds_addr : specified dataserver address\n"
             );
       }
 
@@ -1032,6 +1049,10 @@ namespace tair {
        fprintf(stderr, "failed with %d: %s\n", ret, client_helper.get_error_msg(ret));
      }
    }
+   void tair_client::do_cmd_set_migrate_wait_ms(VSTRING &param)
+   {
+     do_cmd_op_ds_or_not(param, "set_migrate_wait", TAIR_SERVER_CMD_SET_MIGRATE_WAIT_MS, 1);
+   }
 
    void tair_client::do_cmd_get_hidden(VSTRING &params)
    {
@@ -1318,6 +1339,50 @@ namespace tair {
        fprintf(stderr, "successful\n");
      } else {
        fprintf(stderr, "failed with %d\n", ret);
+     }
+   }
+
+   void tair_client::do_cmd_stat_db(VSTRING &param)
+   {
+     do_cmd_op_ds_or_not(param, "stat_db", TAIR_SERVER_CMD_STAT_DB);
+   }
+
+   void tair_client::do_cmd_release_mem(VSTRING& param)
+   {
+     do_cmd_op_ds_or_not(param, "release_mem", TAIR_SERVER_CMD_RELEASE_MEM);
+   }
+
+   void tair_client::do_cmd_pause_gc(VSTRING& param)
+   {
+     do_cmd_op_ds_or_not(param, "pause_mem", TAIR_SERVER_CMD_PAUSE_GC);
+   }
+
+   void tair_client::do_cmd_resume_gc(VSTRING& param)
+   {
+     do_cmd_op_ds_or_not(param, "resume_mem", TAIR_SERVER_CMD_RESUME_GC);
+   }
+
+   void tair_client::do_cmd_set_config(VSTRING& param)
+   {
+     do_cmd_op_ds_or_not(param, "set_config", TAIR_SERVER_CMD_SET_CONFIG, 2);
+   }
+
+   void tair_client::do_cmd_op_ds_or_not(VSTRING &param, const char* cmd_str, ServerCmdType cmd_type, int base_param_size)
+   {
+     if (static_cast<int>(param.size()) < base_param_size || static_cast<int>(param.size()) > base_param_size + 1) {
+       print_help(cmd_str);
+       return ;
+     }
+     std::vector<std::string> cmd_params;
+     for (int i = 0; i < base_param_size; ++i) {
+       cmd_params.push_back(param[i]);
+     }
+     int ret = client_helper.op_cmd_to_ds(cmd_type, &cmd_params,
+                                          static_cast<int>(param.size()) > base_param_size ? param[base_param_size] : NULL);
+     if (ret != TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "%s fail, ret: %d\n", cmd_str, ret);
+     } else {
+       fprintf(stderr, "%s success.\n", cmd_str);
      }
    }
 

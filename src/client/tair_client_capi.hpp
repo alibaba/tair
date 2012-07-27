@@ -33,6 +33,7 @@ extern "C"
    void tair_set_loglevel(const char* level);
    int tair_begin(tair_handler handler, const char *master_addr,const char *slave_addr, const char *group_name);
    int tair_put(tair_handler handler, int area, tair_data_pair* key, tair_data_pair* data, int expire, int version);
+   int tair_put_with_cache(tair_handler handler, int area, tair_data_pair* key, tair_data_pair* data, int expire, int version, bool fill_cache);
    int tair_get(tair_handler handler, int area, tair_data_pair* key, tair_data_pair* data);
    int tair_remove(tair_handler handler, int area, tair_data_pair* key);
 //int tairRemoveArea(tair_handler handler, int area, int timeout);

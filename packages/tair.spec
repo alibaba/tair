@@ -37,10 +37,10 @@ files for developing applications that use the %name package.
 %setup
 
 %build
-#export TBLIB_ROOT=/opt/csr/common
+export TBLIB_ROOT=/opt/csr/common
 chmod u+x bootstrap.sh
 ./bootstrap.sh
-./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-ldb=yes --with-boost=%BOOST_DIR --with-tcmalloc_minimal
+./configure --prefix=%{_prefix} --with-release=yes --with-kdb=yes --with-ldb=yes --with-boost=%BOOST_DIR --with-tcmalloc
 make %{?_smp_mflags}
 
 %install
@@ -52,12 +52,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %post
 echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
-#echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
+echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
 /sbin/ldconfig
 
 %post devel
 echo %{_prefix}/lib > /etc/ld.so.conf.d/tair-%{VERSION}.conf
-#echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
+echo /opt/csr/common/lib >> /etc/ld.so.conf.d/tair-%{VERSION}.conf
 /sbin/ldconfig
 
 %postun

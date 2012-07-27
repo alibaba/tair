@@ -21,7 +21,7 @@ Arena::~Arena() {
 }
 
 char* Arena::AllocateFallback(size_t bytes) {
-  if (bytes > config::kBlockSize / 4) {
+  if (bytes > config::kArenaBlockSize / 4) {
     // Object is more than a quarter of our block size.  Allocate it separately
     // to avoid wasting too much space in leftover bytes.
     char* result = AllocateNewBlock(bytes);
@@ -29,8 +29,8 @@ char* Arena::AllocateFallback(size_t bytes) {
   }
 
   // We waste the remaining space in the current block.
-  alloc_ptr_ = AllocateNewBlock(config::kBlockSize);
-  alloc_bytes_remaining_ = config::kBlockSize;
+  alloc_ptr_ = AllocateNewBlock(config::kArenaBlockSize);
+  alloc_bytes_remaining_ = config::kArenaBlockSize;
 
   char* result = alloc_ptr_;
   alloc_ptr_ += bytes;
@@ -64,4 +64,4 @@ char* Arena::AllocateNewBlock(size_t block_bytes) {
   return result;
 }
 
-}
+}  // namespace leveldb

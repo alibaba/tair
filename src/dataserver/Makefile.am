@@ -52,6 +52,10 @@ include_HEADERS=item_manager.hpp tair_manager.hpp table_manager.hpp duplicate_ma
 tair_server_SOURCES=duplicate_manager.cpp item_manager.cpp stat_processor.cpp request_processor.cpp tair_manager.cpp update_log.cpp \
 		    heartbeat_thread.cpp migrate_manager.cpp table_manager.cpp tair_server.cpp \
 		    $(top_builddir)/src/common/stat_helper.cpp \
+		    $(top_builddir)/src/common/scoped_wrlock.hpp	\
+		    $(top_builddir)/src/common/BlockQueueEx.hpp \
+		    $(top_builddir)/src/common/blockqueue.hpp   \
+		    $(top_builddir)/src/common/syncproc.hpp   \
 		    base_migrate.hpp	\
 		    base_tair_manager.hpp	\
 		    duplicate_base.hpp	\
@@ -67,5 +71,5 @@ tair_server_SOURCES=duplicate_manager.cpp item_manager.cpp stat_processor.cpp re
 		    tair_server.hpp	\
 		    tinyjson.hpp	\
 		    update_log.hpp \
-				prefix_locker.hpp \
-				stat_processor.h
+		    prefix_locker.hpp \
+		    stat_processor.h

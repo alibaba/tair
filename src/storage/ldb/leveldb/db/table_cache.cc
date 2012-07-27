@@ -4,6 +4,8 @@
 
 #include "db/table_cache.h"
 
+#include "tbsys.h"
+
 #include "db/filename.h"
 #include "leveldb/env.h"
 #include "leveldb/table.h"
@@ -42,6 +44,39 @@ TableCache::~TableCache() {
   delete cache_;
 }
 
+Status TableCache::FindTable(uint64_t file_number, uint64_t file_size,
+                             Cache::Handle** handle) {
+  Status s;
+  char buf[sizeof(file_number)];
+  EncodeFixed64(buf, file_number);
+  Slice key(buf, sizeof(buf));
+  *handle = cache_->Lookup(key);
+  if (*handle == NULL) {
+    std::string fname = TableFileName(dbname_, file_number);
+    RandomAccessFile* file = NULL;
+    Table* table = NULL;
+    s = env_->NewRandomAccessFile(fname, &file);
+    if (s.ok()) {
+      // PROFILER_BEGIN("open sst");
+      s = Table::Open(*options_, file, file_size, &table);
+      // PROFILER_END();
+    }
+
+    if (!s.ok()) {
+      assert(table == NULL);
+      delete file;
+      // We do not cache error results so that if the error is transient,
+      // or somebody repairs the file, we recover automatically.
+    } else {
+      TableAndFile* tf = new TableAndFile;
+      tf->file = file;
+      tf->table = table;
+      *handle = cache_->Insert(key, tf, 1, &DeleteEntry);
+    }
+  }
+  return s;
+}
+
 Iterator* TableCache::NewIterator(const ReadOptions& options,
                                   uint64_t file_number,
                                   uint64_t file_size,
@@ -50,31 +85,10 @@ Iterator* TableCache::NewIterator(const ReadOptions& options,
     *tableptr = NULL;
   }
 
-  char buf[sizeof(file_number)];
-  EncodeFixed64(buf, file_number);
-  Slice key(buf, sizeof(buf));
-  Cache::Handle* handle = cache_->Lookup(key);
-  if (handle == NULL) {
-    std::string fname = TableFileName(dbname_, file_number);
-    RandomAccessFile* file = NULL;
-    Table* table = NULL;
-    Status s = env_->NewRandomAccessFile(fname, &file);
-    if (s.ok()) {
-      s = Table::Open(*options_, file, file_size, &table);
-    }
-
-    if (!s.ok()) {
-      assert(table == NULL);
-      delete file;
-      // We do not cache error results so that if the error is transient,
-      // or somebody repairs the file, we recover automatically.
-      return NewErrorIterator(s);
-    }
-
-    TableAndFile* tf = new TableAndFile;
-    tf->file = file;
-    tf->table = table;
-    handle = cache_->Insert(key, tf, 1, &DeleteEntry);
+  Cache::Handle* handle = NULL;
+  Status s = FindTable(file_number, file_size, &handle);
+  if (!s.ok()) {
+    return NewErrorIterator(s);
   }
 
   Table* table = reinterpret_cast<TableAndFile*>(cache_->Value(handle))->table;
@@ -86,10 +100,28 @@ Iterator* TableCache::NewIterator(const ReadOptions& options,
   return result;
 }
 
+Status TableCache::Get(const ReadOptions& options,
+                       uint64_t file_number,
+                       uint64_t file_size,
+                       const Slice& k,
+                       void* arg,
+                       void (*saver)(void*, const Slice&, const Slice&)) {
+  Cache::Handle* handle = NULL;
+  PROFILER_BEGIN("findtable");
+  Status s = FindTable(file_number, file_size, &handle);
+  PROFILER_END();
+  if (s.ok()) {
+    Table* t = reinterpret_cast<TableAndFile*>(cache_->Value(handle))->table;
+    s = t->InternalGet(options, k, arg, saver);
+    cache_->Release(handle);
+  }
+  return s;
+}
+
 void TableCache::Evict(uint64_t file_number) {
   char buf[sizeof(file_number)];
   EncodeFixed64(buf, file_number);
   cache_->Erase(Slice(buf, sizeof(buf)));
 }
 
-}
+}  // namespace leveldb

@@ -32,6 +32,7 @@ AC_DEFUN([TS_CHECK_TCMALLOC],
     )
 	fi
 
+    AM_CONDITIONAL([WITH_TCMALLOC], [test "x$want_tcmalloc" = "xyes"])
 
     AC_ARG_WITH([tcmalloc_minimal],
         AS_HELP_STRING([--with-tcmalloc_minimal=DIR],

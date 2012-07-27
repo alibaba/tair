@@ -132,8 +132,12 @@ namespace tair {
     log_debug("start put: key:%u,area:%d,value:%u,flag:%d,exp:%u", key_len, KEY_AREA(key), value_len, flag, expired);
 
     uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
+    PROFILER_BEGIN("mdb lock");
     boost::mutex::scoped_lock guard(mem_locker);
+    PROFILER_END();
+    PROFILER_BEGIN("hashmap find");
     mdb_item *it = hashmap->find(key, key_len);
+    PROFILER_END();
 
     uint8_t old_flag = 0;
     if(it != 0)                 //exists
@@ -143,12 +147,16 @@ namespace tair {
         old_flag = TAIR_ITEM_FLAG_DELETED;
       }
       log_debug("already exists,remove it");
+      PROFILER_BEGIN("__remove");
       __remove(it);
+      PROFILER_END();
       it = 0;
     }
 
     int type = KEY_AREA(key);
+    PROFILER_BEGIN("alloc item");
     it = cache->alloc_item(total_size, type);        /* will be successful */
+    PROFILER_END();
     assert(it != 0);
     if (type == ALLOC_EXPIRED || type == ALLOC_EVICT_SELF || type == ALLOC_EVICT_ANY)
     {        /* is evict */
@@ -160,7 +168,9 @@ namespace tair {
         ++(area_stat[ITEM_AREA(it)]->evict_count);
         TAIR_STAT.stat_evict(ITEM_AREA(it));
       }
+      PROFILER_BEGIN("hashmap remove");
       hashmap->remove(it);
+      PROFILER_END();
     }
     /*write data into mdb_item */
     it->key_len = key_len;
@@ -174,8 +184,10 @@ namespace tair {
     memcpy(ITEM_KEY(it), key, it->key_len);
     memcpy(ITEM_DATA(it), value, it->data_len);
 
+    PROFILER_BEGIN("hashmap insert");
     /*insert mdb_item into hashtable */
     hashmap->insert(it);
+    PROFILER_END();
 
     /*update stat */
     area_stat[ITEM_AREA(it)]->data_size += (it->data_len + it->key_len);
@@ -190,7 +202,9 @@ namespace tair {
   {
     TBSYS_LOG(DEBUG, "start get: area:%d,key size:%d", KEY_AREA(key), key_len);
 
+    PROFILER_BEGIN("mdb lock");
     boost::mutex::scoped_lock guard(mem_locker);
+    PROFILER_END();
     mdb_item *it = 0;
     int ret = TAIR_RETURN_DATA_NOT_EXIST;
     bool expired = false;
@@ -200,7 +214,9 @@ namespace tair {
     {
       value.assign(ITEM_DATA(it), it->data_len); // just get value.
 
+      PROFILER_BEGIN("cache update");
       cache->update_item(it);
+      PROFILER_END();
       //++m_stat.hitCount;
       if (update)
       {
@@ -223,7 +239,9 @@ namespace tair {
   int mdb_manager::raw_remove(const char* key, int32_t key_len)
   {
     TBSYS_LOG(DEBUG, "start remove: key size :%d", key_len);
+    PROFILER_BEGIN("mdb lock");
     boost::mutex::scoped_lock guard(mem_locker);
+    PROFILER_END();
     bool ret = raw_remove_if_exists(key, key_len);
     //++m_stat.removeCount;
     ++area_stat[KEY_AREA(key)]->remove_count;
@@ -241,11 +259,15 @@ namespace tair {
 
   bool mdb_manager::raw_remove_if_exists(const char* key, int32_t key_len)
   {
+    PROFILER_BEGIN("hashmap find");
     mdb_item *it = hashmap->find(key, key_len);
+    PROFILER_END();
     bool ret = false;
     if (it != 0)                 // found
     {
+      PROFILER_BEGIN("__remove");
       __remove(it);
+      PROFILER_END();
       ret = true;
     }
     return ret;
@@ -253,14 +275,18 @@ namespace tair {
 
   bool mdb_manager::raw_remove_if_expired(const char* key, int32_t key_len, mdb_item*& item)
   {
+    PROFILER_BEGIN("hashmap find");
     mdb_item *it = hashmap->find(key, key_len);
+    PROFILER_END();
     bool ret = false;
     if(it != 0)
     {
       if(is_item_expired(it, static_cast<uint32_t> (time(NULL))))
       {
         log_debug("this item is expired");
+        PROFILER_BEGIN("__remove");
         __remove(it);
+        PROFILER_END();
         ret = true;
       }
       else
@@ -726,7 +752,7 @@ namespace tair {
   }
   void mdb_manager::close_buckets(const vector<int> &buckets)
   {
-    TBSYS_LOG(INFO,"start close_buckets");
+    log_warn("start close_buckets");
     set<int>__buckets(buckets.begin(), buckets.end());
 
     for(int hash_index = 0; hash_index < hashmap->get_bucket_size();
@@ -817,9 +843,13 @@ namespace tair {
       area_stat[ITEM_AREA(it)]->space_usage = 0;
     }
     --area_stat[ITEM_AREA(it)]->item_count;
+    PROFILER_BEGIN("hashmap remove");
     hashmap->remove(it);
+    PROFILER_END();
     CLEAR_FLAGS(it->item_id);        //clear all flag
+    PROFILER_BEGIN("cache free");
     cache->free_item(it);
+    PROFILER_END();
     //clear
     it->exptime = 0;
     it->data_len = 0;

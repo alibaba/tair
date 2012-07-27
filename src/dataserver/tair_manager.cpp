@@ -555,6 +555,9 @@
       }
       PROFILER_END();
 
+      // for client PUT_CACHE_FLAG etc.
+      int old_flag = key.data_meta.flag;
+
       // save into the storage engine
       bool version_care =  op_flag & TAIR_OPERATION_VERSION;
       PROFILER_BEGIN("put into storage");
@@ -563,14 +566,17 @@
 
       if (rc == TAIR_RETURN_SUCCESS ) {
         key.data_meta = mkey.data_meta;
+        // for duplicate
+        key.data_meta.flag = old_flag;
         if (op_flag & TAIR_OPERATION_DUPLICATE) {
           vector<uint64_t> slaves;
           get_slaves(key.server_flag, bucket_number, slaves);
           if (slaves.empty() == false) {
             PROFILER_BEGIN("do duplicate");
-            if (request)
-              rc = duplicator->duplicate_data(area, &key, &value, expire_time, bucket_number,
-                  slaves, (base_packet *)request, heart_vesion);
+            //duplicator->(area, &key, &value, bucket_number, slaves);
+            if(request)
+              rc=duplicator->duplicate_data(area, &key, &value, expire_time,bucket_number,
+                                            slaves,(base_packet *)request,heart_vesion);
             PROFILER_END();
           }
         }
@@ -580,7 +586,6 @@
           migrate_log->log(SN_PUT, mkey, value, bucket_number);
           PROFILER_END();
         }
-
       }
       TAIR_STAT.stat_put(area);
 
@@ -589,11 +594,13 @@
 
     int tair_manager::direct_put(data_entry &key, data_entry &value)
     {
-      if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
+      if (key.get_size() >= TAIR_MAX_KEY_SIZE_WITH_AREA || key.get_size() < 1) {
+        log_debug("key size invalid : %d", key.get_size());
         return TAIR_RETURN_ITEMSIZE_ERROR;
       }
 
       if (value.get_size() >= TAIR_MAX_DATA_SIZE || value.get_size() < 1) {
+        log_debug("value size invalid : %d", value.get_size());
         return TAIR_RETURN_ITEMSIZE_ERROR;
       }
 
@@ -611,7 +618,7 @@
 
     int tair_manager::direct_remove(data_entry &key)
     {
-      if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
+      if (key.get_size() >= TAIR_MAX_KEY_SIZE_WITH_AREA || key.get_size() < 1) {
         return TAIR_RETURN_ITEMSIZE_ERROR;
       }
       data_entry akey = key;
@@ -696,6 +703,8 @@
       }
 
       tbsys::CThreadGuard guard(&counter_mutex[get_mutex_index(key)]);
+      // reserve client key flag(maybe skip cache flag)
+      int old_flag = key.data_meta.flag;
       // get from storage engine
       PROFILER_BEGIN("get from storage");
       rc = get(area, key, old_value);
@@ -743,6 +752,8 @@
       }
 
       storage_mgr->set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT);
+      // reassign key's meta flag
+      key.data_meta.flag = old_flag;
       log_debug("before put flag: %d", old_value.data_meta.flag);
       PROFILER_BEGIN("save count into storage");
       int result = put(area, key, old_value, expire_time,request,heart_version);
@@ -779,6 +790,32 @@
           TAIR_RETURN_HIDDEN : TAIR_RETURN_SUCCESS;
       }
       //! even if rc==TAIR_RETURN_HIDDEN, 'value' still hold the value
+      return rc;
+    }
+
+    int tair_manager::get_range(int32_t area, data_entry &key_start, data_entry &key_end, int offset, int limit, std::vector<data_entry*> &result)
+    {
+      if (status != STATUS_CAN_WORK) {
+        return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      }
+      if (key_start.get_size() >= TAIR_MAX_KEY_SIZE || key_start.get_size() < 1) {
+        return TAIR_RETURN_ITEMSIZE_ERROR;
+      }
+
+      if (area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+        return TAIR_RETURN_INVALID_ARGUMENT;
+      }
+
+      int bucket_number = get_bucket_number(key_start);
+
+      key_start.merge_area(area);
+      key_end.merge_area(area);
+
+      PROFILER_BEGIN("get range from storage engine");
+      int rc = storage_mgr->get_range(bucket_number, key_start, key_end, offset, limit, result);
+      PROFILER_END();
+
+      //TAIR_STAT.stat_get_range(area, rc);
       return rc;
     }
 
@@ -1002,16 +1039,23 @@
       return storage_mgr->clear(area);
     }
 
+   int tair_manager::op_cmd(ServerCmdType cmd, std::vector<std::string>& params)
+   {
+      if (status != STATUS_CAN_WORK) {
+         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      }
+      return storage_mgr->op_cmd(cmd, params);
+   }
+
 #ifndef NOT_FIXED_ITEM_FUNC
 #define  NOT_FIXED_ITEM_FUNC return TAIR_RETURN_SERVER_CAN_NOT_WORK;
 #endif
 
-
-    int tair_manager::add_items(int area,
-        data_entry& key,
-        data_entry& value,
-        int max_count, int expire_time/* = 0*/)
-    {
+   int tair_manager::add_items(int area,
+                               data_entry& key,
+                               data_entry& value,
+                               int max_count, int expire_time/* = 0*/)
+   {
       if (status != STATUS_CAN_WORK) {
         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
@@ -1273,7 +1317,7 @@
 
       tbsys::CThreadGuard update_table_guard(&update_server_table_mutex);
 
-      log_debug("updateServerTable, size: %d", server_table_size);
+      log_warn("updateServerTable, size: %d", server_table_size);
       table_mgr->do_update_table(server_table, server_table_size, server_table_version, copy_count, bucket_count);
       duplicator->set_max_queue_size(10 * ((table_mgr->get_copy_count() - 1) * 3 * 3 + 1));
       storage_mgr->set_bucket_count(table_mgr->get_bucket_count());

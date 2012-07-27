@@ -63,9 +63,9 @@ inline uint32_t DecodeFixed32(const char* ptr) {
     return result;
   } else {
     return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0])))
-            | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 8)
-            | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 16)
-            | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3])) << 24));
+        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 8)
+        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 16)
+        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3])) << 24));
   }
 }
 
@@ -99,6 +99,6 @@ inline const char* GetVarint32Ptr(const char* p,
   return GetVarint32PtrFallback(p, limit, value);
 }
 
-}
+}  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_UTIL_CODING_H_

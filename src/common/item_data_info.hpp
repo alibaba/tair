@@ -23,7 +23,7 @@ namespace tair {
       uint16_t checksum;
       uint16_t keysize; // key size max: 64KB
       uint16_t version;
-      uint32_t padsize; // padding size: 64KB
+      uint32_t prefixsize; // prefix size 
       uint32_t valsize : 24; // value size
       uint8_t flag; // for extends
       uint32_t cdate; // item create time
@@ -37,7 +37,7 @@ namespace tair {
          output->writeInt16(checksum);
          output->writeInt16(keysize);
          output->writeInt16(version);
-         output->writeInt32(padsize);
+         output->writeInt32(prefixsize);
          output->writeInt32(valsize);
          output->writeInt8(flag);
          output->writeInt32(cdate);
@@ -51,7 +51,7 @@ namespace tair {
          checksum = input->readInt16();
          keysize = input->readInt16();
          version = input->readInt16();
-         padsize = input->readInt32();
+         prefixsize = input->readInt32();
          valsize = input->readInt32() & 0xFFFFFF;
          flag = input->readInt8();
          cdate = input->readInt32();
@@ -68,7 +68,7 @@ namespace tair {
 
       void log_self()
       {
-         log_debug("meta info of data: keysize[%d], valsize[%d], padsize[%d], version[%d], flag[%d], cdate[%d], mdate[%d], edate[%d]", keysize, valsize, padsize, version, flag, cdate, mdate, edate);
+         log_debug("meta info of data: keysize[%d], valsize[%d], prefixsize[%d], version[%d], flag[%d], cdate[%d], mdate[%d], edate[%d]", keysize, valsize, prefixsize, version, flag, cdate, mdate, edate);
       }
    } item_meta_info;
 

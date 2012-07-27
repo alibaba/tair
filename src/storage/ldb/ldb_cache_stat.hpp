@@ -32,6 +32,14 @@ namespace tair
       typedef tair::mdb_area_stat cache_stat;
       class tair::common::FileOperation;
 
+#define SET_LDB_STAT_BLOOM_GET_COUNT(stat, get_count) (stat)->space_usage |= static_cast<uint64_t>(get_count) << 38
+#define SET_LDB_STAT_BLOOM_MISS_COUNT(stat, miss_count) (stat)->quota |= static_cast<uint64_t>(miss_count) << 38
+#define GET_LDB_STAT_BLOOM_GET_COUNT(stat) (static_cast<uint64_t>((stat)->space_usage) >> 38)
+#define GET_LDB_STAT_BLOOM_MISS_COUNT(stat) (static_cast<uint64_t>((stat)->quota) >> 38)
+#define GET_LDB_STAT_CACHE_SPACE_USAGE(stat) ((stat)->space_usage & 0x3FFFFFFFFF)
+#define GET_LDB_STAT_CACHE_QUOTA(stat) ((stat)->quota & 0x3FFFFFFFFF)
+
+
       // cache stat dump filter.
       // only check time here
       struct StatDumpFilter
@@ -84,11 +92,11 @@ namespace tair
 
         inline bool stat_valid(const cache_stat* stat)
         {
-          return stat->data_size > 0;
+          return stat->space_usage != 0;
         }
         inline bool sentinel_valid(const cache_stat* stat)
         {
-          return stat->space_usage > 0; // not check data_size
+          return GET_LDB_STAT_CACHE_SPACE_USAGE(stat) > 0; // not check data_size
         }
         // sentinel tair_stat here, data_size is 0, space_usage as time
         inline void set_sentinel_stat(cache_stat* stat)
@@ -98,7 +106,7 @@ namespace tair
         }
         inline bool is_sentinel(const cache_stat* stat)
         {
-          return stat->data_size == 0;
+          return stat->data_size == 0 && GET_LDB_STAT_CACHE_SPACE_USAGE(stat) > 0;
         }
         inline void set_area(cache_stat* stat, int32_t area)
         {

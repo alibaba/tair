@@ -61,6 +61,8 @@ const int ITEM_HEAD_LENGTH = 2;
           return TAIR_RETURN_NOT_SUPPORTED;
       }
 
+      virtual int get_range(int bucket_number,data_entry & key_start,data_entry & key_end, int offset, int limit, std::vector<data_entry*> &result){return TAIR_RETURN_NOT_SUPPORTED;}
+
       virtual int clear(int area) = 0;
 
       virtual bool init_buckets(const std::vector<int> &buckets) = 0;
@@ -100,7 +102,9 @@ const int ITEM_HEAD_LENGTH = 2;
         meta &= ~flag;
       }
 
-      void set_bucket_count(uint32_t bucket_count)
+      virtual int op_cmd(ServerCmdType cmd, std::vector<std::string>& params) { return TAIR_RETURN_NOT_SUPPORTED; }
+
+      virtual void set_bucket_count(uint32_t bucket_count)
       {
         if(this->bucket_count != 0)
           return;                //can not rest bucket count

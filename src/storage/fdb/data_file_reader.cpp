@@ -64,7 +64,7 @@ namespace tair {
           key_size = header->keysize;
           assert(key_size > 2);
           value_size = header->valsize;
-          pad_size = header->padsize;
+          pad_size = header->prefixsize;
           is_free = (uint8_t) (header->flag);
           uint32_t total_size =
             ITEM_HEADER_LEN + key_size + value_size + pad_size;

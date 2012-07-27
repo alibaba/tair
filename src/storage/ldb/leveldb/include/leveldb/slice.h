@@ -27,8 +27,8 @@ class Slice {
   // Create an empty slice.
   Slice() : data_(""), size_(0) { }
 
-  // Create a slice that refers to data[0,n-1].
-  Slice(const char* data, size_t n) : data_(data), size_(n) { }
+  // Create a slice that refers to d[0,n-1].
+  Slice(const char* d, size_t n) : data_(d), size_(n) { }
 
   // Create a slice that refers to the contents of "s"
   Slice(const std::string& s) : data_(s.data()), size_(s.size()) { }
@@ -103,7 +103,7 @@ inline int Slice::compare(const Slice& b) const {
   return r;
 }
 
-}
+}  // namespace leveldb
 
 
 #endif  // STORAGE_LEVELDB_INCLUDE_SLICE_H_

@@ -387,6 +387,83 @@ namespace tair {
       return rc;
     }
 
+   int request_processor::process(request_get_range *request, bool &send_return)
+   {
+      if (tair_mgr->is_working() == false) {
+         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      }
+ 
+      int rc = TAIR_RETURN_FAILED;
+      plugin::plugins_root* plugin_root = NULL;
+      uint64_t target_server_id = 0;
+      send_return = true;
+ 
+      PROFILER_START("get_range operation start");
+      request->key_start.server_flag = request->server_flag;
+      request->key_end.server_flag = request->server_flag;
+
+      if (tair_mgr->should_proxy(request->key_start, target_server_id))
+      {
+         base_packet *proxy_packet = new request_get_range(*(request_get_range*)request);
+         rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+         return rc;
+      }
+
+      PROFILER_BEGIN("do request plugin");
+      int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                        TAIR_REQ_GET_RANGE_PACKET, request->area, &request->key_start, &request->key_end, plugin_root);
+      PROFILER_END();
+      if (plugin_ret < 0) {
+         log_error("plugin return %d, skip excute", plugin_ret);
+         rc = TAIR_RETURN_PLUGIN_ERROR;
+      }else {
+         PROFILER_BEGIN("do get_range");
+         std::vector<data_entry*> result;
+
+         rc = tair_mgr->get_range(request->area, request->key_start, request->key_end, request->offset ,request->limit, result);
+         PROFILER_END();
+
+         response_get_range *resp = new response_get_range();
+         resp->config_version = heart_beat->get_client_version();
+         resp->setChannelId(request->getChannelId());
+         resp->set_code(rc); 
+         int size = result.size();
+         if (request->limit != (unsigned)(size/2))
+            resp->set_hasnext(true);
+         else
+            resp->set_hasnext(false);
+         if (size == 0){
+            log_info("no data return from get_range rc:%d, key", rc, request->key_start.get_data()+4);
+         } else {
+            for (int i = 0; i < size; i+=2){
+              resp->set_cmd(request->cmd);
+              switch (request->cmd) {
+              case CMD_RANGE_ALL : 
+                 resp->add_key_data(result[i], result[i+1]);
+                 break;
+              case CMD_RANGE_KEY_ONLY : 
+                 resp->add_key_data(result[i], NULL);
+                 break;
+              case CMD_RANGE_VALUE_ONLY : 
+                 resp->add_key_data(result[i+1], NULL);
+                 break;
+              default: 
+                 log_warn("unknow range command, cmd: %d", request->cmd);
+                 return TAIR_RETURN_INVALID_ARGUMENT ;
+              }
+            }
+         }
+         if(request->get_connection()->postPacket(resp) == false) {
+            delete resp;
+            resp = 0;
+         }
+         send_return = false;
+      }
+      PROFILER_END();
+
+      return rc;
+   }
+
    int request_processor::process(request_remove *request, bool &send_return)
    {
       if (tair_mgr->is_working() == false) {
@@ -1238,6 +1315,16 @@ namespace tair {
 
      send_return = false;
      return rc;
+   }
+
+   int request_processor::process(request_op_cmd *request, bool &send_return)
+   {
+     if (tair_mgr->is_working() == false) {
+       return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+     }
+
+     send_return = true;
+     return tair_mgr->op_cmd(request->cmd, request->params);
    }
 
    bool request_processor::do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet)

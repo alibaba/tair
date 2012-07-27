@@ -278,6 +278,12 @@ namespace tair {
              send_return = false;
              break;
          }
+         case TAIR_REQ_GET_RANGE_PACKET:
+         {
+            request_get_range *npacket = (request_get_range*)packet;
+            ret = req_processor->process(npacket, send_return);
+            break;
+         }
          case TAIR_REQ_REMOVE_PACKET:
          {
             request_remove *npacket = (request_remove*)packet;
@@ -448,6 +454,12 @@ namespace tair {
            ret = req_processor->process(ipacket, send_return);
            break;
          }
+         case TAIR_REQ_OP_CMD_PACKET:
+         {
+            request_op_cmd *opacket = (request_op_cmd*)(packet);
+            ret = req_processor->process(opacket,send_return);
+            break;
+         }
          default:
          {
             ret = EXIT_FAILURE;
@@ -457,10 +469,10 @@ namespace tair {
 
       bool success = true;
       if (ret == TAIR_RETURN_PROXYED) {
-         //||TAIR_DUP_WAIT_RSP==ret || TAIR_RETURN_DUPLICATE_BUSY== ret)
-         // request is proxyed
-         //or wait dup_response,don't rsp to client unlit dup_rsp arrive or timeout.
-         success = false;
+        //||TAIR_DUP_WAIT_RSP==ret || TAIR_RETURN_DUPLICATE_BUSY== ret)
+        // request is proxyed
+        //or wait dup_response,don't rsp to client unlit dup_rsp arrive or timeout.
+        success = false;
 
       } else if (TAIR_DUP_WAIT_RSP==ret) {
          send_return =false;
@@ -601,6 +613,7 @@ void sign_handler(int sig)
          if (tair_server != NULL){
            tair_server->get_tair_manager()->clear(-3);
          }
+         break;
       default:
          log_error("sig: %d", sig);
    }
@@ -633,11 +646,11 @@ char *parse_cmd_line(int argc, char *const argv[])
             config_file = optarg;
             break;
          case 'V':
-            fprintf(stderr, "BUILD_TIME: %s %s\n", __DATE__, __TIME__);
+           fprintf(stderr, "BUILD_TIME: %s %s\nSVN: %s\n", __DATE__, __TIME__, TAIR_SVN_INFO);
             return NULL;
          case 'h':
-            print_usage(argv[0]);
-            return NULL;
+           print_usage(argv[0]);
+           return NULL;
       }
    }
    return config_file;
@@ -738,7 +751,8 @@ int main(int argc, char *argv[])
       signal(42, sign_handler);
       signal(43, sign_handler); // for switch profiler enable/disable status
       signal(44, sign_handler); // remove expired item
-      signal(45, sign_handler); // remove all item
+      signal(45, sign_handler); // balance
+      signal(46, sign_handler); // remove all item
 
       log_error("profiler disabled by default, threshold has been set to %d", profiler_threshold);
 

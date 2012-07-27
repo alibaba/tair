@@ -23,6 +23,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <algorithm>
 #include "hash.hpp"
 #include "define.hpp"
 #include "log.hpp"
@@ -111,6 +114,54 @@ namespace tair
          }
 
       };
+
+     class time_util {
+     public:
+       static int get_time_range(const char* str, int32_t& min, int32_t& max)
+         {
+           bool ret = str != NULL;
+
+           if (ret)
+           {
+             int32_t tmp_min = 0, tmp_max = 0;
+             char buf[32];
+             char* max_p = strncpy(buf, str, sizeof(buf));
+             char* min_p = strsep(&max_p, "-~");
+
+             if (min_p != NULL && min_p[0] != '\0')
+             {
+               tmp_min = atoi(min_p);
+             }
+             if (max_p != NULL && max_p[0] != '\0')
+             {
+               tmp_max = atoi(max_p);
+             }
+
+             if ((ret = tmp_min >= 0 && tmp_max >= 0))
+             {
+               min = tmp_min;
+               max = tmp_max;
+             }
+           }
+
+           return ret;
+         }
+
+       static bool is_in_range(int32_t min, int32_t max)
+         {
+           time_t t = time(NULL);
+           struct tm *tm = localtime((const time_t*) &t);
+           bool reverse = false;
+           if (min > max)
+           {
+             std::swap(min, max);
+             reverse = true;
+           }
+           bool in_range = tm->tm_hour >= min && tm->tm_hour <= max;
+           return reverse ? !in_range : in_range;
+         }
+
+     };
 
       class local_server_ip {
       public:

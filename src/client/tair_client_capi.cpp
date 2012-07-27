@@ -48,6 +48,11 @@ int tair_begin(tair_handler handler, const char *master_addr,const char *slave_a
 
 int tair_put(tair_handler handler, int area, tair_data_pair* key, tair_data_pair* data, int expire, int version)
 {
+  return tair_put_with_cache(handler, area, key, data, expire, version, true);
+}
+
+int tair_put_with_cache(tair_handler handler, int area, tair_data_pair* key, tair_data_pair* data, int expire, int version, bool fill_cache)
+{
    if ( handler == 0 )
       return EXIT_FAILURE;
 
@@ -55,7 +60,7 @@ int tair_put(tair_handler handler, int area, tair_data_pair* key, tair_data_pair
    data_entry _data(data->data, data->len, true);
 
    tair_client_api* tc = (tair_client_api*)handler;
-   return tc->put(area, _key, _data, expire, version);
+   return tc->put(area, _key, _data, expire, version, fill_cache);
 }
 
 int tair_get(tair_handler handler, int area, tair_data_pair* key, tair_data_pair* data)

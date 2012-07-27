@@ -111,7 +111,7 @@ namespace tair
         // *key is a run of 0xffs.  Leave it alone.
       }
 
-      bool LdbComparatorImpl::ShouldDrop(const char* key, int64_t sequence, uint32_t now) const
+      bool LdbComparatorImpl::ShouldDrop(const char* key, int64_t sequence, uint32_t will_gc) const
       {
         // Epired items can't drop only if it is the only key update here,
         // it should be check in ShouldDropMaybe(). eg:
@@ -120,8 +120,7 @@ namespace tair
         //  We can drop this key (a => c) only if (a => b) has droped(compacted by same entry).
         //  Gc factory's check depends on no condition here, because every items will be checked
         //  by gc.
-        UNUSED(now);
-        assert(key != NULL);
+
         // key format
         //     expired_time  fixed32
         //     bucket_number 3bytes
@@ -129,23 +128,28 @@ namespace tair
         //     user_key      ...
 
         bool drop = false;
-        const char* pkey = key;
-        pkey += LDB_EXPIRED_TIME_SIZE;
-
-        // To decode as later as possible, check empty and check need_gc separately, so need lock here.
-        tbsys::CThreadGuard guard(&gc_->lock_);
-        if (!gc_->gc_buckets_.empty()) // 1. check if bucket is valid. can not use empty(GC_BUCKET)
+        // this test will NOT gc this key or
+        // will gc and gc_factory allow gc,
+        // then we will do the test
+        if (0 == will_gc || (0 != will_gc && gc_->can_gc_))
         {
-          drop = gc_->need_gc(LdbKey::decode_bucket_number(pkey), sequence, gc_->gc_buckets_);
-          // fprintf(stderr, "drop bucket: %d %lu %s\n", LdbKey::decode_bucket_number(pkey), sequence, pkey + 5);
-        }
-        if (!drop && !gc_->gc_areas_.empty()) // 2. check if area is valid
-        {
-          // area decode, consensus with data_entry
-          drop = gc_->need_gc(LdbKey::decode_area(pkey + LDB_KEY_BUCKET_NUM_SIZE), sequence, gc_->gc_areas_);
-          // fprintf(stderr, "drop %d area: %d\n", drop, LdbKey::decode_area(pkey + LDB_KEY_BUCKET_NUM_SIZE));
-        }
+          const char* pkey = key;
+          pkey += LDB_EXPIRED_TIME_SIZE;
 
+          // To decode as later as possible, check empty and check need_gc separately, so need lock here.
+          tbsys::CRLockGuard guard(gc_->lock_);
+          if (!gc_->gc_buckets_.empty()) // 1. check if bucket is valid. can not use empty(GC_BUCKET)
+          {
+            drop = gc_->need_gc(LdbKey::decode_bucket_number(pkey), sequence, gc_->gc_buckets_);
+            // fprintf(stderr, "drop bucket: %d %lu %s\n", LdbKey::decode_bucket_number(pkey), sequence, pkey + 5);
+          }
+          if (!drop && !gc_->gc_areas_.empty()) // 2. check if area is valid
+          {
+            // area decode, consensus with data_entry
+            drop = gc_->need_gc(LdbKey::decode_area(pkey + LDB_KEY_BUCKET_NUM_SIZE), sequence, gc_->gc_areas_);
+            // fprintf(stderr, "drop %d area: %d\n", drop, LdbKey::decode_area(pkey + LDB_KEY_BUCKET_NUM_SIZE));
+          }
+        }
         return drop;
       }
 

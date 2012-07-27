@@ -93,6 +93,7 @@ namespace tair {
        * @param data     data
        * @param expire   expire time,realtive time
        * @param version  version,if you don't care the version,set it to 0
+       * @param fill_cache whether fill cache when put(only meaningful when server support embedded cache).
        *
        * @return 0 -- success, otherwise fail,you can use get_error_msg(ret) to get more information.
        */
@@ -100,7 +101,8 @@ namespace tair {
           const data_entry &key,
           const data_entry &data,
           int expire,
-          int version);
+          int version,
+          bool fill_cache = true);
 
       /**
        * @brief get data from tair cluster

@@ -165,6 +165,10 @@ namespace tair{
       delete pNode; pNode = NULL;
       return 0;
     }
+    else
+    {
+	    log_error("clear_waitnode node but not found,packet=%d",max_packet_id);
+    }
     return 0;
   }
 

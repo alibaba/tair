@@ -167,8 +167,8 @@ void DBIter::FindNextUserEntry(bool skipping, std::string* skip) {
           skipping = true;
           break;
         case kTypeValue:
-          if ((skipping &&
-               user_comparator_->Compare(ikey.user_key, *skip) <= 0)) {
+          if (skipping &&
+              user_comparator_->Compare(ikey.user_key, *skip) <= 0) {
             // Entry hidden
           } else if (user_comparator_->ShouldDrop(ikey.user_key.data(), ikey.sequence) ||
                      user_comparator_->ShouldDropMaybe(ikey.user_key.data(), ikey.sequence)) {
@@ -301,4 +301,4 @@ Iterator* NewDBIterator(
   return new DBIter(dbname, env, user_key_comparator, internal_iter, sequence);
 }
 
-}
+}  // namespace leveldb

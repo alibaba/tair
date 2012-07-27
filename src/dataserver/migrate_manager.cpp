@@ -158,7 +158,7 @@ namespace tair {
       bucket_server_map_it  it = temp_servers.begin();
       for(; it != temp_servers.end() && !is_stopped; it++){
          int bucket_number = it->first;
-         log_warn("begin migrate bucket: %d", bucket_number);
+         log_error("begin migrate bucket: %d", bucket_number);
          vector<uint64_t> servers = it->second;
          if(servers.empty()){
             current_locked_bucket = bucket_number;
@@ -174,7 +174,7 @@ namespace tair {
             log_debug("----to server:%s",  tbsys::CNetUtil::addrToString(servers[i]).c_str());
          }
          do_migrate_one_bucket(bucket_number, servers);
-         log_warn("finish %d bucket migrate",  bucket_number);
+         log_error("finish %d bucket migrate",  bucket_number);
       }
    }
 
@@ -264,6 +264,8 @@ namespace tair {
             } else {
                response_return *rpacket = (response_return *)tpacket;
                if (rpacket->get_code() != TAIR_RETURN_SUCCESS) {
+                 log_error("migrate not return success, server: %s, ret: %d", tbsys::CNetUtil::addrToString(server_id).c_str(), rpacket->get_code());
+                 ::usleep(500);
                   ret = false;
                }
             }
@@ -298,15 +300,21 @@ namespace tair {
       bool have_item = storage_mgr->get_next_items(info, items);
       request_mupdate *packet = new request_mupdate();
       packet->server_flag = TAIR_SERVERFLAG_MIGRATE;
+      uint64_t total_count = 0;
 
       while(true) {
          if (!items.empty()) {
+            total_count += items.size();
             tag = true;
             for(vector<item_data_info *>::iterator itor = items.begin(); itor != items.end(); itor++) {
                item_data_info *item = *itor;
                data_entry key(item->m_data, item->header.keysize, false);
                key.data_meta = item->header;
+               // skip embedded cache when migrating
+               key.data_meta.flag = TAIR_CLIENT_PUT_SKIP_CACHE_FLAG;
                key.has_merged = true;
+               if (item->header.magic == MAGIC_ITEM_META_LDB_PREFIX)
+                  key.set_prefix_size(item->header.prefixsize); 
                data_entry value(item->m_data + item->header.keysize, item->header.valsize, false);
                value.data_meta = item->header;
                bool is_succuss = packet->add_put_key_data(key, value);
@@ -327,7 +335,8 @@ namespace tair {
          }
 
          if(flag == false){
-            break;
+           log_error("send migrate packet fail. bucket: %d", db_id);
+           break;
          }
          if (have_item) {
             have_item = storage_mgr->get_next_items(info, items);
@@ -342,6 +351,7 @@ namespace tair {
       delete packet;
       packet = NULL;
       storage_mgr->end_scan(info);
+      log_warn("migrate bucket db data end. total count: %d, all_done: %d, send suc: %d", total_count, !have_item, flag);
       return flag;
    }
 
@@ -364,6 +374,8 @@ namespace tair {
          log_debug("logis:%S", key.get_data());
          data_entry value;
          if (log_entry->operation_type == (uint8_t)SN_PUT) {
+            // skip embedded cache when migrating
+            key.data_meta.flag = TAIR_CLIENT_PUT_SKIP_CACHE_FLAG;
             value = log_entry->value;
             value.data_meta = log_entry->header;
             is_succuss = packet->add_put_key_data(key, value);

@@ -24,7 +24,6 @@
 #include "ldb_gc_factory.hpp"
 #include "bg_task.hpp"
 #include "stat_manager.hpp"
-#include "ldb_cache_stat.hpp"
 
 namespace tair
 {
@@ -38,7 +37,7 @@ namespace tair
       {
       public:
         LdbInstance();
-        explicit LdbInstance(int32_t index, bool db_version_care, storage_manager* cache, bool put_fill_cache);
+        explicit LdbInstance(int32_t index, bool db_version_care, storage_manager* cache);
         ~LdbInstance();
 
         typedef __gnu_cxx::hash_map<int32_t, stat_manager*> STAT_MANAGER_MAP;
@@ -55,10 +54,17 @@ namespace tair
         int get(int bucket_number, tair::common::data_entry& key, tair::common::data_entry& value);
         int remove(int bucket_number, tair::common::data_entry& key, bool version_care);
 
+        int get_range(int bucket_number, tair::common::data_entry& key, tair::common::data_entry& end_key, int offset, int limit, std::vector<tair::common::data_entry*>& result);
+
+        int op_cmd(ServerCmdType cmd, std::vector<std::string>& params);
+
         bool begin_scan(int bucket_number);
         bool end_scan();
         bool get_next_items(std::vector<item_data_info*>& list);
         void get_stats(tair_stat* stat);
+
+        int stat_db();
+        int set_config(std::vector<std::string>& params);
 
         int clear_area(int32_t area);
         bool exist(int32_t bucket_number);
@@ -71,15 +77,18 @@ namespace tair
         // use inner leveldb/gc_factory when compact
         leveldb::DB* db() { return db_; }
         LdbGcFactory* gc_factory() { return &gc_; }
+        BgTask* bg_task() { return &bg_task_;}
 
       private:
-        int do_get(LdbKey& ldb_key, std::string& value, bool fill_cache, bool update_stat = true);
-        int do_put(LdbKey& ldb_key, LdbItem& ldb_item);
+        int do_cache_get(LdbKey& ldb_key, std::string& value, bool update_stat);
+        int do_get(LdbKey& ldb_key, std::string& value, bool from_cache, bool fill_cache, bool update_stat = true);
+        int do_put(LdbKey& ldb_key, LdbItem& ldb_item, bool fill_cache);
         int do_remove(LdbKey& ldb_key);
+        void add_prefix(LdbKey& ldb_key, int prefix_size);
 
         bool init_db();
         void stop();
-        void sanitize_option(leveldb::Options& options);
+        void sanitize_option();
         tbsys::CThreadMutex* get_mutex(const tair::common::data_entry& key);
 
       private:
@@ -90,7 +99,8 @@ namespace tair
         // so this flag control whether we really must do it.
         // (statistics data may not be exact, as it is always.)
         bool db_version_care_;
-        // write and read option to leveldb
+        // init and write and read option to leveldb
+        leveldb::Options options_;
         leveldb::WriteOptions write_options_;
         leveldb::ReadOptions read_options_;
         // lock to protect cache. cause leveldb and mdb has its own lock,
@@ -101,14 +111,11 @@ namespace tair
         leveldb::DB* db_;
         // mdb cache
         mdb_manager* cache_;
-        // cache stat
-        CacheStat cache_stat_;
-        // whether fill cache put data
-        bool put_fill_cache_;
 
         // for scan, MUST single-bucket everytime
         leveldb::Iterator* scan_it_;
-        std::string scan_end_key_;
+        // the bucket migrating
+        int scan_bucket_;
         bool still_have_;
 
         // statatics manager

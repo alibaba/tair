@@ -23,6 +23,29 @@ namespace tair
   {
     namespace ldb
     {
+      void ldb_key_printer(const leveldb::Slice& key, std::string& output)
+      {
+        // we only care bucket number, area and first byte of key now
+        if (key.size() < LDB_KEY_META_SIZE + LDB_KEY_AREA_SIZE + 1)
+        {
+          log_error("invalid ldb key. igore print");
+          output.append("DiRtY");
+        }
+        else
+        {
+          char buf[32];
+          int32_t skip = 0;
+          // bucket number
+          skip += snprintf(buf + skip, sizeof(buf) - skip, "%d",
+                          LdbKey::decode_bucket_number(key.data() + LDB_EXPIRED_TIME_SIZE));
+          // area
+          skip += snprintf(buf + skip, sizeof(buf) - skip, "-%d", LdbKey::decode_area(key.data() + LDB_KEY_META_SIZE));
+          // first byte of key
+          skip += snprintf(buf + skip, sizeof(buf) - skip, "-0x%X", *(key.data() + LDB_KEY_META_SIZE + LDB_KEY_AREA_SIZE));
+          output.append(buf);
+        }
+      }
+
       bool get_db_stat(leveldb::DB* db, std::string& value, const char* property)
       {
         bool ret = db != NULL && property != NULL;
@@ -35,7 +58,7 @@ namespace tair
           snprintf(name, sizeof(name), "leveldb.%s", property);
           std::string stat_value;
 
-          if (!(ret = db->GetProperty(leveldb::Slice(std::string(name)), &stat_value)))
+          if (!(ret = db->GetProperty(leveldb::Slice(std::string(name)), &stat_value, ldb_key_printer)))
           {
             log_error("get db stats fail");
           }

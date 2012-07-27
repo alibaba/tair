@@ -134,7 +134,6 @@ namespace tair {
                data_entry *key = new data_entry();
                key->decode(input);
                log_debug("decodekey is %d", key->has_merged);
-
                oprec->key = key;
                if (oprec->operation_type == 1) {
                   data_entry *value = new data_entry();

@@ -256,11 +256,11 @@ std::string VersionEdit::DebugString() const {
     AppendNumberTo(&r, f.file_size);
     r.append(" ");
     r.append(f.smallest.DebugString());
-    r.append(" ");
+    r.append(" .. ");
     r.append(f.largest.DebugString());
   }
   r.append("\n}\n");
   return r;
 }
 
-}
+}  // namespace leveldb

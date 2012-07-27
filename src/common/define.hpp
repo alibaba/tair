@@ -64,6 +64,7 @@
 #define TAIR_SLEEP(stop, interval) ({int count=interval*5; while(count-->0 && !stop) usleep(200000);})
 
 #define TAIR_MAX_KEY_SIZE            1024
+#define TAIR_MAX_KEY_SIZE_WITH_AREA  1026
 #define TAIR_MAX_DATA_SIZE           1000000
 #define TAIR_MAX_AREA_COUNT          1024
 #define TAIR_MAX_DUP_MAP_SIZE        102400
@@ -84,6 +85,13 @@
 //for data duplicate
 #define MISECONDS_BEFOR_SEND_RETRY  (1000000)
 #define SLEEP_MISECONDS             (10)
+//for prefix
+#define PREFIX_KEY_OFFSET 	        (22)
+#define PREFIX_KEY_MASK 		        (0x3FFFFF)
+#define MAGIC_ITEM_META_LDB_PREFIX  (0x0101)
+//hasnext flag for getrange
+#define FLAG_HASNEXT                (0x01)
+#define FLAG_HASNEXT_MASK           (0xFFFE)
 //////////////////////////////////////////////
 #define TAIRPUBLIC_SECTION           "public"
 #define TAIRSERVER_SECTION           "tairserver"
@@ -168,9 +176,10 @@
 #define LDB_COMPACT_RANGE               "ldb_compact_range"
 #define LDB_CHECK_COMPACT_INTERVAL      "ldb_check_compact_interval"
 #define LDB_USE_CACHE                   "ldb_use_cache"
-#define LDB_PUT_FILL_CACHE              "ldb_put_fill_cache"
 #define LDB_MIGRATE_BATCH_COUNT         "ldb_migrate_batch_count"
 #define LDB_MIGRATE_BATCH_SIZE          "ldb_migrate_batch_size"
+#define LDB_USE_BLOOMFILTER             "ldb_use_bloomfilter"
+#define LDB_USE_MMAP_RANDOM_ACCESS      "ldb_use_mmap_random_access"
 
 #define LDB_PARANOID_CHECK              "ldb_paranoid_check"
 #define LDB_MAX_OPEN_FILES              "ldb_max_open_files"
@@ -178,6 +187,8 @@
 #define LDB_TARGET_FILE_SIZE            "ldb_target_file_size"
 #define LDB_BLOCK_SIZE                  "ldb_block_size"
 #define LDB_BLOCK_RESTART_INTERVAL      "ldb_block_restart_interval"
+#define LDB_BLOCK_CACHE_SIZE            "ldb_block_cache_size"
+#define LDB_ARENABLOCK_SIZE             "ldb_arenablock_size"
 #define LDB_COMPRESSION                 "ldb_compression"
 #define LDB_L0_COMPACTION_TRIGGER       "ldb_l0_compaction_trigger"
 #define LDB_L0_SLOWDOWN_WRITE_TRIGGER   "ldb_l0_slowdown_write_trigger"
@@ -186,6 +197,16 @@
 #define LDB_BASE_LEVEL_SIZE             "ldb_base_level_size"
 #define LDB_READ_VERIFY_CHECKSUMS       "ldb_read_verify_checksums"
 #define LDB_WRITE_SYNC                  "ldb_write_sync"
+#define LDB_BLOOMFILTER_BITS_PER_KEY    "ldb_bloomfilter_bits_per_key"
+#define LDB_FILTER_BASE_LOGARITHM       "ldb_filter_base_logarithm"
+#define LDB_RANGE_MAX_SIZE              "ldb_range_max_size"
+#define LDB_RANGE_MAX_LIMIT             "ldb_range_max_limit"
+#define LDB_LIMIT_COMPACT_LEVEL_COUNT   "ldb_limit_compact_level_count"
+#define LDB_LIMIT_COMPACT_COUNT_INTERVAL "ldb_limit_compact_count_interval"
+#define LDB_LIMIT_COMPACT_TIME_INTERVAL "ldb_limit_compact_time_interval"
+#define LDB_LIMIT_COMPACT_TIME_RANGE    "ldb_limit_compact_time_range"
+#define LDB_LIMIT_DELETE_OBSOLETE_FILE_INTERVAL      "ldb_limit_delete_obsolete_file_interval"
+#define LDB_DO_SEEK_COMPACTION          "ldb_do_seek_compaction"
 
 // file storage engine config items
 #define FDB_INDEX_MMAP_SIZE             "index_mmap_size"
@@ -261,11 +282,20 @@ enum {
    TAIR_ITEM_FLAG_SET,
 };
 
+// 'cause key's data_entry.data_meta.flag is meaningless when requsting to put,
+// here is a trick to set flag to data_entry.data_meta.flag when requesting.
+enum {
+  TAIR_CLIENT_PUT_PUT_CACHE_FLAG = 0,
+  TAIR_CLIENT_PUT_SKIP_CACHE_FLAG = 1
+};
+#define SHOULD_PUT_FILL_CACHE(flag) \
+  (!((flag) & TAIR_CLIENT_PUT_SKIP_CACHE_FLAG))
+
 enum {
    TAIR_RETURN_SUCCESS = 0,
    TAIR_DUP_WAIT_RSP = 133,
 
-   TAIR_RETURN_NOT_SUPPORTED= -4001,
+   TAIR_RETURN_NOT_SUPPORTED = -4001,
    TAIR_RETURN_PROXYED = -4000,
    TAIR_RETURN_FAILED = -3999,
    TAIR_RETURN_DATA_NOT_EXIST = -3998,
@@ -348,6 +378,13 @@ typedef enum {
   TAIR_SERVER_CMD_GET_GROUP_STATUS,
   TAIR_SERVER_CMD_GET_TMP_DOWN_SERVER,
   TAIR_SERVER_CMD_SET_GROUP_STATUS,
+  TAIR_SERVER_CMD_SET_MIGRATE_WAIT_MS,
+  TAIR_SERVER_CMD_PAUSE_GC,
+  TAIR_SERVER_CMD_RESUME_GC,
+  TAIR_SERVER_CMD_RELEASE_MEM,
+  TAIR_SERVER_CMD_STAT_DB,
+  TAIR_SERVER_CMD_SET_CONFIG,
+  TAIR_SERVER_CMD_GET_CONFIG,
 } ServerCmdType;
 
 typedef enum {

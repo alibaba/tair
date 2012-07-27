@@ -81,9 +81,13 @@ namespace tair {
       int batch_remove(int area, const tair_dataentry_set * key_list,request_remove *request,int version);
       int clear(int area);
 
+      int op_cmd(ServerCmdType cmd, std::vector<std::string>& params);
+
       int direct_put(data_entry &key, data_entry &value);
       int direct_remove(data_entry &key);
 
+      int get_range(int32_t area, data_entry &key_start, data_entry &key_end, int offset, int limit, std::vector<data_entry*> &result); 
+    
       int add_items(int area,
                     data_entry& key,
                     data_entry& value,
