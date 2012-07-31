@@ -228,20 +228,10 @@ struct ReadOptions {
   // Default: NULL
   const Snapshot* snapshot;
 
-  // max response KV size when using get_range operation 
-  // Default: 1M
-  int range_max_size;
-
-  // max response KV count limit when using get_range operation 
-  // Default: 1000
-  int range_max_limit;
-
   ReadOptions()
       : verify_checksums(false),
         fill_cache(true),
-        snapshot(NULL) ,
-        range_max_size(1<<20),
-        range_max_limit(1000){
+        snapshot(NULL){
   }
 };
 

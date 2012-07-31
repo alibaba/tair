@@ -388,6 +388,12 @@ typedef enum {
 } ServerCmdType;
 
 typedef enum {
+  CMD_RANGE_ALL = 1,  
+  CMD_RANGE_VALUE_ONLY,  
+  CMD_RANGE_KEY_ONLY,  
+} RangeCmdType;
+
+typedef enum {
   TAIR_CLUSTER_TYPE_NONE = 0,
   TAIR_CLUSTER_TYPE_SINGLE_CLUSTER,
   TAIR_CLUSTER_TYPE_MULTI_CLUSTER,

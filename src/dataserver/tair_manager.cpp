@@ -793,7 +793,7 @@
       return rc;
     }
 
-    int tair_manager::get_range(int32_t area, data_entry &key_start, data_entry &key_end, int offset, int limit, std::vector<data_entry*> &result)
+    int tair_manager::get_range(int32_t area, data_entry &key_start, data_entry &key_end, int offset, int limit, int type, std::vector<data_entry*> &result, bool &has_next)
     {
       if (status != STATUS_CAN_WORK) {
         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
@@ -812,7 +812,7 @@
       key_end.merge_area(area);
 
       PROFILER_BEGIN("get range from storage engine");
-      int rc = storage_mgr->get_range(bucket_number, key_start, key_end, offset, limit, result);
+      int rc = storage_mgr->get_range(bucket_number, key_start, key_end, offset, limit, type, result, has_next);
       PROFILER_END();
 
       //TAIR_STAT.stat_get_range(area, rc);

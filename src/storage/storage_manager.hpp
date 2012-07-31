@@ -61,7 +61,7 @@ const int ITEM_HEAD_LENGTH = 2;
           return TAIR_RETURN_NOT_SUPPORTED;
       }
 
-      virtual int get_range(int bucket_number,data_entry & key_start,data_entry & key_end, int offset, int limit, std::vector<data_entry*> &result){return TAIR_RETURN_NOT_SUPPORTED;}
+      virtual int get_range(int bucket_number,data_entry & key_start,data_entry & key_end, int offset, int limit, int type, std::vector<data_entry*> &result, bool &has_next){return TAIR_RETURN_NOT_SUPPORTED;}
 
       virtual int clear(int area) = 0;
 

@@ -11,12 +11,6 @@
 #define TAIR_PACKET_GET_RANGE_PACKET_H
 #include "base_packet.hpp"
 
-enum {
-  CMD_RANGE_ALL = 1,
-  CMD_RANGE_VALUE_ONLY = 2,
-  CMD_RANGE_KEY_ONLY = 3,
-};
-
 namespace tair {
   class request_get_range : public base_packet {
     public:
@@ -226,7 +220,7 @@ namespace tair {
         key_data_vector->push_back(value);
         key_count ++;
       }
-
+      
       void add_proxyed_key(data_entry *proxyed_key_value)
       {
         if (proxyed_key_list == NULL) {
@@ -239,6 +233,28 @@ namespace tair {
         ret = proxyed_key_list->insert(p);
         if (ret.second == false)
           delete p;
+      }
+
+      void set_key_data_vector(tair_dataentry_vector *result)
+      {
+        if (key_data_vector ) 
+        {
+          for (uint32_t i=0; i<key_data_vector->size(); i++) 
+          {
+            if ((*key_data_vector)[i] != NULL)
+            {
+              delete (*key_data_vector)[i];
+            }
+          }
+          delete key_data_vector;
+        }
+
+        key_data_vector = result;
+      }
+
+      void set_key_count(int count)
+      {
+        key_count = count; 
       }
 
     public:

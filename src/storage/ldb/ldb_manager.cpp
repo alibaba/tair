@@ -130,7 +130,7 @@ namespace tair
         return rc;
       }
 
-      int LdbManager::get_range(int bucket_number, data_entry &key_start, data_entry &key_end, int offset, int limit, std::vector<data_entry*> &result)
+      int LdbManager::get_range(int bucket_number, data_entry& key_start, data_entry& key_end, int offset, int limit, int type, std::vector<data_entry*>& result, bool &has_next)
       {
         int rc = TAIR_RETURN_SUCCESS;
         LdbInstance* db_instance = get_db_instance(bucket_number);
@@ -143,8 +143,8 @@ namespace tair
         else 
         {
           PROFILER_BEGIN("db_instance get_range");
-          rc = db_instance->get_range(bucket_number, key_start, key_end, offset, limit, result);
-          log_warn("after get_range key_count:%d", result.size());
+          rc = db_instance->get_range(bucket_number, key_start, key_end, offset, limit, type, result, has_next);
+          log_debug("after get_range key_count:%d", result.size());
           PROFILER_END();
         }
         return rc;

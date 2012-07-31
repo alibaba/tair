@@ -402,8 +402,7 @@ namespace tair {
       request->key_start.server_flag = request->server_flag;
       request->key_end.server_flag = request->server_flag;
 
-      if (tair_mgr->should_proxy(request->key_start, target_server_id))
-      {
+      if (tair_mgr->should_proxy(request->key_start, target_server_id)) {
          base_packet *proxy_packet = new request_get_range(*(request_get_range*)request);
          rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
          return rc;
@@ -416,42 +415,25 @@ namespace tair {
       if (plugin_ret < 0) {
          log_error("plugin return %d, skip excute", plugin_ret);
          rc = TAIR_RETURN_PLUGIN_ERROR;
-      }else {
+      } else {
          PROFILER_BEGIN("do get_range");
-         std::vector<data_entry*> result;
-
-         rc = tair_mgr->get_range(request->area, request->key_start, request->key_end, request->offset ,request->limit, result);
+         tair_dataentry_vector *result = new tair_dataentry_vector();
+         bool has_next;
+         rc = tair_mgr->get_range(request->area, request->key_start, request->key_end, request->offset ,request->limit, request->cmd, *result, has_next);
          PROFILER_END();
 
          response_get_range *resp = new response_get_range();
          resp->config_version = heart_beat->get_client_version();
          resp->setChannelId(request->getChannelId());
          resp->set_code(rc); 
-         int size = result.size();
-         if (request->limit != (unsigned)(size/2))
-            resp->set_hasnext(true);
-         else
-            resp->set_hasnext(false);
+         resp->set_hasnext(has_next); 
+         resp->set_cmd(request->cmd);
+         int size = result->size();
+         resp->set_key_count(size);
          if (size == 0){
             log_info("no data return from get_range rc:%d, key", rc, request->key_start.get_data()+4);
          } else {
-            for (int i = 0; i < size; i+=2){
-              resp->set_cmd(request->cmd);
-              switch (request->cmd) {
-              case CMD_RANGE_ALL : 
-                 resp->add_key_data(result[i], result[i+1]);
-                 break;
-              case CMD_RANGE_KEY_ONLY : 
-                 resp->add_key_data(result[i], NULL);
-                 break;
-              case CMD_RANGE_VALUE_ONLY : 
-                 resp->add_key_data(result[i+1], NULL);
-                 break;
-              default: 
-                 log_warn("unknow range command, cmd: %d", request->cmd);
-                 return TAIR_RETURN_INVALID_ARGUMENT ;
-              }
-            }
+            resp->set_key_data_vector(result);
          }
          if(request->get_connection()->postPacket(resp) == false) {
             delete resp;

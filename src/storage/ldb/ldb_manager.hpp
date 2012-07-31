@@ -50,7 +50,7 @@ namespace tair
         int remove(int bucket_number, data_entry& key, bool version_care);
         int clear(int area);
 
-        int get_range(int bucket_number, data_entry &key_start, data_entry &key_end, int offset, int limit, std::vector<data_entry*> &result);
+        int get_range(int bucket_number, data_entry& key_start, data_entry& end_key, int offset, int limit, int type, std::vector<data_entry*>& result, bool &has_next);
 
         bool init_buckets(const std::vector <int>& buckets);
         void close_buckets(const std::vector <int>& buckets);

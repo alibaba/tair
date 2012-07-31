@@ -345,7 +345,7 @@ namespace tair
           }
 
           ldb_item.set(value.get_data(), value.get_size());
-          log_debug ("meta_version:%u ,prefix_size %u, totlesize:%u, valuesize:%u",ldb_item.meta().base_.meta_version_, key.get_prefix_size(), ldb_item.size(), value.get_size());
+          log_debug ("meta_version:%u ,prefix_size %u, total_size:%u, valuesize:%u",ldb_item.meta().base_.meta_version_, key.get_prefix_size(), ldb_item.size(), value.get_size());
 
           PROFILER_BEGIN("db put");
           rc = do_put(ldb_key, ldb_item, SHOULD_PUT_FILL_CACHE(key.data_meta.flag));
@@ -377,26 +377,39 @@ namespace tair
         ldb_key.incr_key(prefix_size);
       }
 
-      int LdbInstance::get_range(int bucket_number, data_entry& key_start, data_entry& key_end, int offset, int limit, std::vector<data_entry*> &result)
+      inline void LdbInstance::fill_meta(data_entry *data, LdbKey& key, LdbItem& item)
+      {
+          data->data_meta.flag = item.flag();
+          data->data_meta.mdate = item.mdate();
+          data->data_meta.cdate = item.cdate();
+          data->data_meta.edate = item.edate();
+          data->data_meta.version = item.version();
+          data->data_meta.valsize = item.value_size();
+          data->data_meta.keysize = key.key_size();
+      }
+
+      int LdbInstance::get_range(int bucket_number, data_entry& key_start, data_entry& key_end, int offset, int limit, int type, std::vector<data_entry*> &result, bool &has_next)
       {
         assert(db_ != NULL);
-        int totle_size=0;
+        int total_size = 0;
+        bool end_break = false;
 
         leveldb::Iterator *iter;
         int rc = TAIR_RETURN_SUCCESS;
         int count = 0;
         LdbKey ldb_key;
         LdbItem ldb_item;
+        static int range_max_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_RANGE_MAX_SIZE, 1<<20); // 1M
+        data_entry *nkey = NULL, *nvalue = NULL;
 
-        log_debug("start range. startkey size:%d prefixsize:%d key:%s,%s.", key_start.get_size(), key_start.get_prefix_size(), key_start.get_data() +4, key_start.get_data()+2+key_start.get_prefix_size());
-        if ( limit > read_options_.range_max_limit){
-          limit = read_options_.range_max_limit;
-          log_debug("limit:%d out of bound, set to %d ", limit, read_options_.range_max_limit);
+        if (CMD_RANGE_ALL != type && CMD_RANGE_VALUE_ONLY != type && CMD_RANGE_KEY_ONLY != type)
+        {
+          return TAIR_RETURN_INVALID_ARGUMENT; 
         }
+        log_debug("start range. startkey size:%d prefixsize:%d key:%s,%s.", key_start.get_size(), key_start.get_prefix_size(), key_start.get_data() +4, key_start.get_data()+2+key_start.get_prefix_size());
 
         leveldb::ReadOptions scan_read_options = read_options_;
         scan_read_options.fill_cache = false;
-        //tbsys::CThreadGuard mutex_guard(get_mutex(key_start));
         iter = db_->NewIterator(scan_read_options);
 
         LdbKey ldbkey(key_start.get_data(), key_start.get_size(), bucket_number);
@@ -411,11 +424,14 @@ namespace tair
         leveldb::Slice slice_key_end(ldbendkey.data(), ldbendkey.size());
 
         //iterate all keys
-        for(iter->Seek(slice_key_start) ;iter->Valid() && count < limit; iter->Next() ) 
+        for(iter->Seek(slice_key_start) ;iter->Valid() && count < limit; iter->Next()) 
         {
           leveldb::Slice slice_iter_key(iter->key().data(), iter->key().size());
-          if (options_.comparator->Compare(slice_iter_key,slice_key_end) >= 0) 
+          if (options_.comparator->Compare(slice_iter_key,slice_key_end) >= 0)
+          {
+            end_break = true;
             break;
+          }
           ldb_key.assign(const_cast<char*>(iter->key().data()), iter->key().size());
           ldb_item.assign(const_cast<char*>(iter->value().data()), iter->value().size());
           if (ldb_item.prefix_size() != key_start.get_prefix_size())
@@ -430,36 +446,45 @@ namespace tair
             continue; 
           }
 
-          data_entry *nkey = new data_entry(ldb_key.key() + key_start.get_prefix_size() + LDB_KEY_AREA_SIZE,  
-                                            ldb_key.key_size() - key_start.get_prefix_size() - LDB_KEY_AREA_SIZE, true);
-          data_entry *nvalue = new data_entry(ldb_item.value(), ldb_item.value_size(), true);
-
-          nkey->data_meta.flag = nvalue->data_meta.flag = ldb_item.flag();
-          nkey->data_meta.mdate = nvalue->data_meta.mdate = ldb_item.mdate();
-          nkey->data_meta.cdate = nvalue->data_meta.cdate = ldb_item.cdate();
-          nkey->data_meta.edate = nvalue->data_meta.edate = ldb_item.edate();
-          nkey->data_meta.version = nvalue->data_meta.version = ldb_item.version();
-          nkey->data_meta.valsize = nvalue->data_meta.valsize = ldb_item.value_size();
-          nkey->data_meta.keysize = nvalue->data_meta.keysize = ldb_key.key_size();
-
-          result.push_back(nkey);
-          result.push_back(nvalue);
+          if (CMD_RANGE_ALL == type || CMD_RANGE_KEY_ONLY == type)
+          {
+            nkey = new data_entry(ldb_key.key() + key_start.get_prefix_size() + LDB_KEY_AREA_SIZE,  
+                                ldb_key.key_size() - key_start.get_prefix_size() - LDB_KEY_AREA_SIZE, true);
+            fill_meta(nkey, ldb_key, ldb_item);
+            result.push_back(nkey);
+            total_size += ldb_key.size();
+          }
+          if (CMD_RANGE_ALL == type || CMD_RANGE_VALUE_ONLY == type)
+          {
+            nvalue = new data_entry(ldb_item.value(), ldb_item.value_size(), true);
+            fill_meta(nvalue, ldb_key, ldb_item);
+            result.push_back(nvalue);
+            total_size += ldb_item.size();
+          }
 
           count++;
-
-          totle_size += ldb_key.size() + ldb_item.size();
-          if (totle_size >  read_options_.range_max_size)
+          
+          if (total_size > range_max_size)
             break;
         }
+        
+        if (limit != count && !end_break && iter->Valid())        
+        {
+          has_next = true;
+        }
+        else
+        {
+          has_next = false;
+        }
 
+        if (0 == count)
+        {
+          rc = TAIR_RETURN_DATA_NOT_EXIST;
+        }
         if(iter != NULL) 
         {
           delete iter;
         }
-
-        if (0 == count)
-          rc = TAIR_RETURN_DATA_NOT_EXIST;
-
         return rc;
       }
 
@@ -1062,8 +1087,6 @@ namespace tair
         options_.env = leveldb::Env::Instance();
         read_options_.verify_checksums = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_READ_VERIFY_CHECKSUMS, 0) != 0;
         read_options_.fill_cache = true;
-        read_options_.range_max_size = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_RANGE_MAX_SIZE, 1<<20); // 1M
-        read_options_.range_max_limit = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_RANGE_MAX_LIMIT, 1000); // 1000
         write_options_.sync = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_WRITE_SYNC, 0) != 0;
         // remainning avaliable config: comparator, env, block cache.
       }

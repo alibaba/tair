@@ -54,7 +54,7 @@ namespace tair
         int get(int bucket_number, tair::common::data_entry& key, tair::common::data_entry& value);
         int remove(int bucket_number, tair::common::data_entry& key, bool version_care);
 
-        int get_range(int bucket_number, tair::common::data_entry& key, tair::common::data_entry& end_key, int offset, int limit, std::vector<tair::common::data_entry*>& result);
+        int get_range(int bucket_number, tair::common::data_entry& key_start, tair::common::data_entry& end_key, int offset, int limit, int type, std::vector<tair::common::data_entry*>& result, bool &has_next);
 
         int op_cmd(ServerCmdType cmd, std::vector<std::string>& params);
 
@@ -85,6 +85,7 @@ namespace tair
         int do_put(LdbKey& ldb_key, LdbItem& ldb_item, bool fill_cache);
         int do_remove(LdbKey& ldb_key);
         void add_prefix(LdbKey& ldb_key, int prefix_size);
+        inline void fill_meta(tair::common::data_entry *data, LdbKey& key, LdbItem& item);
 
         bool init_db();
         void stop();
