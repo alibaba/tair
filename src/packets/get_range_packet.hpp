@@ -237,9 +237,9 @@ namespace tair {
 
       void set_key_data_vector(tair_dataentry_vector *result)
       {
-        if (key_data_vector ) 
+        if (key_data_vector != NULL) 
         {
-          for (uint32_t i=0; i<key_data_vector->size(); i++) 
+          for (uint32_t i = 0; i < key_data_vector->size(); i++) 
           {
             if ((*key_data_vector)[i] != NULL)
             {

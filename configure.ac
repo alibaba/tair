@@ -1,6 +1,6 @@
-AC_INIT(tair, 2.3.1.5,ruohai@taobao.com)
+AC_INIT(tair, 2.3.1.7,ruohai@taobao.com)
 
-AM_INIT_AUTOMAKE(tair, 2.3.1.5)
+AM_INIT_AUTOMAKE(tair, 2.3.1.7)
 AC_PROG_CXX
 AC_LANG([C++])
 AC_PROG_LIBTOOL

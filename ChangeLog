@@ -34,3 +34,17 @@ version 2.3.1.5
 * 1. 增加localmode模式: 客户端直连data server进行数据读写。
 * 2. 完成了客户端工具中-s参数，使用-s参数可以直连data server。
 
+2012-07-27
+version 2.3.1.6
+* feature:
+* 1. 增加了限流功能, 对超出阈值的namespace进行限流。
+* 2. 对mdb增加了lazy clear namespace功能。
+* 3. uic 2.3升级支持的功能：
+*** 3.1 增加build表因子，初次启动bucket随机分布。
+*** 3.2 Ds宕机后加入集群需要重新reset。
+
+2012-08-01
+version 2.3.1.7
+* feature:
+* 1. 合并ldb_with_bloomfilter分支
+* 2. 增加ldb get_range功能，可以对prefixPut的数据进行范围查询
