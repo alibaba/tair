@@ -10,13 +10,14 @@ import org.junit.Before;
 
 public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 	/*
-	 * 512´óÐ¡Êý¾ÝµÄÊµ¼ÊÉèÖÃµÄkeyºÍvalue´óÐ¡Îª£º448 1024´óÐ¡µÄÊý¾ÝÊµ¼ÊÉèÖÃµÄkeyºÍvalue´óÐ¡Îª£º960
+	 * 512ï¿½ï¿½Ð¡ï¿½ï¿½Ýµï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½keyï¿½ï¿½valueï¿½ï¿½Ð¡Îªï¿½ï¿½448
+	 * 1024ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½keyï¿½ï¿½valueï¿½ï¿½Ð¡Îªï¿½ï¿½960
 	 */
 	final static int D512B = 448;
 	final static int D1024B = 960;
 	final static int num = 10000;
 
-    @Test
+	@Test
 	public void testExpireEliminate_01_expireDate_eliminated_ontime() {
 		log.error("start expire eliminate test case 01");
 
@@ -67,18 +68,22 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		log.error("sed expire hour range");
 		Calendar c = Calendar.getInstance();
 		int startHour = c.get(Calendar.HOUR_OF_DAY);
-		assertTrue(changeHourRange(dsList.get(0).toString(), "expired", startHour, startHour + 1));
+		assertTrue(changeHourRange(dsList.get(0).toString(), "expired",
+				startHour, startHour + 1));
 		log.error("expire time has been changed successful");
-		
+
 		log.error("stop ds");
-		if(!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))fail("stop ds failed!");
-	
+		if (!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))
+			fail("stop ds failed!");
+
 		waitto(AreaTestBaseCase.down_time);
-		if(!batch_control_ds(dsList, AreaTestBaseCase.start, 0))fail("start ds failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin+"etc/group.conf");
+		if (!batch_control_ds(dsList, AreaTestBaseCase.start, 0))
+			fail("start ds failed!");
+		// touch group.conf
+		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin
+				+ "etc/group.conf");
 		log.error("change group.conf and touch it");
-		waitto(60*AreaTestBaseCase.down_time);
+		waitto(60 * AreaTestBaseCase.down_time);
 
 		log.error("start verify data");
 		log.error("verify area0");
@@ -90,7 +95,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		assertTrue(verifySuccess(0, Get));
 		log.error("area0's else data has been readed successfully");
 
-		int result = check_keyword("local", "expired", "/home/admin/baoni/function/Get.log");
+		int result = check_keyword("local", "expired", test_bin + "Get.log");
 
 		Assert.assertEquals(0, result);
 		log.error("area0's all expird data has been removed");
@@ -105,7 +110,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		assertTrue(verifySuccess(0, Get));
 		log.error("area0's else data has been readed successfully");
 
-		result = check_keyword("local", "expired", "/home/admin/baoni/function/Get.log");
+		result = check_keyword("local", "expired", test_bin + "Get.log");
 
 		Assert.assertEquals(0, result);
 		log.error("area1's all expird data has been removed");
@@ -113,7 +118,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		log.error("end expire eliminate test case 01");
 	}
 
-    @Before
+	@Before
 	public void setUp() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
@@ -121,7 +126,7 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 
 	}
 
-    @After
+	@After
 	public void tearDown() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
