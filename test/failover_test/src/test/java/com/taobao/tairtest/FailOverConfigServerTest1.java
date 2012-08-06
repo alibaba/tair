@@ -756,7 +756,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 
 		// check rebuild finish
 		while (check_keyword(csList.get(1), finish_rebuild, tair_bin
-				+ "logs/config.log") != (versionCount + 1)) {
+				+ "logs/config.log") == versionCount) {
 			log.debug("check if rebuld table finished on cs "
 					+ csList.get(1) + " log");
 			waitto(2);
@@ -892,7 +892,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 
 		// check build stat
 		while (check_keyword(csList.get(1), finish_rebuild, tair_bin
-				+ "logs/config.log") != (versionCount + 1)) {
+				+ "logs/config.log") == versionCount) {
 			log.debug("check if rebuild table finished on cs "
 					+ csList.get(1) + " log");
 			waitto(2);
@@ -2495,7 +2495,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 
 		// check rebuild stat of start
 		while (check_keyword(csList.get(1), finish_rebuild, tair_bin
-				+ "logs/config.log") != (versionCount + 1)) {
+				+ "logs/config.log") == versionCount) {
 			waitto(2);
 			if (++waitcnt > 150)
 				break;

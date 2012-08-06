@@ -152,7 +152,7 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 
 		while(check_process(local, toolname)!=2)
 		{
-			waitto(2);
+			waitto(4);
 			if(++waitcnt>150)break;
 		}
 		if(waitcnt>150)fail("put data time out!");
