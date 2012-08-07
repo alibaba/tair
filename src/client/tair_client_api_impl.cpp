@@ -654,12 +654,13 @@ FAIL:
         data_entry* value = new data_entry(*((*rp_iter)->data));
         data.insert(tair_keyvalue_map::value_type(key, value));
       }
-      else
+      else if ((*rp_iter)->key_count > 1)
       {
         tair_keyvalue_map* kv_map = (*rp_iter)->key_data_map;
         if (kv_map == NULL)
         {
           TBSYS_LOG(ERROR, "mget response's key data map is null");
+          //why? break;
           kv_map_null = true;
           break;
         }
