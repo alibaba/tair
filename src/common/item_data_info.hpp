@@ -17,6 +17,7 @@
 #ifndef TAIR_ITEM_DATA_INFO
 #define TAIR_ITEM_DATA_INFO
 #include "log.hpp"
+#include "define.hpp"
 namespace tair {
    typedef struct _item_meta {
       uint16_t magic;
@@ -30,7 +31,7 @@ namespace tair {
       uint32_t mdate; // item last modified time
       uint32_t edate; // expire date
 
-      void encode(tbnet::DataBuffer *output) const
+      void encode(tbnet::DataBuffer *output, bool is_new = false) const
      {
          // 29 bytes 
          output->writeInt16(magic);
@@ -39,7 +40,10 @@ namespace tair {
          output->writeInt16(version);
          output->writeInt32(prefixsize);
          output->writeInt32(valsize);
-         output->writeInt8(flag);
+         if (is_new)
+           output->writeInt8(flag | TAIR_ITEM_FLAG_COMPRESS);
+         else
+           output->writeInt8(flag);
          output->writeInt32(cdate);
          output->writeInt32(mdate);
          output->writeInt32(edate);

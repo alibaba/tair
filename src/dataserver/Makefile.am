@@ -39,7 +39,7 @@ LDADD=$(top_builddir)/src/storage/mdb/.libs/libmdb.a \
       $(top_builddir)/src/common/libtair_common.a \
       $(TBLIB_ROOT)/lib/libtbnet.a \
       $(TBLIB_ROOT)/lib/libtbsys.a \
-      -lz -lrt -lpthread \
+      -lz -lsnappy -lrt -lpthread \
       -ldl \
       @BOOST_THREAD_LIB@
 

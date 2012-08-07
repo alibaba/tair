@@ -72,6 +72,13 @@
 #define TAIR_DTM_VERSION             0x31766256
 #define TAIR_HTM_VERSION             0x31766257
 
+#define TAIR_DEFAULT_COMPRESS_THRESHOLD 8192
+#define TAIR_COMPRESS_TYPE_NUM          1
+#define TAIR_ITEM_FLAG_COMPRESS         4
+#define TAIR_VALUE_HEADER_LENGTH        2 // the length of value header, in unit of bytes
+#define COMPRESS_TYPE_OFFSET            12 // the offset of compress type in value header
+#define COMPRESS_FLAG                   1 // the offset of compress flag in value header
+
 #define TAIR_FLAG_SERVER            (0x0000ffffffffffffLL)
 #define TAIR_FLAG_CFG_DOWN          (0x4000000000000000LL)
 #define TAIR_FLAG_NOEXP             (0x0c000000)
@@ -369,6 +376,10 @@ namespace {
    const int TAIR_OPERATION_UNLOCK    = 8;
    const int TAIR_DUPLICATE_BUSY_RETRY_COUNT = 10;
 }
+
+enum TAIR_COMPRESS_TYPE {
+  TAIR_SNAPPY_COMPRESS = 0,
+};
 
 typedef enum {
   TAIR_SERVER_CMD_NONE = 0,

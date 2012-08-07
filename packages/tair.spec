@@ -15,12 +15,14 @@ BuildRequires: google-perftools >= 1.7
 BuildRequires: boost-devel >= 1.30.0
 BuildRequires: automake >= 1.7.0
 BuildRequires: libtool >= 1.5.0
+BuildRequires: snappy >= 1.0.1
 #Requires: openssl-devel >= 0.9
 Requires: t-csrd-tbnet-devel >= 1.0.4
 Requires: google-perftools >= 1.7
 Requires: boost-devel >= 1.30.0
 Requires: automake >= 1.7.0
 Requires: libtool >= 1.5.0
+Requires: snappy >= 1.0.1
 
 %description
 Tair is a high performance, distribution key/value storage system.

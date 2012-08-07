@@ -331,7 +331,7 @@ namespace tair {
                key->decode(input);
                // data
                data_entry *data = new data_entry();
-               data->decode(input);
+               data->decode_with_decompress(input);
 
                key_data_map->insert(tair_keyvalue_map::value_type(key, data));
             }
@@ -353,7 +353,7 @@ namespace tair {
             key->decode(input);
 
             data = new data_entry();
-            data->decode(input);
+            data->decode_with_decompress(input);
          }
 
          return true;

@@ -26,9 +26,9 @@ api_source_list=tair_client_api.cpp tair_client_api_impl.cpp \
 		tair_client.hpp
 
 if WITH_READLINE
-AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB} -lreadline -ltermcap
+AM_LDFLAGS=-lpthread -lz -lsnappy -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB} -lreadline -ltermcap
 else
-AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
+AM_LDFLAGS=-lpthread -lz -lsnappy -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
 endif
 
 lib_LTLIBRARIES=libtairclientapi.la libtairclientapi_c.la

@@ -15,7 +15,7 @@ LDADD=$(top_srcdir)/src/client/.libs/libtairclientapi.a \
 		$(top_srcdir)/src/common/libtair_common.a \
 	  $(TBLIB_ROOT)/lib/libtbnet.a \
 	  $(TBLIB_ROOT)/lib/libtbsys.a \
-		-lz
+		-lz -lsnappy
 
 AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
 

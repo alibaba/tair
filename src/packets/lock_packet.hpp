@@ -63,7 +63,7 @@ namespace tair {
         {
           return false;
         }
-        data->encode(output);
+        data->encode_with_compress(output);
       }
       return true;
     }

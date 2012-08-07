@@ -61,7 +61,7 @@ namespace tair {
          output->writeInt16(version);
          output->writeInt32(expired);
          key.encode(output);
-         data.encode(output);
+         data.encode_with_compress(output);
          return true;
       }
 

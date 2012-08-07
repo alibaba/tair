@@ -189,13 +189,6 @@
           data_entry *value = it->second;
           key->server_flag = request->server_flag;
 
-          uint64_t target_server_id = 0;
-          if (should_proxy(*key, target_server_id))
-          {
-            rc = TAIR_RETURN_SHOULD_PROXY;
-            break;
-          }
-
           //item_meta_info kmeta = key->data_meta;
           //item_meta_info vmeta = value->data_meta;
           rc = put(request->area, *key, *value, key->data_meta.edate, NULL, heart_version);
@@ -261,9 +254,9 @@
         resp = new response_mreturn();
       }
 
+      uint64_t target_server_id = 0L;
       if (request->key != NULL) {
         key->server_flag = request->server_flag;
-        uint64_t target_server_id = 0L;
         do {
           if (should_proxy(*key, target_server_id)) {
             rc = TAIR_RETURN_SHOULD_PROXY;
@@ -291,20 +284,20 @@
         while (itr != request->key_list->end()) {
           data_entry *key = *itr;
           key->server_flag = request->server_flag;
-          uint64_t target_server_id = 0L;
           if (should_proxy(*key, target_server_id)) {
             rc = TAIR_RETURN_SHOULD_PROXY;
-            break; //~ would not do proxy
-          }
-          int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
-          if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
-            rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
             break;
-          }
+          } else {
+            int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
+            if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
+              rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+              break;
+            }
 
-          item_meta_info meta = key->data_meta;
-          rc = remove(request->area, *key, NULL, heart_version);
-          key->data_meta = meta;
+            item_meta_info meta = key->data_meta;
+            rc = remove(request->area, *key, NULL, heart_version);
+            key->data_meta = meta;
+          }
           if (rc == TAIR_RETURN_SUCCESS) {
             ++ndone;
           } else {
@@ -365,9 +358,9 @@
         resp = new response_mreturn();
       }
 
+      uint64_t target_server_id = 0L;
       if (request->key != NULL) {
         key->server_flag = request->server_flag;
-        uint64_t target_server_id = 0L;
         do {
           if (should_proxy(*key, target_server_id)) {
             rc = TAIR_RETURN_SHOULD_PROXY;
@@ -395,20 +388,20 @@
         while (itr != request->key_list->end()) {
           data_entry *key = *itr;
           key->server_flag = request->server_flag;
-          uint64_t target_server_id = 0L;
           if (should_proxy(*key, target_server_id)) {
             rc = TAIR_RETURN_SHOULD_PROXY;
-            break; //~ would not do proxy
-          }
-          int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
-          if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
-            rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
             break;
-          }
+          } else {
+            int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
+            if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {
+              rc = TAIR_RETURN_REMOVE_NOT_ON_MASTER;
+              break;
+            }
 
-          item_meta_info meta = key->data_meta;
-          rc = hide(request->area, *key, NULL, heart_version);
-          key->data_meta = meta;
+            item_meta_info meta = key->data_meta;
+            rc = hide(request->area, *key, NULL, heart_version);
+            key->data_meta = meta;
+          }
           if (rc == TAIR_RETURN_SUCCESS) {
             ++ndone;
           } else {
@@ -463,11 +456,6 @@
         key->server_flag = request->server_flag;
         counter_wrapper *wrapper = it->second;
         int ret_value;
-        uint64_t target_server_id;
-        if (should_proxy(*key, target_server_id)) {
-          rc = TAIR_RETURN_SHOULD_PROXY;
-          break;
-        }
         bucket_number = get_bucket_number(*key);
         int32_t op_flag = get_op_flag(bucket_number, key->server_flag);
         if (!should_write_local(bucket_number, key->server_flag, op_flag, rc)) {

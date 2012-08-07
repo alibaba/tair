@@ -336,10 +336,13 @@ FAIL:
     // we don't want to add a new packet for this set_count() function, so we add two
     // bits type flag here and use put() to make following incr()/decr() happy.
     // We ignore compress type here as same as what CPP client always does.
-    char buf[INCR_DATA_SIZE];
-    SET_INCR_DATA_COUNT(buf, count);
+    char buf[INCR_DATA_SIZE - 2];
+    buf[0] = (count & 0xFF);
+    buf[1] = ((count >> 8) & 0xFF);
+    buf[2] = ((count >> 16) & 0xFF);
+    buf[3] = ((count >> 24) & 0xFF);
     data_entry value;
-    value.set_data(buf, INCR_DATA_SIZE, false);
+    value.set_data(buf, INCR_DATA_SIZE - 2, false);
     // force set count type flag
     value.data_meta.flag = TAIR_ITEM_FLAG_ADDCOUNT;
     return put(area, key, value, expire, version, true, pfunc, parg);
@@ -507,6 +510,9 @@ FAIL:
     if (ret == TAIR_RETURN_SERVER_CAN_NOT_WORK) {
       new_config_version = resp->config_version;
       send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+    }
+    if (TAIR_RETURN_SHOULD_PROXY == ret) {
+      new_config_version = resp->config_version;
     }
 
     this_wait_object_manager->destroy_wait_object(cwo);
@@ -1857,6 +1863,7 @@ FAIL:
     temp[TAIR_RETURN_LOCK_EXIST]                 = "lock exist";
     temp[TAIR_RETURN_LOCK_NOT_EXIST]                 = "lock not exist";
     temp[TAIR_RETURN_HIDDEN] = "item is hidden";
+    temp[TAIR_RETURN_SHOULD_PROXY] = "the key should be proxy";
     //temp[TAIR_RETURN_NO_INVALID_SERVER]       = "invlaid but not found invalid server";
     return temp;
   }
@@ -1864,7 +1871,7 @@ FAIL:
   const char *tair_client_impl::get_error_msg(int ret)
   {
     std::map<int,string>::const_iterator it = tair_client_impl::m_errmsg.find(ret);
-    return it != tair_client_impl::m_errmsg.end() ? it->second.c_str() : "unknow";
+    return it != tair_client_impl::m_errmsg.end() ? it->second.c_str() : "unknown";
   }
 
   void tair_client_impl::get_server_with_key(const data_entry& key,std::vector<std::string>& servers)

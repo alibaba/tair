@@ -48,3 +48,8 @@ version 2.3.1.7
 * feature:
 * 1. 合并ldb_with_bloomfilter分支
 * 2. 增加ldb get_range功能，可以对prefixPut的数据进行范围查询
+
+2012-08-06
+version 2.3.2.0
+* feuture:
+* 1. C++客户端增加压缩功能

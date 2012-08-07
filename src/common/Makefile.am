@@ -5,7 +5,7 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 
 AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB} \
       -lz -lrt -lpthread \
-      -ldl \
+      -ldl -lsnappy\
       @BOOST_THREAD_LIB@
 
 LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \
@@ -33,12 +33,15 @@ base_src=data_dumpper.cpp	\
 	 blockqueue.hpp \
 	 syncproc.hpp \
 	 scoped_wrlock.hpp \
-         file_list_factory.hpp \
-	 counter_wrapper.hpp tair_atomic.hpp
+   file_list_factory.hpp \
+   compressor.hpp \
+   snappy_compressor.hpp \
+	 counter_wrapper.hpp \
+   tair_atomic.hpp
 
 noinst_LIBRARIES=libtair_common.a
 
-include_HEADERS=item_data_info.hpp data_entry.hpp define.hpp util.hpp hash.hpp log.hpp
+include_HEADERS=item_data_info.hpp data_entry.hpp define.hpp util.hpp hash.hpp log.hpp compressor.hpp snappy_compressor.hpp
 
 libtair_common_a_SOURCES = ${base_src}
 

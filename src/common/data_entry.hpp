@@ -381,20 +381,30 @@ namespace tair
          return 40 + get_size();
        }
 
-       void encode(tbnet::DataBuffer *output) const
+       void encode(tbnet::DataBuffer *output, bool need_compress = false) const
        {
          output->writeInt8(has_merged);
          output->writeInt32(area);
          output->writeInt16(server_flag);
-         data_meta.encode(output);
 
-         uint32_t msize = (size | (prefix_size << PREFIX_KEY_OFFSET));
-         output->writeInt32(msize);
-         if (get_size() > 0) {
-           output->writeBytes(get_data(), get_size());
+         if (need_compress) {
+           do_compress(output);
+         } else {
+           data_meta.encode(output);
+           uint32_t msize = (size | (prefix_size << PREFIX_KEY_OFFSET));
+           output->writeInt32(msize);
+           if (get_size() > 0) {
+             output->writeBytes(get_data(), get_size());
+           }
          }
        }
-       bool decode(tbnet::DataBuffer *input)
+
+       void encode_with_compress(tbnet::DataBuffer *output) const
+       {
+         encode(output, true);
+       }
+
+       bool decode(tbnet::DataBuffer *input, bool need_decompress = false)
        {
          free_data();
          uint8_t temp_merged = input->readInt8();
@@ -410,13 +420,25 @@ namespace tair
            set_data(NULL, size, true, temp_merged);
            input->readBytes(get_data(), size);
          }
+         bool ret = true;
+         if (need_decompress) {
+           ret = do_decompress();
+         }
          has_merged = temp_merged;
          area = _area;
          server_flag = flag;
-         return true;
+         return ret;
+       }
+
+       bool decode_with_decompress(tbnet::DataBuffer *input)
+       {
+         return decode(input, true);
        }
 
      private:
+       void do_compress(tbnet::DataBuffer *output) const;
+       bool do_decompress();
+
        void init()
        {
          alloc = false;
@@ -461,6 +483,8 @@ namespace tair
        uint32_t area;
        uint16_t server_flag;
        item_meta_info data_meta;
+       static int compress_type;
+       static int compress_threshold;
      };
 
      class data_entry_comparator {

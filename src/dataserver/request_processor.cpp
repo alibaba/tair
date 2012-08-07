@@ -32,6 +32,7 @@ namespace tair {
    {
       resp_size = 0;
       int rc = 0;
+      send_return = true;
 
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
@@ -45,8 +46,7 @@ namespace tair {
       uint64_t target_server_id = 0;
       if (tair_mgr->should_proxy(request->key, target_server_id))
       {
-         base_packet *proxy_packet = new request_put(*(request_put*)request);
-         rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+         rc = TAIR_RETURN_SHOULD_PROXY;
          return rc;
       }
 
@@ -59,7 +59,6 @@ namespace tair {
       int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
                                                                     TAIR_REQ_PUT_PACKET, request->area, &(request->key), &(request->data), plugin_root);
       PROFILER_END();
-      send_return = true;
       if (plugin_ret < 0) {
          log_debug("plugin return %d, skip excute", plugin_ret);
          rc = TAIR_RETURN_PLUGIN_ERROR;
@@ -82,105 +81,100 @@ namespace tair {
 
    int request_processor::process(request_get *request, bool &send_return, uint32_t &resp_size)
    {
-      resp_size = 0;
-      if (tair_mgr->is_working() == false) {
-         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-      }
-
-      set<data_entry*, data_entry_comparator>::iterator it;
-      data_entry *data = NULL;
-      response_get *resp = new response_get();
-
-      uint64_t target_server_id = 0;
       int rc = TAIR_RETURN_FAILED;
+      resp_size = 0;
+      response_get *resp = new response_get();
+      if (tair_mgr->is_working() == false) {
+         rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      } else {
+         set<data_entry*, data_entry_comparator>::iterator it;
+         data_entry *data = NULL;
+         uint64_t target_server_id = 0;
+         if (request->key_list != NULL) {
+            uint32_t count = 0;
+            PROFILER_START("batch get operation start");
+            for (it = request->key_list->begin(); it != request->key_list->end(); ++it) {
+               PROFILER_BEGIN("sub get operation in batch begin");
+               if (data == NULL) {
+                  data = new data_entry();
+               }
+               data_entry *key = (*it);
 
-      if (request->key_list != NULL) {
-         uint32_t count = 0;
-         PROFILER_START("batch get operation start");
-         for (it = request->key_list->begin(); it != request->key_list->end(); ++it) {
-            PROFILER_BEGIN("sub get operation in batch begin");
-            if (data == NULL) {
-               data = new data_entry();
+               if (tair_mgr->should_proxy(*key, target_server_id))
+               {
+                  resp->add_proxyed_key(key);
+                  continue;
+               }
+
+               plugin::plugins_root* plugin_root = NULL;
+               PROFILER_BEGIN("do request plugin");
+               int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                                                                             TAIR_REQ_GET_PACKET, request->area, key, NULL, plugin_root);
+               PROFILER_END();
+               if (plugin_ret < 0) {
+                  log_debug("plugin return %d, skip excute", plugin_ret);
+                  continue;
+               }
+               PROFILER_BEGIN("do get");
+               int rev = tair_mgr->get(request->area, *key, *data);
+               PROFILER_END();
+
+               PROFILER_BEGIN("do response plugin");
+               tair_mgr->plugins_manager.do_response_plugins(rev, plugin::PLUGIN_TYPE_SYSTEM,
+                                                             TAIR_REQ_GET_PACKET, request->area, key, data, plugin_root);
+               PROFILER_END();
+               if (rev != TAIR_RETURN_SUCCESS) {
+                  continue;
+               }
+               ++count;
+               resp->add_key_data(new data_entry(*key), data);
+               data = NULL;
+               PROFILER_END();
             }
-            data_entry *key = (*it);
-
-            if (tair_mgr->should_proxy(*key, target_server_id))
-            {
-               resp->add_proxyed_key(key);
-               continue;
-            }
-
-            plugin::plugins_root* plugin_root = NULL;
-            PROFILER_BEGIN("do request plugin");
-            int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-                                                                          TAIR_REQ_GET_PACKET, request->area, key, NULL, plugin_root);
-            PROFILER_END();
-            if (plugin_ret < 0) {
-               log_debug("plugin return %d, skip excute", plugin_ret);
-               continue;
-            }
-            PROFILER_BEGIN("do get");
-            int rev = tair_mgr->get(request->area, *key, *data);
-            PROFILER_END();
-
-            PROFILER_BEGIN("do response plugin");
-            tair_mgr->plugins_manager.do_response_plugins(rev, plugin::PLUGIN_TYPE_SYSTEM,
-                                                          TAIR_REQ_GET_PACKET, request->area, key, data, plugin_root);
-            PROFILER_END();
-            if (rev != TAIR_RETURN_SUCCESS) {
-               continue;
-            }
-            ++count;
-            resp->add_key_data(new data_entry(*key), data);
-            data = NULL;
-            PROFILER_END();
-         }
-         if (data != NULL) {
-            delete data;
-            data = NULL;
-         }
-         if(count == request->key_count){
-            rc = TAIR_RETURN_SUCCESS;
-         }else{
-            rc = TAIR_RETURN_PARTIAL_SUCCESS;
-         }
-      } else if (request->key != NULL) {
-         PROFILER_START("get operation start");
-
-         if (tair_mgr->should_proxy(*request->key, target_server_id))
-         {
-            base_packet *proxy_packet = new request_get(*(request_get*)request);
-            rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
-            delete resp; resp = 0;
-            return rc;
-         }
-
-         plugin::plugins_root* plugin_root = NULL;
-         PROFILER_BEGIN("do request plugin");
-         int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-                                                                       TAIR_REQ_GET_PACKET,request->area, (request->key), NULL, plugin_root);
-         PROFILER_END();
-
-         if (plugin_ret < 0) {
-            log_debug("plugin return %d, skip excute", plugin_ret);
-            rc = TAIR_RETURN_PLUGIN_ERROR;
-         }
-         else {
-            data = new data_entry();
-            PROFILER_BEGIN("do get");
-            rc = tair_mgr->get(request->area, *(request->key), *data);
-            PROFILER_END();
-
-            PROFILER_BEGIN("do response plugin");
-            tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-                                                          TAIR_REQ_GET_PACKET,request->area, (request->key), data, plugin_root);
-            PROFILER_END();
-            if (rc == TAIR_RETURN_SUCCESS) {
-               resp->add_key_data(request->key, data);
-               request->key = NULL;
-               log_debug("get return %s", resp->data->get_data());
-            } else {
+            if (data != NULL) {
                delete data;
+               data = NULL;
+            }
+            if(count == request->key_count){
+               rc = TAIR_RETURN_SUCCESS;
+            }else{
+               rc = TAIR_RETURN_PARTIAL_SUCCESS;
+            }
+         } else if (request->key != NULL) {
+            PROFILER_START("get operation start");
+
+            if (tair_mgr->should_proxy(*request->key, target_server_id))
+            {
+               rc = TAIR_RETURN_SHOULD_PROXY;
+            } else {
+               plugin::plugins_root* plugin_root = NULL;
+               PROFILER_BEGIN("do request plugin");
+               int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                                                                             TAIR_REQ_GET_PACKET,request->area, (request->key), NULL, plugin_root);
+               PROFILER_END();
+
+               if (plugin_ret < 0) {
+                  log_debug("plugin return %d, skip excute", plugin_ret);
+                  rc = TAIR_RETURN_PLUGIN_ERROR;
+               }
+               else {
+                  data = new data_entry();
+                  PROFILER_BEGIN("do get");
+                  rc = tair_mgr->get(request->area, *(request->key), *data);
+                  PROFILER_END();
+
+                  PROFILER_BEGIN("do response plugin");
+                  tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                                                                TAIR_REQ_GET_PACKET,request->area, (request->key), data, plugin_root);
+                  PROFILER_END();
+                  if (rc == TAIR_RETURN_SUCCESS) {
+                     resp->add_key_data(request->key, data);
+                     request->key = NULL;
+                     log_debug("get return %s", resp->data->get_data());
+                  } else {
+                     delete data;
+                  }
+               }
             }
          }
       }
@@ -210,8 +204,8 @@ namespace tair {
 
       uint64_t target_server_id = 0;
       if (tair_mgr->should_proxy(*request->key, target_server_id)) {
-        base_packet *proxy_packet = new request_hide(*(request_hide*)request);
-        return do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+        rc = TAIR_RETURN_SHOULD_PROXY;
+        return rc;
       }
 
       PROFILER_START("local hide operation start");
@@ -242,134 +236,133 @@ namespace tair {
 
    int request_processor::process(request_prefix_hides *request, bool &send_return)
    {
+      send_return = false;
+      int rc = TAIR_RETURN_SUCCESS;
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-      }
-      int rc = 0;
-      data_entry key = request->key == NULL ?
-        **(request->key_list->begin()) : *request->key;
-      plocker.lock(key);
-      rc = tair_mgr->prefix_hides(request, heart_beat->get_client_version());
-      plocker.unlock(key);
-      if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
-        log_warn("prefix hides duplicate busy");
-        response_mreturn *resp = new response_mreturn();
-        resp->config_version = heart_beat->get_client_version();
-        resp->setChannelId(request->getChannelId());
-        resp->set_code(rc);
-        if (request->get_connection()->postPacket(resp) == false) {
-          delete resp;
+      } else {
+        data_entry key = request->key == NULL ?
+          **(request->key_list->begin()) : *request->key;
+        plocker.lock(key);
+        rc = tair_mgr->prefix_hides(request, heart_beat->get_client_version());
+        plocker.unlock(key);
+        if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+          log_warn("prefix hides duplicate busy");
+        } else {
+          return rc;
         }
       }
-
-      send_return = false;
+      response_mreturn *resp = new response_mreturn();
+      resp->config_version = heart_beat->get_client_version();
+      resp->setChannelId(request->getChannelId());
+      resp->set_code(rc);
+      if (request->get_connection()->postPacket(resp) == false) {
+        delete resp;
+      }
       return rc;
    }
 
     int request_processor::process(request_get_hidden *request, bool &send_return)
     {
-      if (tair_mgr->is_working() == false) {
-        return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-      }
-
-      set<data_entry*, data_entry_comparator>::iterator it;
-      data_entry *data = NULL;
+      int rc = TAIR_RETURN_FAILED;
       response_get *resp = new response_get();
 
-      uint64_t target_server_id = 0;
-      int rc = TAIR_RETURN_FAILED;
+      if (tair_mgr->is_working() == false) {
+        rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      } else {
+        set<data_entry*, data_entry_comparator>::iterator it;
+        data_entry *data = NULL;
+        uint64_t target_server_id = 0;
 
-      if (request->key_list != NULL) {
-        uint32_t count = 0;
-        PROFILER_START("batch get_hidden operation start");
-        for (it = request->key_list->begin(); it != request->key_list->end(); ++it) {
-          PROFILER_BEGIN("sub get_hidden operation in batch begin");
-          if (data == NULL) {
-            data = new data_entry();
+        if (request->key_list != NULL) {
+          uint32_t count = 0;
+          PROFILER_START("batch get_hidden operation start");
+          for (it = request->key_list->begin(); it != request->key_list->end(); ++it) {
+            PROFILER_BEGIN("sub get_hidden operation in batch begin");
+            if (data == NULL) {
+              data = new data_entry();
+            }
+            data_entry *key = (*it);
+
+            if (tair_mgr->should_proxy(*key, target_server_id))
+            {
+              resp->add_proxyed_key(key); //? when to do_proxy
+              continue;
+            }
+
+            plugin::plugins_root* plugin_root = NULL;
+            PROFILER_BEGIN("do request plugin");
+            int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                TAIR_REQ_GET_HIDDEN_PACKET, request->area, key, NULL, plugin_root);
+            PROFILER_END();
+            if (plugin_ret < 0) {
+              log_debug("plugin return %d, skip excute", plugin_ret);
+              continue;
+            }
+            PROFILER_BEGIN("do get");
+            int rev = tair_mgr->get_hidden(request->area, *key, *data);
+            PROFILER_END();
+
+            PROFILER_BEGIN("do response plugin");
+            tair_mgr->plugins_manager.do_response_plugins(rev, plugin::PLUGIN_TYPE_SYSTEM,
+                TAIR_REQ_GET_HIDDEN_PACKET, request->area, key, data, plugin_root);
+            PROFILER_END();
+            if (rev != TAIR_RETURN_SUCCESS && rev != TAIR_RETURN_HIDDEN) {
+              continue;
+            }
+            rev = TAIR_RETURN_SUCCESS;
+            ++count;
+            resp->add_key_data(new data_entry(*key), data);
+            data = NULL;
+            PROFILER_END();
           }
-          data_entry *key = (*it);
-
-          if (tair_mgr->should_proxy(*key, target_server_id))
-          {
-            resp->add_proxyed_key(key); //? when to do_proxy
-            continue;
-          }
-
-          plugin::plugins_root* plugin_root = NULL;
-          PROFILER_BEGIN("do request plugin");
-          int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-              TAIR_REQ_GET_HIDDEN_PACKET, request->area, key, NULL, plugin_root);
-          PROFILER_END();
-          if (plugin_ret < 0) {
-            log_debug("plugin return %d, skip excute", plugin_ret);
-            continue;
-          }
-          PROFILER_BEGIN("do get");
-          int rev = tair_mgr->get_hidden(request->area, *key, *data);
-          PROFILER_END();
-
-          PROFILER_BEGIN("do response plugin");
-          tair_mgr->plugins_manager.do_response_plugins(rev, plugin::PLUGIN_TYPE_SYSTEM,
-              TAIR_REQ_GET_HIDDEN_PACKET, request->area, key, data, plugin_root);
-          PROFILER_END();
-          if (rev != TAIR_RETURN_SUCCESS && rev != TAIR_RETURN_HIDDEN) {
-            continue;
-          }
-          rev = TAIR_RETURN_SUCCESS;
-          ++count;
-          resp->add_key_data(new data_entry(*key), data);
-          data = NULL;
-          PROFILER_END();
-        }
-        if (data != NULL) {
-          delete data;
-          data = NULL;
-        }
-        if(count == request->key_count){
-          rc = TAIR_RETURN_SUCCESS;
-        }else if(count > 0){
-          rc = TAIR_RETURN_PARTIAL_SUCCESS;
-        }else {
-          rc = TAIR_RETURN_FAILED;
-        }
-      } else if (request->key != NULL) {
-        PROFILER_START("get_hidden operation start");
-
-        if (tair_mgr->should_proxy(*request->key, target_server_id))
-        {
-          base_packet *proxy_packet = new request_get_hidden(*(request_get_hidden*)request);
-          rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
-          delete resp; resp = 0;
-          return rc;
-        }
-
-        plugin::plugins_root* plugin_root = NULL;
-        PROFILER_BEGIN("do request plugin");
-        int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-            TAIR_REQ_GET_HIDDEN_PACKET,request->area, (request->key), NULL, plugin_root);
-        PROFILER_END();
-
-        if (plugin_ret < 0) {
-          log_debug("plugin return %d, skip excute", plugin_ret);
-          rc = TAIR_RETURN_PLUGIN_ERROR;
-        }
-        else {
-          data = new data_entry();
-          PROFILER_BEGIN("do get_hidden");
-          rc = tair_mgr->get_hidden(request->area, *(request->key), *data);
-          PROFILER_END();
-
-          PROFILER_BEGIN("do response plugin");
-          tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-              TAIR_REQ_GET_HIDDEN_PACKET,request->area, (request->key), data, plugin_root);
-          PROFILER_END();
-          if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_HIDDEN) {
-            rc = TAIR_RETURN_SUCCESS;
-            resp->add_key_data(request->key, data);
-            request->key = NULL;
-            log_debug("get return %s", resp->data->get_data());
-          } else {
+          if (data != NULL) {
             delete data;
+            data = NULL;
+          }
+          if(count == request->key_count){
+            rc = TAIR_RETURN_SUCCESS;
+          }else if(count > 0){
+            rc = TAIR_RETURN_PARTIAL_SUCCESS;
+          }else {
+            rc = TAIR_RETURN_FAILED;
+          }
+        } else if (request->key != NULL) {
+          PROFILER_START("get_hidden operation start");
+
+          if (tair_mgr->should_proxy(*request->key, target_server_id))
+          {
+            rc = TAIR_RETURN_SHOULD_PROXY;
+          } else {
+            plugin::plugins_root* plugin_root = NULL;
+            PROFILER_BEGIN("do request plugin");
+            int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                TAIR_REQ_GET_HIDDEN_PACKET,request->area, (request->key), NULL, plugin_root);
+            PROFILER_END();
+
+            if (plugin_ret < 0) {
+              log_debug("plugin return %d, skip excute", plugin_ret);
+              rc = TAIR_RETURN_PLUGIN_ERROR;
+            }
+            else {
+              data = new data_entry();
+              PROFILER_BEGIN("do get_hidden");
+              rc = tair_mgr->get_hidden(request->area, *(request->key), *data);
+              PROFILER_END();
+
+              PROFILER_BEGIN("do response plugin");
+              tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                  TAIR_REQ_GET_HIDDEN_PACKET,request->area, (request->key), data, plugin_root);
+              PROFILER_END();
+              if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_HIDDEN) {
+                rc = TAIR_RETURN_SUCCESS;
+                resp->add_key_data(request->key, data);
+                request->key = NULL;
+                log_debug("get return %s", resp->data->get_data());
+              } else {
+                delete data;
+              }
+            }
           }
         }
       }
@@ -389,22 +382,22 @@ namespace tair {
 
    int request_processor::process(request_get_range *request, bool &send_return)
    {
+      send_return = true;
+
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
- 
+
       int rc = TAIR_RETURN_FAILED;
       plugin::plugins_root* plugin_root = NULL;
       uint64_t target_server_id = 0;
-      send_return = true;
- 
+
       PROFILER_START("get_range operation start");
       request->key_start.server_flag = request->server_flag;
       request->key_end.server_flag = request->server_flag;
 
       if (tair_mgr->should_proxy(request->key_start, target_server_id)) {
-         base_packet *proxy_packet = new request_get_range(*(request_get_range*)request);
-         rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+         rc = TAIR_RETURN_SHOULD_PROXY;
          return rc;
       }
 
@@ -448,6 +441,8 @@ namespace tair {
 
    int request_processor::process(request_remove *request, bool &send_return)
    {
+      send_return = true;
+
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
@@ -455,7 +450,6 @@ namespace tair {
       int rc = 0;
       plugin::plugins_root* plugin_root = NULL;
       uint64_t target_server_id = 0;
-      send_return = true;
 
       if (request->key_list != NULL) {
 
@@ -468,8 +462,7 @@ namespace tair {
 
          if (tair_mgr->should_proxy(*request->key, target_server_id))
          {
-            base_packet *proxy_packet = new request_remove(*(request_remove*)request);
-            rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+            rc = TAIR_RETURN_SHOULD_PROXY;
             return rc;
          }
 
@@ -499,6 +492,7 @@ namespace tair {
 
    int request_processor::process(request_inc_dec *request, bool &send_return)
    {
+      send_return = true;
       int rc = 0;
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
@@ -507,8 +501,7 @@ namespace tair {
       uint64_t target_server_id = 0;
       if (tair_mgr->should_proxy(request->key, target_server_id))
       {
-         base_packet *proxy_packet = new request_inc_dec(*(request_inc_dec*)request);
-         rc = do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+         rc = TAIR_RETURN_SHOULD_PROXY;
          return rc;
       }
 
@@ -524,7 +517,6 @@ namespace tair {
       if (plugin_ret < 0) {
          log_debug("plugin return %d, skip excute", plugin_ret);
          rc = TAIR_RETURN_PLUGIN_ERROR;
-         send_return = true;
       } else {
          PROFILER_BEGIN("do addCount");
          rc = tair_mgr->add_count(request->area, request->key,
@@ -556,7 +548,7 @@ namespace tair {
       return rc;
    }
 
-   int request_processor::process(request_duplicate *request, bool &sendReturn)
+   int request_processor::process(request_duplicate *request, bool &send_return)
    {
       int ret = 0;
 
@@ -596,7 +588,7 @@ namespace tair {
       }
       PROFILER_DUMP();
       PROFILER_STOP();
-      sendReturn = false;
+      send_return = false;
       return ret;
    }
 
@@ -852,6 +844,8 @@ namespace tair {
 
    int request_processor::process(request_mupdate *request,bool &send_return)
    {
+     send_return = true;
+
      if (tair_mgr->is_working() == false) {
        return TAIR_RETURN_SERVER_CAN_NOT_WORK;
      }
@@ -900,8 +894,8 @@ namespace tair {
 
     uint64_t target_server_id = 0;
     if (tair_mgr->should_proxy(request->key, target_server_id)) {
-      base_packet *proxy_packet = new request_lock(*(request_lock*)request);
-      return do_proxy(target_server_id, proxy_packet, request) ? TAIR_RETURN_PROXYED : TAIR_RETURN_FAILED;
+      rc = TAIR_RETURN_SHOULD_PROXY;
+      return rc;
     }
 
     PROFILER_START("local lock operation start");
@@ -935,212 +929,232 @@ namespace tair {
 
   int request_processor::process(request_prefix_puts *request, bool &send_return)
   {
-    int rc = 0;
+    send_return = false;
+    int rc = TAIR_RETURN_SUCCESS;
+
     if (tair_mgr->is_working() == false) {
-      return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-    }
-    if (request->key_count <= 0) {
-      log_error("prefix puts key count not greater than zero");
-      return TAIR_RETURN_ITEMSIZE_ERROR;
-    }
-    tair_keyvalue_map::iterator it = request->kvmap->begin();
-    data_entry mkey = *it->first;
-    plocker.lock(mkey);
-    rc = tair_mgr->prefix_puts(request, heart_beat->get_client_version());
-    plocker.unlock(mkey);
-    if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
-      log_warn("prefix puts duplicate busy");
-      response_mreturn *resp = new response_mreturn();
-      resp->set_code(rc);
-      resp->setChannelId(request->getChannelId());
-      resp->config_version = heart_beat->get_client_version();
-      if (request->get_connection()->postPacket(resp) == false) {
-        delete resp;
+      rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+    } else {
+      if (request->key_count <= 0) {
+        log_error("prefix puts key count not greater than zero");
+        rc = TAIR_RETURN_ITEMSIZE_ERROR;
+      } else {
+        uint64_t target_server_id = 0;
+        if (tair_mgr->should_proxy(*request->pkey, target_server_id))
+        {
+          rc = TAIR_RETURN_SHOULD_PROXY;
+        } else {
+          tair_keyvalue_map::iterator it = request->kvmap->begin();
+          data_entry mkey = *it->first;
+          plocker.lock(mkey);
+          rc = tair_mgr->prefix_puts(request, heart_beat->get_client_version());
+          plocker.unlock(mkey);
+          if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+            log_warn("prefix puts duplicate busy");
+          } else {
+            return rc;
+          }
+        }
       }
     }
-    send_return = false;
+    response_mreturn *resp = new response_mreturn();
+    resp->set_code(rc);
+    resp->setChannelId(request->getChannelId());
+    resp->config_version = heart_beat->get_client_version();
+    if (request->get_connection()->postPacket(resp) == false) {
+      delete resp;
+    }
     return rc;
   }
 
    int request_processor::process(request_prefix_removes *request, bool &send_return)
    {
+      send_return = false;
+      int rc = TAIR_RETURN_SUCCESS;
       if (tair_mgr->is_working() == false) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-      }
-      int rc = 0;
-      data_entry key = request->key == NULL ?
-        **(request->key_list->begin()) : *request->key;
-      plocker.lock(key);
-      rc = tair_mgr->prefix_removes(request, heart_beat->get_client_version());
-      plocker.unlock(key);
-      if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
-        log_warn("prefix removes duplicate busy");
-        response_mreturn *resp = new response_mreturn();
-        resp->config_version = heart_beat->get_client_version();
-        resp->setChannelId(request->getChannelId());
-        resp->set_code(rc);
-        if (request->get_connection()->postPacket(resp) == false) {
-          delete resp;
+      } else {
+        data_entry key = request->key == NULL ?
+          **(request->key_list->begin()) : *request->key;
+        plocker.lock(key);
+        rc = tair_mgr->prefix_removes(request, heart_beat->get_client_version());
+        plocker.unlock(key);
+        if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+          log_warn("prefix removes duplicate busy");
+        } else {
+          return rc;
         }
       }
-
-      send_return = false;
+      response_mreturn *resp = new response_mreturn();
+      resp->config_version = heart_beat->get_client_version();
+      resp->setChannelId(request->getChannelId());
+      resp->set_code(rc);
+      if (request->get_connection()->postPacket(resp) == false) {
+        delete resp;
+      }
       return rc;
    }
 
    int request_processor::process(request_prefix_incdec *request, bool &send_return)
    {
+     send_return = false;
      int rc = TAIR_RETURN_SUCCESS;
      if (tair_mgr->is_working() == false) {
        rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
-     }
-     data_entry key = *request->key_counter_map->begin()->first;
-     plocker.lock(key);
-     rc = tair_mgr->prefix_incdec(request, heart_beat->get_client_version());
-     plocker.unlock(key);
-     send_return = false;
-     if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
-       log_warn("prefix inc/dec duplicate busy");
-       response_prefix_incdec *resp = new response_prefix_incdec;
-       resp->set_code(rc);
-       resp->config_version = heart_beat->get_client_version();
-       resp->setChannelId(request->getChannelId());
-       if (request->get_connection()->postPacket(resp) == false) {
-         delete resp;
+     } else {
+       uint64_t target_server_id = 0;
+       if (tair_mgr->should_proxy(*request->pkey, target_server_id))
+       {
+         rc = TAIR_RETURN_SHOULD_PROXY;
+       } else {
+         data_entry key = *request->key_counter_map->begin()->first;
+         plocker.lock(key);
+         rc = tair_mgr->prefix_incdec(request, heart_beat->get_client_version());
+         plocker.unlock(key);
+         send_return = false;
+         if (rc == TAIR_RETURN_DUPLICATE_BUSY) {
+           log_warn("prefix inc/dec duplicate busy");
+         } else {
+           return rc;
+         }
        }
      }
-
+     response_prefix_incdec *resp = new response_prefix_incdec;
+     resp->set_code(rc);
+     resp->config_version = heart_beat->get_client_version();
+     resp->setChannelId(request->getChannelId());
+     if (request->get_connection()->postPacket(resp) == false) {
+       delete resp;
+     }
      return rc;
    }
 
    int request_processor::process(request_prefix_gets *request, bool &send_return)
    {
-     if (tair_mgr->is_working() == false) {
-       return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-     }
-
-     set<data_entry*, data_entry_comparator>::iterator it;
-     data_entry *data = NULL;
+     int rc = TAIR_RETURN_FAILED;
      response_prefix_gets *resp = new response_prefix_gets();
 
-     uint64_t target_server_id = 0;
-     int rc = TAIR_RETURN_FAILED;
+     if (tair_mgr->is_working() == false) {
+       rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+     } else {
+       set<data_entry*, data_entry_comparator>::iterator it;
+       data_entry *data = NULL;
+       uint64_t target_server_id = 0;
 
-     if (request->key_list != NULL) {
-       uint32_t count = 0;
-       PROFILER_START("batch get operation start");
-       it = request->key_list->begin();
-       data_entry *mkey = *it;
-       plocker.lock(*mkey);
-       for (; it != request->key_list->end(); ++it) {
-         data_entry *key = (*it);
+       if (request->key_list != NULL) {
+         uint32_t count = 0;
+         PROFILER_START("batch get operation start");
+         it = request->key_list->begin();
+         data_entry *mkey = *it;
+         plocker.lock(*mkey);
+         for (; it != request->key_list->end(); ++it) {
+           data_entry *key = (*it);
+           if (tair_mgr->should_proxy(*key, target_server_id))
+           {
+             rc = TAIR_RETURN_SHOULD_PROXY;
+             break;
+           } else {
+             plugin::plugins_root* plugin_root = NULL;
+             PROFILER_BEGIN("do request plugin");
+             int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                 TAIR_REQ_PREFIX_GETS_PACKET, request->area, key, NULL, plugin_root);
+             PROFILER_END();
+             if (plugin_ret < 0) {
+               log_debug("plugin return %d, skip excute", plugin_ret);
+               rc = TAIR_RETURN_PLUGIN_ERROR;
+             } else {
+               PROFILER_BEGIN("do get");
+               if (data == NULL) {
+                 data = new data_entry();
+               }
+               rc = tair_mgr->get(request->area, *key, *data);
+               PROFILER_END();
 
-         if (tair_mgr->should_proxy(*key, target_server_id))
-         {
-           rc = TAIR_RETURN_SHOULD_PROXY;
-           break;
-         }
-
-         plugin::plugins_root* plugin_root = NULL;
-         PROFILER_BEGIN("do request plugin");
-         int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-             TAIR_REQ_PREFIX_GETS_PACKET, request->area, key, NULL, plugin_root);
-         PROFILER_END();
-         if (plugin_ret < 0) {
-           log_debug("plugin return %d, skip excute", plugin_ret);
-           rc = TAIR_RETURN_PLUGIN_ERROR;
-         } else {
-           PROFILER_BEGIN("do get");
-           if (data == NULL) {
-             data = new data_entry();
+               PROFILER_BEGIN("do response plugin");
+               tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                   TAIR_REQ_PREFIX_GETS_PACKET, request->area, key, data, plugin_root);
+               PROFILER_END();
+             }
            }
-           rc = tair_mgr->get(request->area, *key, *data);
-           PROFILER_END();
-
-           PROFILER_BEGIN("do response plugin");
-           tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-               TAIR_REQ_PREFIX_GETS_PACKET, request->area, key, data, plugin_root);
-           PROFILER_END();
-         }
-         data_entry *skey = new data_entry();
-         int prefix_size = key->get_prefix_size();
-         skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
-         skey->data_meta.version = key->data_meta.version;
-         skey->data_meta.edate = key->data_meta.edate;
-         //skey->data_meta = key->data_meta;
-         if (resp->pkey == NULL) {
-           resp->set_pkey(key->get_data(), key->get_prefix_size());
-         }
-         if (rc == TAIR_RETURN_SUCCESS) {
-           ++count;
-           resp->add_key_value(skey, data);
-           data = NULL;
-         } else {
-           resp->add_key_code(skey, rc);
-         }
-       }
-       plocker.unlock(*mkey);
-       if (data != NULL) {
-         delete data;
-         data = NULL;
-       }
-       if (count == request->key_count) {
-         rc = TAIR_RETURN_SUCCESS;
-       } else if (count > 0) {
-         rc = TAIR_RETURN_PARTIAL_SUCCESS;
-       } else {
-         //~ rc = rc;
-       }
-     } else if (request->key != NULL) {
-       data_entry *mkey = request->key;
-       plocker.lock(*mkey);
-       do {
-         if (tair_mgr->should_proxy(*request->key, target_server_id))
-         {
-           rc = TAIR_RETURN_SHOULD_PROXY;
-           break;
-         }
-
-         plugin::plugins_root* plugin_root = NULL;
-         PROFILER_BEGIN("do request plugin");
-         int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-             TAIR_REQ_PREFIX_GETS_PACKET,request->area, (request->key), NULL, plugin_root);
-         PROFILER_END();
-
-         if (plugin_ret < 0) {
-           log_debug("plugin return %d, skip excute", plugin_ret);
-           rc = TAIR_RETURN_PLUGIN_ERROR;
-         } else {
-           data = new data_entry();
-           data_entry *key = request->key;
-           PROFILER_BEGIN("do get");
-           rc = tair_mgr->get(request->area, *(request->key), *data);
-           PROFILER_END();
-
-           PROFILER_BEGIN("do response plugin");
-           tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-               TAIR_REQ_GET_PACKET,request->area, (request->key), data, plugin_root);
-           PROFILER_END();
-
            data_entry *skey = new data_entry();
            int prefix_size = key->get_prefix_size();
            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
            skey->data_meta.version = key->data_meta.version;
            skey->data_meta.edate = key->data_meta.edate;
-
+           //skey->data_meta = key->data_meta;
            if (resp->pkey == NULL) {
              resp->set_pkey(key->get_data(), key->get_prefix_size());
            }
            if (rc == TAIR_RETURN_SUCCESS) {
+             ++count;
              resp->add_key_value(skey, data);
              data = NULL;
            } else {
-             delete data;
-             data = NULL;
+             resp->add_key_code(skey, rc);
            }
          }
-       } while (false);
-       plocker.unlock(*mkey);
+         plocker.unlock(*mkey);
+         if (data != NULL) {
+           delete data;
+           data = NULL;
+         }
+         if (count == request->key_count) {
+           rc = TAIR_RETURN_SUCCESS;
+         } else if (count > 0) {
+           rc = TAIR_RETURN_PARTIAL_SUCCESS;
+         } else {
+           //~ rc = rc;
+         }
+       } else if (request->key != NULL) {
+         data_entry *mkey = request->key;
+         if (tair_mgr->should_proxy(*mkey, target_server_id))
+         {
+           rc = TAIR_RETURN_SHOULD_PROXY;
+         } else {
+           plocker.lock(*mkey);
+           do {
+             plugin::plugins_root* plugin_root = NULL;
+             PROFILER_BEGIN("do request plugin");
+             int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                 TAIR_REQ_PREFIX_GETS_PACKET,request->area, (request->key), NULL, plugin_root);
+             PROFILER_END();
+
+             if (plugin_ret < 0) {
+               log_debug("plugin return %d, skip excute", plugin_ret);
+               rc = TAIR_RETURN_PLUGIN_ERROR;
+             } else {
+               data = new data_entry();
+               data_entry *key = request->key;
+               PROFILER_BEGIN("do get");
+               rc = tair_mgr->get(request->area, *(request->key), *data);
+               PROFILER_END();
+
+               PROFILER_BEGIN("do response plugin");
+               tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                   TAIR_REQ_GET_PACKET,request->area, (request->key), data, plugin_root);
+               PROFILER_END();
+
+               data_entry *skey = new data_entry();
+               int prefix_size = key->get_prefix_size();
+               skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+               skey->data_meta.version = key->data_meta.version;
+               skey->data_meta.edate = key->data_meta.edate;
+
+               if (resp->pkey == NULL) {
+                 resp->set_pkey(key->get_data(), key->get_prefix_size());
+               }
+               if (rc == TAIR_RETURN_SUCCESS) {
+                 resp->add_key_value(skey, data);
+                 data = NULL;
+               } else {
+                 delete data;
+                 data = NULL;
+               }
+             }
+           } while (false);
+           plocker.unlock(*mkey);
+         }
+       }
      }
      resp->config_version = heart_beat->get_client_version();
      resp->setChannelId(request->getChannelId());
@@ -1158,132 +1172,130 @@ namespace tair {
 
    int request_processor::process(request_prefix_get_hiddens *request, bool &send_return)
    {
-     if (tair_mgr->is_working() == false) {
-       return TAIR_RETURN_SERVER_CAN_NOT_WORK;
-     }
-
-     set<data_entry*, data_entry_comparator>::iterator it;
-     data_entry *data = NULL;
+     int rc = TAIR_RETURN_FAILED;
      response_prefix_gets *resp = new response_prefix_gets();
 
-     uint64_t target_server_id = 0;
-     int rc = TAIR_RETURN_FAILED;
+     if (tair_mgr->is_working() == false) {
+       rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+     } else {
+       set<data_entry*, data_entry_comparator>::iterator it;
+       data_entry *data = NULL;
+       uint64_t target_server_id = 0;
 
-     if (request->key_list != NULL) {
-       uint32_t count = 0;
-       PROFILER_START("batch get operation start");
-       it = request->key_list->begin();
-       data_entry *mkey = *it;
-       plocker.lock(*mkey);
-       for (; it != request->key_list->end(); ++it) {
-         data_entry *key = (*it);
+       if (request->key_list != NULL) {
+         uint32_t count = 0;
+         PROFILER_START("batch get operation start");
+         it = request->key_list->begin();
+         data_entry *mkey = *it;
+         plocker.lock(*mkey);
+         for (; it != request->key_list->end(); ++it) {
+           data_entry *key = (*it);
+           if (tair_mgr->should_proxy(*key, target_server_id))
+           {
+             rc = TAIR_RETURN_SHOULD_PROXY;
+             break;
+           } else {
+             plugin::plugins_root* plugin_root = NULL;
+             PROFILER_BEGIN("do request plugin");
+             int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                 TAIR_REQ_PREFIX_GET_HIDDENS_PACKET, request->area, key, NULL, plugin_root);
+             PROFILER_END();
+             if (plugin_ret < 0) {
+               log_debug("plugin return %d, skip excute", plugin_ret);
+               rc = TAIR_RETURN_PLUGIN_ERROR;
+             } else {
+               PROFILER_BEGIN("do prefix get hiddens");
+               if (data == NULL) {
+                 data = new data_entry();
+               }
+               rc = tair_mgr->get_hidden(request->area, *key, *data);
+               PROFILER_END();
 
-         if (tair_mgr->should_proxy(*key, target_server_id))
-         {
-           rc = TAIR_RETURN_SHOULD_PROXY;
-           break;
-         }
-
-         plugin::plugins_root* plugin_root = NULL;
-         PROFILER_BEGIN("do request plugin");
-         int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-             TAIR_REQ_PREFIX_GET_HIDDENS_PACKET, request->area, key, NULL, plugin_root);
-         PROFILER_END();
-         if (plugin_ret < 0) {
-           log_debug("plugin return %d, skip excute", plugin_ret);
-           rc = TAIR_RETURN_PLUGIN_ERROR;
-         } else {
-           PROFILER_BEGIN("do prefix get hiddens");
-           if (data == NULL) {
-             data = new data_entry();
+               PROFILER_BEGIN("do response plugin");
+               tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                   TAIR_REQ_PREFIX_GET_HIDDENS_PACKET, request->area, key, data, plugin_root);
+               PROFILER_END();
+             }
            }
-           rc = tair_mgr->get_hidden(request->area, *key, *data);
-           PROFILER_END();
-
-           PROFILER_BEGIN("do response plugin");
-           tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-               TAIR_REQ_PREFIX_GET_HIDDENS_PACKET, request->area, key, data, plugin_root);
-           PROFILER_END();
-         }
-         data_entry *skey = new data_entry();
-         int prefix_size = key->get_prefix_size();
-         skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
-         skey->data_meta.version = key->data_meta.version;
-         skey->data_meta.edate = key->data_meta.edate;
-         //skey->data_meta = key->data_meta;
-         if (resp->pkey == NULL) {
-           resp->set_pkey(key->get_data(), key->get_prefix_size());
-         }
-         if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_HIDDEN) {
-           ++count;
-           resp->add_key_value(skey, data, false, rc);
-           data = NULL;
-         } else {
-           resp->add_key_code(skey, rc);
-         }
-       }
-       plocker.unlock(*mkey);
-       if (data != NULL) {
-         delete data;
-         data = NULL;
-       }
-       if (count == request->key_count) {
-         rc = TAIR_RETURN_SUCCESS;
-       } else if (count > 0) {
-         rc = TAIR_RETURN_PARTIAL_SUCCESS;
-       } else {
-         //~ rc = rc;
-       }
-     } else if (request->key != NULL) {
-       data_entry *mkey = request->key;
-       plocker.lock(*mkey);
-       do {
-         if (tair_mgr->should_proxy(*request->key, target_server_id))
-         {
-           rc = TAIR_RETURN_SHOULD_PROXY;
-           break;
-         }
-
-         plugin::plugins_root* plugin_root = NULL;
-         PROFILER_BEGIN("do request plugin");
-         int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
-             TAIR_REQ_PREFIX_GET_HIDDENS_PACKET,request->area, (request->key), NULL, plugin_root);
-         PROFILER_END();
-
-         if (plugin_ret < 0) {
-           log_debug("plugin return %d, skip excute", plugin_ret);
-           rc = TAIR_RETURN_PLUGIN_ERROR;
-         } else {
-           data = new data_entry();
-           data_entry *key = request->key;
-           PROFILER_BEGIN("do get");
-           rc = tair_mgr->get_hidden(request->area, *(request->key), *data);
-           PROFILER_END();
-
-           PROFILER_BEGIN("do response plugin");
-           tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
-               TAIR_REQ_PREFIX_GET_HIDDENS_PACKET,request->area, (request->key), data, plugin_root);
-           PROFILER_END();
-
            data_entry *skey = new data_entry();
            int prefix_size = key->get_prefix_size();
            skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
            skey->data_meta.version = key->data_meta.version;
            skey->data_meta.edate = key->data_meta.edate;
-
+           //skey->data_meta = key->data_meta;
            if (resp->pkey == NULL) {
              resp->set_pkey(key->get_data(), key->get_prefix_size());
            }
            if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_HIDDEN) {
+             ++count;
              resp->add_key_value(skey, data, false, rc);
              data = NULL;
            } else {
-             delete data;
-             data = NULL;
+             resp->add_key_code(skey, rc);
            }
          }
-       } while (false);
-       plocker.unlock(*mkey);
+         plocker.unlock(*mkey);
+         if (data != NULL) {
+           delete data;
+           data = NULL;
+         }
+         if (count == request->key_count) {
+           rc = TAIR_RETURN_SUCCESS;
+         } else if (count > 0) {
+           rc = TAIR_RETURN_PARTIAL_SUCCESS;
+         } else {
+           //~ rc = rc;
+         }
+       } else if (request->key != NULL) {
+         data_entry *mkey = request->key;
+         if (tair_mgr->should_proxy(*mkey, target_server_id))
+         {
+            rc = TAIR_RETURN_SHOULD_PROXY;
+         } else {
+           plocker.lock(*mkey);
+           do {
+             plugin::plugins_root* plugin_root = NULL;
+             PROFILER_BEGIN("do request plugin");
+             int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                 TAIR_REQ_PREFIX_GET_HIDDENS_PACKET,request->area, (request->key), NULL, plugin_root);
+             PROFILER_END();
+
+             if (plugin_ret < 0) {
+               log_debug("plugin return %d, skip excute", plugin_ret);
+               rc = TAIR_RETURN_PLUGIN_ERROR;
+             } else {
+               data = new data_entry();
+               data_entry *key = request->key;
+               PROFILER_BEGIN("do get");
+               rc = tair_mgr->get_hidden(request->area, *(request->key), *data);
+               PROFILER_END();
+
+               PROFILER_BEGIN("do response plugin");
+               tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                   TAIR_REQ_PREFIX_GET_HIDDENS_PACKET,request->area, (request->key), data, plugin_root);
+               PROFILER_END();
+
+               data_entry *skey = new data_entry();
+               int prefix_size = key->get_prefix_size();
+               skey->set_data(key->get_data() + prefix_size, key->get_size() - prefix_size);
+               skey->data_meta.version = key->data_meta.version;
+               skey->data_meta.edate = key->data_meta.edate;
+
+               if (resp->pkey == NULL) {
+                 resp->set_pkey(key->get_data(), key->get_prefix_size());
+               }
+               if (rc == TAIR_RETURN_SUCCESS || rc == TAIR_RETURN_HIDDEN) {
+                 resp->add_key_value(skey, data, false, rc);
+                 data = NULL;
+               } else {
+                 delete data;
+                 data = NULL;
+               }
+             }
+           } while (false);
+           plocker.unlock(*mkey);
+         }
+       }
      }
      resp->config_version = heart_beat->get_client_version();
      resp->setChannelId(request->getChannelId());

@@ -441,6 +441,21 @@ namespace tair {
       void set_randread(bool rand_flag);
 
       /**
+       * @brief set the compress algorithm type
+       *
+       * @param type: the type of compress algorithm, 0 means zlib
+       */
+      void set_compress_type(TAIR_COMPRESS_TYPE type);
+
+      /**
+       * @brief set the compress threshold
+       *
+       * @param threshold: the threshold of compress, if the size of data is lower than
+       *                   this value, skip the compress method. the unit is byte.
+       */
+      void set_compress_threshold(int threshold);
+
+      /**
        * @brief get bucket count of tair cluster
        *
        * @return  bucket count

@@ -401,6 +401,18 @@ namespace tair {
     impl->set_randread(rand_flag);
   }
 
+  void tair_client_api::set_compress_type(TAIR_COMPRESS_TYPE type)
+  {
+    if ((type >= 0) && (type < TAIR_COMPRESS_TYPE_NUM)) {
+      tair::common::data_entry::compress_type = type;
+    }
+  }
+
+  void tair_client_api::set_compress_threshold(int threshold)
+  {
+      tair::common::data_entry::compress_threshold = threshold;
+  }
+
   const char *tair_client_api::get_error_msg(int ret)
   {
     return impl->get_error_msg(ret);

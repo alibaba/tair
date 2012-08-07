@@ -1134,8 +1134,18 @@ namespace tair {
             server_table_manager.d_hash_table[idx];
           ret = true;
         }
+        if(server_table_manager.hash_table[idx] !=
+           server_table_manager.d_hash_table[idx]) {
+          server_table_manager.hash_table[idx] =
+            server_table_manager.d_hash_table[idx];
+        }
       }
       if(ret == true) {
+        inc_version(server_table_manager.client_version);
+        deflate_hash_table();
+        log_info("[%s] version changed: clientVersion: %u, serverVersion: %u",
+               group_name, *server_table_manager.client_version,
+               *server_table_manager.server_version);
         (*server_table_manager.migrate_block_count)--;
         map<uint64_t, int>::iterator it = migrate_machine.find(server_id);
         assert(it != migrate_machine.end());
