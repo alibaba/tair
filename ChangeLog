@@ -53,3 +53,6 @@ version 2.3.1.7
 version 2.3.2.0
 * feuture:
 * 1. C++客户端增加压缩功能
+* 2. 去掉ds的proxy机制
+* fixbug:
+* 1. 修复mget时返回key_count为0时全部失败的bug。
