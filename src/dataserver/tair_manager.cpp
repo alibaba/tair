@@ -839,6 +839,7 @@
         rc = TAIR_RETURN_SUCCESS;
       }
 
+      TAIR_STAT.stat_remove(area);
       return rc;
     }
 
