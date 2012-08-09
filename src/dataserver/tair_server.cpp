@@ -647,10 +647,10 @@ char *parse_cmd_line(int argc, char *const argv[])
             break;
          case 'V':
            fprintf(stderr, "BUILD_TIME: %s %s\nSVN: %s\n", __DATE__, __TIME__, TAIR_SVN_INFO);
-            return NULL;
+           exit(1);
          case 'h':
            print_usage(argv[0]);
-           return NULL;
+           exit(1);
       }
    }
    return config_file;

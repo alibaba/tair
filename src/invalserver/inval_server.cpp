@@ -344,7 +344,7 @@ char *parse_cmd_line(int argc, char *const argv[]) {
         configFile = optarg;
         break;
       case 'V':
-        fprintf(stderr, "BUILD_TIME: %s %s\n\n", __DATE__, __TIME__);
+        fprintf(stderr, "BUILD_TIME: %s %s\nSVN: %s\n", __DATE__, __TIME__, TAIR_SVN_INFO);
         exit (1);
       case 'h':
         print_usage(argv[0]);
