@@ -749,7 +749,7 @@
       return result;
     }
 
-    int tair_manager::get(int area, data_entry &key, data_entry &value)
+    int tair_manager::get(int area, data_entry &key, data_entry &value, bool with_stat)
     {
       if (!localmode && status != STATUS_CAN_WORK) {
         return TAIR_RETURN_SERVER_CAN_NOT_WORK;
@@ -769,10 +769,11 @@
       int bucket_number = get_bucket_number(key);
       log_debug("get request will server in bucket: %d", bucket_number);
       PROFILER_BEGIN("get from storage engine");
-      int rc = storage_mgr->get(bucket_number, mkey, value);
+      int rc = storage_mgr->get(bucket_number, mkey, value, with_stat);
       PROFILER_END();
       key.data_meta = mkey.data_meta;
-      TAIR_STAT.stat_get(area, rc);
+      if (with_stat)
+        TAIR_STAT.stat_get(area, rc);
       if (rc == TAIR_RETURN_SUCCESS) {
         rc = (value.data_meta.flag & TAIR_ITEM_FLAG_DELETED) ?
           TAIR_RETURN_HIDDEN : TAIR_RETURN_SUCCESS;
@@ -825,7 +826,7 @@
       // get from storage engine
       data_entry old_value;
       PROFILER_BEGIN("hide::get");
-      int rc = get(area, key, old_value);
+      int rc = get(area, key, old_value, false);
       PROFILER_END();
       log_debug("hide::get result: %d, flag: %d", rc, key.data_meta.flag);
       key.data_meta.log_self();

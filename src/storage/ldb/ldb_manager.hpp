@@ -46,7 +46,7 @@ namespace tair
 
         int put(int bucket_number, data_entry& key, data_entry& value,
                 bool version_care, int expire_time);
-        int get(int bucket_number, data_entry& key, data_entry& value);
+        int get(int bucket_number, data_entry& key, data_entry& value, bool stat);
         int remove(int bucket_number, data_entry& key, bool version_care);
         int clear(int area);
 

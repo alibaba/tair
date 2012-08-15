@@ -111,7 +111,7 @@ namespace tair
         return rc;
       }
 
-      int LdbManager::get(int bucket_number, data_entry& key, data_entry& value)
+      int LdbManager::get(int bucket_number, data_entry& key, data_entry& value, bool stat)
       {
         log_debug("ldb::get");
         int rc = TAIR_RETURN_SUCCESS;

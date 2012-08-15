@@ -74,7 +74,7 @@ namespace tair {
       int put(int area, data_entry &key, data_entry &value, int expire_time,base_packet *request=NULL,int version=0);
       //int put(int area, data_entry &key, data_entry &value, int expire_time,request_put *request,int version);
       int add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,base_packet * request,int version);
-      int get(int area, data_entry &key, data_entry &value);
+      int get(int area, data_entry &key, data_entry &value, bool with_stat = true);
       int hide(int area, data_entry &key, base_packet *request = NULL, int heart_version = 0);
       int get_hidden(int area, data_entry &key, data_entry &value);
       int remove(int area, data_entry &key,request_remove *request=NULL,int version=0);

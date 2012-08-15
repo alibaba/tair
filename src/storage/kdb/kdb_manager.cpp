@@ -68,7 +68,7 @@ namespace tair {
         return rc;
       }
 
-      int kdb_manager::get(int bucket_number, data_entry & key, data_entry & value)
+      int kdb_manager::get(int bucket_number, data_entry & key, data_entry & value, bool stat)
       {
         int rc = TAIR_RETURN_SUCCESS;
 

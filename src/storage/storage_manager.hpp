@@ -51,7 +51,7 @@ const int ITEM_HEAD_LENGTH = 2;
                       bool version_care, int expire_time) = 0;
 
       virtual int get(int bucket_number, data_entry & key,
-                      data_entry & value) = 0;
+                      data_entry & value, bool with_stat = true) = 0;
 
       virtual int remove(int bucket_number, data_entry & key,
                          bool version_care) = 0;

@@ -45,7 +45,7 @@ namespace tair {
     int put(int bucket_num, data_entry & key, data_entry & value,
             bool version_care, int expire_time);
 
-    int get(int bucket_num, data_entry & key, data_entry & value);
+    int get(int bucket_num, data_entry & key, data_entry & value, bool with_stat = true);
 
     int remove(int bucket_num, data_entry & key, bool version_care);
     int add_count(int bucket_num,data_entry &key, int count, int init_value,
@@ -116,7 +116,7 @@ namespace tair {
     //do_put,do_get,do_remove should lock first.
     int do_put(data_entry & key, data_entry & data, bool version_care,
                int expired);
-    int do_get(data_entry & key, data_entry & data);
+    int do_get(data_entry & key, data_entry & data, bool with_stat = true);
     int do_remove(data_entry & key, bool version_care);
     int do_add_count(data_entry &key, int count, int init_value,
             bool not_negative,int expired ,int &result_value);

@@ -73,7 +73,7 @@ namespace tair {
       }
 
       int fdb_manager::get(int bucket_number, data_entry & key,
-                           data_entry & value)
+                           data_entry & value, bool with_stat)
       {
 
         fdb_bucket *bucket = get_bucket(bucket_number);

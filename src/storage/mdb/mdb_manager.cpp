@@ -114,10 +114,10 @@ namespace tair {
     return do_put(key, value, version_care, expire_time);
   }
 
-  int mdb_manager::get(int bucket_num, data_entry & key, data_entry & value)
+  int mdb_manager::get(int bucket_num, data_entry & key, data_entry & value, bool with_stat)
   {
     boost::mutex::scoped_lock guard(mem_locker);
-    return do_get(key, value);
+    return do_get(key, value, with_stat);
   }
 
   int mdb_manager::remove(int bucket_num, data_entry & key, bool version_care)
@@ -566,7 +566,7 @@ namespace tair {
     return 0;
   }
 
-  int mdb_manager::do_get(data_entry & key, data_entry & data)
+  int mdb_manager::do_get(data_entry & key, data_entry & data, bool with_stat)
   {
 
     TBSYS_LOG(DEBUG, "start get: area:%d,key size:%u", key.area,
@@ -599,14 +599,16 @@ namespace tair {
       cache->update_item(it);
 
       //++m_stat.hitCount;
-      ++area_stat[key.area]->hit_count;
+      if (with_stat)
+        ++area_stat[key.area]->hit_count;
       ret = 0;
     }
     else if(expired) {
       ret = TAIR_RETURN_DATA_EXPIRED;
     }
     //++m_stat.getCount;
-    ++area_stat[key.area]->get_count;
+    if (with_stat)
+      ++area_stat[key.area]->get_count;
     return ret;
   }
 
