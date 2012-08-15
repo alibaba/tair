@@ -460,6 +460,12 @@ namespace tair {
             ret = req_processor->process(opacket,send_return);
             break;
          }
+         case TAIR_REQ_EXPIRE_PACKET:
+         {
+            request_expire *opacket = (request_expire*)(packet);
+            ret = req_processor->process(opacket, send_return);
+            break;
+         }
          default:
          {
             ret = EXIT_FAILURE;

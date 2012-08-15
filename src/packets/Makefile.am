@@ -48,6 +48,7 @@ libtair_packets_a_SOURCES=packet_factory.cpp	\
         get_hidden_packet.hpp \
         sync_packet.hpp \
         put_packet.hpp  \
+        expire_packet.hpp  \
         query_info_packet.hpp  \
         remove_area_packet.hpp  \
         remove_packet.hpp  \

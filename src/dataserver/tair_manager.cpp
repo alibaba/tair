@@ -1523,6 +1523,38 @@
       return flag;
     }
 
+    int tair_manager::expire(int area, data_entry &key, int expire_time, base_packet *request, int heart_version)
+    {
+      if (status != STATUS_CAN_WORK) {
+        return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      }
+
+      if (key.get_size() >= TAIR_MAX_KEY_SIZE || key.get_size() < 1) {
+        return TAIR_RETURN_ITEMSIZE_ERROR;
+      }
+
+      if (area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+        return TAIR_RETURN_INVALID_ARGUMENT;
+      }
+
+      tbsys::CThreadGuard guard(&counter_mutex[get_mutex_index(key)]);
+      // get from storage engine
+      data_entry old_value;
+      PROFILER_BEGIN("expire::get");
+      int rc = get(area, key, old_value);
+      PROFILER_END();
+      log_debug("expire::get result: %d, flag: %d", rc, key.data_meta.flag);
+      key.data_meta.log_self();
+
+      if (TAIR_RETURN_SUCCESS == rc) {
+        PROFILER_BEGIN("expire::put");
+        rc = put(area, key, old_value, expire_time, request, heart_version);
+        PROFILER_END();
+      }
+
+      return rc;
+    }
+
     bool tair_manager::is_localmode()
     {
       return localmode;

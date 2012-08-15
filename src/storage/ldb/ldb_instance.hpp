@@ -50,7 +50,7 @@ namespace tair
 
         int put(int bucket_number, tair::common::data_entry& key,
                 tair::common::data_entry& value,
-                bool version_care, uint32_t expire_time);
+                bool version_care, int expire_time);
         int get(int bucket_number, tair::common::data_entry& key, tair::common::data_entry& value);
         int remove(int bucket_number, tair::common::data_entry& key, bool version_care);
 

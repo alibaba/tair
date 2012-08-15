@@ -107,6 +107,8 @@ namespace tair {
       TAIR_REQ_DATASERVER_CTRL_PACKET = 1500,
       TAIR_REQ_GET_MIGRATE_MACHINE_PACKET,
 
+      TAIR_REQ_EXPIRE_PACKET = 2127, // compatible with java client
+
       TAIR_STAT_CMD_VIEW      = 9000,
       TAIR_FLOW_CONTROL       = 9001,
       TAIR_FLOW_CONTROL_SET   = 9002,

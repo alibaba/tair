@@ -261,7 +261,7 @@ namespace tair
 
       int LdbInstance::put(int bucket_number, tair::common::data_entry& key,
                            tair::common::data_entry& value,
-                           bool version_care, uint32_t expire_time)
+                           bool version_care, int expire_time)
       {
         assert(db_ != NULL);
 
@@ -333,7 +333,11 @@ namespace tair
           ldb_item.meta().base_.flag_ = value.data_meta.flag;
           ldb_item.meta().base_.cdate_ = cdate;
           ldb_item.meta().base_.mdate_ = mdate;
-          ldb_item.meta().base_.edate_ = edate;
+          if (expire_time >= 0) {
+            ldb_item.meta().base_.edate_ = edate;
+          } else {
+            ldb_key.build_key_meta(ldb_key.data(), bucket_number, ldb_item.meta().base_.edate_);
+          }
           ldb_item.set_prefix_size(key.get_prefix_size());
           if (version_care)
           {

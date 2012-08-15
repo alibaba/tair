@@ -317,6 +317,13 @@ namespace tair {
   {
     return impl->lock(area, key, UNLOCK_VALUE);
   }
+
+  int tair_client_api::expire(int area,
+      const data_entry& key,
+      int expire)
+  {
+    return impl->expire(area, key, expire);
+  }
   //int tair_client_api::removeArea(int area)
   //{
   //      return impl->removeArea(area);

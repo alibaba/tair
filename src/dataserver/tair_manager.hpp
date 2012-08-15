@@ -82,6 +82,7 @@ namespace tair {
       int clear(int area);
 
       int op_cmd(ServerCmdType cmd, std::vector<std::string>& params);
+      int expire(int area, data_entry &key, int expire_time, base_packet *request = NULL, int version = 0);
 
       int direct_put(data_entry &key, data_entry &value);
       int direct_remove(data_entry &key);

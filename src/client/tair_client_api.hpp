@@ -340,6 +340,19 @@ namespace tair {
       int unlock(int area, const data_entry& key);
 
       /**
+       * @brief set the expire time
+       *
+       * @param area     namespace
+       * @param key      key
+       * @param expire   expire time,realtive time
+       *
+       * @return 0 -- success, otherwise fail.
+       */
+      int expire(int area,
+          const data_entry& key,
+          int expire);
+
+      /**
        *
        * items :  just support four types: int32_t int64_t double string
        *

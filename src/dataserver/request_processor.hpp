@@ -38,6 +38,7 @@
 #include "prefix_locker.hpp"
 #include "op_cmd_packet.hpp"
 #include "get_range_packet.hpp"
+#include "expire_packet.hpp"
 
 namespace tair {
   class request_processor {
@@ -67,6 +68,7 @@ namespace tair {
     int process(request_prefix_hides *request, bool &send_return);
     int process(request_prefix_get_hiddens *request, bool &send_return);
     int process(request_op_cmd *request, bool &send_return);
+    int process(request_expire *request, bool &send_return);
 
   private:
     bool do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet);

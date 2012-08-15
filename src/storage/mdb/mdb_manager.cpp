@@ -460,10 +460,7 @@ namespace tair {
   int mdb_manager::do_put(data_entry & key, data_entry & data,
                           bool version_care, int expired)
   {
-    if(UNLIKELY(expired < 0))
-      expired = 0;
-
-    int total_size = key.get_size() + data.get_size() + sizeof(mdb_item);
+    int total_size = key.get_size() + data.get_size() + sizeof(mdb_item), old_expired = -1;
 
     TBSYS_LOG(DEBUG, "start put: key:%u,area:%d,value:%u,flag:%d\n", key.get_size(),key.area,data.get_size(), data.data_meta.flag);
     if (key.area != KEY_AREA(key.get_data()))
@@ -471,7 +468,6 @@ namespace tair {
       TBSYS_LOG(INFO,"key.area[%d] != KEY_AREA(key.get_data())[%d]",key.area,KEY_AREA(key.get_data()));
       key.area =KEY_AREA( key.get_data());
     }
-
 
     uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
     mdb_item *it = hashmap->find(key.get_data(), key.get_size());
@@ -498,7 +494,6 @@ namespace tair {
         TBSYS_LOG(WARN, "it->version(%hu) != version(%hu)", it->version,
                   key.get_version());
         return TAIR_RETURN_VERSION_ERROR;
-
       }
       else {
         if(version_care) {
@@ -508,6 +503,7 @@ namespace tair {
           version = 0;
         }
         TBSYS_LOG(DEBUG, "%s:already exists,remove it", __FUNCTION__);
+        old_expired = it->exptime;
         __remove(it);
         it = 0;
       }
@@ -539,6 +535,8 @@ namespace tair {
       it->exptime =
         static_cast<uint32_t> (expired) >
         crrnt_time ? expired : crrnt_time + expired;
+    } else if (expired < 0) {
+        it->exptime = old_expired < 0 ? 0 : old_expired;
     }
 
     set_flag(old_flag, data.data_meta.flag);

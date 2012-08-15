@@ -1321,6 +1321,49 @@ namespace tair {
      return tair_mgr->op_cmd(request->cmd, request->params);
    }
 
+   int request_processor::process(request_expire *request, bool &send_return)
+   {
+      int rc = TAIR_RETURN_FAILED;
+
+      if (tair_mgr->is_working() == false) {
+         rc = TAIR_RETURN_SERVER_CAN_NOT_WORK;
+      } else {
+        uint64_t target_server_id = 0;
+        if (tair_mgr->should_proxy(request->key, target_server_id))
+        {
+           rc = TAIR_RETURN_SHOULD_PROXY;
+        } else {
+          request->key.server_flag = request->server_flag;
+          log_debug("receive expire request, serverFlag: %d", request->key.server_flag);
+          PROFILER_START("expire operation start");
+          plugin::plugins_root* plugin_root = NULL;
+          PROFILER_BEGIN("do request plugin");
+          int plugin_ret = tair_mgr->plugins_manager.do_request_plugins(plugin::PLUGIN_TYPE_SYSTEM,
+                                                                        TAIR_REQ_EXPIRE_PACKET, request->area, &(request->key), NULL, plugin_root);
+          PROFILER_END();
+          if (plugin_ret < 0) {
+             log_debug("plugin return %d, skip excute", plugin_ret);
+             rc = TAIR_RETURN_PLUGIN_ERROR;
+          }
+          else {
+             PROFILER_BEGIN("do expire");
+             rc = tair_mgr->expire(request->area, request->key, request->expired, request, heart_beat->get_client_version());
+             PROFILER_END();
+
+             PROFILER_BEGIN("do response plugin");
+             tair_mgr->plugins_manager.do_response_plugins(rc, plugin::PLUGIN_TYPE_SYSTEM,
+                                                           TAIR_REQ_EXPIRE_PACKET, request->area, &(request->key), NULL, plugin_root);
+             PROFILER_END();
+          }
+          log_debug("expire reques return: %d", rc);
+          PROFILER_DUMP();
+          PROFILER_STOP();
+        }
+      }
+
+      return rc;
+   }
+
    bool request_processor::do_proxy(uint64_t target_server_id, base_packet *proxy_packet, base_packet *packet)
    {
       proxy_packet->server_flag = TAIR_SERVERFLAG_PROXY;

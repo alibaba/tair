@@ -145,11 +145,15 @@ namespace tair {
       int lock(int area, const data_entry& key, LockType type,
           TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
 
-      int set_flow_limit_bound(uint64_t addr, int &ns, 
-                                int &lower, int &upper, 
+      int expire(int area,
+          const data_entry& key,
+          int expire);
+
+      int set_flow_limit_bound(uint64_t addr, int &ns,
+                                int &lower, int &upper,
                                 tair::stat::FlowType &type);
 
-      int get_flow(uint64_t addr, int ns, 
+      int get_flow(uint64_t addr, int ns,
                    tair::stat::Flowrate &rate);
 
       template< typename IT >

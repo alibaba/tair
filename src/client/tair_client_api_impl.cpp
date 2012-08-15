@@ -44,6 +44,7 @@
 #include "flow_view.hpp"
 #include "flowrate.h"
 #include "op_cmd_packet.hpp"
+#include "expire_packet.hpp"
 
 namespace tair {
 
@@ -261,7 +262,7 @@ FAIL_1:
       return TAIR_RETURN_ITEMSIZE_ERROR;
     }
 
-    if(area < 0 || area >= TAIR_MAX_AREA_COUNT || version < 0 || expired < 0){
+    if(area < 0 || area >= TAIR_MAX_AREA_COUNT || version < 0){
       return TAIR_RETURN_INVALID_ARGUMENT;
     }
 
@@ -414,7 +415,68 @@ FAIL:
     return ret;
   }
 
+  int tair_client_impl::expire(int area, const data_entry &key, int expired)
+  {
+    if (!key_entry_check(key)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
 
+    if (key.get_size() > TAIR_MAX_KEY_SIZE) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+
+    if( area < 0 || area >= TAIR_MAX_AREA_COUNT || expired < 0){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    vector<uint64_t> server_list;
+    if ( !get_server_id(key, server_list)) {
+      TBSYS_LOG(DEBUG, "can not find serverId, return false");
+      return -1;
+    }
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    request_expire *packet = new request_expire();
+    packet->area = area;
+    packet->key = key;
+    packet->expired = expired;
+    base_packet *tpacket = 0;
+    response_return *resp  = 0;
+
+    int ret = TAIR_RETURN_SEND_FAILED;
+    if( (ret = send_request(server_list[0], packet, cwo->get_id())) < 0){
+      delete packet;
+      goto FAIL;
+    }
+
+    if ((ret = get_response(cwo, 1, tpacket)) < 0){
+      TBSYS_LOG(ERROR, "go failure from here");
+      goto FAIL;
+    }
+
+    if (tpacket->getPCode() != TAIR_RESP_RETURN_PACKET) {
+      goto FAIL;
+    }
+
+    resp = (response_return*)tpacket;
+    new_config_version = resp->config_version;
+    ret = resp->get_code();
+    if (ret != TAIR_RETURN_SUCCESS){
+      if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK || ret == TAIR_RETURN_WRITE_NOT_ON_MASTER) {
+        //update server table immediately
+        send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+      }
+      goto FAIL;
+    }
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return ret;
+FAIL:
+    this_wait_object_manager->destroy_wait_object(cwo);
+    TBSYS_LOG(INFO, "expire failure: %s:%s",
+        tbsys::CNetUtil::addrToString(server_list[0]).c_str(),
+        get_error_msg(ret));
+    return ret;
+  }
 
   int tair_client_impl::get(int area, const data_entry &key, data_entry* &data )
   {

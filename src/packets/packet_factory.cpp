@@ -49,6 +49,7 @@
 #include "flow_view.hpp"
 #include "get_range_packet.hpp"
 #include "op_cmd_packet.hpp"
+#include "expire_packet.hpp"
 
 #include "prefix_puts_packet.hpp"
 #include "prefix_incdec_packet.hpp"
@@ -244,6 +245,9 @@
           break;
         case TAIR_REQ_PREFIX_GET_HIDDENS_PACKET:
           packet = new request_prefix_get_hiddens();
+          break;
+        case TAIR_REQ_EXPIRE_PACKET:
+          packet = new request_expire();
           break;
          case TAIR_REQ_GET_RANGE_PACKET:
             packet = new request_get_range();
