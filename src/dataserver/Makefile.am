@@ -8,6 +8,9 @@ LDB_LDFLAGS= $(top_builddir)/src/storage/ldb/libldb.a \
              $(top_builddir)/src/storage/ldb/leveldb/libleveldb.a \
              $(top_builddir)/src/storage/ldb/leveldb/libsnappy.a
 endif
+if WITH_COMPRESS
+COMPRESS_LDFLAGS= -lsnappy
+endif
 
 AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     -I$(TBLIB_ROOT)/include/tbnet \
@@ -32,6 +35,7 @@ LDADD=$(top_builddir)/src/storage/mdb/.libs/libmdb.a \
       $(top_builddir)/src/storage/fdb/libfdb.a \
       $(KDB_LDFLAGS) \
       $(LDB_LDFLAGS) \
+      $(COMPRESS_LDFLAGS) \
       $(top_builddir)/src/plugin/libtair_plugins.a \
       $(top_builddir)/src/packets/libtair_packets.a \
       $(top_builddir)/src/statserver/storage/libtair_stat.a \
@@ -39,7 +43,7 @@ LDADD=$(top_builddir)/src/storage/mdb/.libs/libmdb.a \
       $(top_builddir)/src/common/libtair_common.a \
       $(TBLIB_ROOT)/lib/libtbnet.a \
       $(TBLIB_ROOT)/lib/libtbsys.a \
-      -lz -lsnappy -lrt -lpthread \
+      -lz -lrt -lpthread \
       -ldl \
       @BOOST_THREAD_LIB@
 

@@ -51,6 +51,28 @@ fi
 
 AM_CONDITIONAL([TEST_OPT],[test "$build_test" = yes])
 
+AC_ARG_WITH([compress],
+		AS_HELP_STRING([--with-compress],
+			[with compress (default is NO)]),
+		[
+		if test "$withval" = "yes"; then
+		with_compress=yes
+		AC_CHECK_HEADER(snappy.h, [],
+		[
+		AC_MSG_ERROR([snappy have not been installed])
+		exit 1;
+		])
+		AC_CHECK_LIB(snappy, _ZN6snappy11RawCompressEPKcmPcPm, [],
+		[
+		AC_MSG_ERROR([snappy have not been installed])
+		exit 1;
+		])
+		fi
+		],
+		[ with_compress=no ]
+	   )
+AM_CONDITIONAL([WITH_COMPRESS],[test x$with_compress = xyes])
+
 AC_ARG_WITH([kdb],
 		AS_HELP_STRING([--with-kdb],
 			[with kdb (default is NO)]),

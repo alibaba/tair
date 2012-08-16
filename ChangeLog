@@ -52,7 +52,7 @@ version 2.3.1.7
 2012-08-06
 version 2.3.2.0
 * feuture:
-* 1. C++客户端增加压缩功能
+* 1. C++客户端增加压缩功能(编译时添加--with-compress可以使用)
 * 2. 去掉ds的proxy机制
 * 3. 增加expire接口设置超时时间
 * 4. put时设置expire为负数不改变之前的超时时间

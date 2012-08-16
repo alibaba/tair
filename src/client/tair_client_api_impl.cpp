@@ -337,6 +337,7 @@ FAIL:
     // we don't want to add a new packet for this set_count() function, so we add two
     // bits type flag here and use put() to make following incr()/decr() happy.
     // We ignore compress type here as same as what CPP client always does.
+#ifdef WITH_COMPRESS
     char buf[INCR_DATA_SIZE - 2];
     buf[0] = (count & 0xFF);
     buf[1] = ((count >> 8) & 0xFF);
@@ -344,6 +345,12 @@ FAIL:
     buf[3] = ((count >> 24) & 0xFF);
     data_entry value;
     value.set_data(buf, INCR_DATA_SIZE - 2, false);
+#else
+    char buf[INCR_DATA_SIZE];
+    SET_INCR_DATA_COUNT(buf, count);
+    data_entry value;
+    value.set_data(buf, INCR_DATA_SIZE, false);
+#endif
     // force set count type flag
     value.data_meta.flag = TAIR_ITEM_FLAG_ADDCOUNT;
     return put(area, key, value, expire, version, true, pfunc, parg);

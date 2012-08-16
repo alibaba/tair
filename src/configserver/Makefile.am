@@ -6,7 +6,7 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     @BOOST_CPPFLAGS@
 
 AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB} \
-      -lz -lsnappy -lrt -lpthread \
+      -lz -lrt -lpthread \
       -ldl
 
 LDADD=$(TBLIB_ROOT)/lib/libtbnet.a \

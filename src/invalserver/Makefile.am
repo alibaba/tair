@@ -9,12 +9,17 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 
 AM_LDFLAGS= -rdynamic $(BOOST_LDFLAGS)  ${GCOV_LIB}
 
+if WITH_COMPRESS
+COMPRESS_LDFLAGS= -lsnappy
+endif
+
 LDADD=$(top_builddir)/src/packets/libtair_packets.a \
 	  $(top_builddir)/src/client/.libs/libtairclientapi.a \
 		$(TBLIB_ROOT)/lib/libtbnet.a \
 		$(TBLIB_ROOT)/lib/libtbsys.a \
 		$(top_builddir)/src/common/libtair_common.a \
-		-lz -lsnappy -lrt -lpthread \
+		-lz -lrt -lpthread \
+		$(COMPRESS_LDFLAGS) \
 		-ldl \
 		@BOOST_THREAD_LIB@
 

@@ -26,10 +26,14 @@ api_source_list=tair_client_api.cpp tair_client_api_impl.cpp \
 		tair_client.hpp
 
 if WITH_READLINE
-AM_LDFLAGS=-lpthread -lz -lsnappy -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB} -lreadline -ltermcap
-else
-AM_LDFLAGS=-lpthread -lz -lsnappy -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
+READLINE_LDFLAGS= -lreadline -ltermcap
 endif
+
+if WITH_COMPRESS
+COMPRESS_LDFLAGS= -lsnappy
+endif
+
+AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB} ${READLINE_LDFLAGS} ${COMPRESS_LDFLAGS}
 
 lib_LTLIBRARIES=libtairclientapi.la libtairclientapi_c.la
 sbin_PROGRAMS=tairclient keycleantool

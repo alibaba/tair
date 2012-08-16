@@ -453,6 +453,7 @@ namespace tair {
        */
       void set_randread(bool rand_flag);
 
+#ifdef WITH_COMPRESS
       /**
        * @brief set the compress algorithm type
        *
@@ -467,6 +468,7 @@ namespace tair {
        *                   this value, skip the compress method. the unit is byte.
        */
       void set_compress_threshold(int threshold);
+#endif
 
       /**
        * @brief get bucket count of tair cluster

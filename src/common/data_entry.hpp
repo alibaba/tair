@@ -387,9 +387,12 @@ namespace tair
          output->writeInt32(area);
          output->writeInt16(server_flag);
 
+#ifdef WITH_COMPRESS
          if (need_compress) {
            do_compress(output);
-         } else {
+         } else
+#endif
+         {
            data_meta.encode(output);
            uint32_t msize = (size | (prefix_size << PREFIX_KEY_OFFSET));
            output->writeInt32(msize);
@@ -421,9 +424,11 @@ namespace tair
            input->readBytes(get_data(), size);
          }
          bool ret = true;
+#ifdef WITH_COMPRESS
          if (need_decompress) {
            ret = do_decompress();
          }
+#endif
          has_merged = temp_merged;
          area = _area;
          server_flag = flag;
@@ -436,8 +441,10 @@ namespace tair
        }
 
      private:
+#ifdef WITH_COMPRESS
        void do_compress(tbnet::DataBuffer *output) const;
        bool do_decompress();
+#endif
 
        void init()
        {
@@ -483,8 +490,10 @@ namespace tair
        uint32_t area;
        uint16_t server_flag;
        item_meta_info data_meta;
+#ifdef WITH_COMPRESS
        static int compress_type;
        static int compress_threshold;
+#endif
      };
 
      class data_entry_comparator {

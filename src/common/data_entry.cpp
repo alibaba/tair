@@ -15,15 +15,19 @@
  *
  */
 #include "data_entry.hpp"
+
+#ifdef WITH_COMPRESS
 #include "compressor.hpp"
 #include "define.hpp"
 
 int tair::common::data_entry::compress_type = TAIR_SNAPPY_COMPRESS;
 int tair::common::data_entry::compress_threshold = TAIR_DEFAULT_COMPRESS_THRESHOLD;
+#endif
 
 namespace tair
 {
   namespace common {
+#ifdef WITH_COMPRESS
     void data_entry::do_compress(tbnet::DataBuffer *output) const
     {
       int new_size = size;
@@ -116,6 +120,7 @@ namespace tair
 
       return ret;
     }
+#endif
 
     void defree(tair_dataentry_vector &vector) {
       for (size_t i = 0; i < vector.size(); ++i) {
