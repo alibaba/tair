@@ -1739,6 +1739,8 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 			fail("down time arrived,but no rebuild started or finished!");
 		waitcnt = 0;
 
+		int migCount = check_keyword(csList.get(0), start_migrate, tair_bin + "logs/config.log");
+		
 		// restart ds
 		if (!control_ds(dsList.get(0), start, 0))
 			fail("restart ds failed!");
@@ -1751,7 +1753,7 @@ public class FailOverConfigServerTest1 extends FailOverBaseCase {
 
 		// check firsh migration stat
 		while (check_keyword(csList.get(0), start_migrate, tair_bin
-				+ "logs/config.log") != 1) {
+				+ "logs/config.log") != migCount + 1) {
 			log.debug("check if migration start on cs "
 					+ csList.get(0) + " log");
 			waitto(2);

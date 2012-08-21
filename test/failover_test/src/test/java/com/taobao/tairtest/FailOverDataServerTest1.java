@@ -2396,6 +2396,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		if (!control_ds(dsList.get(1), start, 0))
 			fail("restart another ds failed!");
 		log.error("restart another ds successful!");
+		if (touch_flag != 0)
+			touch_file(csList.get(0), tair_bin + groupconf);
 
 		// wait migrate finish
 		while (check_keyword(csList.get(0), finish_migrate, tair_bin
