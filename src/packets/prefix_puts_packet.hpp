@@ -47,7 +47,7 @@ namespace tair {
     }
 
     ~request_prefix_puts() {
-      if (pkey == NULL) {
+      if (pkey != NULL) {
         delete pkey;
         pkey = NULL;
       }
