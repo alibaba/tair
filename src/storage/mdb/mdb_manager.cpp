@@ -728,6 +728,7 @@ namespace tair {
 
   int mdb_manager::get_meta(data_entry &key, item_meta_info &meta)
   {
+    boost::mutex::scoped_lock guard(mem_locker);
     int ret = TAIR_RETURN_DATA_NOT_EXIST;
     mdb_item *it = NULL;
     bool expired = false;
