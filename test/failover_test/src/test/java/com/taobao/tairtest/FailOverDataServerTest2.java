@@ -6,7 +6,6 @@ package com.taobao.tairtest;
 import static org.junit.Assert.*;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FailOverDataServerTest2 extends FailOverBaseCase {
@@ -2272,14 +2271,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 19");
 	}
 
-	@BeforeClass
-	public static void subBeforeClass() {
-		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
-			fail("modify configure file failure");
-		if (!batch_modify(dsList, tair_bin + groupconf, copycount, "2"))
-			fail("modify configure file failure");
-	}
-
 	@Before
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
@@ -2289,6 +2280,10 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		// execute_shift_tool(local, "conf5");//for kdb
 		if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
 			fail("modify configure file failed!");
+		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
+			fail("modify configure file failure");
+		if (!batch_modify(dsList, tair_bin + groupconf, copycount, "2"))
+			fail("modify configure file failure");
 	}
 
 	@After

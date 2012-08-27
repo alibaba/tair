@@ -6,7 +6,6 @@ package com.taobao.tairtest;
 import static org.junit.Assert.*;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
@@ -938,20 +937,16 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.info("end config test Failover case 08");
 	}
 
-	@BeforeClass
-	public static void subBeforeClass() {
-		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
-			fail("modify configure file failure");
-		if (!batch_modify(dsList, tair_bin + groupconf, copycount, "2"))
-			fail("modify configure file failure");
-	}
-
 	@Before
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
 		clean_tool(local);
 		reset_cluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
+		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
+			fail("modify configure file failure");
+		if (!batch_modify(dsList, tair_bin + groupconf, copycount, "2"))
+			fail("modify configure file failure");
 	}
 
 	@After

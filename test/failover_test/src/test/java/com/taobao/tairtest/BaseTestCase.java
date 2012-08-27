@@ -14,7 +14,7 @@ public class BaseTestCase {
 	protected static Logger log = Logger.getLogger("Test");
 
 	@SuppressWarnings("rawtypes")
-	public static String getShellOutput(STAFResult result) {
+	public String getShellOutput(STAFResult result) {
 		Map rstMap = (Map) result.resultObj;
 		List rstList = (List) rstMap.get("fileList");
 		Map stdoutMap = (Map) rstList.get(0);
@@ -22,7 +22,7 @@ public class BaseTestCase {
 		return stdout;
 	}
 
-	protected static STAFHandle stafhandle = null;
+	protected STAFHandle stafhandle = null;
 
 	public BaseTestCase() {
 		gethandle();
@@ -32,7 +32,7 @@ public class BaseTestCase {
 		gethandle();
 	}
 
-	public static STAFResult executeShell(STAFHandle stafHandle, String machine,
+	public STAFResult executeShell(STAFHandle stafHandle, String machine,
 			String cmd) {
 		STAFResult result = stafHandle.submit2(machine, "PROCESS",
 				"START SHELL COMMAND " + STAFUtil.wrapData(cmd)
@@ -48,7 +48,7 @@ public class BaseTestCase {
 		}
 	}
 
-	protected static void fail(String errMsg) {
+	protected void fail(String errMsg) {
 		assertTrue(errMsg, false);
 	}
 

@@ -458,7 +458,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            value which you want to change
 	 * @return
 	 */
-	protected static boolean modify_config_file(String machine, String confname,
+	protected boolean modify_config_file(String machine, String confname,
 			String key, String value) {
 		log.debug("change file:" + confname + " on " + machine + " key=" + key
 				+ " value=" + value);
@@ -479,7 +479,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	protected static boolean batch_modify(List<String> machines, String confname,
+	protected boolean batch_modify(List<String> machines, String confname,
 			String key, String value) {
 		boolean ret = true;
 		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
