@@ -6,31 +6,28 @@ package com.taobao.tairtest;
 import static org.junit.Assert.*;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FailoverClusterTest2 extends FailOverBaseCase {
 
 	@Test
 	public void testFailover_01_restart_all_server() {
-		log.error("start cluster test failover case 01");
-
+		log.info("start cluster test failover case 01");
 		int waitcnt = 0;
 
 		// start cluster
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 		waitto(down_time);
 
 		// write data
-		if (!modify_config_file(local, test_bin + toolconf,
-				actiontype, put))
+		if (!modify_config_file(local, test_bin + toolconf, actiontype, put))
 			fail("change conf failed!");
-		if (!modify_config_file(local, test_bin + toolconf,
-				datasize, put_count))
+		if (!modify_config_file(local, test_bin + toolconf, datasize, put_count))
 			fail("change conf failed!");
-		if (!modify_config_file(local, test_bin + toolconf,
-				filename, kv_name))
+		if (!modify_config_file(local, test_bin + toolconf, filename, kv_name))
 			fail("change conf failed!");
 
 		execute_data_verify_tool();
@@ -45,7 +42,7 @@ public class FailoverClusterTest2 extends FailOverBaseCase {
 		int datacnt = getVerifySuccessful();
 		assertTrue("put successful rate small than 90%!", datacnt
 				/ put_count_float > 0.9);
-		log.error("finish put data!");
+		log.info("finish put data!");
 
 		// shut down ds and cs
 		if (!batch_control_cs(csList, stop, 0))
@@ -53,17 +50,16 @@ public class FailoverClusterTest2 extends FailOverBaseCase {
 		if (!batch_control_ds(dsList, stop, 0))
 			fail("stop ds failed!");
 
-		waitto(down_time);
+		waitto(ds_down_time);
 
 		// restart cluster
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("restart cluster failed!");
-		log.error("restart cluster successful!");
+		log.info("restart cluster successful!");
 
 		waitto(down_time);
 		// verify data
-		if (!modify_config_file(local, test_bin + toolconf,
-				actiontype, get))
+		if (!modify_config_file(local, test_bin + toolconf, actiontype, get))
 			fail("change conf failed!");
 		execute_data_verify_tool();
 		while (check_process(local, toolname) != 2) {
@@ -74,45 +70,38 @@ public class FailoverClusterTest2 extends FailOverBaseCase {
 		if (waitcnt > 150)
 			fail("get data out time!");
 		waitcnt = 0;
-		log.error("finish get data!");
+		log.info("finish get data!");
 
 		// verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("verify data successful!");
+		log.info("verify data successful!");
 
-		log.error("end cluster test failover case 01");
+		log.info("end cluster test failover case 01");
 	}
 
 	@Test
 	public void testFailover_02_restart_all_server_after_join_ds_and_migration() {
-		log.error("start cluster test failover case 02");
-
+		log.info("start cluster test failover case 02");
 		int waitcnt = 0;
 
 		if (!comment_line(csList.get(0), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
-		if (!comment_line(csList.get(1), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failed!");
-		log.error("change group.conf successful!");
+		log.info("change group.conf successful!");
 
 		// start cluster
 		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
 				start, 0))
 			fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 		waitto(down_time);
 
 		// write data
-		if (!modify_config_file(local, test_bin + toolconf,
-				actiontype, put))
+		if (!modify_config_file(local, test_bin + toolconf, actiontype, put))
 			fail("change conf failed!");
-		if (!modify_config_file(local, test_bin + toolconf,
-				datasize, put_count))
+		if (!modify_config_file(local, test_bin + toolconf, datasize, put_count))
 			fail("change conf failed!");
-		if (!modify_config_file(local, test_bin + toolconf,
-				filename, kv_name))
+		if (!modify_config_file(local, test_bin + toolconf, filename, kv_name))
 			fail("change conf failed!");
 
 		execute_data_verify_tool();
@@ -129,20 +118,14 @@ public class FailoverClusterTest2 extends FailOverBaseCase {
 		int datacnt = getVerifySuccessful();
 		assertTrue("put successful rate small than 90%!", datacnt
 				/ put_count_float > 0.9);
-		log.error("finish put data!");
+		log.info("finish put data!");
 
-		if (!control_ds(dsList.get(dsList.size() - 1),
-				start, 0))
+		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
 			fail("start ds failed!");
-		log.error("start ds successful!");
+		log.info("start ds successful!");
 
 		// add ds and migration
-		if (!uncomment_line(csList.get(0),
-				tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failed!");
-		if (!uncomment_line(csList.get(1),
-				tair_bin + groupconf,
+		if (!uncomment_line(csList.get(0), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
 		if (touch_flag != 0)
@@ -159,7 +142,7 @@ public class FailoverClusterTest2 extends FailOverBaseCase {
 		if (waitcnt > 200)
 			fail("check migrate time out!");
 		waitcnt = 0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 		// shut down ds and cs
 		if (!batch_control_cs(csList, stop, 0))
@@ -173,12 +156,11 @@ public class FailoverClusterTest2 extends FailOverBaseCase {
 		// restart cluster
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("restart cluster failed!");
-		log.error("restart cluster successful!");
+		log.info("restart cluster successful!");
 
 		waitto(down_time);
 		// verify data
-		if (!modify_config_file(local, test_bin + toolconf,
-				actiontype, get))
+		if (!modify_config_file(local, test_bin + toolconf, actiontype, get))
 			fail("change conf failed!");
 
 		execute_data_verify_tool();
@@ -191,36 +173,39 @@ public class FailoverClusterTest2 extends FailOverBaseCase {
 		if (waitcnt > 150)
 			fail("get data out time!");
 		waitcnt = 0;
-		log.error("finish get data!");
+		log.info("finish get data!");
 
 		// verify get result
-		log.error(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("verify data successful!");
+		log.info("verify data successful!");
 
-		log.error("end cluster test failover case 02");
+		log.info("end cluster test failover case 02");
+	}
+
+	@BeforeClass
+	public static void subBeforeClass() {
+		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
+			fail("modify configure file failure");
+		if (!batch_modify(dsList, tair_bin + groupconf, copycount, "2"))
+			fail("modify configure file failure");
 	}
 
 	@Before
-	public void setUp() {
-        log.info("clean tool and cluster while setUp!");
-        clean_tool(local);
-        reset_cluster(csList, dsList);
-        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
+	public void subBefore() {
+		log.info("clean tool and cluster while subBefore!");
+		clean_tool(local);
+		reset_cluster(csList, dsList);
+		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 		// execute_shift_tool(local, "conf5");// for kdb
-		if (!batch_modify(csList, tair_bin + groupconf, copycount,
-				"2"))
-			fail("modify configure file failure");
-		if (!batch_modify(dsList, tair_bin + groupconf, copycount,
-				"2"))
-			fail("modify configure file failure");
+		if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
+			fail("modify configure file failed!");
 	}
 
 	@After
-	public void tearDown() {
-		log.info("clean tool and cluster while tearDown!");
-        clean_tool(local);
-        reset_cluster(csList, dsList);
-        batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
+	public void subAfter() {
+		log.info("clean tool and cluster while subAfter!");
+		clean_tool(local);
+		reset_cluster(csList, dsList);
+		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 }

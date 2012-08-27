@@ -12,13 +12,13 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 	@Test
 	public void testFailover_01_restart_all_server()
 	{
-		log.error("start cluster test failover case 01");
+		log.info("start cluster test failover case 01");
 
 		int waitcnt=0;
 
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 
 		waitto(down_time);
 
@@ -39,7 +39,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		//save put result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("finish put data!");
+		log.info("finish put data!");
 
 		//shut down ds and cs
 		if(!batch_control_cs(csList, stop, 0))fail("stop cs failed!");
@@ -49,7 +49,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 
 		//restart cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("restart cluster failed!");
-		log.error("restart cluster successful!");
+		log.info("restart cluster successful!");
 
 		waitto(down_time);
 		//verify data
@@ -64,28 +64,28 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("get data out time!");
 		waitcnt=0;
-		log.error("finish get data!");
+		log.info("finish get data!");
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("verify data successful!");
+		log.info("verify data successful!");
 
-		log.error("end cluster test failover case 01");
+		log.info("end cluster test failover case 01");
 	}
 	@Test
 	public void testFailover_02_restart_all_server_after_join_ds_and_migration()
 	{
-		log.error("start cluster test failover case 02");
+		log.info("start cluster test failover case 02");
 
 		int waitcnt=0;
 
 		if(!comment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		log.error("change group.conf successful!");
+		log.info("change group.conf successful!");
 
 		//start cluster
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 		waitto(down_time);
 
 		//write data
@@ -105,17 +105,17 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		//save put result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("finish put data!");
+		log.info("finish put data!");
 
 		if(!control_ds(dsList.get(dsList.size()-1), start, 0))fail("start ds failed!");
-		log.error("start ds successful!");
+		log.info("start ds successful!");
 
 		//add ds and migration
 		if(!uncomment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!uncomment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 
 		touch_file(csList.get(0), tair_bin+groupconf);
-		log.error("change group.conf and touch it");
+		log.info("change group.conf and touch it");
 
 		waitto(down_time);
 
@@ -127,7 +127,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate time out!");
 		waitcnt=0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 
 		//shut down ds and cs
@@ -139,7 +139,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 
 		//restart cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("restart cluster failed!");
-		log.error("restart cluster successful!");
+		log.info("restart cluster successful!");
 
 		waitto(down_time);
 		//verify data
@@ -154,13 +154,13 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("get data out time!");
 		waitcnt=0;
-		log.error("finish get data!");
+		log.info("finish get data!");
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("verify data successful!");
+		log.info("verify data successful!");
 
-		log.error("end cluster test failover case 02");
+		log.info("end cluster test failover case 02");
 	}
 	
 	@Before

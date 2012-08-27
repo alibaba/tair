@@ -12,14 +12,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 	@Test
 	public void testFailover_01_restart_master_cs()
 	{
-		log.error("start config test Failover case 01");
+		log.info("start config test Failover case 01");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -30,7 +30,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -44,13 +44,13 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 
 		//close master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("close master cs failed!");
 
-		log.error("master cs has been closed!");
+		log.info("master cs has been closed!");
 
 		waitto(down_time);
 
@@ -65,17 +65,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}	
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
 
 		//verify get result
 		assertEquals("get data verify failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("Restart master cs successful!");
+		log.info("Restart master cs successful!");
 
 		waitto(down_time);
 
@@ -87,26 +87,26 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
 
 		//verify get result
 		assertEquals("get data verify failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully verified data!");
+		log.info("Successfully verified data!");
 		//end test
-		log.error("end config test Failover case 01");
+		log.info("end config test Failover case 01");
 	}
 	@Test
 	public void testFailover_02_restart_slave_cs()
 	{
-		log.error("start config test Failover case 02");
+		log.info("start config test Failover case 02");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -117,7 +117,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -130,12 +130,12 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close slave cs
 		if(!control_cs(csList.get(1), stop, 0))fail("close slave cs failed!");
 
-		log.error("slave cs has been closed!");
+		log.info("slave cs has been closed!");
 
 		waitto(2);
 
@@ -152,15 +152,15 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}	
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
-		log.error("Read data over!");
+		log.info("Read data over!");
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("Restart slave cs successful!");
+		log.info("Restart slave cs successful!");
 
 		//read data from cluster
 		execute_data_verify_tool();
@@ -170,26 +170,26 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully verified data!");
+		log.info("Successfully verified data!");
 		//end test
-		log.error("end config test Failover case 02");
+		log.info("end config test Failover case 02");
 	}
 	@Test
 	public void testFailover_03_restart_all_cs()
 	{
-		log.error("start config test Failover case 03");
+		log.info("start config test Failover case 03");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -200,7 +200,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -213,19 +213,19 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 
 		//close all cs
 		if(!batch_control_cs(csList, stop, 0))fail("close all cs failed!");
 
-		log.error("all cs has been closed! wait for 2 seconds to restart ...");
+		log.info("all cs has been closed! wait for 2 seconds to restart ...");
 
 		waitto(2);
 
 		//restart all cs
 		if(!batch_control_cs(csList, start, 0))fail("restart all cs failed!");
-		log.error("Restart all cs successful!");
+		log.info("Restart all cs successful!");
 
 		//change test tool's configuration
 		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
@@ -239,27 +239,27 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;
 
 		//verify get result
 		assertEquals("verify data failed", datacnt, getVerifySuccessful());
-		log.error("Successfully verified data!");
+		log.info("Successfully verified data!");
 		//end test
-		log.error("end config test Failover case 03");
+		log.info("end config test Failover case 03");
 	}
 	@Test
 	public void testFailover_04_recover_master_cs_and_ds_before_rebuild()
 	{
-		log.error("start config test Failover case 04");
+		log.info("start config test Failover case 04");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -270,7 +270,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -280,7 +280,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			if(++waitcnt>150)break;
 		}
 
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
@@ -288,29 +288,29 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);
-		log.error("finish put data!");
+		log.info("finish put data!");
 
 		//close master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("close master cs failed!");
-		log.error("master cs has been closed!");
+		log.info("master cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
-		log.error("wait 5 seconds to restart before rebuild ...");
+		log.info("ds has been closed!");
+		log.info("wait 5 seconds to restart before rebuild ...");
 
 		waitto(5);
 
 		if(check_keyword(csList.get(1), start_migrate, tair_bin+"logs/config.log")==0)fail("Already migration!");
 		//restart ds
 		if(!control_ds(dsList.get(0), start, 0))fail("restart ds failed!");
-		log.error("Restart ds successful!");	
+		log.info("Restart ds successful!");	
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("Restart master cs successful!");
+		log.info("Restart master cs successful!");
 
 		//change test tool's configuration
 		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
@@ -326,26 +326,26 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
-		log.error("Read data over!");
+		log.info("Read data over!");
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 04");
+		log.info("end config test Failover case 04");
 	}
 	@Test
 	public void testFailover_05_recover_master_cs_when_ds_down_and_rebuild()
 	{
-		log.error("start config test Failover case 05");
+		log.info("start config test Failover case 05");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -356,7 +356,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -371,18 +371,18 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 
 		//close master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("close master cs failed!");
-		log.error("master cs has been closed!");
+		log.info("master cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		waitto(down_time);
 
@@ -395,11 +395,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration start!");
+		log.info("donw time arrived,migration start!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("Restart master cs successful!");
+		log.info("Restart master cs successful!");
 
 		//wait for system restart to work
 		waitto(down_time);
@@ -413,7 +413,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//change test tool's configuration
 		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
@@ -427,28 +427,28 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 05");
+		log.info("end config test Failover case 05");
 	}
 	@Test
 	public void testFailover_06_recover_master_cs_after_ds_down_and_rebuild()
 	{
-		log.error("start config test Failover case 06");
+		log.info("start config test Failover case 06");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -459,7 +459,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -468,7 +468,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {
-				log.error("sleep exception", e);
+				log.info("sleep exception", e);
 			}
 			if(++waitcnt>150)break;
 		}
@@ -477,17 +477,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("close master cs failed!");
-		log.error("master cs has been closed!");
+		log.info("master cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		waitto(down_time);
 
@@ -500,11 +500,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>210)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("Restart master cs successful!");
+		log.info("Restart master cs successful!");
 
 		//wait for system restart to work
 		waitto(down_time);
@@ -521,28 +521,28 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 06");
+		log.info("end config test Failover case 06");
 	}
 	@Test
 	public void testFailover_07_recover_master_cs_when_ds_down_and_rebuild_then_ds_join_again_generate_second_rebuild()
 	{
-		log.error("start config test Failover case 07");
+		log.info("start config test Failover case 07");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -553,7 +553,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -567,17 +567,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("close master cs failed!");
-		log.error("master cs has been closed!");
+		log.info("master cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		waitto(down_time);
 
@@ -590,14 +590,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>210)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//restart ds
 		if(!control_ds(dsList.get(0), start, 0))fail("restart ds failed!");
-		log.error("restart ds successful!");
+		log.info("restart ds successful!");
 		//touch conf file
 		touch_file(csList.get(1), tair_bin+groupconf);
-		log.error("touch group.conf");
+		log.info("touch group.conf");
 
 		waitto(down_time);
 
@@ -610,11 +610,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.info("donw time arrived,migration started!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("Restart master cs successful!");
+		log.info("Restart master cs successful!");
 
 		//wait for system restart to work
 		waitto(down_time);
@@ -633,26 +633,26 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
-		log.error("Read data over!");
+		log.info("Read data over!");
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 07");
+		log.info("end config test Failover case 07");
 	}
 	@Test
 	public void testFailover_08_recover_master_cs_after_ds_down_and_rebuild_then_ds_join_again_generate_second_rebuild()
 	{
-		log.error("start config test Failover case 08");
+		log.info("start config test Failover case 08");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -663,7 +663,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -677,17 +677,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);		
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("close master cs failed!");
-		log.error("master cs has been closed!");
+		log.info("master cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		waitto(down_time);
 
@@ -700,14 +700,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>210)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//restart ds
 		if(!control_ds(dsList.get(0), start, 0))fail("restart ds failed!");
-		log.error("restart ds successful!");
+		log.info("restart ds successful!");
 		//touch conf file
 		touch_file(csList.get(1), tair_bin+groupconf);
-		log.error("touch group.conf");
+		log.info("touch group.conf");
 
 		//wait down time for touch
 		waitto(down_time);
@@ -721,14 +721,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started or stoped!");
 		waitcnt=0;
-		log.error("donw time arrived,migration stoped!");
+		log.info("donw time arrived,migration stoped!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("Restart master cs successful!");
+		log.info("Restart master cs successful!");
 
 		//wait for system restart to work
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -743,27 +743,27 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 08");
+		log.info("end config test Failover case 08");
 	}
 	@Test
 	public void testFailover_09_shutdown_master_cs_and_slave_cs_one_by_one_then_recover_one_by_one()
 	{
-		log.error("start config test Failover case 09");
+		log.info("start config test Failover case 09");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
-		log.error("start cluster successfull!");
+		log.info("start cluster successfull!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -774,7 +774,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -783,7 +783,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {
-				log.error("sleep exception", e);
+				log.info("sleep exception", e);
 			}
 			if(++waitcnt>150)break;
 		}
@@ -792,18 +792,18 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//stop master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("stop master cs failed!");
-		log.error("stop master cs successful!");
+		log.info("stop master cs successful!");
 
 		//wait 2x(down time) to restart,make sure original slave cs become new master cs
 		waitto(down_time*2);
 
 		//restart master cs
 		if(!control_cs(csList.get(0),start,0))fail("restart master cs failed!");
-		log.error("restart master cs successful!");
+		log.info("restart master cs successful!");
 		//wait down time for master cs work
 		waitto(down_time);
 
@@ -819,17 +819,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//stop slave cs
 		if(!control_cs(csList.get(1), stop, 0))fail("stop slave cs failed!");
-		log.error("stop slave cs successful!");
+		log.info("stop slave cs successful!");
 
 		//wait 2x(down time) to restart,make sure original slave cs become new master cs
 		waitto(down_time*2);
@@ -846,17 +846,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1),start,0))fail("restart slave cs failed!");
-		log.error("restart slave cs successful!");
+		log.info("restart slave cs successful!");
 		//wait down time for master cs work
 		waitto(down_time);
 
@@ -874,33 +874,33 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
-		log.error("Read data over!");
+		log.info("Read data over!");
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
 		//stop master cs again
 		if(!control_cs(csList.get(0), stop, 0))fail("stop master cs failed!");
-		log.error("stop master cs successful!");
+		log.info("stop master cs successful!");
 
 		//wait 2x(down time) to restart,make sure original slave cs become new master cs
 		waitto(down_time*2);
 
 		//stop slave cs again
 		if(!control_cs(csList.get(1), stop, 0))fail("stop slave cs failed!");
-		log.error("stop slave cs successful!");
+		log.info("stop slave cs successful!");
 
 		//keep all cs down for down_time seconds
 		waitto(down_time);
 
 		//restart slave cs again
 		if(!control_cs(csList.get(1),start,0))fail("restart slave cs failed!");
-		log.error("restart slave cs successful!");
+		log.info("restart slave cs successful!");
 
 		//restart master cs again
 		if(!control_cs(csList.get(0),start,0))fail("restart master cs failed!");
-		log.error("restart master cs successful!");
+		log.info("restart master cs successful!");
 		//wait down time for master cs work
 		waitto(down_time);
 
@@ -916,27 +916,27 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
-		log.error("end config test Failover case 09");
+		log.info("end config test Failover case 09");
 	}
 	@Test
 	public void testFailover_10_recover_slave_cs_and_ds_before_rebuild()
 	{
-		log.error("start config test Failover case 10");
+		log.info("start config test Failover case 10");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -947,7 +947,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -961,28 +961,28 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close slave cs
 		if(!control_cs(csList.get(1), stop, 0))fail("close slave cs failed!");
-		log.error("slave cs has been closed!");
+		log.info("slave cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
-		log.error("wait 5 seconds to restart before rebuild ...");
+		log.info("ds has been closed!");
+		log.info("wait 5 seconds to restart before rebuild ...");
 		waitto(5);
 
 		if(check_keyword(csList.get(0), start_migrate, tair_bin+"logs/config.log")!=1)fail("Already migration!");
 		//restart ds
 		if(!control_ds(dsList.get(0), start, 0))fail("restart ds failed!");
-		log.error("Restart ds successful!");	
+		log.info("Restart ds successful!");	
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("Restart slave cs successful!");
+		log.info("Restart slave cs successful!");
 
 		//change test tool's configuration
 		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
@@ -996,28 +996,28 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 10");
+		log.info("end config test Failover case 10");
 	}
 	@Test
 	public void testFailover_11_recover_slave_cs_when_ds_down_and_rebuild()
 	{
-		log.error("start config test Failover case 11");
+		log.info("start config test Failover case 11");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1028,7 +1028,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -1037,7 +1037,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {
-				log.error("sleep exception", e);
+				log.info("sleep exception", e);
 			}
 			if(++waitcnt>150)break;
 		}
@@ -1046,18 +1046,18 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 
 		//close slave cs
 		if(!control_cs(csList.get(1), stop, 0))fail("close slave cs failed!");
-		log.error("slave cs has been closed!");
+		log.info("slave cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		waitto(down_time);
 
@@ -1070,14 +1070,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration start!");
+		log.info("donw time arrived,migration start!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("Restart slave cs successful!");
+		log.info("Restart slave cs successful!");
 
 		//wait for system restart to work
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//check migration stat
@@ -1089,7 +1089,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//change test tool's configuration
 		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
@@ -1105,26 +1105,26 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
-		log.error("Read data over!");
+		log.info("Read data over!");
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 11");
+		log.info("end config test Failover case 11");
 	}
 	@Test
 	public void testFailover_12_recover_slave_cs_after_ds_down_and_rebuild()
 	{
-		log.error("start config test Failover case 12");
+		log.info("start config test Failover case 12");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1135,7 +1135,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -1149,17 +1149,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close slave cs
 		if(!control_cs(csList.get(1), stop, 0))fail("close slave cs failed!");
-		log.error("slave cs has been closed!");
+		log.info("slave cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		waitto(down_time);
 
@@ -1172,14 +1172,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("Restart slave cs successful!");
+		log.info("Restart slave cs successful!");
 
 		//wait for system restart to work
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1194,28 +1194,28 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 12");
+		log.info("end config test Failover case 12");
 	}
 	@Test
 	public void testFailover_13_recover_slave_cs_when_ds_down_and_rebuild_then_ds_join_again_generate_second_rebuild()
 	{
-		log.error("start config test Failover case 13");
+		log.info("start config test Failover case 13");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1226,7 +1226,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -1240,17 +1240,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close slave cs
 		if(!control_cs(csList.get(1), stop, 0))fail("close slave cs failed!");
-		log.error("slave cs has been closed!");
+		log.info("slave cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		waitto(down_time);
 
@@ -1261,16 +1261,16 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
 
 		//restart ds
 		if(!control_ds(dsList.get(0), start, 0))fail("restart ds failed!");
-		log.error("restart ds successful!");
+		log.info("restart ds successful!");
 		//touch conf file
 		touch_file(csList.get(0), tair_bin+groupconf);
-		log.error("touch group.conf");
+		log.info("touch group.conf");
 		waitto(down_time);
 
 		//check second migration stat
@@ -1282,14 +1282,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.info("donw time arrived,migration started!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("Restart slave cs successful!");
+		log.info("Restart slave cs successful!");
 
 		//wait for system restart to work
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1306,25 +1306,25 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
-		log.error("Read data over!");
+		log.info("Read data over!");
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 13");
+		log.info("end config test Failover case 13");
 	}
 	@Test
 	public void testFailover_14_recover_slave_cs_after_ds_down_and_rebuild_then_ds_join_again_generate_second_rebuild()
 	{
-		log.error("start config test Failover case 14");
+		log.info("start config test Failover case 14");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
 
-		log.error("Start Cluster Successful!");
+		log.info("Start Cluster Successful!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1335,7 +1335,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -1344,7 +1344,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {
-				log.error("sleep exception", e);
+				log.info("sleep exception", e);
 			}
 			if(++waitcnt>150)break;
 		}
@@ -1353,17 +1353,17 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//close slave cs
 		if(!control_cs(csList.get(1), stop, 0))fail("close slave cs failed!");
-		log.error("slave cs has been closed!");
+		log.info("slave cs has been closed!");
 
 		waitto(2);
 
 		//close ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("close ds failed!");
-		log.error("ds has been closed!");
+		log.info("ds has been closed!");
 
 		//change master cs cause down time by 2
 		waitto(down_time*2);
@@ -1377,14 +1377,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//restart ds
 		if(!control_ds(dsList.get(0), start, 0))fail("restart ds failed!");
-		log.error("restart ds successful!");
+		log.info("restart ds successful!");
 		//touch conf file
 		touch_file(csList.get(0), tair_bin+groupconf);
-		log.error("touch group.conf");
+		log.info("touch group.conf");
 
 		//wait down time for touch
 		waitto(down_time);
@@ -1398,14 +1398,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started or stoped!");
 		waitcnt=0;
-		log.error("donw time arrived,migration stoped!");
+		log.info("donw time arrived,migration stoped!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("Restart slave cs successful!");
+		log.info("Restart slave cs successful!");
 
 		//wait for system restart to work
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1420,27 +1420,27 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//end test
-		log.error("end config test Failover case 14");
+		log.info("end config test Failover case 14");
 	}
 	@Test
 	public void testFailover_15_shutdown_master_cs_ds_and_slave_cs_one_by_one_then_recover_one_by_one()
 	{
-		log.error("start config test Failover case 15");
+		log.info("start config test Failover case 15");
 		int waitcnt=0;
 		//start cluster
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
-		log.error("start cluster successfull!");
+		log.info("start cluster successfull!");
 
-		log.error("wait system initialize ...");
+		log.info("wait system initialize ...");
 		waitto(down_time);
 
 		//change test tool's configuration
@@ -1451,7 +1451,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!modify_config_file(local, test_bin+toolconf, filename, kv_name))
 			fail("modify configure file failed");
 
-		//write 100k data to cluster
+		//
 		execute_data_verify_tool();
 
 		//check verify
@@ -1465,14 +1465,14 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("Write data over!");		
+		log.info("Write data over!");		
 
 		//stop master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("stop master cs failed!");
-		log.error("stop master cs successful!");
+		log.info("stop master cs successful!");
 		//stop ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("stop ds failed!");
-		log.error("stop ds sucessful!");
+		log.info("stop ds sucessful!");
 
 		//wait migration start
 		waitto(down_time);
@@ -1486,15 +1486,15 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.info("donw time arrived,migration started!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0),start,0))fail("restart master cs failed!");
-		log.error("restart master cs successful!");
+		log.info("restart master cs successful!");
 
 		//stop slave cs
 		if(!control_cs(csList.get(1),stop,0))fail("close slave cs failed!");
-		log.error("stop slave cs successful!");
+		log.info("stop slave cs successful!");
 
 		//wait down time for master cs work
 		waitto(down_time);
@@ -1508,7 +1508,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//change test tool's configuration
 		if(!modify_config_file(local, test_bin+toolconf, actiontype, get))
@@ -1522,21 +1522,21 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt,getVerifySuccessful());
-		log.error("Successfully Verified data!");	
+		log.info("Successfully Verified data!");	
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("restart slave cs successful!");
+		log.info("restart slave cs successful!");
 
 		//restart ds
 		if(!control_ds(dsList.get(0), start, 0))fail("restart ds failed!");
-		log.error("restart ds successful!");
+		log.info("restart ds successful!");
 		//touch for ds join
 		touch_file(csList.get(0), tair_bin+groupconf);
 
@@ -1552,11 +1552,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration started!");
+		log.info("donw time arrived,migration started!");
 
 		//stop master cs
 		if(!control_cs(csList.get(0), stop, 0))fail("stop master cs failed!");
-		log.error("stop master cs successful!");
+		log.info("stop master cs successful!");
 		//wait to down time
 		waitto(down_time);
 
@@ -1569,11 +1569,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>200)fail("donw time arrived,but no migration started or finished!");
 		waitcnt=0;
-		log.error("donw time arrived,migration finished!");
+		log.info("donw time arrived,migration finished!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("restart master cs successful!");
+		log.info("restart master cs successful!");
 		//wait to down time
 		waitto(down_time);
 
@@ -1589,31 +1589,31 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 			waitto(2);
 			if(++waitcnt>150)break;
 		}
-		log.error("Read data over!");
+		log.info("Read data over!");
 		if(waitcnt>150)fail("Read data time out!");
 		waitcnt=0;	
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
-		log.error("end config test Failover case 15");
+		log.info("end config test Failover case 15");
 	}
 	@Test
 	public void testFailover_16_close_master_cs_restart_it_when_add_a_ds_and_begin_migration()
 	{
-		log.error("start config test Failover case 16!");
+		log.info("start config test Failover case 16!");
 
 		int waitcnt=0;
 
 		//modify group configuration
 		if(!comment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		log.error("group.conf has been changed!");
+		log.info("group.conf has been changed!");
 
 		//start part cluster for next migration step
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 
 		//wait down time for cluster to work
 		waitto(down_time);
@@ -1634,12 +1634,12 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result\
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("put data over!");
+		log.info("put data over!");
 
 
 		//close master cs
 		if(!control_cs(csList.get(0),stop, 0))fail("stop master cs failed!");
-		log.error("close master cs successful!");
+		log.info("close master cs successful!");
 
 		//start ds
 		if(!control_ds(dsList.get(dsList.size()-1), start, 0))fail("start ds failed!");
@@ -1649,7 +1649,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!uncomment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
 		touch_file(csList.get(1), tair_bin+groupconf);
-		log.error("change group.conf and touch it");
+		log.info("change group.conf and touch it");
 		//wait down time for migration
 		waitto(down_time);
 
@@ -1661,11 +1661,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate start time out!");
 		waitcnt=0;
-		log.error("check migrate started!");
+		log.info("check migrate started!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("restart master cs successful!");
+		log.info("restart master cs successful!");
 
 		//wait down time for cs change
 		waitto(down_time);
@@ -1678,7 +1678,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>200)fail("check migrate finish time out!");
 		waitcnt=0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 		//verify data
 		if (!modify_config_file(local, test_bin+toolconf, actiontype, get))fail("modify tool config file failed!");
@@ -1694,25 +1694,25 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
-		log.error("end config test Failover case 16");
+		log.info("end config test Failover case 16");
 	}
 	@Test
 	public void testFailover_17_close_master_cs_restart_it_after_add_a_ds_and_migration()
 	{
-		log.error("start config test Failover case 17!");
+		log.info("start config test Failover case 17!");
 
 		int waitcnt=0;
 
 		//modify group configuration
 		if(!comment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		log.error("group.conf has been changed!");
+		log.info("group.conf has been changed!");
 
 		//start part cluster for next migration step
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 
 		//wait down time for cluster to work
 		waitto(down_time);
@@ -1733,11 +1733,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("put data over!");
+		log.info("put data over!");
 
 		//close master cs
 		if(!control_cs(csList.get(0),stop, 0))fail("stop master cs failed!");
-		log.error("close master cs successful!");
+		log.info("close master cs successful!");
 
 		//start ds
 		if(!control_ds(dsList.get(dsList.size()-1), start, 0))fail("start ds failed!");
@@ -1747,7 +1747,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!uncomment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
 		touch_file(csList.get(1), tair_bin+groupconf);
-		log.error("change group.conf and touch it");
+		log.info("change group.conf and touch it");
 		//wait down time for migration
 		waitto(down_time);
 
@@ -1759,11 +1759,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate start time out!");
 		waitcnt=0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 		//restart master cs
 		if(!control_cs(csList.get(0), start, 0))fail("restart master cs failed!");
-		log.error("restart master cs successful!");
+		log.info("restart master cs successful!");
 
 		//wait down time for cs change
 		waitto(down_time);
@@ -1782,25 +1782,25 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
-		log.error("end config test Failover case 17");
+		log.info("end config test Failover case 17");
 	}
 	@Test
 	public void testFailover_18_close_slave_cs_restart_it_when_add_a_ds_and_begin_migration()
 	{
-		log.error("start config test Failover case 18!");
+		log.info("start config test Failover case 18!");
 
 		int waitcnt=0;
 
 		//modify group configuration
 		if(!comment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		log.error("group.conf has been changed!");
+		log.info("group.conf has been changed!");
 
 		//start part cluster for next migration step
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 
 		//wait down time for cluster to work
 		waitto(down_time);
@@ -1821,11 +1821,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("put data over!");
+		log.info("put data over!");
 
 		//close slave cs
 		if(!control_cs(csList.get(1),stop, 0))fail("stop slave cs failed!");
-		log.error("close slave cs successful!");
+		log.info("close slave cs successful!");
 
 		//start ds
 		if(!control_ds(dsList.get(dsList.size()-1), start, 0))fail("start ds failed!");
@@ -1835,7 +1835,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!uncomment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
 		touch_file(csList.get(0), tair_bin+groupconf);
-		log.error("change group.conf and touch it");
+		log.info("change group.conf and touch it");
 		//wait down time for migration
 		waitto(down_time);
 
@@ -1847,11 +1847,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate start time out!");
 		waitcnt=0;
-		log.error("check migrate started!");
+		log.info("check migrate started!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("restart slave cs successful!");
+		log.info("restart slave cs successful!");
 
 		//wait down time for cs change
 		waitto(down_time);
@@ -1864,7 +1864,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate finish time out!");
 		waitcnt=0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 		//verify data
 		if (!modify_config_file(local, test_bin+toolconf, actiontype, get))fail("modify tool config file failed!");
@@ -1880,25 +1880,25 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
-		log.error("end config test Failover case 18");
+		log.info("end config test Failover case 18");
 	}
 	@Test
 	public void testFailover_19_close_slave_cs_restart_it_after_add_a_ds_and_migration()
 	{
-		log.error("start config test Failover case 19!");
+		log.info("start config test Failover case 19!");
 
 		int waitcnt=0;
 
 		//modify group configuration
 		if(!comment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		log.error("group.conf has been changed!");
+		log.info("group.conf has been changed!");
 
 		//start part cluster for next migration step
 		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 
 		//wait down time for cluster to work
 		waitto(down_time);
@@ -1919,11 +1919,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("put data over!");
+		log.info("put data over!");
 
 		//close slave cs
 		if(!control_cs(csList.get(1),stop, 0))fail("stop slave cs failed!");
-		log.error("close slave cs successful!");
+		log.info("close slave cs successful!");
 
 		//start ds
 		if(!control_ds(dsList.get(dsList.size()-1), start, 0))fail("start ds failed!");
@@ -1933,7 +1933,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		if(!uncomment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		//touch group.conf
 		touch_file(csList.get(0), tair_bin+groupconf);
-		log.error("change group.conf and touch it");
+		log.info("change group.conf and touch it");
 		//wait down time for migration
 		waitto(down_time);
 
@@ -1945,11 +1945,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate start time out!");
 		waitcnt=0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 		//restart slave cs
 		if(!control_cs(csList.get(1), start, 0))fail("restart slave cs failed!");
-		log.error("restart slave cs successful!");
+		log.info("restart slave cs successful!");
 
 		//wait down time for cs change
 		waitto(down_time);
@@ -1968,24 +1968,24 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
-		log.error("end config test Failover case 19");
+		log.info("end config test Failover case 19");
 	}
 
 	@Test
 	public void testFailover_20_migrate_before_add_new_ds()
 	{
-		log.error("start config test Failover case 20");
+		log.info("start config test Failover case 20");
 
 		int waitcnt=0;
 		if(!comment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		log.error("change group.conf successful!");
+		log.info("change group.conf successful!");
 
 		//start part cluster for next migration step
 		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
-		log.error("start cluster successful!");
+		log.info("start cluster successful!");
 
 		//wait down time for cluster to work
 		waitto(down_time);
@@ -2006,12 +2006,12 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		//save put result
 		int datacnt=getVerifySuccessful();
 		assertTrue("put successful rate samll than 90%!",datacnt/put_count_float>0.9);	
-		log.error("put data over!");
+		log.info("put data over!");
 
 
 		//close a ds
 		if(!control_ds(dsList.get(0), stop, 0))fail("stop ds failed!");
-		log.error("stop ds successful1");
+		log.info("stop ds successful1");
 
 		waitto(down_time);
 
@@ -2023,7 +2023,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate start time out!");
 		waitcnt=0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 		//verify data
 		if (!modify_config_file(local, test_bin+toolconf, actiontype, get))fail("modify tool config file failed!");
@@ -2039,11 +2039,11 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
 		if(!uncomment_line(csList.get(0), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		if(!uncomment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
-		log.error("change group.conf successful!");
+		log.info("change group.conf successful!");
 
 		waitto(down_time);
 
@@ -2055,7 +2055,7 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 		}
 		if(waitcnt>150)fail("check migrate start time out!");
 		waitcnt=0;
-		log.error("check migrate finished!");
+		log.info("check migrate finished!");
 
 		//verify data
 		if (!modify_config_file(local, test_bin+toolconf, actiontype, get))fail("modify tool config file failed!");
@@ -2071,9 +2071,9 @@ public class FailOverConfigServerTest3 extends FailOverBaseCase {
 
 		//verify get result
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
-		log.error("Successfully Verified data!");
+		log.info("Successfully Verified data!");
 
-		log.error("end config test Failover case 20");
+		log.info("end config test Failover case 20");
 	}
 
 	@Before
