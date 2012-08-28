@@ -977,7 +977,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 09");	
     }
     
-    //add one data server ,and then migrate,add another£¬ reclose first data server
+    //add one data server ,and then migrate,add anotherï¿½ï¿½ reclose first data server
 	@Test
     public void testFailover_10_add_one_afterMigrate_recloseFirst()
     {
@@ -2576,7 +2576,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		//wait 5s for duplicate
 		waitto(5);
 		//record the version times
-		int migrateCount = check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+//		int migrateCount = check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		
 		//close one data server
 		if(!control_ds((String) dsList_4.get(0), FailOverBaseCase.stop, 0))fail("close data server failed!");
@@ -2584,7 +2584,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		waitto(FailOverBaseCase.ds_down_time);
 		
 		//record the version times
-		migrateCount = check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+//		migrateCount = check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		
 		//close one data server
 		if(!control_ds((String) dsList_4.get(1), FailOverBaseCase.stop, 0))fail("close second data server failed!");
@@ -2666,7 +2666,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		waitto(5);
 		
 		//record the version times
-		int migrateCount = check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+//		int migrateCount = check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
 		
 		//close data server
 		if(!control_ds((String) dsList_4.get(0), FailOverBaseCase.stop, 0))fail("close first data server failed!");

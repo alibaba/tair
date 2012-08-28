@@ -1,12 +1,7 @@
 package com.taobao.ldbtest;
 
 import java.util.*;
-
 import org.junit.Test;
-
-import com.ibm.staf.STAFResult;
-
-import junit.framework.Assert;
 
 /**
  * author fanggang
@@ -14,7 +9,6 @@ import junit.framework.Assert;
  **/
 public class FailOverDataServerTest3 extends FailOverBaseCase{
 	
-    //ÔÚ»Ö¸´Ê±¼äÍâ»Ö¸´dataserver
 	@Test
     public void testFailover_02_kill_out_time()
     {   
@@ -122,7 +116,7 @@ public class FailOverDataServerTest3 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 02");
     }
     
-    //ÔÚÇ¨ÒÆ¹ý³ÌÖÐ»Ö¸´
+    //ï¿½ï¿½Ç¨ï¿½Æ¹ï¿½ï¿½ï¿½Ð»Ö¸ï¿½
 	@Test
     public void testFailover_03_restart_in_migrate()
     { 
@@ -227,7 +221,7 @@ public class FailOverDataServerTest3 extends FailOverBaseCase{
       
     }
     
-    //ÔÚÇ¨ÒÆºó»Ö¸´
+    //ï¿½ï¿½Ç¨ï¿½Æºï¿½Ö¸ï¿½
 	@Test
     public void testFailover_04_restart_after_migrate()
     {
@@ -376,7 +370,7 @@ public class FailOverDataServerTest3 extends FailOverBaseCase{
 		waitto(10);
 		
 		//close 3 data server
-		List closeList = dsList.subList(0, 2);
+		List<String> closeList = dsList.subList(0, 2);
 		if(!batch_control_ds(closeList, FailOverBaseCase.stop, 0))
 			fail("close 2 data server failed!");
 		

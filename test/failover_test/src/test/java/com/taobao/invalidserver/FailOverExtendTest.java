@@ -1,7 +1,7 @@
 package com.taobao.invalidserver;
 
-import org.junit.Test;
-import com.ibm.staf.STAFResult;
+//import org.junit.Test;
+//import com.ibm.staf.STAFResult;
 
 public class FailOverExtendTest extends FailOverBaseCase {
 

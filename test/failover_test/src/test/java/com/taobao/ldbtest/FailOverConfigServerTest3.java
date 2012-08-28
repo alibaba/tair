@@ -2,18 +2,8 @@
  * 
  */
 package com.taobao.ldbtest;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Iterator;
-
 import org.junit.Test;
 
-import com.ibm.staf.*;
-
-/**
- * @author dongpo
- *
- */
 public class FailOverConfigServerTest3 extends FailOverBaseCase {
 	@Test
 	public void testFailover_01_restart_master_cs()

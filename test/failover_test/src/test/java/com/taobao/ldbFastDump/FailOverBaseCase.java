@@ -625,6 +625,7 @@ public class FailOverBaseCase {
 				log.error("create handle failed!",e);
 			}
 	}
+	@SuppressWarnings("rawtypes")
 	public String getShellOutput(STAFResult result)
 	{
 		Map rstMap=(Map)result.resultObj;

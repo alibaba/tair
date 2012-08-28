@@ -2,18 +2,8 @@
  * 
  */
 package com.taobao.ldbtest;
-
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.Test;
 
-import com.ibm.staf.STAFResult;
-
-/**
- * @author dongpo
- *
- */
 public class FailoverClusterTest1 extends FailOverBaseCase {
 	@Test
 	public void testFailover_01_restart_all_server()

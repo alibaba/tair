@@ -52,14 +52,14 @@ public class FailOverBaseCase extends BaseTestCase {
 	// Server List
 	final String csarr[] = new String[] { "10.232.4.14", "10.232.4.15" };
 	final String dsarr[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17"};
-	final List csList = Arrays.asList(csarr);
-	final List dsList_4 = Arrays.asList(dsarr);
+	final List<String> csList = Arrays.asList(csarr);
+	final List<String> dsList_4 = Arrays.asList(dsarr);
 	
 	final String dsarr_func[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18"};
-	final List dsList_5 = Arrays.asList(dsarr_func);
+	final List<String> dsList_5 = Arrays.asList(dsarr_func);
 	
 	final String dsarr_kdb[] = new String[] { "10.232.4.14", "10.232.4.15", "10.232.4.16", "10.232.4.17", "10.232.4.18", "10.232.4.19"};
-	final List dsList_6 = Arrays.asList(dsarr_kdb);
+	final List<String> dsList_6 = Arrays.asList(dsarr_kdb);
 	
 	final static String ycsb_client = "10.232.4.18";
 
@@ -153,9 +153,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	public boolean batch_control_cs(List cs_group, String opID, int type) {
+	public boolean batch_control_cs(List<String> cs_group, String opID, int type) {
 		boolean ret = false;
-		for (Iterator it = cs_group.iterator(); it.hasNext();) {
+		for (Iterator<String> it = cs_group.iterator(); it.hasNext();) {
 			if (!control_cs((String) it.next(), opID, type)) {
 				ret = false;
 				break;
@@ -172,9 +172,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	public boolean batch_control_ds(List ds_group, String opID, int type) {
+	public boolean batch_control_ds(List<String> ds_group, String opID, int type) {
 		boolean ret = false;
-		for (Iterator it = ds_group.iterator(); it.hasNext();) {
+		for (Iterator<String> it = ds_group.iterator(); it.hasNext();) {
 			if (!control_ds((String) it.next(), opID, type)) {
 				ret = false;
 				break;
@@ -192,7 +192,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	public boolean control_cluster(List cs_group, List ds_group, String opID, int type) {
+	public boolean control_cluster(List<String> cs_group, List<String> ds_group, String opID, int type) {
 		boolean ret = false;
 		if (!batch_control_ds(ds_group, opID, type) || !batch_control_cs(cs_group, opID, type))
 			ret = false;
@@ -318,16 +318,16 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	public boolean batch_clean_data(List machines) {
+	public boolean batch_clean_data(List<String> machines) {
 		boolean ret = true;
-		for (Iterator it = machines.iterator(); it.hasNext();) {
+		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
 			if (!clean_data((String) it.next()))
 				ret = false;
 		}
 		return ret;
 	}
 
-	public boolean reset_cluster(List csList, List dsList_4) {
+	public boolean reset_cluster(List<String> csList, List<String> dsList_4) {
 		boolean ret = false;
 		log.debug("stop and clean cluster!");
 		if (control_cluster(csList, dsList_6, FailOverBaseCase.stop, 1) && batch_clean_data(csList) && batch_clean_data(dsList_6))
@@ -412,9 +412,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 ///////////////////////////////////////////////////////////////////////////////////////////////
-	public boolean batch_modify(List machines, String confname, String key, String value) {
+	public boolean batch_modify(List<String> machines, String confname, String key, String value) {
 		boolean ret = true;
-		for (Iterator it = machines.iterator(); it.hasNext();) {
+		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
 			if (!modify_config_file((String) it.next(), confname, key, value)) {
 				ret = false;
 				break;
@@ -478,9 +478,9 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 	
-	public boolean batch_recover_net(List machines) {
+	public boolean batch_recover_net(List<String> machines) {
 		boolean ret = true;
-		for (Iterator it = machines.iterator(); it.hasNext();) {
+		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
 			if (!recover_net((String)it.next())) {
 				ret = false;
 				break;
@@ -634,11 +634,11 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	public boolean batch_uncomment(List machines, String confname, List keywords, String comment) {
+	public boolean batch_uncomment(List<String> machines, String confname, List<String> keywords, String comment) {
 		boolean ret = true;
-		for (Iterator ms = machines.iterator(); ms.hasNext();) {
+		for (Iterator<String> ms = machines.iterator(); ms.hasNext();) {
 			String cms = (String) ms.next();
-			for (Iterator ks = keywords.iterator(); ks.hasNext();) {
+			for (Iterator<String> ks = keywords.iterator(); ks.hasNext();) {
 				if (!uncomment_line(cms, confname, (String) ks.next(), comment))
 					ret = false;
 			}

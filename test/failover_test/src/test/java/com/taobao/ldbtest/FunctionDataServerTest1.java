@@ -3,17 +3,8 @@
  */
 package com.taobao.ldbtest;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.junit.Test;
 
-import com.ibm.staf.STAFResult;
-
-/**
- * @author dongpo
- *
- */
 public class FunctionDataServerTest1 extends FailOverBaseCase {
 	@Test
 	public void testFunction_01_add_ds_and_migration()

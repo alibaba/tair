@@ -1,12 +1,7 @@
 package com.taobao.ldbtest;
 
 import java.util.*;
-
 import org.junit.Test;
-
-import com.ibm.staf.STAFResult;
-
-import junit.framework.Assert;
 
 /**
  * author fanggang
@@ -1024,7 +1019,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 09");	
     }
     
-    //add one data server ,and then migrate,add another£¬ reclose first data server
+    //add one data server ,and then migrate,add anotherï¿½ï¿½ reclose first data server
 	@Test
     public void testFailover_10_add_one_afterMigrate_recloseFirst()
     {
@@ -1721,7 +1716,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 14");
     }
     
-  //ÔÚÇ¨ÒÆ¹ý³ÌÖÐ¹Ø±ÕÁíÒ»Ì¨ds
+  //ï¿½ï¿½Ç¨ï¿½Æ¹ï¿½ï¿½ï¿½Ð¹Ø±ï¿½ï¿½ï¿½Ò»Ì¨ds
 	@Test
     public void testFailover_15_add_ds_close_another_in_migrate()
     { 
@@ -1835,7 +1830,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		log.error("end DataServer test Failover case 15");
       
     }
-  //ÔÚÇ¨ÒÆ¹ý³ÌÖÐ¹Ø±ÕÁíÒ»Ì¨ds,restart ontime
+  //ï¿½ï¿½Ç¨ï¿½Æ¹ï¿½ï¿½ï¿½Ð¹Ø±ï¿½ï¿½ï¿½Ò»Ì¨ds,restart ontime
 	@Test
     public void testFailover_16_add_ds_close_another_in_migrate_restart_ontime()
     { 
@@ -2851,7 +2846,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		//end test
 		log.error("end DataServer test Failover case 26");
     }
-  //kill 80%ÊýÁ¿dataserver,Ç¨ÒÆÖ®Ç°»Ö¸´
+  //kill 80%ï¿½ï¿½ï¿½ï¿½dataserver,Ç¨ï¿½ï¿½Ö®Ç°ï¿½Ö¸ï¿½
 	@Test
     public void testFailover_27_kill_more_servers()
     { 
@@ -2893,7 +2888,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase{
 		waitto(10);
 		
 		//close 3 data server
-		List closeList = dsList.subList(0, 3);
+		List<String> closeList = dsList.subList(0, 3);
 		if(!batch_control_ds(closeList, FailOverBaseCase.stop, 0))
 			fail("close 3 data server failed!");
 		

@@ -2,6 +2,7 @@
  * 
  */
 package com.taobao.invalidserver;
+
 import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
@@ -10,6 +11,7 @@ import junit.framework.TestCase;
 
 public class BaseTestCase extends TestCase {
 	protected static Logger log=Logger.getLogger("Test");
+	@SuppressWarnings("rawtypes")
 	public String getShellOutput(STAFResult result)
 	{
 		Map rstMap=(Map)result.resultObj;

@@ -541,8 +541,8 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get successful count smaller than 0!", suc_count > 0);
 		Assert.assertTrue("get fail_count count not 0!", fail_count == 0);
 		
-		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
-		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
+//		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
+//		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 		
 		//3、关闭主cs
 		if(!control_cs(csList.get(0), stop, 0))
@@ -625,8 +625,8 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 		Assert.assertTrue("get successful count smaller than 0!", suc_count > 0);
 		Assert.assertTrue("get fail_count count not 0!", fail_count == 0);
 		
-		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
-		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
+//		int versionGroup_1 = check_keyword(csList.get(0),verchange_group_1,tair_bin+"logs/config.log");
+//		int versionGroup_2 = check_keyword(csList.get(0),verchange_group_2,tair_bin+"logs/config.log");
 	
 		//3、关闭所有cs
 		if(!batch_control_cs(csList, stop, 0))

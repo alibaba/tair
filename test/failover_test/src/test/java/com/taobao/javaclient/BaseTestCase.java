@@ -1,21 +1,16 @@
 package com.taobao.javaclient;
+
 import java.util.List;
 import java.util.Map;
-
 import org.apache.log4j.Logger;
-
 import com.ibm.staf.*;
-import com.ibm.staf.wrapper.*;
 import junit.framework.TestCase;
 
-/**
- * @author ashu.cs
- *
- */
 public class BaseTestCase extends TestCase {
 	protected static Logger log=Logger.getLogger("Test");
 	protected STAFHandle stafhandle=null;
 	
+	@SuppressWarnings("rawtypes")
 	public String getShellOutput(STAFResult result)
 	{
 		Map rstMap=(Map)result.resultObj;

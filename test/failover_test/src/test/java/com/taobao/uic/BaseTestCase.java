@@ -13,7 +13,8 @@ public class BaseTestCase {
 
         protected static Logger log = Logger.getLogger("Test");
 
-        public String getShellOutput(STAFResult result) {
+        @SuppressWarnings("rawtypes")
+		public String getShellOutput(STAFResult result) {
                 Map rstMap = (Map) result.resultObj;
                 List rstList = (List) rstMap.get("fileList");
                 Map stdoutMap = (Map) rstList.get(0);
