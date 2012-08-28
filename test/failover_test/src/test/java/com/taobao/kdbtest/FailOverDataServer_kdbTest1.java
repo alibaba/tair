@@ -1,10 +1,8 @@
 package com.taobao.kdbtest;
+
+import static org.junit.Assert.*;
 import org.junit.Test;
 
-/**
- * @author ashu.cs
- *
- */
 public class FailOverDataServer_kdbTest1 extends FailOverBaseCase {
 	@Test
 	public void testFailover_01_add_1ds_then_write_while_migrate()

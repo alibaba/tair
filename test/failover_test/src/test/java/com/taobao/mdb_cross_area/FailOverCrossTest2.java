@@ -1,12 +1,8 @@
 package com.taobao.mdb_cross_area;
+
+import static org.junit.Assert.*;
 import org.junit.Test;
-
 import com.taobao.mdb_cross_area.FailOverBaseCase;
-
-/**
- * @author ashu.cs
- *
- */
 
 public class FailOverCrossTest2 extends FailOverBaseCase {
 

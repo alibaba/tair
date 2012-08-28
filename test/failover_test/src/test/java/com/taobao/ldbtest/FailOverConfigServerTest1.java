@@ -1,7 +1,10 @@
-/**
+ /**
  * 
  */
 package com.taobao.ldbtest;
+
+import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 public class FailOverConfigServerTest1 extends FailOverBaseCase {

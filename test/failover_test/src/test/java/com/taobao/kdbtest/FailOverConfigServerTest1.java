@@ -1,10 +1,7 @@
 package com.taobao.kdbtest;
-import org.junit.Test;
 
-/**
- * @author ashu.cs
- *
- */
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class FailOverConfigServerTest1 extends FailOverBaseCase {
 
