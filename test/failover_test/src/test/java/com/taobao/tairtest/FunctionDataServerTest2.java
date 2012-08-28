@@ -47,8 +47,8 @@ public class FunctionDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -135,8 +135,8 @@ public class FunctionDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -253,8 +253,8 @@ public class FunctionDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -343,8 +343,8 @@ public class FunctionDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -462,18 +462,16 @@ public class FunctionDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 
 		// close ds
-		if (!control_ds(dsList.get(0), stop, 0))
+		if (!control_ds(dsList.get(0), stop, 1))
 			fail("close ds failed!");
 		log.info("ds has been closed!");
 		log.info("wait to restart before rebuild ...");
 
-		// waitto(ds_down_time);
-
-		if (check_keyword(csList.get(1), start_migrate, tair_bin
+		if (check_keyword(csList.get(0), start_migrate, tair_bin
 				+ "logs/config.log") != 0)
 			fail("Already migration!");
 

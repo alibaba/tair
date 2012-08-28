@@ -49,8 +49,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// save put result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("finish put data!");
 
 		// wait 5s for duplicate
@@ -144,8 +144,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -240,8 +240,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",
-				datacnt / 500000.0 > 0.9);
+		assertTrue("put successful rate small than normSucRate!",
+				datacnt / 500000.0 > normSucRate);
 		log.info("Write data over!");
 
 		// wait 30s for duplicate
@@ -363,8 +363,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		// verify get result
 		int datacnt = getVerifySuccessful();
 		log.info(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 10s for duplicate
@@ -490,8 +490,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 10s for duplicate
@@ -593,8 +593,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -719,8 +719,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -811,7 +811,6 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 07");
 	}
 
-	// first add one ,and then add another one, and reclose first one
 	@Test
 	public void testFailover_08_add_one_inMigrate_reCloseFirst() {
 		log.info("start DataServer test Failover case 08");
@@ -854,8 +853,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		// verify get result
 		int datacnt = getVerifySuccessful();
 		log.info(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -987,8 +986,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -1128,8 +1127,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -1248,6 +1247,9 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		if (!comment_line(csList.get(0), tair_bin + groupconf, dsList.get(0),
 				"#"))
 			fail("change group.conf failed!");
+		if (!comment_line(csList.get(0), tair_bin + groupconf, dsList.get(1),
+		"#"))
+	fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
 		if (!control_cluster(csList, dsList, start, 0))
@@ -1278,8 +1280,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -1312,7 +1314,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.info("down time arrived,migration started!");
 
-		// /uncomment cs group.conf
+		// uncomment cs group.conf
 		if (!uncomment_line(csList.get(0), tair_bin + groupconf, dsList.get(1),
 				"#"))
 			fail("change group.conf failed!");
@@ -1429,8 +1431,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -1582,8 +1584,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -1731,8 +1733,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -1888,8 +1890,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		// verify get result
 		int datacnt = getVerifySuccessful();
 		log.info(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 30s for duplicate
@@ -2010,8 +2012,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 30s for duplicate
@@ -2126,8 +2128,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -2208,8 +2210,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -2304,8 +2306,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 		// wait 5s for duplicate
 		waitto(5);
@@ -2396,8 +2398,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -2448,13 +2450,13 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		log.info("down time arrived,migration finished!");
 
-		int versionNow = check_keyword(csList.get(1), finish_rebuild, tair_bin
+		int versionNow = check_keyword(csList.get(0), finish_rebuild, tair_bin
 				+ "logs/config.log");
 		assertTrue("check version count not correct!", versionNow > versionOld);
 		waitto(down_time);
 		assertTrue(
 				"check version count not correct!",
-				check_keyword(csList.get(1), finish_rebuild, tair_bin
+				check_keyword(csList.get(0), finish_rebuild, tair_bin
 						+ "logs/config.log") == versionNow);
 
 		if (!modify_config_file(local, test_bin + toolconf, actiontype, get))
@@ -2513,8 +2515,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -2665,8 +2667,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -2877,8 +2879,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -2987,8 +2989,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -3119,8 +3121,8 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 10s for duplicate

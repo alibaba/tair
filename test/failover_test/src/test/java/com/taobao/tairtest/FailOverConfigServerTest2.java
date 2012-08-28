@@ -42,8 +42,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("put data time out!");
 		waitcnt = 0;
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close master cs
@@ -132,8 +132,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("put data time out!");
 		waitcnt = 0;
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close slave cs
@@ -220,8 +220,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("put data time out!");
 		waitcnt = 0;
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close all cs
@@ -295,8 +295,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("finish put data!");
 
 		// close master cs
@@ -392,8 +392,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close master cs
@@ -499,8 +499,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close master cs
@@ -597,8 +597,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close master cs
@@ -724,8 +724,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close master cs
@@ -859,8 +859,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// stop master cs
@@ -1044,8 +1044,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close slave cs
@@ -1142,8 +1142,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close slave cs
@@ -1245,8 +1245,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close slave cs
@@ -1343,8 +1343,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close slave cs
@@ -1471,8 +1471,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close slave cs
@@ -1594,8 +1594,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// stop master cs
@@ -1787,8 +1787,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		// close master cs
@@ -1805,7 +1805,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("start the last ds successful!");
 
 		// uncomment cs group.conf
-		if (!uncomment_line(csList.get(0), tair_bin + groupconf,
+		if (!uncomment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
 		if (touch_flag != 0) {
@@ -1832,6 +1832,9 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("restart master cs failure!");
 		log.info("restart master cs successful!");
 
+		versionOld = check_keyword(csList.get(0), finish_rebuild, tair_bin
+				+ "logs/config.log");
+		
 		// wait down time for cs change
 		waitto(down_time);
 
@@ -1886,9 +1889,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if (!comment_line(csList.get(0), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
-		if (!comment_line(csList.get(1), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failure!");
 		log.info("group.conf has been changed!");
 
 		// start part cluster for next migration step
@@ -1919,8 +1919,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		// close master cs
@@ -1928,14 +1928,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("stop master cs failure!");
 		log.info("close master cs successful!");
 
+		int migCount = check_keyword(csList.get(1), finish_migrate, tair_bin
+				+ "logs/config.log");
 		// start ds
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
 			fail("start ds failure!");
 
 		// uncomment cs group.conf
-		if (!uncomment_line(csList.get(0), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failure!");
 		if (!uncomment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
@@ -1948,7 +1947,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		// check migration stat of start
 		while (check_keyword(csList.get(1), finish_migrate, tair_bin
-				+ "logs/config.log") != 1) {
+				+ "logs/config.log") != migCount + 1) {
 			waitto(3);
 			if (++waitcnt > 200)
 				break;
@@ -1996,9 +1995,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if (!comment_line(csList.get(0), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
-		if (!comment_line(csList.get(1), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failure!");
 		log.info("group.conf has been changed!");
 
 		// start part cluster for next migration step
@@ -2029,8 +2025,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		// close slave cs
@@ -2044,9 +2040,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		// uncomment cs group.conf
 		if (!uncomment_line(csList.get(0), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failure!");
-		if (!uncomment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
 		if (touch_flag != 0) {
@@ -2118,9 +2111,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if (!comment_line(csList.get(0), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
-		if (!comment_line(csList.get(1), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failure!");
 		log.info("group.conf has been changed!");
 
 		// start part cluster for next migration step
@@ -2151,8 +2141,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		// close slave cs
@@ -2227,9 +2217,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if (!comment_line(csList.get(0), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
-		if (!comment_line(csList.get(1), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failure!");
 		log.info("change group.conf successful!");
 
 		// start part cluster for next migration step
@@ -2259,8 +2246,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// save put result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		// close a ds
@@ -2301,9 +2288,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("Successfully Verified data!");
 
 		if (!uncomment_line(csList.get(0), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failure!");
-		if (!uncomment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
 		log.info("change group.conf successful!");
@@ -2385,8 +2369,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close ds

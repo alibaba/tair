@@ -69,6 +69,9 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String ds = "ds";
 	// system option
 	final static String local = "local";
+	// judge measure
+	final static float normSucRate = 0.99f;
+	final static float migSucRate = 0.92f;
 
 	@BeforeClass
 	public static void baseBeforeClass() {

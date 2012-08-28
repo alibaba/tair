@@ -43,8 +43,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 5s for duplicate
@@ -130,8 +130,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -240,8 +240,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 10s for duplicate
@@ -317,7 +317,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 03");
 	}
 
-	// first kill one ,and then kill another one in migrate
 	@Test
 	public void testFailover_04_kill_one_inMigrate_outtime() {
 		log.info("start DataServer test Failover case 06");
@@ -352,8 +351,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 10s for duplicate
@@ -417,8 +416,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 04");
 	}
 
-	// first kill one , then kill another one and restart it before second
-	// migrate
 	@Test
 	public void testFailover_05_kill_one_inMigrate_inTime() {
 		log.info("start DataServer test Failover case 05");
@@ -426,7 +423,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -453,8 +449,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -531,7 +527,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 05");
 	}
 
-	// first kill one ,and then kill another one, and restart first one
 	@Test
 	public void testFailover_06_kill_one_inMigrate_restartFirst() {
 		log.info("start DataServer test Failover case 06");
@@ -539,7 +534,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -566,8 +560,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait 10s for duplicate
@@ -640,7 +634,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 06");
 	}
 
-	// kill another data server ,and restart both in migrate
 	@Test
 	public void testFailover_07_kill_one_inMigrate_restartBoth() {
 		log.info("start DataServer test Failover case 07");
@@ -648,7 +641,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -675,8 +667,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -760,7 +752,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 07");
 	}
 
-	// kill another data server ,and then migrate, restart first data server
 	@Test
 	public void testFailover_08_kill_one_afterMigrate_restartFirst() {
 		log.info("start DataServer test Failover case 08");
@@ -768,7 +759,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -795,8 +785,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -876,8 +866,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 08");
 	}
 
-	// kill another data server ,and after second migrate, restart second data
-	// server
 	@Test
 	public void testFailover_09_kill_one_afterMigrate_restartSecond() {
 		log.info("start DataServer test Failover case 09");
@@ -885,7 +873,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -912,8 +899,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -995,7 +982,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 09");
 	}
 
-	// kill another data server ,and after second migrate, restart both
 	@Test
 	public void testFailover_10_kill_one_afterMigrate_restartBoth() {
 		log.info("start DataServer test Failover case 10");
@@ -1003,7 +989,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1030,8 +1015,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -1116,8 +1101,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 10");
 	}
 
-	// kill another data server,and after migrate finish, restart first data
-	// server
 	@Test
 	public void testFailover_11_kill_one_finishMigrate_restartFirst() {
 		log.info("start DataServer test Failover case 11");
@@ -1125,7 +1108,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1152,8 +1134,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -1243,8 +1225,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 11");
 	}
 
-	// kill another data server,and after migrate finish, restart second data
-	// server
 	@Test
 	public void testFailover_12_kill_one_finishMigrate_restartSecond() {
 		log.info("start DataServer test Failover case 12");
@@ -1252,7 +1232,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1279,8 +1258,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -1379,7 +1358,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 12");
 	}
 
-	// kill another data server,and after migrate finish, restart both
 	@Test
 	public void testFailover_13_kill_one_finishMigrate_restartBoth() {
 		log.info("start DataServer test Failover case 13");
@@ -1414,8 +1392,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -1519,7 +1497,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 13");
 	}
 
-	// kill two data servers,and after migrate start, restart the servers
 	@Test
 	public void testFailover_14_kill_twoDataServers_afterMigrate_restart() {
 		log.info("start DataServer test Failover case 14");
@@ -1554,8 +1531,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -1641,7 +1618,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 14");
 	}
 
-	// kill two data servers,and after migrate finish, restart the servers
 	@Test
 	public void testFailover_15_kill_twoDataServers_finishMigrate_restart() {
 		log.info("start DataServer test Failover case 15");
@@ -1676,8 +1652,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -1764,7 +1740,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 15");
 	}
 
-	// kill all data servers, and restart out time
 	@Test
 	public void testFailover_16_kill_allDataServrs_restart_outTime() {
 		log.info("start DataServer test Failover case 16");
@@ -1801,8 +1776,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close all data servers
@@ -1826,6 +1801,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!modify_config_file(local, test_bin + toolconf, actiontype, get))
 			fail("modify configure file failed");
+		if (!modify_config_file(local, test_bin + toolconf, proxyflag, "1"))
+			fail("modify configure file failed");
 		// migrate need check data
 		execute_data_verify_tool();
 		// check verify
@@ -1847,7 +1824,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 16");
 	}
 
-	// kill the data server after migrate start
 	@Test
 	public void testFailover_17_kill_one_afterMigate() {
 		log.info("start DataServer test Failover case 17");
@@ -1855,7 +1831,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		if (!control_cluster(csList, dsList, start, 0))
 			fail("start cluster failed!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1882,8 +1857,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// wait for duplicate
@@ -1963,13 +1938,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		if (!comment_line(csList.get(0), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
-		if (!comment_line(csList.get(1), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failed!");
 		if (!comment_line(csList.get(0), tair_bin + groupconf,
-				dsList.get(dsList.size() - 3), "#"))
-			fail("change group.conf failed!");
-		if (!comment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 3), "#"))
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
@@ -2006,8 +1975,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -2016,9 +1985,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// uncomment cs group.conf
 		if (!uncomment_line(csList.get(0), tair_bin + groupconf,
-				dsList.get(dsList.size() - 1), "#"))
-			fail("change group.conf failed!");
-		if (!uncomment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failed!");
 		waitto(5);
@@ -2065,9 +2031,6 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 
 		// uncomment cs group.conf
 		if (!uncomment_line(csList.get(0), tair_bin + groupconf,
-				dsList.get(dsList.size() - 3), "#"))
-			fail("change group.conf failed!");
-		if (!uncomment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 3), "#"))
 			fail("change group.conf failed!");
 		waitto(5);
@@ -2213,8 +2176,8 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 			fail("put data time out!");
 		waitcnt = 0;
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("Write data over!");
 
 		// close some ds
@@ -2244,12 +2207,14 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 			fail("put data time out!");
 		waitcnt = 0;
 		int datacnt1 = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt1
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than migSucRate!", datacnt1
+				/ put_count_float > migSucRate);
 		log.info("Write data over!");
 
 		// read data
 		if (!modify_config_file(local, test_bin + toolconf, actiontype, get))
+			fail("modify configure file failure");
+		if (!modify_config_file(local, test_bin + toolconf, proxyflag, "1"))
 			fail("modify configure file failure");
 		execute_data_verify_tool();
 		while (check_process(local, toolname) != 2) {

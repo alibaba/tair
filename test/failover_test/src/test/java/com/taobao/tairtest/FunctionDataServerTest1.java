@@ -47,8 +47,8 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -137,8 +137,8 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -181,8 +181,8 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt1 = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt1
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than migSucRate!", datacnt1
+				/ put_count_float > migSucRate);
 		datacnt += datacnt1;
 		log.info("put data over!");
 
@@ -214,7 +214,6 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		log.info("get data over!");
 
 		// verify get result
-		log.info(getVerifySuccessful());
 		assertEquals("verify data failed!", datacnt, getVerifySuccessful());
 		log.info("Successfully Verified data!");
 
@@ -258,8 +257,8 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -349,8 +348,8 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("put data over!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
@@ -470,8 +469,8 @@ public class FunctionDataServerTest1 extends FailOverBaseCase {
 
 		// verify get result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 
 		// close ds
 		if (!control_ds(dsList.get(0), stop, 0))

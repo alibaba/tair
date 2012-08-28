@@ -43,8 +43,8 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		// save put result
 		int datacnt = getVerifySuccessful();
 		log.info(getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("finish put data!");
 
 		// shut down ds and cs
@@ -122,8 +122,8 @@ public class FailoverClusterTest1 extends FailOverBaseCase {
 		waitcnt = 0;
 		// save put result
 		int datacnt = getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!", datacnt
-				/ put_count_float > 0.9);
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
 		log.info("finish put data!");
 
 		if (!control_ds(dsList.get(dsList.size() - 1), start, 0))
