@@ -6,9 +6,15 @@ package com.taobao.tairtest;
 import com.ibm.staf.*;
 import static org.junit.Assert.*;
 import com.taobao.tairtest.ConfParser;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.BeforeClass;
 
 public class FailOverBaseCase extends BaseTestCase {
@@ -59,6 +65,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	final static String put = "put";
 	final static String get = "get";
 	final static String rem = "rem";
+	final static String cs = "cs";
+	final static String ds = "ds";
 	// system option
 	final static String local = "local";
 
@@ -741,6 +749,101 @@ public class FailOverBaseCase extends BaseTestCase {
 			} catch (Exception e) {
 				log.debug("get verify exception: " + stdout);
 				ret = -1;
+			}
+		}
+		return ret;
+	}
+	
+	protected void batchControlServer(List<String> serverList,
+			String serverType, String option, int type) {
+		log.info("start batch " + option + " " + serverType + " list!");
+		boolean ret = true;
+		ExecutorService exec = Executors.newFixedThreadPool(serverList.size());
+		ArrayList<Future<Boolean>> resultList = new ArrayList<Future<Boolean>>();
+		for (int i = 0; i < serverList.size(); i++) {
+			resultList.add(exec.submit(new ControlServer(serverList.get(i),
+					serverType, option, type)));
+		}
+		boolean waitFlag = true;
+		int waitLimit = 0;
+		while (waitFlag && waitLimit < 10) {
+			waitFlag = false;
+			waitto(1);
+			waitLimit++;
+			for(int j = 0; j < serverList.size(); j++) {
+				if(!resultList.get(j).isDone()) {
+					waitFlag = true;
+					break;
+				}
+			}
+		}
+		exec.shutdown();
+		
+		for(int k = 0; k < serverList.size(); k++) {
+			Boolean retThread;
+			try {
+				retThread = resultList.get(k).get();
+				if(retThread.booleanValue())
+					log.debug(option + " " + serverType + " on " + serverList.get(k) + " successful!");
+				else
+					log.debug(option + " " + serverType + " on " + serverList.get(k) + " failed!");
+				ret = retThread.booleanValue() && ret;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				fail("exception occured while get result on " + serverList.get(k));
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+				fail("exception occured while get result on " + serverList.get(k));
+			}
+		}
+		if(!ret)
+			fail("batch " + option + " " + serverType + " list successful!");
+		else
+			log.info("batch " + option + " " + serverType + " list successful!");
+	}
+}
+
+class ControlServer extends BaseTestCase implements Callable<Boolean> {
+
+	private String machine;
+	private String serverType;
+	private String serverName;
+	private String option;
+	private int type;
+	
+	public ControlServer(String machine, String serverType, String option, int type) {
+		this.machine = machine;
+		this.serverType = serverType;
+		this.serverName = this.serverType.equals("cs") ? FailOverBaseCase.csname
+				: FailOverBaseCase.dsname;
+		this.option = option;
+		this.type = type;
+	}
+
+	public Boolean call() throws Exception {
+//		log.debug("control " + serverType + ": " + machine + " " + option + " type=" + type);
+		boolean ret = false;
+		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + option
+				+ "_" + serverType;
+		if (option.equals(FailOverBaseCase.stop) && type == 1)
+			cmd = "killall -9 " + serverName + " && sleep 1";
+		executeShell(stafhandle, machine, cmd);
+		cmd = "ps -ef|grep " + serverName + "|wc -l";
+		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0) {
+			log.error(machine + " result.rc not 0! " + result.rc);
+			ret = false;
+		} else {
+			String stdout = getShellOutput(result);
+//			log.debug("------------server ps result--------------" + stdout);
+			if (option.equals(FailOverBaseCase.start)
+					&& (new Integer(stdout.trim())).intValue() != 3) {
+				ret = false;
+			} else if (option.equals(FailOverBaseCase.stop)
+					&& (new Integer(stdout.trim())).intValue() != 2) {
+				ret = false;
+			} else {
+				ret = true;
 			}
 		}
 		return ret;
