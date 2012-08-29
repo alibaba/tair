@@ -3,11 +3,8 @@ package com.taobao.ldbtest;
 import static org.junit.Assert.*;
 import java.util.*;
 import org.junit.Test;
+import com.taobao.tairtest.FailOverBaseCase;
 
-/**
- * author fanggang
- * dataserver testcase
- **/
 public class FailOverDataServerTest1 extends FailOverBaseCase{
 	
 	@Test

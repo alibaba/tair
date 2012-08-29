@@ -4,6 +4,7 @@
 package com.taobao.tairtest;
 
 import com.ibm.staf.*;
+
 import static org.junit.Assert.*;
 import com.taobao.tairtest.ConfParser;
 import java.util.ArrayList;
@@ -371,6 +372,19 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
+	
+	protected boolean execute_tair_tool(String machine, String path) {
+		log.debug("start verify tool,run batchData");
+		boolean ret = false;
+		String cmd = "cd " + path + " && ";
+		cmd += "./batchData.sh";
+		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0)
+			ret = false;
+		else
+			ret = true;
+		return ret;
+	}
 
 	protected boolean killall_tool_proc() {
 		log.debug("force kill all data tool process");
@@ -388,6 +402,28 @@ public class FailOverBaseCase extends BaseTestCase {
 		boolean ret = true;
 		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
 			if (!clean_data(it.next()))
+				ret = false;
+		}
+		return ret;
+	}
+	
+	protected boolean clean_test_data(String machine, String path) {
+		boolean ret = false;
+		killall_tool_proc();
+		String cmd = "cd " + path + " && ";
+		cmd += "./clean.sh";
+		STAFResult rst = executeShell(stafhandle, machine, cmd);
+		if (rst.rc != 0)
+			ret = false;
+		else
+			ret = true;
+		return ret;
+	}
+	
+	protected boolean batch_clean_test_data(List<String> machines, String path) {
+		boolean ret = true;
+		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
+			if (!clean_test_data(it.next(), path))
 				ret = false;
 		}
 		return ret;
@@ -635,6 +671,29 @@ public class FailOverBaseCase extends BaseTestCase {
 		log.error(ret);
 		return ret;
 	}
+	
+	protected int getVerifySuccessful(String machine, String path) {
+		int ret = 0;
+		String verify = "cd " + path + " && ";
+		verify += " grep \"Successful\" datadbg0.log |awk \'{print $7}\' |tail -1";
+		log.debug("do verify on local");
+		STAFResult result = executeShell(stafhandle, machine, verify);
+		if (result.rc != 0) {
+			log.debug("get result " + result);
+			ret = -1;
+		} else {
+			String stdout = getShellOutput(result);
+			try {
+				ret = (new Integer(stdout.trim())).intValue();
+				log.debug(machine + ": " + ret);
+			} catch (Exception e) {
+				log.debug("get verify exception: " + stdout);
+				ret = -1;
+			}
+		}
+		log.error("Success count: " + ret);
+		return ret;
+	}
 
 	protected boolean copy_file(String source_machine, String filename,
 			String target_machine) {
@@ -642,6 +701,19 @@ public class FailOverBaseCase extends BaseTestCase {
 				+ target_machine);
 		boolean ret = true;
 		String cmd = "scp " + filename + " " + target_machine + ":" + test_bin;
+		STAFResult result = executeShell(stafhandle, source_machine, cmd);
+		if (result.rc != 0)
+			ret = false;
+		return ret;
+	}
+	
+	public boolean scp_file(String source_machine, String source_path,
+			String filename, String target_machine, String target_path) {
+		log.error("scp " + filename + " from " + source_machine + " "
+				+ source_path + " to " + target_machine + " " + target_path);
+		boolean ret = true;
+		String cmd = "scp " + source_path + filename + " admin@"
+				+ target_machine + ":" + target_path;
 		STAFResult result = executeShell(stafhandle, source_machine, cmd);
 		if (result.rc != 0)
 			ret = false;

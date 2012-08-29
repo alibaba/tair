@@ -2,6 +2,7 @@ package com.taobao.ldbtest;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
+import com.taobao.tairtest.FailOverBaseCase;
 
 public class FunctionDataServerTest2 extends FailOverBaseCase {
 
