@@ -53,25 +53,25 @@ public class FailOverBaseCase extends BaseTestCase {
 	// distinguish if mdb needs touch
 	protected static int touch_flag;
 	// server operation
-	final static String groupconf = "etc/group.conf";
-	final static String start = "start";
-	final static String stop = "stop";
-	final static String copycount = "_copy_count";
+	protected final static String groupconf = "etc/group.conf";
+	protected final static String start = "start";
+	protected final static String stop = "stop";
+	protected final static String copycount = "_copy_count";
 	// tool option
-	final static String actiontype = "actiontype";
-	final static String datasize = "datasize";
-	final static String filename = "filename";
-	final static String proxyflag = "proxyflag";
-	final static String put = "put";
-	final static String get = "get";
-	final static String rem = "rem";
-	final static String cs = "cs";
-	final static String ds = "ds";
+	protected final static String actiontype = "actiontype";
+	protected final static String datasize = "datasize";
+	protected final static String filename = "filename";
+	protected final static String proxyflag = "proxyflag";
+	protected final static String put = "put";
+	protected final static String get = "get";
+	protected final static String rem = "rem";
+	protected final static String cs = "cs";
+	protected final static String ds = "ds";
 	// system option
-	final static String local = "local";
+	protected final static String local = "local";
 	// judge measure
-	final static float normSucRate = 0.99f;
-	final static float migSucRate = 0.92f;
+	protected final static float normSucRate = 0.99f;
+	protected final static float migSucRate = 0.92f;
 
 	@BeforeClass
 	public static void baseBeforeClass() {
@@ -185,12 +185,12 @@ public class FailOverBaseCase extends BaseTestCase {
 		String cmd = "cd " + tair_bin + " && ./tair.sh " + opID
 				+ "_cs && sleep 5";
 		if (opID.equals(stop) && type == 1)
-			cmd = "killall -9 " + csname + " && sleep 2";
+			cmd = "killall -9 " + csname;
 		executeShell(stafhandle, machine, cmd);
 		cmd = "ps -ef|grep " + csname + "|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
-			log.debug("cs rc!=0");
+			log.error("result.rc != 0! " + result.rc);
 			ret = false;
 		} else {
 			String stdout = getShellOutput(result);
@@ -225,32 +225,26 @@ public class FailOverBaseCase extends BaseTestCase {
 		} else if (opID.equals(start)) {
 			expectNum = 3;
 		}
-		executeShell(stafhandle, machine, cmd);
-
 		if (opID.equals(stop) && type == 1)
-			cmd = "killall -9 " + dsname + " && sleep 2";
+			cmd = "killall -9 " + dsname;
 		STAFResult result = executeShell(stafhandle, machine, cmd);
+		
 		int waittime = 0;
 		cmd = "ps -ef|grep " + dsname + "|wc -l";
 		while (waittime < 110) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {
-				log.debug("ds rc!=0");
+				log.error("result.rc not 0! " + result.rc);
 				ret = false;
 			} else {
 				String stdout = getShellOutput(result);
 				if ((new Integer(stdout.trim())).intValue() == expectNum) {
-
 					log.debug("------------ds ps result--------------" + stdout);
 					ret = true;
 					break;
 				} else {
 					ret = false;
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-
-					}
+					waitto(1);
 					waittime++;
 				}
 			}
@@ -664,16 +658,6 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	// public boolean control_netcut_sh(String machine, String opID) {
-	// log.error("Copy " + opID + " files on " + machine);
-	// boolean ret = true;
-	// String cmd = "cd " + test_bin + " && ./shift.sh " + opID;
-	// STAFResult result = executeShell(stafhandle, machine, cmd);
-	// if (result.rc != 0)
-	// ret = false;
-	// return ret;
-	// }
-	// //////////////////////////////////////////////////////////////////////////////////////////////////
 	protected boolean comment_line(String machine, String file, String keyword,
 			String comment) {
 		boolean ret = false;
@@ -799,10 +783,14 @@ public class FailOverBaseCase extends BaseTestCase {
 				fail("exception occured while get result on " + serverList.get(k));
 			}
 		}
+		String listName = "";
+		for(String ip : serverList) {
+			listName = listName + ip + " ";
+		}
 		if(!ret)
-			fail("batch " + option + " " + serverType + " list successful!");
+			fail("batch " + option + " " + serverType + " failed! " + listName);
 		else
-			log.info("batch " + option + " " + serverType + " list successful!");
+			log.info("batch " + option + " " + serverType + " successful! " + listName);
 	}
 }
 
@@ -824,7 +812,6 @@ class ControlServer extends BaseTestCase implements Callable<Boolean> {
 	}
 
 	public Boolean call() throws Exception {
-//		log.debug("control " + serverType + ": " + machine + " " + option + " type=" + type);
 		boolean ret = false;
 		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + option
 				+ "_" + serverType;
@@ -838,7 +825,6 @@ class ControlServer extends BaseTestCase implements Callable<Boolean> {
 			ret = false;
 		} else {
 			String stdout = getShellOutput(result);
-//			log.debug("------------server ps result--------------" + stdout);
 			if (option.equals(FailOverBaseCase.start)
 					&& (new Integer(stdout.trim())).intValue() != 3) {
 				ret = false;

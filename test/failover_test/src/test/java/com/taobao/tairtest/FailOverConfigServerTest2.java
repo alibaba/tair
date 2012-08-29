@@ -1928,6 +1928,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("stop master cs failure!");
 		log.info("close master cs successful!");
 
+		waitto(ds_down_time);
 		int migCount = check_keyword(csList.get(1), finish_migrate, tair_bin
 				+ "logs/config.log");
 		// start ds
@@ -1938,10 +1939,8 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if (!uncomment_line(csList.get(1), tair_bin + groupconf,
 				dsList.get(dsList.size() - 1), "#"))
 			fail("change group.conf failure!");
-		if (touch_flag != 0) {
-			touch_file(csList.get(0), tair_bin + groupconf);
+		if (touch_flag != 0)
 			touch_file(csList.get(1), tair_bin + groupconf);
-		}
 		// wait down time for migration
 		waitto(ds_down_time);
 
