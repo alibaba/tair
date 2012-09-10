@@ -34,6 +34,7 @@
 #include "inc_dec_packet.hpp"
 #include "dump_packet.hpp"
 #include "get_packet.hpp"
+#include "get_range_packet.hpp"
 #include "get_group_packet.hpp"
 #include "query_info_packet.hpp"
 #include "get_migrate_machine.hpp"
@@ -1235,6 +1236,89 @@ FAIL:
       }
       this_wait_object_manager->destroy_wait_object(cwo);
     } while (false);
+    return ret;
+  }
+
+  int tair_client_impl::get_range(int area, const data_entry &pkey, const data_entry &start_key, const data_entry &end_key, 
+      int offset, int limit, vector<data_entry *> &values,short type)
+  {
+    if ( area < 0 || area >= TAIR_MAX_AREA_COUNT) {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    if (limit < 0 || offset < 0){
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+       
+    data_entry merge_skey, merge_ekey;
+    merge_key(pkey, start_key, merge_skey);
+    merge_key(pkey, end_key, merge_ekey);
+
+    if (!key_entry_check(merge_skey) || !key_entry_check(merge_ekey)) {
+      return TAIR_RETURN_ITEMSIZE_ERROR;
+    }
+    vector<uint64_t> server_list;
+    if (!get_server_id(merge_skey, server_list)) {
+      TBSYS_LOG(WARN, "no dataserver available");
+      return TAIR_RETURN_FAILED;
+    }
+    if (limit == 0)
+      limit = RANGE_DEFAULT_LIMIT;
+
+    request_get_range *packet = new request_get_range();
+    packet->area = area;
+    packet->cmd = type;
+    packet->offset = offset;
+    packet->limit = limit;
+    packet->key_start.set_data(merge_skey.get_data(), merge_skey.get_size());
+    packet->key_start.set_prefix_size(merge_skey.get_prefix_size());
+    packet->key_end.set_data(merge_ekey.get_data(), merge_ekey.get_size());
+    packet->key_end.set_prefix_size(merge_ekey.get_prefix_size());
+
+    int ret = TAIR_RETURN_SEND_FAILED;
+    base_packet *tpacket = 0;
+    response_get_range *resp = 0;
+
+    wait_object *cwo = this_wait_object_manager->create_wait_object();
+    if((ret = send_request(server_list[0],packet,cwo->get_id())) < 0){
+      delete packet;
+      this_wait_object_manager->destroy_wait_object(cwo);
+      TBSYS_LOG(ERROR, "get_range failure: %s %d",get_error_msg(ret), ret);
+      return ret;
+    }
+
+    if((ret = get_response(cwo,1,tpacket)) < 0){
+      this_wait_object_manager->destroy_wait_object(cwo);
+      TBSYS_LOG(ERROR, "get_range get_response failure: %s %d ",get_error_msg(ret), ret);
+      return ret;
+    }
+
+    if(tpacket == 0 || tpacket->getPCode() != TAIR_RESP_GET_RANGE_PACKET){
+      TBSYS_LOG(ERROR, "get_range response packet error. pcode: %d", tpacket->getPCode());
+      ret = TAIR_RETURN_FAILED;
+    }
+    else {
+      resp = (response_get_range*)tpacket;
+      new_config_version = resp->config_version;
+      ret = resp->get_code();
+      if (ret != TAIR_RETURN_SUCCESS){
+        if(ret == TAIR_RETURN_SERVER_CAN_NOT_WORK || ret == TAIR_RETURN_WRITE_NOT_ON_MASTER) {
+          //update server table immediately
+          send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+        }
+      }
+      else {
+        for(size_t i = 0; i < resp->key_data_vector->size(); i++) { 
+          data_entry *data = new data_entry(*((*resp->key_data_vector)[i])); 
+          values.push_back(data); 
+        }
+        if (resp->get_hasnext()){
+          ret = TAIR_HAS_MORE_DATA;
+        }
+      }
+    }
+
+    this_wait_object_manager->destroy_wait_object(cwo);
     return ret;
   }
 

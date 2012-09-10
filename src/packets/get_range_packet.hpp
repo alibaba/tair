@@ -104,15 +104,6 @@ namespace tair {
           }
           delete key_data_vector;
         }
-
-        if (proxyed_key_list != NULL) {
-          tair_dataentry_set::iterator it;
-          for (it=proxyed_key_list->begin(); it!=proxyed_key_list->end(); ++it) {
-            delete (*it);
-          }
-          delete proxyed_key_list;
-          proxyed_key_list = NULL;
-        }
       }
 
 
@@ -129,17 +120,7 @@ namespace tair {
             if ( data != NULL)
               data->encode(output);
           }
-          int pkc = 0;
-          if (proxyed_key_list != NULL)
-            pkc = proxyed_key_list->size();
-          output->writeInt32(pkc);
-          if (pkc > 0) {
-            tair_dataentry_set::iterator it;
-            for (it=proxyed_key_list->begin(); it!=proxyed_key_list->end(); ++it) {
-              data_entry *pk = (*it);
-              pk->encode(output);
-            }
-          }
+          output->writeInt32(0);
         }
         return true;
       }
@@ -167,14 +148,15 @@ namespace tair {
             flag &= FLAG_HASNEXT_MASK;
       }
 
-      bool get_truncated()
+      bool get_hasnext()
       {
         return flag & FLAG_HASNEXT;
       }
 
       bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header)
       {
-        if (header->_dataLen < 8) {
+        if (header->_dataLen < 8) 
+        {
           log_warn( "buffer data too few.");
           return false;
         }
@@ -185,26 +167,15 @@ namespace tair {
         flag = input->readInt16();
 
         key_data_vector = new tair_dataentry_vector();
-        for (uint32_t i=0; i<key_count; i++) {
+        for (uint32_t i=0; i<key_count; i++) 
+        {
           data_entry *key = new data_entry();
-          data_entry *value = new data_entry();
           key->decode(input);
-          value->decode(input);
           key_data_vector->push_back(key);
-          key_data_vector->push_back(value);
         }
-
-        int pkc = input->readInt32();
-        if (pkc > 0) {
-          proxyed_key_list = new tair_dataentry_set();
-          pair<tair_dataentry_set::iterator, bool> ret;
-          for (int i=0; i<pkc; i++) {
-            data_entry *pair = new data_entry();
-            pair->decode(input);
-            ret = proxyed_key_list->insert(pair);
-            if (!ret.second)
-              delete pair;
-          }
+        if (key_count > 0)
+        {
+          input->readInt32();
         }
 
         return true;
@@ -219,20 +190,6 @@ namespace tair {
         key_data_vector->push_back(key);
         key_data_vector->push_back(value);
         key_count ++;
-      }
-      
-      void add_proxyed_key(data_entry *proxyed_key_value)
-      {
-        if (proxyed_key_list == NULL) {
-          proxyed_key_list = new tair_dataentry_set();
-        }
-
-        data_entry *p = new data_entry();
-        p->clone(*proxyed_key_value);
-        pair<tair_dataentry_set::iterator, bool> ret;
-        ret = proxyed_key_list->insert(p);
-        if (ret.second == false)
-          delete p;
       }
 
       void set_key_data_vector(tair_dataentry_vector *result)

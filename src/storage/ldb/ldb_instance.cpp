@@ -330,7 +330,7 @@ namespace tair
         if (rc == TAIR_RETURN_SUCCESS)
         {
           ldb_item.meta().base_.meta_version_ = META_VER_PREFIX;
-          ldb_item.meta().base_.flag_ = value.data_meta.flag;
+          ldb_item.meta().base_.flag_ = value.data_meta.flag | TAIR_ITEM_FLAG_NEWMETA;
           ldb_item.meta().base_.cdate_ = cdate;
           ldb_item.meta().base_.mdate_ = mdate;
           if (expire_time >= 0) {
@@ -419,8 +419,8 @@ namespace tair
         LdbKey ldbkey(key_start.get_data(), key_start.get_size(), bucket_number);
         LdbKey ldbendkey(key_end.get_data(), key_end.get_size(), bucket_number);
 
-        // if key_end's skey is "",  add_prefix to key_end for scan all prefix. 4 means 2B area & 2B '00 04' flag
-        if (key_end.get_size()- key_end.get_prefix_size() == 4)
+        // if key_end's skey is "",  add_prefix to key_end for scan all prefix. 
+        if (key_end.get_size()- key_end.get_prefix_size() == TAIR_AREA_ENCODE_SIZE)  
         {
           add_prefix(ldbendkey, key_end.get_prefix_size()); 
         }

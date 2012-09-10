@@ -220,6 +220,12 @@ namespace tair {
      return impl->prefix_removes(area, pkey, skey_set, key_code_map);
    }
 
+   int tair_client_api::get_range(int area, const data_entry &pkey, const data_entry &start_key, const data_entry &end_key, 
+                        int offset, int limit, vector<data_entry *> &values, short type)
+   {
+     return impl->get_range(area, pkey, start_key, end_key, offset, limit, values, type);
+   }
+
    int tair_client_api::removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
    {
      return impl->removes(area, mkey_set, key_code_map);

@@ -218,6 +218,22 @@ namespace tair {
       int prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map);
 
       /**
+       * @brief 
+       * @param pkey: primary key for range query
+       * @param start_key: start skey to seek, seek from the first skey if equals ""
+       * @param end_key: end skey to seek, seek to the last skey if equals ""
+       * @param offset: skip first N skey
+       * @param limit: limit response less than N skey
+       * @param values: result skey with ascending sortting, free memory by user.
+       * @param type: CMD_RANGE_ALL means get key&value response, 
+       *              CMD_RANGE_VALUE_ONL means get only values,
+       *              CMD_RANGE_KEY_ONL means get only keys.
+       * @return TAIR_RETURN_SUCCESS -- success, <0 -- fail, or TAIR_HAS_MORE_DATA -- limit by package size(1M default).
+       */
+      int get_range(int area, const data_entry &pkey, const data_entry &start_key, const data_entry &end_key, 
+          int offset, int limit, vector<data_entry *> &values, short type=CMD_RANGE_ALL);
+
+      /**
        * @brief remove multiple items, which were merged with the same prefix key
        * @param mkey_set: set of merged keys
        * @param key_code_map: return code of each failed skey, would be cleared before filled

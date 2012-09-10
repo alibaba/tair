@@ -124,6 +124,9 @@ namespace tair {
 
       int prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map);
 
+      int get_range(int area, const data_entry &pkey, const data_entry &start_key, const data_entry &end_key, 
+          int offset, int limit, vector<data_entry *>  &values,short type=CMD_RANGE_ALL);
+
       int hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map);
 
       int removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map);

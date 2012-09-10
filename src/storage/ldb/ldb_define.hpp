@@ -211,10 +211,7 @@ namespace tair
 
       struct LdbItemMeta   // change value() and set() ,if you want to add new metadata 
       {
-        LdbItemMeta():  prefix_size_(0) 
-        { 
-          memset(&base_, 0, sizeof(LdbItemMetaBase)); 
-        }
+        LdbItemMeta():  prefix_size_(0) {}
         struct LdbItemMetaBase base_;
         uint16_t prefix_size_;  // prefix key size(for getRange conflict detect)
         uint16_t reserved;  // 
@@ -252,10 +249,13 @@ namespace tair
             int real_meta_size = LDB_ITEM_META_BASE_SIZE;
             LdbItemMetaBase *metabp = reinterpret_cast<LdbItemMetaBase *>(&meta_);
             free();
-            if ( META_VER_PREFIX == metabp->meta_version_ )
-              real_meta_size = LDB_ITEM_META_SIZE;
-            else if ( META_VER_BASE == metabp->meta_version_ )
-              real_meta_size = LDB_ITEM_META_BASE_SIZE;
+            if (metabp->flag_ & TAIR_ITEM_FLAG_NEWMETA)
+            {
+              if (META_VER_PREFIX == metabp->meta_version_)
+                real_meta_size = LDB_ITEM_META_SIZE;
+              else if (META_VER_BASE == metabp->meta_version_)
+                real_meta_size = LDB_ITEM_META_BASE_SIZE;
+            }
             data_size_ = value_size + real_meta_size;
             data_ = new char[data_size_];
             memcpy(data_, metap, real_meta_size);
@@ -288,27 +288,46 @@ namespace tair
         {
           return data_size_;
         }
+        inline int is_new_meta()
+        {
+            return meta_.base_.flag_ & TAIR_ITEM_FLAG_NEWMETA; 
+        }
+        inline bool has_prefix()
+        {
+          return (meta_.base_.flag_ & TAIR_ITEM_FLAG_NEWMETA) && (meta_.base_.meta_version_ >=  META_VER_PREFIX);
+        }
         inline char* value()
         {
-          return NULL != data_ ? ( meta_.base_.meta_version_ ==  META_VER_PREFIX ? 
-            data_ + LDB_ITEM_META_SIZE : data_ + LDB_ITEM_META_BASE_SIZE ): NULL;
+          if (NULL == data_)
+            return NULL;
+          if (has_prefix())  
+            return data_ + LDB_ITEM_META_SIZE;
+          else 
+            return data_ + LDB_ITEM_META_BASE_SIZE;
         }
         inline int32_t value_size()
         {
-          return data_size_ > LDB_ITEM_META_SIZE ? ( meta_.base_.meta_version_ ==  META_VER_PREFIX ?
-                     data_size_ - LDB_ITEM_META_SIZE : data_size_ - LDB_ITEM_META_BASE_SIZE  )  : 0;
+          if (data_size_ <= LDB_ITEM_META_SIZE)
+            return 0;
+          if (has_prefix())
+            return data_size_ - LDB_ITEM_META_SIZE; 
+          else
+            return data_size_ - LDB_ITEM_META_BASE_SIZE;
         }
         inline LdbItemMeta& meta() 
         {
           return meta_;
         }
-        inline uint16_t prefix_size() const 
+        inline uint16_t prefix_size() 
         {
-          return meta_.base_.meta_version_ >=  META_VER_PREFIX ? meta_.prefix_size_ : 0;
+          if (has_prefix())
+            return meta_.prefix_size_;
+          else
+            return 0;
         }
         inline void set_prefix_size(uint16_t size)
         {
-          if (meta_.base_.meta_version_ >=  META_VER_PREFIX) 
+          if (has_prefix())
             meta_.prefix_size_ = size ;
         }
         inline uint32_t cdate() const 
