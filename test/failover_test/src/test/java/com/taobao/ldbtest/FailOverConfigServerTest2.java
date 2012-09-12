@@ -12,19 +12,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt=0;
 		//start cluster
         //###########################################################
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.error("Start Cluster Successful!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
         //###########################################################
         
         //change test tool's configuration
         //###########################################################
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
         //###########################################################
 
@@ -41,20 +41,20 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
         log.error("datacnt:"+ datacnt);
-		assertTrue("put successful rate small than 90%!",datacnt/(FailOverBaseCase.put_count_float*3)>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/(put_count_float*3)>0.9);
 		log.error("Write data over!");		
 		//############################################################
 
 		//close master cs
         //############################################################
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))fail("close master cs failure!");
+		if(!control_cs((String) csList.get(0), stop, 0))fail("close master cs failure!");
 		log.error("master cs has been closed!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		//############################################################
 
 		//red the data
         //############################################################
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -78,9 +78,9 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	
         //restart master cs
         //###########################################################
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		//###########################################################
 
 		//read data from cluster
@@ -113,18 +113,18 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt=0;
 		//start cluster
         //#############################################################
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.error("Start Cluster Successful!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
         //#############################################################
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -140,21 +140,21 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
         log.error("datacnt:" + datacnt + ";and put_count_float:" + put_count_float);
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");		
 		//################################################################
 
 		//close slave cs
         //################################################################
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
+		if(!control_cs((String) csList.get(1), stop, 0))fail("close slave cs failure!");
 		log.error("slave cs has been closed!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		//#################################################################
 
         //get the data
         //#################################################################
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -178,7 +178,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//restart slave cs
         //###################################################################
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String) csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("Restart slave cs successful!");
 		//###################################################################
 
@@ -212,18 +212,18 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 03");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configurnation
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -238,23 +238,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");		
 
 		
 		//close all cs
-		if(!batch_control_cs(csList, FailOverBaseCase.stop, 0))fail("close all cs failure!");
+		if(!batch_control_cs(csList, stop, 0))fail("close all cs failure!");
 		
 		log.error("all cs has been closed! wait for 2 seconds to restart ...");
 
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//restart all cs
-		if(!batch_control_cs(csList, FailOverBaseCase.start, 0))fail("restart all cs failure!");
+		if(!batch_control_cs(csList, start, 0))fail("restart all cs failure!");
 		log.error("Restart all cs successful!");
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");
 		
 		//read data from cluster
@@ -282,19 +282,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 04");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -315,33 +315,33 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
         log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("finish put data!");
 		
 		//close master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))fail("close master cs failure!");
+		if(!control_cs((String) csList.get(0), stop, 0))fail("close master cs failure!");
 		log.error("master cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		log.error("wait 5 seconds to restart before rebuild ...");
 		
 		waitto(10);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)fail("Already migration!");
+		if(check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log")!=1)fail("Already migration!");
 		//restart ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
+		if(!control_ds((String) dsList.get(0), start, 0))fail("restart ds failure!");
 		log.error("Restart ds successful!");
 		
 		//restart master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -370,19 +370,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 05");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -401,34 +401,34 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int datacnt=getVerifySuccessful();
         log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
         log.error("the datacnt must biger than put_count_float");
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");		
 
 		//close master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))fail("close master cs failure!");
+		if(!control_cs((String) csList.get(0), stop, 0))fail("close master cs failure!");
 		log.error("master cs has been closed!");
 		
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
+		if(check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log")<1)
 			fail("down time arrived,but no migration started!");
 		log.error("migration start!");
-	    int key_time=check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");	
+	    int key_time=check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log");	
 		//restart master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
 		
 		//wait for system restart to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=key_time)
+		while(check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=key_time)
 		{
 			log.debug("check if migration finish on cs "+(String)csList.get(0)+" log");
 			waitto(3);
@@ -439,7 +439,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -468,19 +468,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 06");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -501,25 +501,25 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		//verify get result
 		int datacnt=getVerifySuccessful();
         log.error("datacnt:" + datacnt + " and getVerifySuccessful:" + getVerifySuccessful());
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");		
 		
 		//close master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_cs((String) csList.get(0), stop, 0))
 			fail("close master cs failure!");
 		log.error("master cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_ds((String) dsList.get(0), stop, 0))
 			fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(1), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(1)+" log");
 			waitto(3);
@@ -530,14 +530,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		//restart master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
 		
 		//wait for system restart to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -566,19 +566,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 07");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -594,23 +594,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");		
 		
 		//close master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))fail("close master cs failure!");
+		if(!control_cs((String) csList.get(0), stop, 0))fail("close master cs failure!");
 		log.error("master cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(1), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(1)+" log");
 			waitto(3);
@@ -620,15 +620,15 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		log.error("down time arrived,migration finished!");
 	
-		int versionCount=check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");	
+		int versionCount=check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log");	
 		//restart ds
-		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
+		if(!control_ds((String)dsList.get(0), start, 0))fail("restart ds failure!");
 		log.error("restart ds successful!");
 		
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check second migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=versionCount+1)
+		while(check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log")!=versionCount+1)
 		{
 			log.debug("check if migration start on cs "+(String)csList.get(1)+" log");
 			waitto(2);
@@ -639,14 +639,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 		
 		//restart master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
 		
 		//wait for system restart to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -675,19 +675,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
         log.error("start config test Failover case 08");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -703,26 +703,26 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);		
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);		
 		log.error("Write data over!");		
 		
 		//close master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))fail("close master cs failure!");
+		if(!control_cs((String) csList.get(0), stop, 0))fail("close master cs failure!");
 		log.error("master cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=2)
+		if(check_keyword((String)csList.get(1), finish_rebuild, tair_bin+"logs/config.log")!=2)
 			fail("version changed failed!");
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(1), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(1)+" log");
 			waitto(2);
@@ -733,13 +733,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		//restart ds
-		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
+		if(!control_ds((String)dsList.get(0), start, 0))fail("restart ds failure!");
 		log.error("restart ds successful!");
 		
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check second migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=2)
+		while(check_keyword((String)csList.get(1), finish_migrate, tair_bin+"logs/config.log")!=2)
 		{
 			log.debug("check if migration stop on cs "+(String)csList.get(1)+" log");
 			waitto(2);
@@ -750,15 +750,15 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration stoped!");
 		
 		//restart master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("Restart master cs successful!");
 		
 		//wait for system restart to work
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -787,18 +787,18 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 09");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.error("start cluster successfull!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 		fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -814,24 +814,24 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("Write data over!");		
 
 		//stop master cs
-		if(!control_cs((String)csList.get(0), FailOverBaseCase.stop, 0))fail("stop master cs failure!");
+		if(!control_cs((String)csList.get(0), stop, 0))fail("stop master cs failure!");
 		log.error("stop master cs successful!");
 		
 		//wait 2x(down time) to restart,make sure original slave cs become new master cs
-		waitto(FailOverBaseCase.down_time*2);
+		waitto(down_time*2);
 		
 		//restart master cs
-		if(!control_cs((String)csList.get(0),FailOverBaseCase.start,0))fail("restart master cs failure!");
+		if(!control_cs((String)csList.get(0),start,0))fail("restart master cs failure!");
 		log.error("restart master cs successful!");
 		//wait down time for master cs work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -851,14 +851,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Successfully Verified data!");	
 		
 		//stop slave cs
-		if(!control_cs((String)csList.get(1), FailOverBaseCase.stop, 0))fail("stop slave cs failure!");
+		if(!control_cs((String)csList.get(1), stop, 0))fail("stop slave cs failure!");
 		log.error("stop slave cs successful!");
 		
 		//wait 2x(down time) to restart,make sure original slave cs become new master cs
-		waitto(FailOverBaseCase.down_time*2);
+		waitto(down_time*2);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -878,13 +878,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Successfully Verified data!");
 		
 		//restart slave cs
-		if(!control_cs((String)csList.get(1),FailOverBaseCase.start,0))fail("restart slave cs failure!");
+		if(!control_cs((String)csList.get(1),start,0))fail("restart slave cs failure!");
 		log.error("restart slave cs successful!");
 		//wait down time for master cs work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -904,31 +904,31 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Successfully Verified data!");
 		
 		//stop master cs again
-		if(!control_cs((String)csList.get(0), FailOverBaseCase.stop, 0))fail("stop master cs failure!");
+		if(!control_cs((String)csList.get(0), stop, 0))fail("stop master cs failure!");
 		log.error("stop master cs successful!");
 		
 		//wait 2x(down time) to restart,make sure original slave cs become new master cs
-		waitto(FailOverBaseCase.down_time*2);
+		waitto(down_time*2);
 		
 		//stop slave cs again
-		if(!control_cs((String)csList.get(1), FailOverBaseCase.stop, 0))fail("stop slave cs failure!");
+		if(!control_cs((String)csList.get(1), stop, 0))fail("stop slave cs failure!");
 		log.error("stop slave cs successful!");
 		
 		//keep all cs down for down_time seconds
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//restart slave cs again
-		if(!control_cs((String)csList.get(1),FailOverBaseCase.start,0))fail("restart slave cs failure!");
+		if(!control_cs((String)csList.get(1),start,0))fail("restart slave cs failure!");
 		log.error("restart slave cs successful!");
 		
 		//restart master cs again
-		if(!control_cs((String)csList.get(0),FailOverBaseCase.start,0))fail("restart master cs failure!");
+		if(!control_cs((String)csList.get(0),start,0))fail("restart master cs failure!");
 		log.error("restart master cs successful!");
 		//wait down time for master cs work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -955,19 +955,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 10");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -983,33 +983,33 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("Write data over!");		
 		
 		//close slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
+		if(!control_cs((String) csList.get(1), stop, 0))fail("close slave cs failure!");
 		log.error("slave cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		log.error("wait less than ds down time before rebuild ...");
-		waitto(FailOverBaseCase.ds_down_time/2);
+		waitto(ds_down_time/2);
 		
-		//if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")==1)
+		//if(check_keyword((String)csList.get(0), start_migrate, tair_bin+"logs/config.log")==1)
 		//	fail("Already migration!");
 		//restart ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
+		if(!control_ds((String) dsList.get(0), start, 0))fail("restart ds failure!");
 		log.error("Restart ds successful!");	
 		
 		//restart slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String) csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("Restart slave cs successful!");
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -1038,18 +1038,18 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 11");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -1069,35 +1069,35 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("Write data over!");		
 
 		//close slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
+		if(!control_cs((String) csList.get(1), stop, 0))fail("close slave cs failure!");
 		log.error("slave cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		if(check_keyword((String)csList.get(0), start_migrate, tair_bin+"logs/config.log")!=1)
 			fail("migration not started!");
 		log.error("migration start!");
 		
 		//restart slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String) csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("Restart slave cs successful!");
 		
 		//wait for system restart to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finish on cs "+(String)csList.get(0)+" log");
 			waitto(3);
@@ -1108,7 +1108,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -1136,19 +1136,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 12");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -1164,23 +1164,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("Write data over!");		
 		
 		//close slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
+		if(!control_cs((String) csList.get(1), stop, 0))fail("close slave cs failure!");
 		log.error("slave cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(0)+" log");
 			waitto(3);
@@ -1191,14 +1191,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		//restart slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String) csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("Restart slave cs successful!");
 		
 		//wait for system restart to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -1226,19 +1226,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 13");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -1254,23 +1254,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("Write data over!");		
 
 		//close slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
+		if(!control_cs((String) csList.get(1), stop, 0))fail("close slave cs failure!");
 		log.error("slave cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(0)+" log");
 			waitto(3);
@@ -1281,15 +1281,15 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		log.error("down time arrived,migration finished!");
 
-		int versionCount=check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+		int versionCount=check_keyword((String)csList.get(0), start_migrate, tair_bin+"logs/config.log");
 		
 		//restart ds
-		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
+		if(!control_ds((String)dsList.get(0), start, 0))fail("restart ds failure!");
 		log.error("restart ds successful!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check second migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=versionCount+1)
+		while(check_keyword((String)csList.get(0), start_migrate, tair_bin+"logs/config.log")!=versionCount+1)
 		{
 			log.debug("check if migration start on cs "+(String)csList.get(0)+" log");
 			waitto(2);
@@ -1300,15 +1300,15 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 		
 		//restart slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String) csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("Restart slave cs successful!");
 		
 		//wait for system restart to work
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -1336,19 +1336,19 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 14");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 
 		log.error("Start Cluster Successful!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -1364,23 +1364,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("Write data over!");		
 		
 		//close slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))fail("close slave cs failure!");
+		if(!control_cs((String) csList.get(1), stop, 0))fail("close slave cs failure!");
 		log.error("slave cs has been closed!");
 		
 		waitto(2);
 		
 		//close ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("close ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("close ds failure!");
 		log.error("ds has been closed!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
+		while(check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log")<1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(0)+" log");
 			waitto(2);
@@ -1390,16 +1390,16 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		log.error("down time arrived,migration finished!");
 		
-         int key_check=check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+         int key_check=check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log");
 		//restart ds
-		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
+		if(!control_ds((String)dsList.get(0), start, 0))fail("restart ds failure!");
 		log.error("restart ds successful!");
 		
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
        
 		key_check=key_check+1;
 		//check second migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<key_check)
+		while(check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log")<key_check)
         {
 			log.debug("check if migration stop on cs "+(String)csList.get(0)+" log");
 			waitto(2);
@@ -1410,15 +1410,15 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration stoped!");
 		
 		//restart slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String) csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("Restart slave cs successful!");
 		
 		//wait for system restart to work
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -1447,18 +1447,18 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 15");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.error("start cluster successfull!");
 		
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -1474,40 +1474,40 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("Write data over!");		
 		
 		//stop master cs
-		if(!control_cs((String)csList.get(0), FailOverBaseCase.stop, 0))fail("stop master cs failure!");
+		if(!control_cs((String)csList.get(0), stop, 0))fail("stop master cs failure!");
 		log.error("stop master cs successful!");
 		//stop ds
-		if(!control_ds((String)dsList.get(0), FailOverBaseCase.stop, 0))fail("stop ds failure!");
+		if(!control_ds((String)dsList.get(0), stop, 0))fail("stop ds failure!");
 		log.error("stop ds sucessful!");
 		
 		//wait migration start
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat
-		if(check_keyword((String)csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
+		if(check_keyword((String)csList.get(1), start_migrate, tair_bin+"logs/config.log")<1)
 			fail("no migration started!");
 		log.error("migration started!");
 		
 		//restart master cs
-		if(!control_cs((String)csList.get(0),FailOverBaseCase.start,0))fail("restart master cs failure!");
+		if(!control_cs((String)csList.get(0),start,0))fail("restart master cs failure!");
 		log.error("restart master cs successful!");
 		
 		//stop slave cs
-		if(!control_cs((String)csList.get(1),FailOverBaseCase.stop,0))fail("close slave cs failure!");
+		if(!control_cs((String)csList.get(1),stop,0))fail("close slave cs failure!");
 		log.error("stop slave cs successful!");
 		
 		//wait down time for master cs work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat
         int keyword_check=0;
 		while(keyword_check<1)
 		{
-            keyword_check=check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+            keyword_check=check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log");
 			log.debug("check if migration finished on cs "+(String)csList.get(0)+" log");
 			waitto(3);
 			if(++waitcnt>20) keyword_check=keyword_check+1;
@@ -1517,7 +1517,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -1537,18 +1537,18 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Successfully Verified data!");	
 		
 		//restart slave cs
-		if(!control_cs((String)csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String)csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("restart slave cs successful!");
 		
 		//restart ds
-		if(!control_ds((String)dsList.get(0), FailOverBaseCase.start, 0))fail("restart ds failure!");
+		if(!control_ds((String)dsList.get(0), start, 0))fail("restart ds failure!");
 		log.error("restart ds successful!");
 			
 		//wait down time
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
+		while(check_keyword((String)csList.get(0), start_migrate, tair_bin+"logs/config.log")<1)
 		{
 			log.debug("check if migration started on cs "+(String)csList.get(0)+" log");
 			waitto(2);
@@ -1559,13 +1559,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 		
 		//stop master cs
-		if(!control_cs((String)csList.get(0), FailOverBaseCase.stop, 0))fail("stop master cs failure!");
+		if(!control_cs((String)csList.get(0), stop, 0))fail("stop master cs failure!");
 		log.error("stop master cs successful!");
 		//wait to down time
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat
-		while(check_keyword((String)csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
+		while(check_keyword((String)csList.get(1), finish_migrate, tair_bin+"logs/config.log")<1)
 		{
 			log.debug("check if migration finished on cs "+(String)csList.get(1)+" log");
 			waitto(2);
@@ -1576,13 +1576,13 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		//restart master cs
-		if(!control_cs((String)csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String)csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("restart master cs successful!");
 		//wait to down time
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		
 		//read data from cluster
@@ -1612,23 +1612,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt=0;
 		
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		log.error("group.conf has been changed!");
 		
 		//start part cluster for next migration step
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.error("start cluster successful!");
 		
 		//wait down time for cluster to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 		execute_data_verify_tool();
 		
@@ -1641,27 +1641,27 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("put data over!");
 		
 		//close master cs
-		if(!control_cs((String) csList.get(0),FailOverBaseCase.stop, 0))fail("stop master cs failure!");
+		if(!control_cs((String) csList.get(0),stop, 0))fail("stop master cs failure!");
 		log.error("close master cs successful!");
 		
-		waitto(FailOverBaseCase.down_time);
-		int versionCount=check_keyword((String) csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
+		waitto(down_time);
+		int versionCount=check_keyword((String) csList.get(1), finish_rebuild, tair_bin+"logs/config.log");
 		//start ds
-		if(!control_ds((String)dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failure!");
+		if(!control_ds((String)dsList.get(dsList.size()-1), start, 0))fail("start ds failure!");
 		log.error("start the last ds successful!");
 
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		//wait down time for migration
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=versionCount+1)
+		while(check_keyword((String) csList.get(1), finish_rebuild, tair_bin+"logs/config.log")!=versionCount+1)
 		{
 			waitto(2);
 			if(++waitcnt>10)break;
@@ -1671,14 +1671,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("check migrate started!");
 		
 		//restart master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("restart master cs successful!");
 		
 		//wait down time for cs change
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat of finish
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(3);
 			if(++waitcnt>200)break;
@@ -1688,7 +1688,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 		
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
+		if (!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -1714,21 +1714,21 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt=0;
 		
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		log.error("group.conf has been changed!");
 		
 		//start part cluster for next migration step
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.error("start cluster successful!");
 		
 		//wait down time for cluster to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -1740,24 +1740,24 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("put data over!");
 		
 		//close master cs
-		if(!control_cs((String) csList.get(0),FailOverBaseCase.stop, 0))fail("stop master cs failure!");
+		if(!control_cs((String) csList.get(0),stop, 0))fail("stop master cs failure!");
 		log.error("close master cs successful!");
 		
 		//start ds
-		if(!control_ds((String)dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failure!");
+		if(!control_ds((String)dsList.get(dsList.size()-1), start, 0))fail("start ds failure!");
 		
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		//wait down time for migration
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(1), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(1), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -1767,14 +1767,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 		
 		//restart master cs
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))fail("restart master cs failure!");
+		if(!control_cs((String) csList.get(0), start, 0))fail("restart master cs failure!");
 		log.error("restart master cs successful!");
 		
 		//wait down time for cs change
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
+		if (!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -1800,21 +1800,21 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt=0;
 		
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		log.error("group.conf has been changed!");
 		
 		//start part cluster for next migration step
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.error("start cluster successful!");
 		
 		//wait down time for cluster to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -1826,24 +1826,24 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("put data over!");
 		
 		//close slave cs
-		if(!control_cs((String) csList.get(1),FailOverBaseCase.stop, 0))fail("stop slave cs failure!");
+		if(!control_cs((String) csList.get(1),stop, 0))fail("stop slave cs failure!");
 		log.error("close slave cs successful!");
 		
 		//start ds
-		if(!control_ds((String)dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failure!");
+		if(!control_ds((String)dsList.get(dsList.size()-1), start, 0))fail("start ds failure!");
 		
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		//wait down time for migration
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>10)break;
@@ -1853,14 +1853,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("check migrate started!");
 		
 		//restart slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))fail("restart slave cs failure!");
+		if(!control_cs((String) csList.get(1), start, 0))fail("restart slave cs failure!");
 		log.error("restart slave cs successful!");
 		
 		//wait down time for cs change
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//check migration stat of finish
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(2);
 			if(++waitcnt>150)break;
@@ -1870,7 +1870,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 		
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
+		if (!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -1896,21 +1896,21 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt=0;
 		
 		//modify group configuration
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		log.error("group.conf has been changed!");
 		
 		//start part cluster for next migration step
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.error("start cluster successful!");
 		
 		//wait down time for cluster to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -1922,24 +1922,24 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("put data over!");
 		
 		//close slave cs
-		if(!control_cs((String) csList.get(1),FailOverBaseCase.stop, 0))fail("stop slave cs failure!");
+		if(!control_cs((String) csList.get(1),stop, 0))fail("stop slave cs failure!");
 		log.error("close slave cs successful!");
 		
 		//start ds
-		if(!control_ds((String)dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))fail("start ds failure!");
+		if(!control_ds((String)dsList.get(dsList.size()-1), start, 0))fail("start ds failure!");
 		
 		//uncomment cs group.conf
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String) dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		//wait down time for migration
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			waitto(3);
 			if(++waitcnt>200)break;
@@ -1949,15 +1949,15 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 		
 		//restart slave cs
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if(!control_cs((String) csList.get(1), start, 0))
 			fail("restart slave cs failure!");
 		log.error("restart slave cs successful!");
 		
 		//wait down time for cs change
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
+		if (!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -1982,21 +1982,21 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 20");
 		
 		int waitcnt=0;
-		if(!comment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!comment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!comment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		log.error("change group.conf successful!");
 		
 		//start part cluster for next migration step
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.error("start cluster successful!");
 		
 		//wait down time for cluster to work
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//write verify data to cluster
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))fail("modify configure file failure!");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))fail("modify configure file failure");
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))fail("modify configure file failure");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -2008,28 +2008,28 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//save put result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);	
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);	
 		log.error("put data over!");
 		
 		//close a ds
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))fail("stop ds failure!");
+		if(!control_ds((String) dsList.get(0), stop, 0))fail("stop ds failure!");
 		log.error("stop ds successful1");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")<1)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")<1)
         {
 			waitto(3);
 			if(++waitcnt>200)break;
 		}
 		if(waitcnt>200)fail("check migrate start time out!");
-        int keyword_check=check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+        int keyword_check=check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log");
 		waitcnt=0;
 		log.error("check migrate finished!");
 		
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if (!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify tool config file failure!");
 		execute_data_verify_tool();
 		
@@ -2046,14 +2046,14 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		assertEquals("verify data failure!", datacnt, getVerifySuccessful());
 		log.error("Successfully Verified data!");
 		
-		if(!uncomment_line((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
-		if(!uncomment_line((String)csList.get(1), FailOverBaseCase.tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(0), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
+		if(!uncomment_line((String)csList.get(1), tair_bin+"etc/group.conf", (String)dsList.get(dsList.size()-1), "#"))fail("change group.conf failure!");
 		log.error("change group.conf successful!");
 		
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
 		//check migration stat of start
-		while(check_keyword((String) csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=keyword_check)
+		while(check_keyword((String) csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=keyword_check)
 		{
 			waitto(3);
 			if(++waitcnt>200)break;
@@ -2063,7 +2063,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("check migrate finished!");
 		
 		//verify data
-		if (!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
+		if (!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))fail("modify tool config file failure!");
 		execute_data_verify_tool();
 		
 		while(check_process("local", "DataDebug")!=2)
@@ -2090,17 +2090,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{ 
 		log.error("start config test Failover case 21");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!controlCluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		//write 100k data to cluster
@@ -2118,39 +2118,39 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 
 		//wait 10s for duplicate
 		waitto(10);
 		
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_cs((String) csList.get(0), stop, 0))
 			fail("close master config server failed!");
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_ds((String) dsList.get(0), stop, 0))
 			fail("close data server failed!");
 		log.error("master cs and one ds in master rack have been closed!");
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 
 		//check migration stat of start
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		if(check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log")!=1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 		
-		int version_count=check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+		int version_count=check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log");
 
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if(!control_ds((String) dsList.get(0), start, 0))
 			fail("start data server failed!");
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))
+		if(!control_cs((String) csList.get(0), start, 0))
 			fail("start master config server failed!");
 		log.error("master cs and one ds in master rack have been started!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+1)
+		if(check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log")!=version_count+1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -2177,17 +2177,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{ 
 		log.error("start config test Failover case 22");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!controlCluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		//write 100k data to cluster
@@ -2205,42 +2205,42 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 
 		//wait 5s for duplicate
 		waitto(10);
 		
-		int versionCount=check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
+		int versionCount=check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log");
 		
-		if(!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if(!control_ds((String) dsList.get(1), stop, 0))
 			fail("close data server failed!");
-		waitto(FailOverBaseCase.ds_down_time);
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))
+		waitto(ds_down_time);
+		if(!control_cs((String) csList.get(1), stop, 0))
 			fail("close slave config server failed!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("slave cs and one ds in slave rack have been closed!");
 
 		//check migration stat of start
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=versionCount+1)
+		if(check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log")!=versionCount+1)
 			fail("version not changed!");
 		log.error("version changed!");
 		
-		int version_count=check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+		int version_count=check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log");
 
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if(!control_cs((String) csList.get(1), start, 0))
 			fail("start slave config server failed!");
-		if(!control_ds((String) dsList.get(1), FailOverBaseCase.start, 0))
+		if(!control_ds((String) dsList.get(1), start, 0))
 			fail("start data server failed!");
 		log.error("slave cs and one ds in slave rack have been started!");
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+1)
+		if(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=version_count+1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -2267,17 +2267,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{
 		log.error("start config test Failover case 23");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!controlCluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
@@ -2291,23 +2291,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 
 		waitto(10);
 		
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_cs((String) csList.get(0), stop, 0))
 			fail("close master config server failed!");
 		for(int i=0; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if(!control_ds((String) dsList.get(i), stop, 0))
 				fail("close data server failed!");
-			waitto(FailOverBaseCase.ds_down_time);
+			waitto(ds_down_time);
 		}
 		log.error("master rack have been closed!");
 
 		//check migration stat of start
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=dsList.size()/2)
+		if(check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log")!=dsList.size()/2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 		
@@ -2321,29 +2321,29 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 		waitto(10);
 		
-		int version_count=check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+		int version_count=check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log");
 
 		for(int i=0; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if(!control_ds((String) dsList.get(i), start, 0))
 				fail("start data server failed!");
-			waitto(FailOverBaseCase.ds_down_time);
+			waitto(ds_down_time);
 		}
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))
+		if(!control_cs((String) csList.get(0), start, 0))
 			fail("start master config server failed!");
 		log.error("master rack have been started!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+dsList.size()/2)
+		if(check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log")!=version_count+dsList.size()/2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -2371,17 +2371,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{ 
 		log.error("start config test Failover case 24");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!controlCluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
@@ -2397,7 +2397,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 
 		//wait 5s for duplicate
@@ -2405,16 +2405,16 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		for(int i=1; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if(!control_ds((String) dsList.get(i), stop, 0))
 				fail("close data server failed!");
-			waitto(FailOverBaseCase.ds_down_time);
+			waitto(ds_down_time);
 		}
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))
+		if(!control_cs((String) csList.get(1), stop, 0))
 			fail("close slave config server failed!");
 		log.error("slave rack have been closed!");
 
 		//check migration stat of start
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=dsList.size()/2)
+		if(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=dsList.size()/2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 		
@@ -2428,30 +2428,30 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 		waitto(10);
 		
-		int version_count=check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+		int version_count=check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log");
 
 		for(int i=1; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if(!control_ds((String) dsList.get(i), start, 0))
 				fail("start data server failed!");
-			waitto(FailOverBaseCase.down_time);
+			waitto(down_time);
 		}
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if(!control_cs((String) csList.get(1), start, 0))
 			fail("start slave config server failed!");
 		log.error("master rack have been started!");
 		//wait 10s for data server start
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+dsList.size()/2)
+		if(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=version_count+dsList.size()/2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -2479,17 +2479,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{ 
 		log.error("start config test Failover case 25");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!controlCluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 		execute_data_verify_tool();
 		while(check_process("local", "DataDebug")!=2)
@@ -2500,31 +2500,31 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 		waitto(10);
 		
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_cs((String) csList.get(0), stop, 0))
 			fail("close master config server failed!");
 		for(int i=0; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if(!control_ds((String) dsList.get(i), stop, 0))
 				fail("close data server failed!");
-			waitto(FailOverBaseCase.ds_down_time);
+			waitto(ds_down_time);
 		}
 		
-		int version_count=check_keyword((String) csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
-		int migrate_count=check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+		int version_count=check_keyword((String) csList.get(1), finish_rebuild, tair_bin+"logs/config.log");
+		int migrate_count=check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log");
 		
-		if(!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if(!control_ds((String) dsList.get(1), stop, 0))
 			fail("close data server in slave rack failed!");
 		log.error("master rack and one ds in slave rack have been closed!");
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 
 		//check migration stat of start
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+1)
+		if(check_keyword((String) csList.get(1), finish_rebuild, tair_bin+"logs/config.log")!=version_count+1)
 			fail("migrate not start!");
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=migrate_count+1)
+		if(check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log")!=migrate_count+1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 		
@@ -2538,12 +2538,12 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 		waitto(10);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -2557,23 +2557,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		log.error("Read data over!");
 		//verify get result
-		assertTrue("verify data failed!",datacnt/FailOverBaseCase.put_count_float>1.5);
+		assertTrue("verify data failed!",datacnt/put_count_float>1.5);
 		log.error("Successfully Verified data!");
 		
 		for(int i=0; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if(!control_ds((String) dsList.get(i), start, 0))
 				fail("start data server failed!");
-			waitto(FailOverBaseCase.ds_down_time);
+			waitto(ds_down_time);
 		}
-		if(!control_cs((String) csList.get(0), FailOverBaseCase.start, 0))
+		if(!control_cs((String) csList.get(0), start, 0))
 			fail("start master config server failed!");
 		log.error("master rack have been started!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=migrate_count+1+dsList.size()/2)
+		if(check_keyword((String) csList.get(1), start_migrate, tair_bin+"logs/config.log")!=migrate_count+1+dsList.size()/2)
 			fail("migrate not start!");
-		if(check_keyword((String) csList.get(1), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+1+dsList.size()/2)
+		if(check_keyword((String) csList.get(1), finish_rebuild, tair_bin+"logs/config.log")!=version_count+1+dsList.size()/2)
 			fail("version not change!");
 		log.error("check migrate started!");
 
@@ -2591,7 +2591,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//verify get result
         log.error(getVerifySuccessful());
-		assertTrue("verify data failed!",datacnt/FailOverBaseCase.put_count_float>1.5);
+		assertTrue("verify data failed!",datacnt/put_count_float>1.5);
 		log.error("Successfully Verified data!");
 
 		//end test
@@ -2603,17 +2603,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{ 
 		log.error("start config test Failover case 26");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!controlCluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 
 		execute_data_verify_tool();
@@ -2630,7 +2630,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 
 		//wait 5s for duplicate
@@ -2638,26 +2638,26 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		
 		for(int i=1; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.stop, 0))
+			if(!control_ds((String) dsList.get(i), stop, 0))
 				fail("close data server failed!");
-			waitto(FailOverBaseCase.ds_down_time);
+			waitto(ds_down_time);
 		}
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.stop, 0))
+		if(!control_cs((String) csList.get(1), stop, 0))
 			fail("close slave config server failed!");
 		log.error("master rack and one ds in slave rack have been closed!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
-		int version_count=check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
-		int migrate_count=check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+		int version_count=check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log");
+		int migrate_count=check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log");
 
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_ds((String) dsList.get(0), stop, 0))
 			fail("close data server in master rack failed!");
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 
 		//check migration stat of start
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+1)
+		if(check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log")!=version_count+1)
 			fail("version not change!");
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=migrate_count+1)
+		if(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=migrate_count+1)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 		
@@ -2671,12 +2671,12 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 		waitto(10);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failed");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -2690,23 +2690,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		log.error("Read data over!");
 		//verify get result
-		assertTrue("verify data failed!",datacnt/FailOverBaseCase.put_count_float>1.5);
+		assertTrue("verify data failed!",datacnt/put_count_float>1.5);
 		log.error("Successfully Verified data!");
 		
 		for(int i=1; i<dsList.size(); i+=2)
 		{
-			if(!control_ds((String) dsList.get(i), FailOverBaseCase.start, 0))
+			if(!control_ds((String) dsList.get(i), start, 0))
 				fail("start data server failed!");
-			waitto(FailOverBaseCase.ds_down_time);
+			waitto(ds_down_time);
 		}
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		if(!control_cs((String) csList.get(1), start, 0))
 			fail("start slave config server failed!");
 		log.error("slave rack have been started!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+1+dsList.size()/2)
+		if(check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log")!=version_count+1+dsList.size()/2)
 			fail("version not change!");
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=migrate_count+1+dsList.size()/2)
+		if(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=migrate_count+1+dsList.size()/2)
 			fail("migrate not start!");
 		log.error("check migrate started!");
 
@@ -2724,7 +2724,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 
 		//verify get result
         log.error(getVerifySuccessful());
-		assertTrue("verify data failed!",datacnt/FailOverBaseCase.put_count_float>1.5);
+		assertTrue("verify data failed!",datacnt/put_count_float>1.5);
 		log.error("Successfully Verified data!");
 
 		//end test
@@ -2736,16 +2736,16 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{ 
 		log.error("start config test Failover case 27");
 		int waitcnt=0;
-		if(!control_cluster(csList, dsList, FailOverBaseCase.start, 0))fail("start cluster failed!");
+		if(!controlCluster(csList, dsList, start, 0))fail("start cluster failed!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("Start Cluster Successful!");
 
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failed");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failed");
 		execute_data_verify_tool();
 		while(check_process("local", "DataDebug")!=2)
@@ -2756,33 +2756,33 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 
 		//wait for duplicate
 		waitto(10);
 
 		//check if version changed after one ds stoped on master rack
-//		int version_count=check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log");
-		int migrate_count=check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log");
+//		int version_count=check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log");
+		int migrate_count=check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log");
 		
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.stop, 0))
+		if(!control_ds((String) dsList.get(0), stop, 0))
 			fail("close data server on master rack failed!");
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
-//		if(check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+1)
+//		if(check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log")!=version_count+1)
 //			fail("version not changed after stop one ds on master rack!");
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=migrate_count+1)
+		if(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=migrate_count+1)
 			fail("migrate not start after stop one ds on master rack!");
 		
 		//check if version changed after one ds stoped on slave rack
-		if(!control_ds((String) dsList.get(1), FailOverBaseCase.stop, 0))
+		if(!control_ds((String) dsList.get(1), stop, 0))
 			fail("close data server on slave rack failed!");
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 		
-//		if(check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+2)
+//		if(check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log")!=version_count+2)
 //			fail("version not changed after stop one ds on slave rack!");
-		if(check_keyword((String) csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=migrate_count+2)
+		if(check_keyword((String) csList.get(0), start_migrate, tair_bin+"logs/config.log")!=migrate_count+2)
 			fail("migrate not start after stop one ds on master rack!");
 		log.error("migrate started!");
 		
@@ -2796,11 +2796,11 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		if(waitcnt>150)fail("put data time out!");
 		waitcnt=0;
 		datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 		waitto(10);
 		
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failed");	
 		execute_data_verify_tool();
 		while(check_process("local", "DataDebug")!=2)
@@ -2812,20 +2812,20 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		log.error("Read data over!");
 		datacnt=getVerifySuccessful();
-		assertTrue("verify data failed!",datacnt/FailOverBaseCase.put_count_float>1.6);
+		assertTrue("verify data failed!",datacnt/put_count_float>1.6);
 		log.error("Successfully Verified data!");
 		
-		if(!control_ds((String) dsList.get(0), FailOverBaseCase.start, 0))
+		if(!control_ds((String) dsList.get(0), start, 0))
 			fail("start ds on master rack failed!");
-		waitto(FailOverBaseCase.down_time);
-		if(!control_cs((String) csList.get(1), FailOverBaseCase.start, 0))
+		waitto(down_time);
+		if(!control_cs((String) csList.get(1), start, 0))
 			fail("start ds on slave rack failed!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		log.error("the stoped ds on each rack have been started!");
 		
-//		if(check_keyword((String) csList.get(0), FailOverBaseCase.finish_rebuild, FailOverBaseCase.tair_bin+"logs/config.log")!=version_count+4)
+//		if(check_keyword((String) csList.get(0), finish_rebuild, tair_bin+"logs/config.log")!=version_count+4)
 //			fail("version not changed after restart one ds on each rack!");
-		if(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=migrate_count+4)
+		if(check_keyword((String)csList.get(0), start_migrate, tair_bin+"logs/config.log")!=migrate_count+4)
 			fail("migrate not start after restart one ds on each rack!");
 		log.error("migrate started!");
 
@@ -2840,7 +2840,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("Read data over!");
 
         log.error(getVerifySuccessful());
-		assertTrue("verify data failed!",datacnt/FailOverBaseCase.put_count_float>1.6);
+		assertTrue("verify data failed!",datacnt/put_count_float>1.6);
 		log.error("Successfully Verified data!");
 
 		//end test
@@ -2853,23 +2853,23 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("start config test Failover case 28");
 		int waitcnt=0;
 		
-		if(!modify_config_file((String)csList.get(0), FailOverBaseCase.tair_bin+"etc/group.conf", "_accept_strategy", "1"))
+		if(!modify_config_file((String)csList.get(0), tair_bin+"etc/group.conf", "_accept_strategy", "1"))
 			fail("modify _accept_strategy failure");
 		log.error("_accept_strategy has been changed!");
 		
 		//start cluster
-		if(!control_cluster(csList, dsList.subList(0,dsList.size()-1), FailOverBaseCase.start, 0))fail("start cluster failure!");
+		if(!controlCluster(csList, dsList.subList(0,dsList.size()-1), start, 0))fail("start cluster failure!");
 
 		log.error("Start Cluster Successful!");
 		log.error("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 		
 		//change test tool's configuration
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "put"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "put"))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "datasize", FailOverBaseCase.put_count))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "datasize", put_count))
 			fail("modify configure file failure");
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "filename", "read.kv"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "filename", "read.kv"))
 			fail("modify configure file failure");
 
 		//write 100k data to cluster
@@ -2885,17 +2885,17 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		waitcnt=0;
 		//verify get result
 		int datacnt=getVerifySuccessful();
-		assertTrue("put successful rate small than 90%!",datacnt/FailOverBaseCase.put_count_float>0.9);
+		assertTrue("put successful rate small than 90%!",datacnt/put_count_float>0.9);
 		log.error("Write data over!");
 		
 		//close ds
-		if(!control_ds((String) dsList.get(dsList.size()-1), FailOverBaseCase.start, 0))
+		if(!control_ds((String) dsList.get(dsList.size()-1), start, 0))
 			fail("start ds failure!");
 		log.error("last data server has been started!");
 		
 		waitto(2);
 		//check if strike migrate without touch configure file
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.start_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), start_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration start on cs "+(String)csList.get(0)+" log");
 			waitto(2);
@@ -2906,7 +2906,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration started!");
 		
 		//wait migrate finish
-		while(check_keyword((String)csList.get(0), FailOverBaseCase.finish_migrate, FailOverBaseCase.tair_bin+"logs/config.log")!=1)
+		while(check_keyword((String)csList.get(0), finish_migrate, tair_bin+"logs/config.log")!=1)
 		{
 			log.debug("check if migration finish on cs "+(String)csList.get(0)+" log");
 			waitto(3);
@@ -2917,7 +2917,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.error("down time arrived,migration finished!");
 		
 		// check data
-		if(!modify_config_file("local", FailOverBaseCase.test_bin+"DataDebug.conf", "actiontype", "get"))
+		if(!modify_config_file("local", test_bin+"DataDebug.conf", "actiontype", "get"))
 			fail("modify configure file failure");	
 		//read data from cluster
 		execute_data_verify_tool();
@@ -2944,10 +2944,10 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{
 		log.error("clean tool and cluster!");
 		clean_tool("local");
-		reset_cluster(csList,dsList);
-		if(!batch_modify(csList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
+		resetCluster(csList,dsList);
+		if(!batch_modify(csList, tair_bin+"etc/group.conf", "_copy_count", "2"))
             fail("modify configure file failure");
-        if(!batch_modify(dsList, FailOverBaseCase.tair_bin+"etc/group.conf", "_copy_count", "2"))
+        if(!batch_modify(dsList, tair_bin+"etc/group.conf", "_copy_count", "2"))
             fail("modify configure file failure");
 	}
 	
@@ -2955,6 +2955,6 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	{
 		clean_tool("local");
 		log.error("clean tool and cluster!");
-		batch_uncomment(csList, FailOverBaseCase.tair_bin+"etc/group.conf", dsList, "#");
+		batch_uncomment(csList, tair_bin+"etc/group.conf", dsList, "#");
 	}
 }

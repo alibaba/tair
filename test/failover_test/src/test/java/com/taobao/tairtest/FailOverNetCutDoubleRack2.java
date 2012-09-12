@@ -16,8 +16,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		int datacnt1, datacnt2, datacnt3;
 
 		// start cluster
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -175,8 +174,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		int datacnt1, datacnt2, datacnt3;
 
 		// start cluster
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -289,8 +287,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		int datacnt1, datacnt2, datacnt3;
 
 		// start cluster
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -400,8 +397,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	@Test
 	public void testFailover_04_cutoff_a1b2_b1a2_a1b1() {
 		log.info("start netcut test Failover case 04");
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -507,8 +503,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	@Test
 	public void testFailover_05_cutoff_b1a2_a1b1_a1b2() {
 		log.info("start netcut test Failover case 05");
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -623,8 +618,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	@Test
 	public void testFailover_06_cutoff_b1a2_a1b2_a1b1() {
 		log.info("start netcut test Failover case 06");
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -744,8 +738,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		int datacnt1, datacnt2, datacnt3;
 
 		// start cluster
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -976,8 +969,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		int datacnt1, datacnt2, datacnt3;
 
 		// start cluster
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1182,8 +1174,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_09_cutoff_a1b2_b1a2_a1b1_recover_a1b2_a1b1_b1a2() {
 		log.info("start netcut test Failover case 09");
 
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1378,8 +1369,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_10_cutoff_b1a2_a1b1_a1b2_recover_a1b2_b1a2_a1b1() {
 		log.info("start netcut test Failover case 10");
 
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1567,8 +1557,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_11_cutoff_b1a2_a1b1_a1b2_recover_b1a2_a1b1_a1b2() {
 		log.info("start netcut test Failover case 11");
 
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1773,8 +1762,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		int datacnt1, datacnt2, datacnt3;
 
 		// start cluster
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1976,8 +1964,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_13_cutoff_a1b2_recover_before_rebuild() {
 		log.info("start netcut test Failover case 13");
 
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2027,8 +2014,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_14_cut_all_flash() {
 		log.info("start netcut test Failover case 14");
 
-		if (!control_cluster(csList, dsList2, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList2, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2079,7 +2065,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		clean_bin_tool(csList.get(0));
 		clean_bin_tool(csList.get(1));
 		clean_bin_tool(local);
-		reset_cluster(csList, dsList2);
+		resetCluster(csList, dsList2);
 		batch_uncomment(csList, tair_bin + groupconf, dsList2, "#");
 		execute_shift_tool(local, "conf6");
 		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
@@ -2094,7 +2080,7 @@ public class FailOverNetCutDoubleRack2 extends FailOverBaseCase {
 		clean_bin_tool(csList.get(0));
 		clean_bin_tool(csList.get(1));
 		clean_bin_tool(local);
-		reset_cluster(csList, dsList2);
+		resetCluster(csList, dsList2);
 		batch_uncomment(csList, tair_bin + groupconf, dsList2, "#");
 		if (!batch_recover_net(dsList2))
 			fail("recover net failure");

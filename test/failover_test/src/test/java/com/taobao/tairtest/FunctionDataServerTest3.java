@@ -21,9 +21,8 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.info("start cluster successful!");
-
 		waitto(down_time);
 
 		//write verify data to cluster
@@ -97,7 +96,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.info("start cluster successful!");
 
 		waitto(down_time);
@@ -198,7 +197,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.info("start cluster successful!");
 
 		waitto(down_time);
@@ -274,7 +273,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		if(!comment_line(csList.get(1), tair_bin+groupconf, dsList.get(dsList.size()-1), "#"))fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.info("start cluster successful!");
 		waitto(down_time);
 
@@ -369,10 +368,8 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 		log.info("start function test case 06");
 		int waitcnt=0;
 		//start cluster
-		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
-
 		log.info("wait system initialize ...");
 		waitto(down_time);
 
@@ -449,7 +446,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 	{
         log.info("clean tool and cluster while setUp!");
 		clean_tool(local);
-		reset_cluster(csList,dsList);
+		resetCluster(csList,dsList);
 		execute_shift_tool(local, "conf5");
 		batch_uncomment(csList, tair_bin+groupconf, dsList, "#");
 		if(!batch_modify(csList, tair_bin+groupconf, copycount, "3"))
@@ -463,7 +460,7 @@ public class FunctionDataServerTest3 extends FailOverBaseCase {
 	{
 		log.info("clean tool and cluster while tearDown!");
 		clean_tool(local);
-		reset_cluster(csList,dsList);
+		resetCluster(csList,dsList);
 		batch_uncomment(csList, tair_bin+groupconf, dsList, "#");
 	}
 }

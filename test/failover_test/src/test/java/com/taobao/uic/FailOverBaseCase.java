@@ -4,10 +4,18 @@
 package com.taobao.uic;
 
 import com.ibm.staf.*;
+import com.taobao.tairtest.BaseTestCase;
 import com.taobao.tairtest.ConfParser;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 
@@ -54,39 +62,75 @@ public class FailOverBaseCase extends BaseTestCase {
 	// distinguish if mdb needs touch
 	protected static int touch_flag;
 	// server operation
-	final static String groupconf = "etc/group.conf";
-	final static String start = "start";
-	final static String stop = "stop";
-	final static String copycount = "_copy_count";
+	protected final static String groupconf = "etc/group.conf";
+	protected final static String start = "start";
+	protected final static String stop = "stop";
+	protected final static String copycount = "_copy_count";
 	// tool option
-	final static String actiontype = "actiontype";
-	final static String datasize = "datasize";
-	final static String filename = "filename";
-	final static String put = "put";
-	final static String get = "get";
-	final static String rem = "rem";
-	final static String putget = "putget";
+	protected final static String actiontype = "actiontype";
+	protected final static String datasize = "datasize";
+	protected final static String filename = "filename";
+	protected final static String filename2 = "filename2";
+	protected final static String incr_first_flag = "incr_first_flag";
+	protected final static String startnum = "start";
+	protected final static String put = "put";
+	protected final static String get = "get";
+	protected final static String delete = "delete";
+	protected final static String incr = "incr";
+	protected final static String decr = "decr";
+	protected final static String hide = "hide";
+	protected final static String getHidden = "getHidden";
+	protected final static String setCount = "setCount";
+	protected final static String lock = "lock";
+	protected final static String unlock = "unlock";
+	protected final static String prefixPut = "prefixPut";
+	protected final static String prefixGet = "prefixGet";
+	protected final static String prefixDelete = "prefixDelete";
+	protected final static String prefixIncr = "prefixIncr";
+	protected final static String prefixDecr = "prefixDecr";
+	protected final static String prefixHide = "prefixHide";
+	protected final static String prefixGetHidden = "prefixGetHidden";
+	protected final static String prefixSetCount = "prefixSetCount";
+	protected final static String rem = "rem";
+	protected final static String putget = "putget";
+	protected final static String cs = "cs";
+	protected final static String ds = "ds";
+	protected final static String Successful = "Successful";
+	protected final static String Fail = "Fail";
+	protected final static String timeOutFail = "timeOutNum";
+	protected final static String migBusyFail = "migBusyNum";
+	protected final static String dupBusyFail = "dupBusyNum";
+	protected final static String noneFail = "noneNum";
+	protected final static String hiddenFail = "hiddenNum";
+	protected final static String valWrongFail = "valWrongNum";
+	protected final static String serWrongFail = "serWrongNum";
+	protected final static String lockedNum = "lockedNum";
+	protected final static String cntRideFail = "cntRideNum";
 	// system option
-	final static String local = "local";
-	final static String low = "low";
-	final static String high = "high";
+	protected final static String local = "local";
+	protected final static String low = "low";
+	protected final static String high = "high";
 	// uic option
-	final static String _pre_load_flag = "_pre_load_flag";
-	final static String tmp_down_server = "tmp_down_server";
-	final static String _bucket_placement_flag = "_bucket_placement_flag";
-	final static String resetserver = "resetserver";
-	final static String resetgroup = "resetgroup";
+	protected final static String _pre_load_flag = "_pre_load_flag";
+	protected final static String tmp_down_server = "tmp_down_server";
+	protected final static String _bucket_placement_flag = "_bucket_placement_flag";
+	protected final static String resetserver = "resetserver";
+	protected final static String resetgroup = "resetgroup";
 	// network flow
-	final static int flow_low = 2000000;
-	final static int flow_middle = 15000000;
-	final static int flow_high = 30000000;
-	final static String SIGUSR2 = "12";
+	protected final static int flow_low = 2000000;
+	protected final static int flow_middle = 15000000;
+	protected final static int flow_high = 30000000;
+	protected final static String SIGUSR2 = "12";
+	protected final static int syncCount = 10000;
 	// tool recover option
-	final static String RECOVER_ALL = "RECOVER_ALL";
-	final static String RECOVER_A_1DS = "RECOVER_A_1DS";
-	final static String RECOVER_B_1DS = "RECOVER_B_1DS";
-	final static String RECOVER_A_1CLS = "RECOVER_A_1CLS";
-	final static String RECOVER_B_1CLS = "RECOVER_B_1CLS";
+	protected final static String RECOVER_ALL = "RECOVER_ALL";
+	protected final static String RECOVER_A_1DS = "RECOVER_A_1DS";
+	protected final static String RECOVER_B_1DS = "RECOVER_B_1DS";
+	protected final static String RECOVER_A_1CLS = "RECOVER_A_1CLS";
+	protected final static String RECOVER_B_1CLS = "RECOVER_B_1CLS";
+	// judge measure
+	protected final static float normSucRate = 0.99f;
+	protected final static float migSucRate = 0.92f;
 
 	@BeforeClass
 	public static void setUpClass() {
@@ -418,7 +462,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	}
 
 	public boolean execute_data_verify_tool(String machine, String test_bin) {
-		log.debug("start verify tool,run batchData");
+		log.debug("start verify tool, run batchData on " + machine);
 		boolean ret = false;
 		String cmd = "cd " + test_bin + " && ";
 		cmd += "./batchData.sh";
@@ -521,6 +565,48 @@ public class FailOverBaseCase extends BaseTestCase {
 		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
 			if (!clean_data(it.next()))
 				ret = false;
+		}
+		return ret;
+	}
+	
+	protected boolean batch_uncomment(List<String> machines, String confname,
+			List<String> keywords, String comment) {
+		boolean ret = true;
+		for (Iterator<String> ms = machines.iterator(); ms.hasNext();) {
+			String cms = ms.next();
+			for (Iterator<String> ks = keywords.iterator(); ks.hasNext();) {
+				if (!uncomment_line(cms, confname, ks.next(), comment))
+					ret = false;
+			}
+		}
+		return ret;
+	}
+	
+	protected boolean uncomment_line(String machine, String file,
+			String keyword, String comment) {
+		boolean ret = false;
+		String cmd = "sed -i \'s/" + comment + "*\\(.*" + keyword
+				+ ".*$\\)/\\1/\' " + file;
+		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0) {
+			log.error("result.rc not 0! " + result.rc);
+			ret = false;
+		} else {
+			ret = true;
+		}
+		return ret;
+	}
+
+	protected boolean comment_line(String machine, String file, String keyword,
+			String comment) {
+		boolean ret = false;
+		String cmd = "sed -i \'s/.*" + keyword + "/" + comment + "&/\' " + file;
+		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0) {
+			log.error("result.rc not 0! " + result.rc);
+			ret = false;
+		} else {
+			ret = true;
 		}
 		return ret;
 	}
@@ -650,19 +736,40 @@ public class FailOverBaseCase extends BaseTestCase {
 				+ "datadbg0.log|grep \"Successful\"|awk -F\" \" \'{print $7}\'";
 		log.debug("do verify on " + machine);
 		STAFResult result = executeShell(stafhandle, machine, verify);
-		if (result.rc != 0)
+		if (result.rc != 0) {
+			log.error("result.rc not 0: " + result.rc);
 			ret = -1;
-		else {
+		} else {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
-				log.info("verify result: " + ret);
+				log.debug("verify result: " + ret);
 			} catch (Exception e) {
-				log.debug("get verify exception: " + stdout);
+				log.error("get verify exception: " + stdout);
 				ret = -1;
 			}
 		}
-		log.error(ret);
+		return ret;
+	}
+	
+	protected int getToolResult(String machine, String path, String keyword) {
+		int ret = 0;
+		String verify = "tail -15 " + path + "datadbg0.log|grep \"" + keyword
+				+ "\"|awk -F\" \" \'{print $7}\'";
+		STAFResult result = executeShell(stafhandle, machine, verify);
+		if (result.rc != 0) {
+			log.error("result.rc not 0: " + result.rc);
+			ret = -1;
+		} else {
+			String stdout = getShellOutput(result);
+			try {
+				ret = (new Integer(stdout.trim())).intValue();
+				log.debug("verify " + keyword + " on " + machine + ": " + ret);
+			} catch (Exception e) {
+				log.error("get verify exception: " + stdout);
+				ret = -1;
+			}
+		}
 		return ret;
 	}
 
@@ -943,6 +1050,37 @@ public class FailOverBaseCase extends BaseTestCase {
 				put_count))
 			fail("modify configure file failure");
 	}
+	
+	protected void modifyToolConf(String machine, String actionType,
+			boolean incrFirstFlag) {
+		int incrfirstflag = incrFirstFlag ? 1 : 0;
+		if (!modify_config_file(machine, test_bin + toolconf, actiontype,
+				actionType))
+			fail("modify configure file failure");
+		if (!modify_config_file(machine, test_bin + toolconf, incr_first_flag,
+				new Integer(incrfirstflag).toString()))
+			fail("modify configure file failure");
+	}
+	
+	protected void modifyToolConf(String machine, String actionType,
+			boolean incrFirstFlag, int dataSize, String fileName, int startNum) {
+		int incrfirstflag = incrFirstFlag ? 1 : 0;
+		if (!modify_config_file(machine, test_bin + toolconf, actiontype,
+				actionType))
+			fail("modify configure file failure");
+		if (!modify_config_file(machine, test_bin + toolconf, datasize,
+				new Integer(dataSize).toString()))
+			fail("modify configure file failure");
+		if (!modify_config_file(machine, test_bin + toolconf, incr_first_flag,
+				new Integer(incrfirstflag).toString()))
+			fail("modify configure file failure");
+		if (!modify_config_file(machine, test_bin + toolconf, filename,
+				fileName))
+			fail("modify configure file failure");
+		if (!modify_config_file(machine, test_bin + toolconf, startnum,
+				new Integer(startNum).toString()))
+			fail("modify configure file failure");
+	}
 
 	protected void waitToolFinish(String machine) {
 		int waitcnt = 0;
@@ -953,6 +1091,41 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		if (waitcnt > 90)
 			fail("wait time out!");
+	}
+	
+	protected void waitKeyword(String machine, String keyword, int expectCount, int circle) {
+		int waitcnt = 0;
+		while (check_keyword(machine, keyword, tair_bin + "logs/config.log") != expectCount) {
+			waitto(2);
+			if (++waitcnt > circle)
+				break;
+		}
+		if (waitcnt > circle)
+			fail("wait time out!");
+	}
+	
+	protected boolean scp_file(String source_machine, String source_path,
+			String filename, String target_machine, String target_path) {
+		log.debug("scp " + filename + " from " + source_machine + ":"
+				+ source_path + " to " + target_machine + ":" + target_path);
+		boolean ret = true;
+		String cmd = "scp " + source_path + filename + " admin@"
+				+ target_machine + ":" + target_path;
+		STAFResult result = executeShell(stafhandle, source_machine, cmd);
+		if (result.rc != 0) {
+			log.error("result.rc not 0: " + result.rc);
+			ret = false;
+		}
+		return ret;
+	}
+
+	protected void scpFile(String source_machine, String source_path,
+			String filename, String target_machine, String target_path) {
+		if (!scp_file(source_machine, source_path, filename, target_machine,
+				target_path))
+			fail("scp " + filename + " from " + source_machine + ":"
+					+ source_path + " to " + target_machine + ":" + target_path
+					+ " failed!");
 	}
 	
 	protected void sendSignal(String machine, String process, String signal) {
@@ -984,5 +1157,101 @@ public class FailOverBaseCase extends BaseTestCase {
 		for (Iterator<String> it = machineList.iterator(); it.hasNext();)
 			sendSignal(it.next(), process, signal);
 	}
+	
+	protected void batchControlServer(List<String> serverList,
+			String serverType, String option, int type) {
+		log.info("start batch " + option + " " + serverType + " list!");
+		boolean ret = true;
+		ExecutorService exec = Executors.newFixedThreadPool(serverList.size());
+		ArrayList<Future<Boolean>> resultList = new ArrayList<Future<Boolean>>();
+		for (int i = 0; i < serverList.size(); i++) {
+			resultList.add(exec.submit(new ControlServer(serverList.get(i),
+					serverType, option, type)));
+		}
+		boolean waitFlag = true;
+		int waitLimit = 0;
+		while (waitFlag && waitLimit < 10) {
+			waitFlag = false;
+			waitto(1);
+			waitLimit++;
+			for(int j = 0; j < serverList.size(); j++) {
+				if(!resultList.get(j).isDone()) {
+					waitFlag = true;
+					break;
+				}
+			}
+		}
+		exec.shutdown();
+		
+		for(int k = 0; k < serverList.size(); k++) {
+			Boolean retThread;
+			try {
+				retThread = resultList.get(k).get();
+				if(retThread.booleanValue())
+					log.debug(option + " " + serverType + " on " + serverList.get(k) + " successful!");
+				else
+					log.debug(option + " " + serverType + " on " + serverList.get(k) + " failed!");
+				ret = retThread.booleanValue() && ret;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				fail("exception occured while get result on " + serverList.get(k));
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+				fail("exception occured while get result on " + serverList.get(k));
+			}
+		}
+		String listName = "";
+		for(String ip : serverList) {
+			listName = listName + ip + " ";
+		}
+		if(!ret)
+			fail("batch " + option + " " + serverType + " failed! " + listName);
+		else
+			log.info("batch " + option + " " + serverType + " successful! " + listName);
+	}
 }
 
+class ControlServer extends BaseTestCase implements Callable<Boolean> {
+
+	private String machine;
+	private String serverType;
+	private String serverName;
+	private String option;
+	private int type;
+	
+	public ControlServer(String machine, String serverType, String option, int type) {
+		this.machine = machine;
+		this.serverType = serverType;
+		this.serverName = this.serverType.equals("cs") ? FailOverBaseCase.csname
+				: FailOverBaseCase.dsname;
+		this.option = option;
+		this.type = type;
+	}
+
+	public Boolean call() throws Exception {
+		boolean ret = false;
+		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + option
+				+ "_" + serverType;
+		if (option.equals(FailOverBaseCase.stop) && type == 1)
+			cmd = "killall -9 " + serverName + " && sleep 1";
+		executeShell(stafhandle, machine, cmd);
+		cmd = "ps -ef|grep " + serverName + "|wc -l";
+		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0) {
+			log.error(machine + " result.rc not 0! " + result.rc);
+			ret = false;
+		} else {
+			String stdout = getShellOutput(result);
+			if (option.equals(FailOverBaseCase.start)
+					&& (new Integer(stdout.trim())).intValue() != 3) {
+				ret = false;
+			} else if (option.equals(FailOverBaseCase.stop)
+					&& (new Integer(stdout.trim())).intValue() != 2) {
+				ret = false;
+			} else {
+				ret = true;
+			}
+		}
+		return ret;
+	}
+}

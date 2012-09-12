@@ -21,8 +21,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 
@@ -116,8 +115,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -212,8 +210,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -334,8 +331,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 
 		waitto(down_time);
@@ -462,8 +458,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 
 		waitto(down_time);
@@ -565,8 +560,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -691,8 +685,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -824,8 +817,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -958,8 +950,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1099,8 +1090,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1252,8 +1242,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 	fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1403,8 +1392,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1556,8 +1544,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1705,8 +1692,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1861,8 +1847,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1984,8 +1969,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2100,8 +2084,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 17");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2182,8 +2165,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 18");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2278,8 +2260,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2370,8 +2351,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 				"#"))
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2487,8 +2467,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 21");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2643,8 +2622,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 			fail("change group.conf failed!");
 		log.info("group.conf has been changed!");
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("start cluster successful!");
 		waitto(down_time);
 
@@ -2851,8 +2829,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 23");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2961,8 +2938,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 24");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -3093,8 +3069,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 25");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -3173,7 +3148,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		// execute_shift_tool(local, "conf5");// for kdb
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 		if (!batch_modify(csList, tair_bin + groupconf, copycount, "1"))
@@ -3186,7 +3161,7 @@ public class FailOverDataServerTest1 extends FailOverBaseCase {
 	public void subAfter() {
 		log.info("clean tool and cluster while subAfter!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 

@@ -16,8 +16,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -106,8 +105,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -194,8 +192,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -266,8 +263,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -364,8 +360,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -468,8 +463,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -570,8 +564,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -697,8 +690,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -832,8 +824,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("start cluster successfull!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -1017,8 +1008,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -1111,8 +1101,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -1218,8 +1207,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -1316,8 +1304,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -1444,8 +1431,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -1567,8 +1553,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("start cluster successfull!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -1760,9 +1745,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("group.conf has been changed!");
 
 		// start part cluster for next migration step
-		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
-				start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size() - 1), start, 0);
 		log.info("start cluster successful!");
 
 		// wait down time for cluster to work
@@ -1892,9 +1875,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("group.conf has been changed!");
 
 		// start part cluster for next migration step
-		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
-				start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size() - 1), start, 0);
 		log.info("start cluster successful!");
 
 		// wait down time for cluster to work
@@ -1997,9 +1978,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("group.conf has been changed!");
 
 		// start part cluster for next migration step
-		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
-				start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size() - 1), start, 0);
 		log.info("start cluster successful!");
 
 		// wait down time for cluster to work
@@ -2113,9 +2092,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("group.conf has been changed!");
 
 		// start part cluster for next migration step
-		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
-				start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size() - 1), start, 0);
 		log.info("start cluster successful!");
 
 		// wait down time for cluster to work
@@ -2219,8 +2196,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("change group.conf successful!");
 
 		// start part cluster for next migration step
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("start cluster successful!");
 
 		// wait down time for cluster to work
@@ -2340,9 +2316,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 		log.info("_accept_strategy has been changed!");
 
 		// start cluster
-		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
-				start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList.subList(0, dsList.size() - 1), start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -2435,7 +2409,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 		// execute_shift_tool(local, "conf5");// for kdb
 		if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
@@ -2450,7 +2424,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 	public void subAfter() {
 		log.info("clean tool and cluster while subAfter!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 }

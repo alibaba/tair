@@ -17,7 +17,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		int waitcnt=0;
 
 		//start cluster
-		if(!control_cluster(csList, dsList, start, 0))fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("start cluster successful!");
 
 		waitto(down_time);
@@ -48,7 +48,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		waitto(down_time);
 
 		//restart cluster
-		if(!control_cluster(csList, dsList, start, 0))fail("restart cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("restart cluster successful!");
 
 		waitto(down_time);
@@ -84,7 +84,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		log.info("change group.conf successful!");
 
 		//start cluster
-		if(!control_cluster(csList, dsList.subList(0, dsList.size()-1), start, 0))fail("start cluster failed!");
+		controlCluster(csList, dsList.subList(0, dsList.size()-1), start, 0);
 		log.info("start cluster successful!");
 		waitto(down_time);
 
@@ -138,7 +138,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 		waitto(down_time);
 
 		//restart cluster
-		if(!control_cluster(csList, dsList, start, 0))fail("restart cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("restart cluster successful!");
 
 		waitto(down_time);
@@ -168,7 +168,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 	{
         log.info("clean tool and cluster while setUp!");
 		clean_tool(local);
-		reset_cluster(csList,dsList);
+		resetCluster(csList,dsList);
 //		execute_shift_tool(local, "conf5");
 		batch_uncomment(csList, tair_bin+groupconf, dsList, "#");
 		if(!batch_modify(csList, tair_bin+groupconf, copycount, "3"))
@@ -182,7 +182,7 @@ public class FailoverClusterTest3 extends FailOverBaseCase {
 	{
 		log.info("clean tool and cluster while tearDown!");
 		clean_tool(local);
-		reset_cluster(csList,dsList);
+		resetCluster(csList,dsList);
 		batch_uncomment(csList, tair_bin+groupconf, dsList, "#");
 	}
 }

@@ -14,9 +14,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_01_kill_out_time() {
 		log.info("start DataServer test Failover case 01");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -100,9 +98,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 02");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -211,8 +207,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 03");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -322,9 +317,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 06");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -421,8 +414,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 05");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -532,8 +524,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 06");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -639,8 +630,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 07");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -757,8 +747,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 08");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -871,8 +860,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 09");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -987,8 +975,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 10");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1106,8 +1093,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 11");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1230,8 +1216,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 12");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1363,9 +1348,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 13");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1502,9 +1485,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 14");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1623,9 +1604,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 15");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1744,9 +1723,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void testFailover_16_kill_allDataServrs_restart_outTime() {
 		log.info("start DataServer test Failover case 16");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
-
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -1829,8 +1806,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		log.info("start DataServer test Failover case 17");
 		int waitcnt = 0;
 
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -2150,8 +2126,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		int waitcnt = 0;
 
 		// start cluster
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failure!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -2240,7 +2215,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 		// execute_shift_tool(local, "conf5");//for kdb
 		if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
@@ -2255,7 +2230,7 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 	public void subAfter() {
 		log.info("clean tool and cluster while subAfter!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 }

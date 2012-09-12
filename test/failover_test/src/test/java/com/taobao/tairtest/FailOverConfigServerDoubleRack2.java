@@ -14,8 +14,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_01_kill_master_cs_and_one_ds_on_master_rack() {
 		log.info("start config test Failover case 01");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -107,8 +106,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_02_kill_slave_cs_and_one_ds_on_slave_rack() {
 		log.info("start config test Failover case 02");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -204,8 +202,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_03_kill_master_rack() {
 		log.info("start config test Failover case 03");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -315,8 +312,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_04_kill_slave_rack() {
 		log.info("start config test Failover case 04");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -430,8 +426,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_05_kill_master_rack_and_one_ds_on_slave_rack() {
 		log.info("start config test Failover case 05");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -564,8 +559,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_06_kill_slave_rack_and_one_ds_on_master_rack() {
 		log.info("start config test Failover case 06");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -707,8 +701,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void testFailover_07_kill_one_ds_on_each_rack() {
 		log.info("start config test Failover case 07");
 		int waitcnt = 0;
-		if (!control_cluster(csList, dsList, start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("wait system initialize ...");
 		waitto(down_time);
 		log.info("Start Cluster Successful!");
@@ -844,10 +837,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 		log.info("_accept_strategy has been changed!");
 
 		// start cluster
-		if (!control_cluster(csList, dsList.subList(0, dsList.size() - 1),
-				start, 0))
-			fail("start cluster failure!");
-
+		controlCluster(csList, dsList.subList(0, dsList.size() - 1), start, 0);
 		log.info("Start Cluster Successful!");
 		log.info("wait system initialize ...");
 		waitto(down_time);
@@ -941,7 +931,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
 			fail("modify configure file failure");
@@ -953,7 +943,7 @@ public class FailOverConfigServerDoubleRack2 extends FailOverBaseCase {
 	public void subAfter() {
 		log.info("clean tool and cluster while subAfter!");
 		clean_tool(local);
-		reset_cluster(csList, dsList);
+		resetCluster(csList, dsList);
 		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
 	}
 }

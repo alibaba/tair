@@ -29,11 +29,10 @@ public class FailOverDetail extends FailOverBaseCase {
 	public void test_Failover_01_get_from_other_ds() {
 		log.info("start detail failover test case 01");
 
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.debug("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// put data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
@@ -105,16 +104,14 @@ public class FailOverDetail extends FailOverBaseCase {
 	public void test_Failover_02_add_one_ds() {
 		log.info("start detail failover test case 02");
 
-		if (!comment_line((String) csList.get(0), FailOverBaseCase.tair_bin
+		if (!comment_line((String) csList.get(0), tair_bin
 				+ "etc/group.conf", (String) dsList.get(0), "#"))
 			fail("change group.conf failed!");
 		log.info("comment one ds successful!");
-		if (!control_cluster(csList, dsList.subList(1, dsList.size()),
-				FailOverBaseCase.start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList.subList(1, dsList.size()), start, 0);
 		log.info("Start Cluster Successful!");
 		log.debug("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// put data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
@@ -124,11 +121,11 @@ public class FailOverDetail extends FailOverBaseCase {
 		execute_tair_tool(dsList.get(2), test_bin);
 
 		// add one new ds while putting data
-		if (!control_ds(dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start the last ds failed!");
 		log.info("start the last ds successful!");
-		waitto(FailOverBaseCase.down_time);
-		if (!uncomment_line((String) csList.get(0), FailOverBaseCase.tair_bin
+		waitto(down_time);
+		if (!uncomment_line((String) csList.get(0), tair_bin
 				+ "etc/group.conf", (String) dsList.get(0), "#"))
 			fail("change group.conf failed!");
 		log.info("uncomment the last ds successful!");
@@ -176,11 +173,10 @@ public class FailOverDetail extends FailOverBaseCase {
 	public void test_Failover_03_restart_one_ds() {
 		log.info("start detail failover test case 03");
 
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.debug("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// put data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
@@ -212,7 +208,7 @@ public class FailOverDetail extends FailOverBaseCase {
 		waitto(10);
 
 		// stop one ds while getting data
-		if (!control_ds(dsList.get(dsList.size() - 1), FailOverBaseCase.stop, 1))
+		if (!control_ds(dsList.get(dsList.size() - 1), stop, 1))
 			fail("kill one ds failed!");
 		log.info("kill one ds successful!");
 
@@ -227,7 +223,7 @@ public class FailOverDetail extends FailOverBaseCase {
 		log.info("Successfully verified local data!");
 
 		// restart the killed ds
-		if (!control_ds(dsList.get(dsList.size() - 1), FailOverBaseCase.start,
+		if (!control_ds(dsList.get(dsList.size() - 1), start,
 				0))
 			fail("restart the killed ds failed!");
 		log.info("restart the killed ds successful!");
@@ -263,11 +259,10 @@ public class FailOverDetail extends FailOverBaseCase {
 	public void test_Failover_04_restart_all_ds() {
 		log.info("start detail failover test case 04");
 
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.debug("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// put data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
@@ -292,16 +287,16 @@ public class FailOverDetail extends FailOverBaseCase {
 				getVerifySuccessful(dsList.get(2), test_bin) / put_count_float == 1);
 
 		// stop all ds
-		if (!batch_control_ds(dsList, FailOverBaseCase.stop, 1))
+		if (!batch_control_ds(dsList, stop, 1))
 			fail("kill all ds failed!");
 		log.info("kill all ds successful!");
-		waitto(FailOverBaseCase.ds_down_time);
+		waitto(ds_down_time);
 
 		// restart all ds
-		if (!batch_control_ds(dsList, FailOverBaseCase.start, 0))
+		if (!batch_control_ds(dsList, start, 0))
 			fail("restart all ds failed!");
 		log.info("restart all ds successful!");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// get local data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "get");
@@ -332,11 +327,11 @@ public class FailOverDetail extends FailOverBaseCase {
 	public void test_Failover_05_no_cs() {
 		log.info("start detail failover test case 05");
 
-		if (!batch_control_ds(dsList, FailOverBaseCase.start, 0))
+		if (!batch_control_ds(dsList, start, 0))
 			fail("start ds cluster failed!");
 		log.info("Start ds cluster Successful!");
 		log.debug("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// put data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
@@ -381,7 +376,7 @@ public class FailOverDetail extends FailOverBaseCase {
 		log.info("Successfully verified local data!");
 
 		// start cs list
-		if (!batch_control_cs(csList, FailOverBaseCase.start, 0))
+		if (!batch_control_cs(csList, start, 0))
 			fail("start cs cluster failed!");
 		log.info("Start cs cluster Successful!");
 
@@ -410,21 +405,19 @@ public class FailOverDetail extends FailOverBaseCase {
 	public void test_Failover_06_add_one_ds_while_open_datamove() {
 		log.info("start detail failover test case 06");
 
-		if (!comment_line((String) csList.get(0), FailOverBaseCase.tair_bin
+		if (!comment_line((String) csList.get(0), tair_bin
 				+ "etc/group.conf", (String) dsList.get(0), "#"))
 			fail("change group.conf failed!");
 		log.info("comment one ds successful!");
-		if (!modify_config_file(csList.get(0), FailOverBaseCase.tair_bin
+		if (!modify_config_file(csList.get(0), tair_bin
 				+ "etc/group.conf", "_data_move", "1"))
 			fail("change datamove to 1 failed!");
 		log.info("change datamove to 1 successful!");
 
-		if (!control_cluster(csList, dsList.subList(1, dsList.size()),
-				FailOverBaseCase.start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList.subList(1, dsList.size()), start, 0);
 		log.info("Start Cluster Successful!");
 		log.debug("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// put data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
@@ -434,11 +427,11 @@ public class FailOverDetail extends FailOverBaseCase {
 		execute_tair_tool(dsList.get(2), test_bin);
 
 		// add one new ds while putting data
-		if (!control_ds(dsList.get(0), FailOverBaseCase.start, 0))
+		if (!control_ds(dsList.get(0), start, 0))
 			fail("start the last ds failed!");
 		log.info("start the last ds successful!");
-		waitto(FailOverBaseCase.down_time);
-		if (!uncomment_line((String) csList.get(0), FailOverBaseCase.tair_bin
+		waitto(down_time);
+		if (!uncomment_line((String) csList.get(0), tair_bin
 				+ "etc/group.conf", (String) dsList.get(0), "#"))
 			fail("change group.conf failed!");
 		log.info("uncomment the last ds successful!");
@@ -486,11 +479,10 @@ public class FailOverDetail extends FailOverBaseCase {
 	public void test_Failover_07_restart_master_cs() {
 		log.info("start detail failover test case 07");
 
-		if (!control_cluster(csList, dsList, FailOverBaseCase.start, 0))
-			fail("start cluster failed!");
+		controlCluster(csList, dsList, start, 0);
 		log.info("Start Cluster Successful!");
 		log.debug("wait system initialize ...");
-		waitto(FailOverBaseCase.down_time);
+		waitto(down_time);
 
 		// put data
 		changeToolConf(dsList.get(0), test_bin, "actiontype", "put");
@@ -528,26 +520,26 @@ public class FailOverDetail extends FailOverBaseCase {
 		execute_tair_tool(dsList.get(2), test_bin2);
 
 		// stop master cs
-		if (!control_cs(csList.get(0), FailOverBaseCase.stop, 1))
+		if (!control_cs(csList.get(0), stop, 1))
 			fail("stop master cs failed!");
 		log.info("Stop master cs Successful!");
 		waitto(down_time);
 		if (check_keyword(csList.get(1),
 				"MASTER_CONFIG changed " + csList.get(1),
-				FailOverBaseCase.tair_bin + "logs/config.log") != 1)
+				tair_bin + "logs/config.log") != 1)
 			fail("check master cs not changed!");
 		log.info("check master cs changed to " + csList.get(1) + " !");
 
 		int csCount = check_keyword(csList.get(1), "MASTER_CONFIG changed "
-				+ csList.get(0), FailOverBaseCase.tair_bin + "logs/config.log");
+				+ csList.get(0), tair_bin + "logs/config.log");
 		// restart master cs
-		if (!control_cs(csList.get(0), FailOverBaseCase.start, 0))
+		if (!control_cs(csList.get(0), start, 0))
 			fail("restart master cs failed!");
 		log.info("Restart master cs Successful!");
 		waitto(down_time);
 		if (check_keyword(csList.get(1),
 				"MASTER_CONFIG changed " + csList.get(0),
-				FailOverBaseCase.tair_bin + "logs/config.log") != csCount + 1)
+				tair_bin + "logs/config.log") != csCount + 1)
 			fail("check master cs not changed!");
 		log.info("check master cs changed to " + csList.get(0) + " !");
 
@@ -582,10 +574,10 @@ public class FailOverDetail extends FailOverBaseCase {
 		log.info("clean tool and cluster while subBefore!");
 		batch_clean_test_data(dsList, test_bin);
 		batch_clean_test_data(dsList, test_bin2);
-		reset_cluster(csList, dsList);
-		batch_uncomment(csList, FailOverBaseCase.tair_bin + "etc/group.conf",
+		resetCluster(csList, dsList);
+		batch_uncomment(csList, tair_bin + "etc/group.conf",
 				dsList, "#");
-		if (!batch_modify(csList, FailOverBaseCase.tair_bin + "etc/group.conf",
+		if (!batch_modify(csList, tair_bin + "etc/group.conf",
 				"_copy_count", "1"))
 			fail("modify configure file failure");
 	}
@@ -595,10 +587,10 @@ public class FailOverDetail extends FailOverBaseCase {
 		log.info("clean tool and cluster while subAfter!");
 		batch_clean_test_data(dsList, test_bin);
 		batch_clean_test_data(dsList, test_bin2);
-		reset_cluster(csList, dsList);
-		batch_uncomment(csList, FailOverBaseCase.tair_bin + "etc/group.conf",
+		resetCluster(csList, dsList);
+		batch_uncomment(csList, tair_bin + "etc/group.conf",
 				dsList, "#");
-		if (!modify_config_file(csList.get(0), FailOverBaseCase.tair_bin
+		if (!modify_config_file(csList.get(0), tair_bin
 				+ "etc/group.conf", "_data_move", "0"))
 			fail("reset datamove to 0 failed!");
 	}

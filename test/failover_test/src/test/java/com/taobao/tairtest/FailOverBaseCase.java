@@ -4,7 +4,6 @@
 package com.taobao.tairtest;
 
 import com.ibm.staf.*;
-
 import static org.junit.Assert.*;
 import com.taobao.tairtest.ConfParser;
 import java.util.ArrayList;
@@ -57,6 +56,7 @@ public class FailOverBaseCase extends BaseTestCase {
 	protected final static String groupconf = "etc/group.conf";
 	protected final static String start = "start";
 	protected final static String stop = "stop";
+	protected final static String clean = "clean";
 	protected final static String copycount = "_copy_count";
 	// tool option
 	protected final static String actiontype = "actiontype";
@@ -229,7 +229,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		if (opID.equals(stop) && type == 1)
 			cmd = "killall -9 " + dsname;
 		STAFResult result = executeShell(stafhandle, machine, cmd);
-		
+
 		int waittime = 0;
 		cmd = "ps -ef|grep " + dsname + "|wc -l";
 		while (waittime < 110) {
@@ -260,7 +260,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	protected boolean batch_control_cs(List<String> cs_group, String opID, int type) {
+	protected boolean batch_control_cs(List<String> cs_group, String opID,
+			int type) {
 		boolean ret = false;
 		for (Iterator<String> it = cs_group.iterator(); it.hasNext();) {
 			if (!control_cs(it.next(), opID, type)) {
@@ -279,7 +280,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	 *            0:normal 1:force
 	 * @return
 	 */
-	protected boolean batch_control_ds(List<String> ds_group, String opID, int type) {
+	protected boolean batch_control_ds(List<String> ds_group, String opID,
+			int type) {
 		boolean ret = false;
 		for (Iterator<String> it = ds_group.iterator(); it.hasNext();) {
 			if (!control_ds(it.next(), opID, type)) {
@@ -291,24 +293,16 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	/**
-	 * @param cs_group
-	 * @param ds_group
-	 * @param opID
-	 * @param type
-	 *            0:normal 1:force
-	 * @return
-	 */
-	protected boolean control_cluster(List<String> cs_group,
-			List<String> ds_group, String opID, int type) {
-		boolean ret = false;
-		if (!batch_control_ds(ds_group, opID, type)
-				|| !batch_control_cs(cs_group, opID, type))
-			ret = false;
-		else
-			ret = true;
-		return ret;
-	}
+	// protected boolean control_cluster(List<String> cs_group,
+	// List<String> ds_group, String opID, int type) {
+	// boolean ret = false;
+	// if (!batch_control_ds(ds_group, opID, type)
+	// || !batch_control_cs(cs_group, opID, type))
+	// ret = false;
+	// else
+	// ret = true;
+	// return ret;
+	// }
 
 	protected boolean clean_data(String machine) {
 		boolean ret = false;
@@ -372,7 +366,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-	
+
 	protected boolean execute_tair_tool(String machine, String path) {
 		log.debug("start verify tool,run batchData");
 		boolean ret = false;
@@ -406,7 +400,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-	
+
 	protected boolean clean_test_data(String machine, String path) {
 		boolean ret = false;
 		killall_tool_proc();
@@ -419,7 +413,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = true;
 		return ret;
 	}
-	
+
 	protected boolean batch_clean_test_data(List<String> machines, String path) {
 		boolean ret = true;
 		for (Iterator<String> it = machines.iterator(); it.hasNext();) {
@@ -432,8 +426,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	protected boolean reset_cluster(List<String> csList, List<String> dsList) {
 		boolean ret = false;
 		log.debug("stop and clean cluster!");
-		if (control_cluster(csList, dsList, stop, 1)
-				&& batch_clean_data(csList) && batch_clean_data(dsList))
+		controlCluster(csList, dsList, stop, 1);
+		if (batch_clean_data(csList) && batch_clean_data(dsList))
 			ret = true;
 		return ret;
 	}
@@ -671,7 +665,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		log.error(ret);
 		return ret;
 	}
-	
+
 	protected int getVerifySuccessful(String machine, String path) {
 		int ret = 0;
 		String verify = "cd " + path + " && ";
@@ -706,7 +700,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			ret = false;
 		return ret;
 	}
-	
+
 	public boolean scp_file(String source_machine, String source_path,
 			String filename, String target_machine, String target_path) {
 		log.error("scp " + filename + " from " + source_machine + " "
@@ -744,8 +738,8 @@ public class FailOverBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	protected boolean uncomment_line(String machine, String file, String keyword,
-			String comment) {
+	protected boolean uncomment_line(String machine, String file,
+			String keyword, String comment) {
 		boolean ret = false;
 		String cmd = "sed -i \'s/" + comment + "*\\(.*" + keyword
 				+ ".*$\\)/\\1/\' " + file;
@@ -812,7 +806,34 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
-	
+
+	protected void resetCluster(List<String> cslist, List<String> dslist) {
+		log.info("stop and clean cluster!");
+		controlCluster(cslist, dslist, stop, 1);
+		batchControlServer(dslist, clean);
+	}
+
+	protected void controlCluster(List<String> cs_group, List<String> ds_group,
+			String opID, int type) {
+		if (start.equals(opID)) {
+			batchControlServer(dsList, ds, start, type);
+			waitto(3);
+			batchControlServer(csList, cs, start, type);
+		} else if (stop.equals(opID)) {
+			batchControlServer(csList, cs, stop, type);
+			batchControlServer(dsList, ds, stop, type);
+		}
+	}
+
+	protected void batchControlServer(List<String> serverList, String option) {
+		batchControlServer(serverList, ds, option);
+	}
+
+	protected void batchControlServer(List<String> serverList,
+			String serverType, String option) {
+		batchControlServer(serverList, serverType, option, 0);
+	}
+
 	protected void batchControlServer(List<String> serverList,
 			String serverType, String option, int type) {
 		log.info("start batch " + option + " " + serverType + " list!");
@@ -829,40 +850,54 @@ public class FailOverBaseCase extends BaseTestCase {
 			waitFlag = false;
 			waitto(1);
 			waitLimit++;
-			for(int j = 0; j < serverList.size(); j++) {
-				if(!resultList.get(j).isDone()) {
+			for (int j = 0; j < serverList.size(); j++) {
+				if (!resultList.get(j).isDone()) {
 					waitFlag = true;
 					break;
 				}
 			}
 		}
 		exec.shutdown();
-		
-		for(int k = 0; k < serverList.size(); k++) {
+
+		for (int k = 0; k < serverList.size(); k++) {
 			Boolean retThread;
 			try {
 				retThread = resultList.get(k).get();
-				if(retThread.booleanValue())
-					log.debug(option + " " + serverType + " on " + serverList.get(k) + " successful!");
-				else
-					log.debug(option + " " + serverType + " on " + serverList.get(k) + " failed!");
+				if (retThread.booleanValue()) {
+					if (clean.equals(option))
+						log.debug("clean log and data on " + serverList.get(k)
+								+ " successful!");
+					else
+						log.debug(option + " " + serverType + " on "
+								+ serverList.get(k) + " successful!");
+				} else {
+					if (clean.equals(option))
+						log.debug("clean log and data on " + serverList.get(k)
+								+ " failed!");
+					else
+						log.debug(option + " " + serverType + " on "
+								+ serverList.get(k) + " failed!");
+				}
 				ret = retThread.booleanValue() && ret;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-				fail("exception occured while get result on " + serverList.get(k));
+				fail("exception occured while get result on "
+						+ serverList.get(k));
 			} catch (ExecutionException e) {
 				e.printStackTrace();
-				fail("exception occured while get result on " + serverList.get(k));
+				fail("exception occured while get result on "
+						+ serverList.get(k));
 			}
 		}
 		String listName = "";
-		for(String ip : serverList) {
+		for (String ip : serverList) {
 			listName = listName + ip + " ";
 		}
-		if(!ret)
+		if (!ret)
 			fail("batch " + option + " " + serverType + " failed! " + listName);
 		else
-			log.info("batch " + option + " " + serverType + " successful! " + listName);
+			log.info("batch " + option + " " + serverType + " successful! "
+					+ listName);
 	}
 }
 
@@ -873,11 +908,12 @@ class ControlServer extends BaseTestCase implements Callable<Boolean> {
 	private String serverName;
 	private String option;
 	private int type;
-	
-	public ControlServer(String machine, String serverType, String option, int type) {
+
+	public ControlServer(String machine, String serverType, String option,
+			int type) {
 		this.machine = machine;
 		this.serverType = serverType;
-		this.serverName = this.serverType.equals("cs") ? FailOverBaseCase.csname
+		this.serverName = FailOverBaseCase.cs.equals(this.serverType) ? FailOverBaseCase.csname
 				: FailOverBaseCase.dsname;
 		this.option = option;
 		this.type = type;
@@ -885,22 +921,33 @@ class ControlServer extends BaseTestCase implements Callable<Boolean> {
 
 	public Boolean call() throws Exception {
 		boolean ret = false;
-		String cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + option
-				+ "_" + serverType;
-		if (option.equals(FailOverBaseCase.stop) && type == 1)
+		String cmd = "";
+		if (FailOverBaseCase.clean.equals(option))
+			cmd = "cd " + FailOverBaseCase.tair_bin + " e&& ./tair.sh clean";
+		else if (FailOverBaseCase.stop.equals(option) && type == 1)
 			cmd = "killall -9 " + serverName + " && sleep 1";
-		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep " + serverName + "|wc -l";
+		else
+			cmd = "cd " + FailOverBaseCase.tair_bin + " && ./tair.sh " + option
+					+ "_" + serverType;
 		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0) {
+			log.error(machine + " result.rc not 0! " + result.rc);
+			return ret;
+		} else if (FailOverBaseCase.clean.equals(option)) {
+			ret = true;
+			return ret;
+		}
+		cmd = "ps -ef|grep " + serverName + "|wc -l";
+		result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
 			log.error(machine + " result.rc not 0! " + result.rc);
 			ret = false;
 		} else {
 			String stdout = getShellOutput(result);
-			if (option.equals(FailOverBaseCase.start)
+			if (FailOverBaseCase.start.equals(option)
 					&& (new Integer(stdout.trim())).intValue() != 3) {
 				ret = false;
-			} else if (option.equals(FailOverBaseCase.stop)
+			} else if (FailOverBaseCase.stop.equals(option)
 					&& (new Integer(stdout.trim())).intValue() != 2) {
 				ret = false;
 			} else {
