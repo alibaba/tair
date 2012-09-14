@@ -183,27 +183,39 @@ public class FailOverBaseCase extends BaseTestCase {
 	protected boolean control_cs(String machine, String opID, int type) {
 		log.debug("control cs:" + machine + " " + opID + " type=" + type);
 		boolean ret = false;
-		String cmd = "cd " + tair_bin + " && ./tair.sh " + opID
-				+ "_cs && sleep 5";
+		String cmd = "cd " + tair_bin + " && ./tair.sh " + opID + "_cs";
+		int expectNum = 0;
+		if (opID.equals(stop)) {
+			expectNum = 2;
+		} else if (opID.equals(start)) {
+			expectNum = 3;
+		}
 		if (opID.equals(stop) && type == 1)
 			cmd = "killall -9 " + csname;
-		executeShell(stafhandle, machine, cmd);
-		cmd = "ps -ef|grep " + csname + "|wc -l";
 		STAFResult result = executeShell(stafhandle, machine, cmd);
 		if (result.rc != 0) {
-			log.error("result.rc != 0! " + result.rc);
+			log.error(machine + " result.rc != 0! " + result.rc);
 			ret = false;
-		} else {
-			String stdout = getShellOutput(result);
-			log.debug("------------cs ps result--------------" + stdout);
-			if (opID.equals(start)
-					&& (new Integer(stdout.trim())).intValue() != 3) {
+			return ret;
+		}
+
+		int retryTime = 0;
+		cmd = "ps -ef|grep " + csname + "|wc -l";
+		while (retryTime++ < 30) {
+			result = executeShell(stafhandle, machine, cmd);
+			if (result.rc != 0) {
+				log.error(machine + " result.rc not 0! " + result.rc);
 				ret = false;
-			} else if (opID.equals(stop)
-					&& (new Integer(stdout.trim())).intValue() != 2) {
-				ret = false;
+				break;
 			} else {
-				ret = true;
+				String stdout = getShellOutput(result);
+				log.debug("------------cs ps result--------------" + stdout);
+				if ((new Integer(stdout.trim())).intValue() != expectNum) {
+					ret = false;
+					waitto(1);
+				} else {
+					ret = true;
+				}
 			}
 		}
 		return ret;
@@ -229,14 +241,20 @@ public class FailOverBaseCase extends BaseTestCase {
 		if (opID.equals(stop) && type == 1)
 			cmd = "killall -9 " + dsname;
 		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0) {
+			log.error(machine + " result.rc != 0! " + result.rc);
+			ret = false;
+			return ret;
+		}
 
-		int waittime = 0;
+		int retryTime = 0;
 		cmd = "ps -ef|grep " + dsname + "|wc -l";
-		while (waittime < 110) {
+		while (retryTime++ < 30) {
 			result = executeShell(stafhandle, machine, cmd);
 			if (result.rc != 0) {
-				log.error("result.rc not 0! " + result.rc);
+				log.error(machine + " result.rc not 0! " + result.rc);
 				ret = false;
+				break;
 			} else {
 				String stdout = getShellOutput(result);
 				if ((new Integer(stdout.trim())).intValue() == expectNum) {
@@ -246,7 +264,6 @@ public class FailOverBaseCase extends BaseTestCase {
 				} else {
 					ret = false;
 					waitto(1);
-					waittime++;
 				}
 			}
 		}
@@ -463,7 +480,7 @@ public class FailOverBaseCase extends BaseTestCase {
 			String stdout = getShellOutput(result);
 			try {
 				ret = (new Integer(stdout.trim())).intValue();
-				log.debug("count=" + ret);
+				log.debug("time=" + ret);
 			} catch (Exception e) {
 				log.error("get verify exception: " + stdout);
 				ret = -1;
@@ -813,25 +830,25 @@ public class FailOverBaseCase extends BaseTestCase {
 		batchControlServer(dslist, clean);
 	}
 
-	protected void controlCluster(List<String> cs_group, List<String> ds_group,
+	protected void controlCluster(List<String> cslist, List<String> dslist,
 			String opID, int type) {
 		if (start.equals(opID)) {
-			batchControlServer(dsList, ds, start, type);
+			batchControlServer(dslist, ds, start, type);
 			waitto(3);
-			batchControlServer(csList, cs, start, type);
+			batchControlServer(cslist, cs, start, type);
 		} else if (stop.equals(opID)) {
-			batchControlServer(csList, cs, stop, type);
-			batchControlServer(dsList, ds, stop, type);
+			batchControlServer(cslist, cs, stop, type);
+			batchControlServer(dslist, ds, stop, type);
 		}
 	}
 
-	protected void batchControlServer(List<String> serverList, String option) {
-		batchControlServer(serverList, ds, option);
+	protected void batchControlServer(List<String> serverlist, String option) {
+		batchControlServer(serverlist, ds, option);
 	}
 
-	protected void batchControlServer(List<String> serverList,
+	protected void batchControlServer(List<String> serverlist,
 			String serverType, String option) {
-		batchControlServer(serverList, serverType, option, 0);
+		batchControlServer(serverlist, serverType, option, 0);
 	}
 
 	protected void batchControlServer(List<String> serverList,
@@ -889,15 +906,10 @@ public class FailOverBaseCase extends BaseTestCase {
 						+ serverList.get(k));
 			}
 		}
-		String listName = "";
-		for (String ip : serverList) {
-			listName = listName + ip + " ";
-		}
 		if (!ret)
-			fail("batch " + option + " " + serverType + " failed! " + listName);
+			fail("batch " + option + " " + serverType + " failed!");
 		else
-			log.info("batch " + option + " " + serverType + " successful! "
-					+ listName);
+			log.info("batch " + option + " " + serverType + " successful!");
 	}
 }
 
@@ -937,21 +949,29 @@ class ControlServer extends BaseTestCase implements Callable<Boolean> {
 			ret = true;
 			return ret;
 		}
+
+		int retryTime = 0;
 		cmd = "ps -ef|grep " + serverName + "|wc -l";
-		result = executeShell(stafhandle, machine, cmd);
-		if (result.rc != 0) {
-			log.error(machine + " result.rc not 0! " + result.rc);
-			ret = false;
-		} else {
-			String stdout = getShellOutput(result);
-			if (FailOverBaseCase.start.equals(option)
-					&& (new Integer(stdout.trim())).intValue() != 3) {
+		while (retryTime++ < 30) {
+			result = executeShell(stafhandle, machine, cmd);
+			if (result.rc != 0) {
+				log.error(machine + " result.rc not 0! " + result.rc);
 				ret = false;
-			} else if (FailOverBaseCase.stop.equals(option)
-					&& (new Integer(stdout.trim())).intValue() != 2) {
-				ret = false;
+				break;
 			} else {
-				ret = true;
+				String stdout = getShellOutput(result);
+				if (FailOverBaseCase.start.equals(option)
+						&& (new Integer(stdout.trim())).intValue() != 3) {
+					ret = false;
+					waitto(1);
+				} else if (FailOverBaseCase.stop.equals(option)
+						&& (new Integer(stdout.trim())).intValue() != 2) {
+					ret = false;
+					waitto(1);
+				} else {
+					ret = true;
+					break;
+				}
 			}
 		}
 		return ret;
