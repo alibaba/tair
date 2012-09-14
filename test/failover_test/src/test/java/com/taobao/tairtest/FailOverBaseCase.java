@@ -209,12 +209,13 @@ public class FailOverBaseCase extends BaseTestCase {
 				break;
 			} else {
 				String stdout = getShellOutput(result);
-				log.debug("------------cs ps result--------------" + stdout);
-				if ((new Integer(stdout.trim())).intValue() != expectNum) {
+				if ((new Integer(stdout.trim())).intValue() == expectNum) {
+					log.debug("------------cs ps result--------------" + stdout);
+					ret = true;
+					break;
+				} else {
 					ret = false;
 					waitto(1);
-				} else {
-					ret = true;
 				}
 			}
 		}
