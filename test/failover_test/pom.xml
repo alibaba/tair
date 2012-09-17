@@ -28,7 +28,8 @@
 				<version>2.9</version>
 				<configuration>
 					<includes>
-						<include>com/taobao/tairtest/Ashu.java</include>
+						<include>com/taobao/tairtest/F*Test1.java</include>
+						<include>com/taobao/tairtest/F*Test2.java</include>
 					</includes>
 				</configuration>
 			</plugin>
