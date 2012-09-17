@@ -1909,7 +1909,7 @@ public class FailOverConfigServerTest2 extends FailOverBaseCase {
 			fail("stop master cs failure!");
 		log.info("close master cs successful!");
 
-		waitto(ds_down_time);
+		waitto(15);
 		int migCount = check_keyword(csList.get(1), finish_migrate, tair_bin
 				+ "logs/config.log");
 		// start ds
