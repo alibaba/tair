@@ -73,6 +73,11 @@ class DB {
   // Note: consider setting options.sync = true.
   virtual Status Write(const WriteOptions& options, WriteBatch* updates) = 0;
 
+  // Apply the specified updates to the database sharded by bucket.
+  // Returns OK on success, non-OK on failure.
+  // Note: consider setting options.sync = true.
+  virtual Status Write(const WriteOptions& options, WriteBatch* updates, int bucket) = 0;
+
   // If the database contains an entry for "key" store the
   // corresponding value in *value and return OK.
   //
@@ -146,6 +151,12 @@ class DB {
 
   // Compact a range of keys only in one level and files whoes filenumer is less than limit_filenumber
   virtual Status CompactRangeSelfLevel(uint64_t limit_filenumber, const Slice* begin, const Slice* end) = 0;
+
+  // force Compact memtable
+  virtual Status ForceCompactMemTable() = 0;
+
+  // reset db name
+  virtual void ResetDbName(const std::string& dbname) = 0;
 
  private:
   // No copying allowed

@@ -24,6 +24,11 @@ static std::string MakeFileName(const std::string& name, uint64_t number,
   return name + buf;
 }
 
+std::string BucketLogFileName(const std::string& name, uint64_t number) {
+  assert(number > 0);
+  return MakeFileName(name, number, "blog");
+}
+
 std::string LogFileName(const std::string& name, uint64_t number) {
   assert(number > 0);
   return MakeFileName(name, number, "log");

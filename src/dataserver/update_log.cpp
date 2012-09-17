@@ -466,7 +466,8 @@ namespace tair {
    bool log_file::flush()
    {
       write_control_page();
-      return file->sync();
+      return true;
+      // return file->sync();
    }
 
    bool log_file::full() {

@@ -72,12 +72,15 @@
         case TAIR_REQ_MUPDATE_PACKET:
           packet = new tair::request_mupdate();
           break;
-         case TAIR_REQ_OP_CMD_PACKET:
-           packet = new tair::request_op_cmd();
-           break;
-         case TAIR_RESP_OP_CMD_PACKET:
-           packet = new response_op_cmd();
-           break;
+        case TAIR_REQ_MPUT_PACKET:
+          packet = new tair::request_mput();
+          break;
+        case TAIR_REQ_OP_CMD_PACKET:
+          packet = new tair::request_op_cmd();
+          break;
+        case TAIR_RESP_OP_CMD_PACKET:
+          packet = new response_op_cmd();
+          break;
         case TAIR_REQ_GET_PACKET:
           packet = new request_get();
           break;

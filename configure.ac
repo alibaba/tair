@@ -87,17 +87,26 @@ AM_CONDITIONAL([WITH_KDB],[test x$with_kdb = xyes])
 
 AC_ARG_WITH([ldb],
 		AS_HELP_STRING([--with-ldb],
-			[with ldb (default is NO)]), [
+			[with ldb (default is YES)]), [
 		if test "$withval" = "yes"; then
 		with_ldb=yes
- 		# configure leveldb && snappy
-                m4_include([src/storage/ldb/leveldb/ax_port_leveldb.m4])
-		AC_CONFIG_HEADERS([src/storage/ldb/leveldb/snappy/config.h])
-		AC_CONFIG_FILES([src/storage/ldb/leveldb/snappy/snappy-stubs-public.h])
 		fi
 		],
-		[ with_ldb=no ]
+		[
+		  with_ldb=yes
+		]
 	   )
+
+AS_IF([test x$with_ldb = xyes],
+    [
+    AC_MSG_NOTICE([ with ldb ])
+    # configure leveldb && snappy
+    m4_include([src/storage/ldb/leveldb/ax_port_leveldb.m4])
+    AC_CONFIG_HEADERS([src/storage/ldb/leveldb/snappy/config.h])
+    AC_CONFIG_FILES([src/storage/ldb/leveldb/snappy/snappy-stubs-public.h])
+    ],
+  [AC_MSG_NOTICE([ without ldb ])])
+
 AM_CONDITIONAL([WITH_LDB],[test x$with_ldb = xyes])
 AX_BOOST([1.30.0],,exit 1)
 AC_CHECK_LIB(readline, readline,

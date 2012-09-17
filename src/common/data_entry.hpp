@@ -519,6 +519,8 @@ namespace tair
          return *a == *b;
        }
      };
+
+
      //! Be Cautious about the return value of set::insert & hash_map::insert,
      //! which return pair<iterator, bool> type.
      //! When inserting one existing data_entry to a set or hash_map below,
@@ -528,6 +530,119 @@ namespace tair
      typedef __gnu_cxx::hash_map<data_entry*, data_entry*,
              data_entry_hash, data_entry_equal_to> tair_keyvalue_map;
      typedef __gnu_cxx::hash_map<data_entry*, int, data_entry_hash, data_entry_equal_to> key_code_map_t;
+
+     class value_entry {
+     public:
+       value_entry() : version(0), expire(0)
+         {
+         }
+
+       value_entry(const value_entry &entry)
+         {
+           d_entry = entry.d_entry;
+           version = entry.version;
+           expire = entry.expire;
+         }
+
+       value_entry& clone(const value_entry &entry)
+         {
+           assert(this != &entry);
+           d_entry = entry.d_entry;
+           version = entry.version;
+           expire = entry.expire;
+
+           return *this;
+         }
+
+       void set_d_entry(const data_entry& in_d_entry)
+         {
+           d_entry = in_d_entry;
+         }
+
+       data_entry& get_d_entry()
+         {
+           return d_entry;
+         }
+
+       void set_expire(int32_t expire_time)
+         {
+           expire = expire_time;
+         }
+
+       int32_t get_expire() const
+         {
+           return expire;
+         }
+
+       void set_version(uint16_t kv_version)
+         {
+           version = kv_version;
+         }
+
+       uint16_t get_version() const
+         {
+           return version;
+         }
+
+       void encode(tbnet::DataBuffer *output) const
+         {
+           d_entry.encode(output);
+           output->writeInt16(version);
+           output->writeInt32(expire);
+         }
+
+       void decode(tbnet::DataBuffer *input)
+         {
+           d_entry.decode(input);
+           version = input->readInt16();
+           expire = input->readInt32();
+         }
+
+       int get_size() const
+         {
+           return d_entry.get_size()+ 2 + 4;
+         }
+
+     private:
+       data_entry d_entry;
+       uint16_t version;
+       int32_t expire;
+     };
+
+     class mput_record {
+     public:
+       mput_record()
+         {
+           key = NULL;
+           value = NULL;
+         }
+
+       mput_record(mput_record &rec)
+         {
+           key = new data_entry(*(rec.key));
+           value = new value_entry(*(rec.value));
+         }
+
+       ~mput_record()
+         {
+           if (key != NULL ) {
+             delete key;
+             key = NULL;
+           }
+           if (value != NULL) {
+             delete value;
+             value = NULL;
+           }
+         }
+
+     public:
+       data_entry* key;
+       value_entry* value;
+     };
+
+     typedef std::vector<mput_record*> mput_record_vec;
+
+     typedef __gnu_cxx::hash_map<data_entry*, value_entry*, data_entry_hash> tair_client_kv_map;
 
      void defree(tair_dataentry_vector &vector);
      void defree(tair_dataentry_set &set);

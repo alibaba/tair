@@ -39,6 +39,7 @@ namespace tair {
 
       int put_count() { return atomic_read(&put_count_value); }
       void inc_put_count() { atomic_inc(&put_count_value); }
+      void add_put_count(int count) { atomic_add(count, &put_count_value); }
       void set_put_count(int new_value) { atomic_set(&put_count_value, new_value); }
 
       int evict_count() { return atomic_read(&evict_count_value); }

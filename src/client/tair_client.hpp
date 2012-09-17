@@ -87,8 +87,12 @@ namespace tair {
       void do_cmd_prefix_hide(VSTRING &params);
       void do_cmd_prefix_hides(VSTRING &params);
 
+      void do_cmd_setstatus(VSTRING &params);
+      void do_cmd_getstatus(VSTRING &params);
       void do_cmd_gettmpdownsvr(VSTRING &params);
       void do_cmd_resetserver(VSTRING &params);
+      void do_cmd_flushmmt(VSTRING &params);
+      void do_cmd_resetdb(VSTRING &params);
       void do_cmd_set_migrate_wait_ms(VSTRING &param);
       void do_cmd_stat_db(VSTRING &param);
       void do_cmd_release_mem(VSTRING &param);

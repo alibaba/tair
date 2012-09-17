@@ -17,6 +17,7 @@ Options::Options()
       env(Env::Default()),
       info_log(NULL),
       write_buffer_size(4<<20),
+      max_mem_usage_for_memtable(1<<30),
       max_open_files(1000),
       block_cache(NULL),
       block_cache_size(8<<20),

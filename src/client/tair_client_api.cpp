@@ -13,10 +13,15 @@
  *
  */
 #include "tair_client_api.hpp"
+#include "i_tair_client_impl.hpp"
 #include "tair_client_api_impl.hpp"
-#include <vector>
-#include <iterator>
+#include "cluster_handler_manager.hpp"
+#include "tair_multi_cluster_client_impl.hpp"
+
 namespace tair {
+
+  static i_tair_client_impl* new_tair_client(const char *master_addr,const char *slave_addr,const char *group_name);
+  static TairClusterType get_cluster_type_by_config(tbsys::STR_STR_MAP& config_map);
 
   /*-----------------------------------------------------------------------------
    *  tair_client_api
@@ -24,13 +29,15 @@ namespace tair {
 
   tair_client_api::tair_client_api()
   {
-    impl = new tair_client_impl();
     memset(cache_impl, 0, sizeof(cache_impl));
   }
 
   tair_client_api::~tair_client_api()
   {
-    delete impl;
+    if (impl != NULL)
+    {
+      delete impl;
+    }
     for (int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
       if (cache_impl[i] != NULL)
         delete cache_impl[i];
@@ -47,17 +54,31 @@ namespace tair {
 
   bool tair_client_api::startup(const char *master_addr,const char *slave_addr,const char *group_name)
   {
-    return impl->startup(master_addr,slave_addr,group_name);
+    bool ret = false;
+    impl = new_tair_client(master_addr, slave_addr, group_name);
+    if (NULL == impl)
+    {
+      log_error("init tair client fail.");
+    }
+    else
+    {
+      impl->set_timeout(timeout_ms_);
+      ret = impl->startup(master_addr,slave_addr,group_name);
+    }
+    return ret;
   }
 
   bool tair_client_api::directup(const char *server_addr)
   {
-    return impl->directup(server_addr);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->directup(server_addr);
   }
 
   void tair_client_api::close()
   {
-    impl->close();
+    if (impl != NULL)
+    {
+      impl->close();
+    }
   }
 
   int tair_client_api::put(int area,
@@ -67,7 +88,7 @@ namespace tair {
       int version,
       bool fill_cache)
   {
-      int ret = impl->put(area,key,data,expire,version, fill_cache);
+    int ret = impl == NULL ? TAIR_RETURN_NOT_INIT : impl->put(area,key,data,expire,version, fill_cache);
     if (TAIR_RETURN_SUCCESS == ret) {
       cache_type *cache = cache_impl[area];
       if (cache != NULL) {
@@ -97,7 +118,7 @@ namespace tair {
         data = NULL;
       }
     }
-    int ret = impl->get(area,key,data);
+    int ret = impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get(area,key,data);
     if (cache != NULL) {
       // update cache
       if (TAIR_RETURN_SUCCESS == ret) {
@@ -138,7 +159,7 @@ namespace tair {
         return TAIR_RETURN_SUCCESS;
 
       tair_keyvalue_map temp_data;
-      int ret = impl->mget(area, not_hit_keys, temp_data);
+      int ret = impl == NULL ? TAIR_RETURN_NOT_INIT : impl->mget(area, not_hit_keys, temp_data);
       // update local cache
       tair_keyvalue_map::iterator iter = temp_data.begin();
       for(; iter != temp_data.end(); ++iter) {
@@ -147,13 +168,13 @@ namespace tair {
       data.insert(temp_data.begin(), temp_data.end());
       return ret;
     }
-    return impl->mget(area,keys,data);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->mget(area,keys,data);
   }
 
   int tair_client_api::remove(int area,
       const data_entry &key)
   {
-    int ret = impl->remove(area,key);
+    int ret = impl == NULL ? TAIR_RETURN_NOT_INIT : impl->remove(area,key);
     if (TAIR_RETURN_SUCCESS == ret ||
         TAIR_RETURN_DATA_NOT_EXIST == ret) {
       cache_type *cache = cache_impl[area];
@@ -166,74 +187,74 @@ namespace tair {
 
    int tair_client_api::invalidate( int area, const data_entry &key, const char *groupname)
    {
-       return impl->invalidate(area, key, groupname);
+       return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->invalidate(area, key, groupname);
    }
 
    int tair_client_api::invalidate(int area, const data_entry &key)
    {
-       return impl->invalidate(area, key);
+       return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->invalidate(area, key);
    }
 
    int tair_client_api::hide(int area, const data_entry &key)
    {
-     return impl->hide(area, key);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hide(area, key);
    }
 
    int tair_client_api::get_hidden(int area, const data_entry &key, data_entry *&value)
    {
-     return impl->get_hidden(area, key, value);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_hidden(area, key, value);
    }
 
    int tair_client_api::prefix_get(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
    {
-     return impl->prefix_get(area, pkey, skey, value);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_get(area, pkey, skey, value);
    }
 
    int tair_client_api::prefix_put(int area, const data_entry &pkey, const data_entry &skey,
        const data_entry &value, int expire, int version)
    {
-     return impl->prefix_put(area, pkey, skey, value, expire, version);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_put(area, pkey, skey, value, expire, version);
    }
 
    int tair_client_api::prefix_hide(int area, const data_entry &pkey, const data_entry &skey)
    {
-     return impl->prefix_hide(area, pkey, skey);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hide(area, pkey, skey);
    }
 
    int tair_client_api::prefix_hides(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
    {
-     return impl->prefix_hides(area, pkey, skey_set, key_code_map);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hides(area, pkey, skey_set, key_code_map);
    }
 
    int tair_client_api::prefix_get_hidden(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
    {
-     return impl->prefix_get_hidden(area, pkey, skey, value);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_get_hidden(area, pkey, skey, value);
    }
 
    int tair_client_api::prefix_remove(int area, const data_entry &pkey, const data_entry &skey)
    {
-     return impl->prefix_remove(area, pkey, skey);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_remove(area, pkey, skey);
    }
 
    int tair_client_api::prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
    {
-     return impl->prefix_removes(area, pkey, skey_set, key_code_map);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_removes(area, pkey, skey_set, key_code_map);
    }
 
    int tair_client_api::get_range(int area, const data_entry &pkey, const data_entry &start_key, const data_entry &end_key, 
                         int offset, int limit, vector<data_entry *> &values, short type)
    {
-     return impl->get_range(area, pkey, start_key, end_key, offset, limit, values, type);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_range(area, pkey, start_key, end_key, offset, limit, values, type);
    }
 
    int tair_client_api::removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
    {
-     return impl->removes(area, mkey_set, key_code_map);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->removes(area, mkey_set, key_code_map);
    }
 
    int tair_client_api::hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
    {
-     return impl->hides(area, mkey_set, key_code_map);
+     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hides(area, mkey_set, key_code_map);
    }
 
   void tair_client_api::invalid_local_cache(int area, const vector<data_entry *> &keys)
@@ -252,7 +273,7 @@ namespace tair {
   int tair_client_api::mdelete(int area,
       const vector<data_entry *> &keys)
   {
-    int ret = impl->mdelete(area,keys);
+    int ret = impl == NULL ? TAIR_RETURN_NOT_INIT : impl->mdelete(area,keys);
     if (TAIR_RETURN_SUCCESS == ret ||
         TAIR_RETURN_PARTIAL_SUCCESS == ret) {
       invalid_local_cache(area, keys);
@@ -278,7 +299,7 @@ namespace tair {
       return TAIR_RETURN_INVALID_ARGUMENT;
     }
 
-    return impl->add_count(area,key,count,ret_count,init_value,expire);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->add_count(area,key,count,ret_count,init_value,expire);
 
   }
   int tair_client_api::decr(int area,
@@ -292,7 +313,7 @@ namespace tair {
       return TAIR_RETURN_INVALID_ARGUMENT;
     }
 
-    return impl->add_count(area,key,-count,ret_count,init_value,expire);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->add_count(area,key,-count,ret_count,init_value,expire);
 
   }
 
@@ -305,30 +326,30 @@ namespace tair {
       int init_value /*= 0*/)
   {
 
-    return impl->add_count(area,key,count,ret_count,init_value);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->add_count(area,key,count,ret_count,init_value);
 
   }
 
   int tair_client_api::set_count(int area, const data_entry& key, int count, int expire, int version)
   {
-    return impl->set_count(area, key, count, expire, version);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->set_count(area, key, count, expire, version);
   }
 
   int tair_client_api::lock(int area, const data_entry& key)
   {
-    return impl->lock(area, key, LOCK_VALUE);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->lock(area, key, LOCK_VALUE);
   }
 
   int tair_client_api::unlock(int area, const data_entry& key)
   {
-    return impl->lock(area, key, UNLOCK_VALUE);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->lock(area, key, UNLOCK_VALUE);
   }
 
   int tair_client_api::expire(int area,
       const data_entry& key,
       int expire)
   {
-    return impl->expire(area, key, expire);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->expire(area, key, expire);
   }
   //int tair_client_api::removeArea(int area)
   //{
@@ -341,6 +362,7 @@ namespace tair {
   //}
 
 
+#if 0
 #undef ADD_ITEMS
 #undef GET_ITEMS_FUNC
 
@@ -403,15 +425,33 @@ namespace tair {
   {
     return impl->get_items_count(area,key);
   }
+#endif
+
+  void tair_client_api::set_log_level(const char* level)
+  {
+    TBSYS_LOGGER.setLogLevel(level);
+  }
+
+  void tair_client_api::set_log_file(const char* log_file)
+  {
+    TBSYS_LOGGER.setFileName(log_file);
+  }
 
   void tair_client_api::set_timeout(int timeout)
   {
-    impl->set_timeout(timeout);
+    timeout_ms_ = timeout;
+    if (impl != NULL)
+    {
+      impl->set_timeout(timeout);
+    }
   }
 
   void tair_client_api::set_randread(bool rand_flag)
   {
-    impl->set_randread(rand_flag);
+    if (impl != NULL)
+    {    
+      impl->set_randread(rand_flag);
+    }
   }
 
 #ifdef WITH_COMPRESS
@@ -430,27 +470,65 @@ namespace tair {
 
   const char *tair_client_api::get_error_msg(int ret)
   {
-    return impl->get_error_msg(ret);
+    return impl == NULL ? NULL : impl->get_error_msg(ret);
   }
 
   uint32_t tair_client_api::get_bucket_count() const
   {
-    return impl->get_bucket_count();
+    return impl == NULL ? 0 : impl->get_bucket_count();
   }
   uint32_t tair_client_api::get_copy_count() const
   {
-    return impl->get_copy_count();
+    return impl == NULL ? 0 : impl->get_copy_count();
   }
   void tair_client_api::get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const
   {
-    return impl->get_server_with_key(key,servers);
+    if (impl != NULL)
+    {
+      impl->get_server_with_key(key,servers);
+    }
   }
 
+  bool tair_client_api::get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_group_name_list(id1, id2, groupnames);
+  }
+  void tair_client_api::query_from_configserver(uint32_t query_type, const std::string &groupname, std::map<std::string, std::string> &out, uint64_t serverId)
+  {
+    if (impl != NULL)
+    {
+      impl->query_from_configserver(query_type, groupname, out, serverId);
+    }
+  }
+  uint32_t tair_client_api::get_config_version() const
+  {
+    return impl == NULL ? 0 : impl->get_config_version();
+  }
+  int64_t tair_client_api::ping(uint64_t server_id)
+  {
+      return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->ping(server_id);
+  }
+
+  int tair_client_api::get_group_status(vector<string> &group, vector<string> &status)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->op_cmd_to_cs(TAIR_SERVER_CMD_GET_GROUP_STATUS, &group, &status);
+  }
   int tair_client_api::get_tmp_down_server(vector<string> &group, vector<string> &down_servers)
   {
-    return impl->op_cmd_to_cs(TAIR_SERVER_CMD_GET_TMP_DOWN_SERVER, &group, &down_servers);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->op_cmd_to_cs(TAIR_SERVER_CMD_GET_TMP_DOWN_SERVER, &group, &down_servers);
   }
-
+  int tair_client_api::set_group_status(const char *group, const char *status)
+  {
+    int ret = TAIR_RETURN_FAILED;
+    if (impl != NULL && group != NULL && status != NULL)
+    {
+      std::vector<std::string> params;
+      params.push_back(group);
+      params.push_back(status);
+      ret = impl->op_cmd_to_cs(TAIR_SERVER_CMD_SET_GROUP_STATUS, &params, NULL);
+    }
+    return ret;
+  }
   int tair_client_api::reset_server(const char* group, std::vector<std::string>* dss)
   {
     int ret = TAIR_RETURN_FAILED;
@@ -469,21 +547,75 @@ namespace tair {
     }
     return ret;
   }
+  int tair_client_api::flush_mmt(const char* ds_addr)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->op_cmd_to_ds(TAIR_SERVER_CMD_FLUSH_MMT, NULL, ds_addr);
+  }
+  int tair_client_api::reset_db(const char* ds_addr)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->op_cmd_to_ds(TAIR_SERVER_CMD_RESET_DB, NULL, ds_addr);
+  }
 
-  bool tair_client_api::get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const
+  i_tair_client_impl* new_tair_client(const char *master_addr,
+                                      const char *slave_addr,
+                                      const char *group_name)
   {
-    return impl->get_group_name_list(id1, id2, groupnames);
+    i_tair_client_impl* ret_client_impl = NULL;
+
+    tair_client_impl client;
+    client.set_force_service(true);
+    if (!client.startup(master_addr, slave_addr, group_name))
+    {
+      log_error("startup to get cluster type fail.");
+      return NULL;
+    }
+    tbsys::STR_STR_MAP config_map;
+    uint32_t version = 0;
+    int ret = client.retrieve_server_config(false, config_map, version);
+    if (ret != TAIR_RETURN_SUCCESS)
+    {
+      log_error("retrieve_server_config fail, ret: %d", ret);
+      return NULL;
+    }
+
+    TairClusterType type = get_cluster_type_by_config(config_map);
+    switch (type)
+    {
+    case TAIR_CLUSTER_TYPE_SINGLE_CLUSTER:
+    {
+      log_warn("Tair cluster is SINGLE CLUSTER TYPE, init tair_client_impl");
+      ret_client_impl = new tair_client_impl();
+      break;
+    }
+    case TAIR_CLUSTER_TYPE_MULTI_CLUSTER:
+    {
+      log_warn("Tair cluster is MULTI CLUSTER TYPE, init tair_multi_cluster_client_impl");
+      ret_client_impl = new tair_multi_cluster_client_impl();
+      break;
+    }
+    default :
+    {
+      log_error("unsupported cluster type, can NOT init tair client. type: %d", type);
+      break;
+    }
+    }
+    return ret_client_impl;
   }
-  void tair_client_api::query_from_configserver(uint32_t query_type, const std::string &groupname, std::map<std::string, std::string> &out, uint64_t serverId)
+
+  TairClusterType get_cluster_type_by_config(tbsys::STR_STR_MAP& config_map)
   {
-    impl->query_from_configserver(query_type, groupname, out, serverId);
+    // we consider cluster type by TAIR_MULTI_GROUPS now.
+    // Just consider SINGLE_CLUSTER and MULTI_CLUSTER now.
+    static const char* cluster_type_config = TAIR_MULTI_GROUPS;
+
+    if (config_map.find(cluster_type_config) != config_map.end())
+    {
+      return TAIR_CLUSTER_TYPE_MULTI_CLUSTER;
+    }
+    else
+    {
+      return TAIR_CLUSTER_TYPE_SINGLE_CLUSTER;
+    }
   }
-  uint32_t tair_client_api::get_config_version() const
-  {
-    return impl->get_config_version();
-  }
-  int64_t tair_client_api::ping(uint64_t server_id)
-  {
-      return impl->ping(server_id);
-  }
+
 } /* tair */

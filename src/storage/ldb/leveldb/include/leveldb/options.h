@@ -83,6 +83,10 @@ struct Options {
   // Default: 4MB
   size_t write_buffer_size;
 
+  // max memory usage for all memtable sharded by bucket number when batch_put(especially for FastDump).
+  // Defalut: 1G
+  int64_t max_mem_usage_for_memtable;
+
   // Number of open files that can be used by the DB.  You may need to
   // increase this if your database has a large working set (budget
   // one open file per 2MB of working set).

@@ -24,7 +24,7 @@
 
 namespace tair {
 
-  class tair_client_impl;
+  class i_tair_client_impl;
   using namespace std;
   using namespace tair::common;
 
@@ -103,6 +103,21 @@ namespace tair {
           int expire,
           int version,
           bool fill_cache = true);
+
+      /**
+       ** @brief batch put data to tair
+       **
+       ** @param area     namespace
+       ** @param kvs      key && value
+       ** @param fail_request fail_keys
+       **
+       ** @return 0 -- success, otherwise fail,you can use get_error_msg(ret) to get more information.
+       **/
+
+      int mput(int area,
+          const tair_client_kv_map& kvs,
+          int& fail_request,
+          bool compress = true);
 
       /**
        * @brief get data from tair cluster
@@ -368,6 +383,7 @@ namespace tair {
           const data_entry& key,
           int expire);
 
+#if 0
       /**
        *
        * items :  just support four types: int32_t int64_t double string
@@ -455,6 +471,22 @@ namespace tair {
        */
       int get_items_count(int area,const data_entry& key);
 
+#endif
+
+      /**
+       * @brief set log level
+       *
+       * @param 
+       */
+      void set_log_level(const char* level);
+
+      /**
+       * @brief set log file
+       *
+       * @param 
+       */
+      void set_log_file(const char* log_file);
+
       /**
        * @brief set timout of each method
        *
@@ -499,17 +531,6 @@ namespace tair {
        * @return  copy count
        */
       uint32_t get_copy_count() const;
-      /**
-       * @param group: group names of which you wanna know the tmp down server
-       * @param down_servers: return tmp down server, in the format of 'group_1: tmp_down_server=xx'
-       */
-      int get_tmp_down_server(vector<string> &group, vector<string> &down_servers);
-
-      /**
-       * @param group: group to reset
-       * @param dss  : if not NULL, then reset ds whose address is specified in `dss
-       */
-      int reset_server(const char* group, vector<string>* dss = NULL);
 
       const char *get_error_msg(int ret);
 
@@ -523,11 +544,47 @@ namespace tair {
 
       int64_t ping(uint64_t server_id);
 
+      // following cmd is useful for multi_cluster_client
+      /**
+       * @param group: group names of which you wanna know the status
+       * @param status: group statuses, in the format of 'group_1: group_status=on'
+       */
+      int get_group_status(vector<string>& group, vector<string>& status);
+
+      /**
+       * @param group: group names of which you wanna know the tmp down server
+       * @param down_servers: return tmp down server, in the format of 'group_1: tmp_down_server=xx'
+       */
+      int get_tmp_down_server(vector<string>& group, vector<string>& down_servers);
+
+      /**
+       * @param group: group name
+       * @param status: on/off
+       */
+      int set_group_status(const char* group, const char* status);
+
+      /**
+       * @param group: group to reset
+       * @param dss  : if not NULL, then reset ds whose address is specified in `dss
+       */
+      int reset_server(const char* group, vector<string>* dss = NULL);
+
+      /**
+       * @param ds_addr  : if not NULL, then only flush ds whose address is `ds_addr
+       */
+      int flush_mmt(const char* ds_addr = NULL);
+      /**
+       * @param group: group to reset db
+       * @param ds_addr  : if not NULL, then only reset ds whose address is `ds_addr
+       */
+      int reset_db(const char* ds_addr = NULL);
+
     private:
       void invalid_local_cache(int area, const std::vector<data_entry*> &key);
 
+      int32_t timeout_ms_;
+      i_tair_client_impl *impl;
       typedef data_entry_local_cache cache_type;
-      tair_client_impl *impl;
       cache_type *cache_impl[TAIR_MAX_AREA_COUNT];
   };
 }

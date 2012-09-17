@@ -63,8 +63,12 @@ namespace tair {
       cmd_map["flowlimit"] = &tair_client::do_cmd_set_flow_limit_bound;
       cmd_map["flowrate"] = &tair_client::do_cmd_get_flow_rate;
 
+      cmd_map["setstatus"] = &tair_client::do_cmd_setstatus;
+      cmd_map["getstatus"] = &tair_client::do_cmd_getstatus;
       cmd_map["gettmpdownsvr"] = &tair_client::do_cmd_gettmpdownsvr;
       cmd_map["resetserver"] = &tair_client::do_cmd_resetserver;
+      cmd_map["flushmmt"] = &tair_client::do_cmd_flushmmt;
+      cmd_map["resetdb"] = &tair_client::do_cmd_resetdb;
       cmd_map["set_migrate_wait"] = &tair_client::do_cmd_set_migrate_wait_ms;
       cmd_map["stat_db"] = &tair_client::do_cmd_stat_db;
       cmd_map["release_mem"] = &tair_client::do_cmd_release_mem;
@@ -217,6 +221,7 @@ namespace tair {
    {
       bool done = true;
       client_helper.set_timeout(5000);
+      client_helper.set_force_service(true);
       if (is_config_server) {
          done = client_helper.startup(server_addr, slave_server_addr, group_name);
       } else {
@@ -414,6 +419,42 @@ namespace tair {
                  "DESCRIPTION: dumpinfo.txt is a config file of dump,syntax:\n"
                  "area start_time end_time,eg:"
                  "10 2008-12-09 12:08:07 2008-12-10 12:10:00\n"
+            );
+      }
+
+      if (cmd == NULL || strcmp(cmd, "setstatus") == 0) {
+         fprintf(stderr,
+                 "------------------------------------------------\n"
+                 "SYNOPSIS   : setstatus group status\n"
+                 "DESCRIPTION: set group to on or off\n"
+                 "\tgroup: groupname to set, status: on/off\n"
+            );
+      }
+
+      if (cmd == NULL || strcmp(cmd, "getstatus") == 0) {
+         fprintf(stderr,
+                 "------------------------------------------------\n"
+                 "SYNOPSIS   : getstatus group1 group2...\n"
+                 "DESCRIPTION: get status of group(s)\n"
+                 "\tgroup[n]: groupnames of which to get status\n"
+            );
+      }
+
+      if (cmd == NULL || strcmp(cmd, "flushmmt") == 0) {
+         fprintf(stderr,
+                 "------------------------------------------------\n"
+                 "SYNOPSIS   : flushmmt [ds_addr]\n"
+                 "DESCRIPTION: flush memtable of all tairserver or specified `ds_addr. WARNING: use this cmd carefully\n"
+                 "\tds_addr: address of tairserver\n"
+            );
+      }
+
+      if (cmd == NULL || strcmp(cmd, "resetdb") == 0) {
+         fprintf(stderr,
+                 "------------------------------------------------\n"
+                 "SYNOPSIS   : resetdb [ds_addr]\n"
+                 "DESCRIPTION: reset db of all tairserver or specified `ds_addr. WARNING: use this cmd carefully\n"
+                 "\tds_addr: address of tairserver\n"
             );
       }
 
@@ -1311,6 +1352,37 @@ namespace tair {
      }
    }
 
+   void tair_client::do_cmd_setstatus(VSTRING &params) {
+     if (params.size() != 2) {
+       print_help("setstatus");
+       return ;
+     }
+     std::vector<std::string> cmd_params(params.begin(), params.end());
+     int ret = client_helper.op_cmd_to_cs(TAIR_SERVER_CMD_SET_GROUP_STATUS, &cmd_params, NULL);
+     if (ret == TAIR_RETURN_SUCCESS) {
+       fprintf(stderr, "successful\n");
+     } else {
+       fprintf(stderr, "failed with %d\n", ret);
+     }
+   }
+
+   void tair_client::do_cmd_getstatus(VSTRING &params) {
+     if (params.empty()) {
+       print_help("getstatus");
+       return ;
+     }
+     vector<string> status;
+     std::vector<std::string> cmd_params(params.begin(), params.end());
+     int ret = client_helper.op_cmd_to_cs(TAIR_SERVER_CMD_GET_GROUP_STATUS, &cmd_params, &status);
+     if (TAIR_RETURN_SUCCESS == ret) {
+       for (size_t i = 0; i < status.size(); ++i) {
+         fprintf(stderr, "\t%s\n", status[i].c_str());
+       }
+     } else {
+       fprintf(stderr, "failed with %d\n", ret);
+     }
+   }
+
    void tair_client::do_cmd_gettmpdownsvr(VSTRING &params) {
      if (params.empty()) {
        print_help("gettmpdownsvr");
@@ -1340,6 +1412,14 @@ namespace tair {
      } else {
        fprintf(stderr, "failed with %d\n", ret);
      }
+   }
+
+   void tair_client::do_cmd_flushmmt(VSTRING &param) {
+     do_cmd_op_ds_or_not(param, "flushmmt", TAIR_SERVER_CMD_FLUSH_MMT);
+   }
+
+   void tair_client::do_cmd_resetdb(VSTRING &param) {
+     do_cmd_op_ds_or_not(param, "resetdb", TAIR_SERVER_CMD_RESET_DB);
    }
 
    void tair_client::do_cmd_stat_db(VSTRING &param)

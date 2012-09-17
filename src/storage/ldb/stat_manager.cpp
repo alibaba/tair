@@ -24,7 +24,7 @@ namespace tair {
       bool stat_manager::start(int bucket_number, const char *file_dir)
       {
         // open file
-        snprintf(file_name, PATH_MAX, "%s/tair_db_%06d.stat", file_dir, bucket_number);
+        snprintf(file_name, TAIR_MAX_PATH_LEN, "%s/tair_db_%06d.stat", file_dir, bucket_number);
         fd =::open(file_name, O_RDWR | O_CREAT | O_LARGEFILE, 0600);
         if(fd < 0) {
           log_error("open file [%s] failed: %s", file_name, strerror(errno));

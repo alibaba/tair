@@ -49,6 +49,8 @@ namespace tair{
       virtual int duplicate_data(int32_t bucket_number, request_prefix_incdec *request, vector<uint64_t> &slaves, int version) {
         return TAIR_RETURN_SUCCESS;
       }
+      virtual int duplicate_batch_data(int bucket_number, const mput_record_vec* record_vec, const std::vector<uint64_t>& des_server_ids,base_packet *request,int version) { return TAIR_RETURN_SUCCESS;}
+
    };
 }
 #endif

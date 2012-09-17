@@ -268,6 +268,10 @@ namespace tair
             log_warn("get gc log file fail, ignore");
             count = -1;
           }
+          else if (0 == file_size)
+          {
+            count = 0;
+          }
           else if (file_size < GC_LOG_HEADER_SIZE)
           {
             log_info("gc log file is invalid, less than header size: %"PRI64_PREFIX"d", file_size);
@@ -350,7 +354,8 @@ namespace tair
         {
           if (empty())
           {
-            log_->destroy();
+            // not destroy
+            // log_->destroy();
           }
           else
           {

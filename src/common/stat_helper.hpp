@@ -43,6 +43,7 @@ namespace tair {
 
       void stat_get(int area, int rc);
       void stat_put(int area);
+      void stat_put(int area, int count);
       void stat_evict(int area);
       void stat_remove(int area);
 

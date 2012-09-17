@@ -51,6 +51,8 @@
 #include "flowrate.h"
 #include "op_cmd_packet.hpp"
 
+#include "i_tair_client_impl.hpp"
+
 namespace tair {
 
 
@@ -60,16 +62,16 @@ namespace tair {
   using namespace tair::common;
 
   const int UPDATE_SERVER_TABLE_INTERVAL = 50;
-  typedef void (*TAIRCALLBACKFUNC)(int retcode, void* parg);
 
   typedef map<uint64_t , request_get *> request_get_map;
   typedef map<uint64_t , request_remove *> request_remove_map;
+  typedef map<uint64_t, map<uint32_t, request_mput*> > request_put_map;
 
-  class tair_client_impl : public tbsys::Runnable, public tbnet::IPacketHandler {
+  class tair_client_impl : public i_tair_client_impl, public tbsys::Runnable, public tbnet::IPacketHandler {
     public:
       tair_client_impl();
 
-      ~tair_client_impl();
+      virtual ~tair_client_impl();
 
       bool startup(const char *master_addr,const char *slave_addr,const char *group_name);
       bool directup(const char *server_addr);
@@ -87,6 +89,8 @@ namespace tair {
           int version,
           bool fill_cache = true,
           TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
+
+      int mput(int area, const tair_client_kv_map& kvs, int& fail_request/*tair_dataentry_vector& fail_keys*/, bool compress = true);
 
       //the caller will release the memory
       int get(int area,
@@ -142,11 +146,9 @@ namespace tair {
           int expire_time = 0);
 
       int set_count(int area, const data_entry& key, int count,
-          int expire, int version,
-          TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
+                    int expire, int version);
 
-      int lock(int area, const data_entry& key, LockType type,
-          TAIRCALLBACKFUNC pfunc=NULL,void * arg=NULL);
+      int lock(int area, const data_entry& key, LockType type);
 
       int expire(int area,
           const data_entry& key,
@@ -201,9 +203,6 @@ namespace tair {
       template<typename Type>
         int find_elements_type(Type element);
 
-      static const std::map<int,string> m_errmsg;
-      static std::map<int,string> init_errmsg();
-      const char *get_error_msg(int ret);
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers);
       bool get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames);
       void get_servers(std::set<uint64_t> &servers);
@@ -224,11 +223,16 @@ namespace tair {
       int op_cmd_to_cs(ServerCmdType cmd, std::vector<std::string>* params, std::vector<std::string>* ret_values);
       int op_cmd_to_ds(ServerCmdType cmd, std::vector<std::string>* params, const char* dest_server_addr = NULL);
 
+      void set_force_service(bool force) { this->force_service = force_service; }
+  
       void force_change_dataserver_status(uint64_t server_id, int cmd);
       void get_migrate_status(uint64_t server_id,vector<pair<uint64_t,uint32_t> >& result);
       void query_from_configserver(uint32_t query_type, const string group_name, map<string, string>&, uint64_t server_id = 0);
       uint32_t get_config_version() const;
       int64_t ping(uint64_t server_id);
+
+      int retrieve_server_config(bool update_server_table, tbsys::STR_STR_MAP& config_map, uint32_t& version);
+      void get_buckets_by_server(uint64_t server_id, std::set<int32_t>& buckets);
 
 #if  0     /* ----- #if 0 : If0Label_1 ----- */
       bool dumpKey(int area, char *file_name, int timeout = 0);
@@ -295,6 +299,11 @@ namespace tair {
           const vector<data_entry *>& keys,
           request_remove_map &request_removes);
 
+      int init_put_map(int area,
+          const tair_client_kv_map& kvs,
+          request_put_map& request_puts);
+      bool get_send_para(const data_entry &key, vector<uint64_t>& server, uint32_t& bucket_number);
+
       //~ do the request operation, delete req if send failed
       template <typename Request, typename Response>
       int do_request(Request *req, Response *&resp, wait_object *cwo, uint64_t server_id) {
@@ -352,6 +361,8 @@ namespace tair {
       wait_object_manager *this_wait_object_manager;
       uint32_t bucket_count;
       uint32_t copy_count;
+      // can this client can service forcefully(no server address list eg.)
+      bool force_service;
       bool rand_read_flag;
       atomic_t read_seq;
     private:

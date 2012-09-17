@@ -77,6 +77,14 @@ namespace tair {
       stat[area].inc_put_count();
    }
 
+   void stat_helper::stat_put(int area, int count)
+   {
+      if (area >= TAIR_MAX_AREA_COUNT || area < 0)
+         area = 0;
+
+      stat[area].add_put_count(count);
+   }
+
    void stat_helper::stat_evict(int area)
    {
       if (area >= TAIR_MAX_AREA_COUNT || area < 0)

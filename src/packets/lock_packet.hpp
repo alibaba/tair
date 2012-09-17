@@ -15,15 +15,6 @@
 #include "put_packet.hpp"
 
 namespace tair {
-  enum LockType
-  {
-    NONE = 0,
-    LOCK_STATUS,
-    LOCK_VALUE,
-    UNLOCK_VALUE,
-    PUT_AND_LOCK_VALUE
-  };
-
   class request_lock : public base_packet {
   public:
     request_lock() : area(0), lock_type(LOCK_VALUE), data(NULL)

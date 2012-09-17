@@ -5,6 +5,8 @@
 #ifndef STORAGE_LEVELDB_DB_DB_IMPL_H_
 #define STORAGE_LEVELDB_DB_DB_IMPL_H_
 
+#include <map>
+#include <list>
 #include <deque>
 #include <set>
 #include "db/dbformat.h"
@@ -22,6 +24,25 @@ class Version;
 class VersionEdit;
 class VersionSet;
 
+struct LoggerId;
+
+struct BucketUpdate
+{
+  int bucket_number_;
+  int log_number_;
+  log::Writer* log_;
+  WritableFile* logfile_;
+  MemTable* mem_;
+  BucketUpdate* prev_;
+  BucketUpdate* next_;
+  // TODO: fine-grained lock
+  LoggerId* logger_;            // NULL, or the id of the current logging thread
+  port::CondVar* logger_cv_;     // For threads waiting to log
+};
+
+typedef std::map<int, BucketUpdate*> BucketMap;
+typedef std::list<BucketUpdate*> BucketList;
+
 class DBImpl : public DB {
  public:
   DBImpl(const Options& options, const std::string& dbname);
@@ -31,6 +52,7 @@ class DBImpl : public DB {
   virtual Status Put(const WriteOptions&, const Slice& key, const Slice& value);
   virtual Status Delete(const WriteOptions&, const Slice& key);
   virtual Status Write(const WriteOptions& options, WriteBatch* updates);
+  virtual Status Write(const WriteOptions& options, WriteBatch* updates, int bucket);
   virtual Status Get(const ReadOptions& options,
                      const Slice& key,
                      std::string* value);
@@ -43,6 +65,8 @@ class DBImpl : public DB {
   virtual void GetApproximateSizes(const Range* range, int n, uint64_t* sizes);
   virtual void CompactRange(const Slice* begin, const Slice* end);
   virtual Status CompactRangeSelfLevel(uint64_t limit_filenumber, const Slice* begin, const Slice* end);
+  virtual Status ForceCompactMemTable();
+  virtual void ResetDbName(const std::string& dbname) { dbname_ = dbname; }
 
   // Compact any files in the named level that overlap [begin,end]
   void TEST_CompactRange(int level, const Slice* begin, const Slice* end);
@@ -83,8 +107,7 @@ class DBImpl : public DB {
 
   // Compact the in-memory write buffer to disk.  Switches to a new
   // log-file/memtable and writes a new descriptor iff successful.
-  Status CompactMemTable();
-
+  Status CompactMemTable(bool compact_mlist = true);
   Status RecoverLogFile(uint64_t log_number,
                         VersionEdit* edit,
                         SequenceNumber* max_sequence);
@@ -93,6 +116,16 @@ class DBImpl : public DB {
 
   Status MakeRoomForWrite(bool force /* compact even if there is room? */);
   WriteBatch* BuildBatchGroup(Writer** last_writer);
+
+  // multi-bucket memtable update
+  Status MakeRoomForWrite(bool force, int bucket, BucketUpdate** bucket_update);
+  void EvictBucketUpdate(BucketUpdate* bu);
+  Status CompactMemTableList();
+  // Only thread is allowed to log at a time.
+  // TODO: group commit
+  struct LoggerId { };          // Opaque identifier for logging thread
+  void AcquireLoggingResponsibility(LoggerId* self);
+  void ReleaseLoggingResponsibility(LoggerId* self);
 
   void MaybeScheduleCompaction();
   static void BGWork(void* db);
@@ -116,7 +149,7 @@ class DBImpl : public DB {
   const Options options_;  // options_.comparator == &internal_comparator_
   bool owns_info_log_;
   bool owns_cache_;
-  const std::string dbname_;
+  std::string dbname_;
 
   // table_cache_ provides its own synchronization
   TableCache* table_cache_;
@@ -140,6 +173,16 @@ class DBImpl : public DB {
   WriteBatch* tmp_batch_;
 
   SnapshotList snapshots_;
+
+  // for multi-bucket update
+  BucketMap bucket_map_;
+  BucketList imm_list_;
+  int32_t imm_list_count_;      // list.size() cost much
+  // list all bucket-memtable, new memtable is linked in the list tail.
+  BucketUpdate* bu_head_;
+  BucketUpdate* bu_tail_;
+  LoggerId* logger_;            // NULL, or the id of the current logging thread
+  port::CondVar logger_cv_;     // For threads waiting to log
 
   // Set of table files to protect from deletion because they are
   // part of ongoing compactions.

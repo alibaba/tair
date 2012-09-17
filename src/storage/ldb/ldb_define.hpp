@@ -49,6 +49,8 @@ namespace tair
       extern uint64_t decode_fixed64(const char* buf);
       extern void encode_fixed64(char* buf, uint64_t value);
 
+      extern std::string get_back_path(const char* path);
+
       class LdbKey
       {
       public:

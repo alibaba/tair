@@ -57,7 +57,7 @@ namespace tair {
 
       private:
         int fd;
-        char file_name[PATH_MAX];
+        char file_name[TAIR_MAX_PATH_LEN];
         tbsys::CThreadMutex stat_lock;
         db_stat_info * stat_info;
       };

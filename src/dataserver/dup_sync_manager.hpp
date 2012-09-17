@@ -198,6 +198,8 @@ namespace tair {
       template <typename T>
       int do_duplicate_data(int32_t bucket_number, T *request, vector<uint64_t> &slaves, int version);
 
+      int duplicate_batch_data(int bucket_number, const mput_record_vec* record_vec, const std::vector<uint64_t>& des_server_ids,base_packet *request,int version);
+
       bool has_bucket_duplicate_done(int bucket_number);
 
       int do_duplicate_response(uint32_t bucket_id, uint64_t d_server_id, uint32_t packet_id);

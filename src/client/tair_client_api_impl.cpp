@@ -63,7 +63,7 @@ namespace tair {
   tair_client_impl::tair_client_impl():inited(false),is_stop(false),direct(false),data_server(0),packet_factory(0),streamer(0),
   transport(0),connmgr(0),timeout(2000),config_version(0),
   new_config_version(0),send_fail_count(0),this_wait_object_manager(0),
-  bucket_count(0),copy_count(0),rand_read_flag(false)
+  bucket_count(0),copy_count(0),force_service(false),rand_read_flag(false)
   {
     atomic_set(&read_seq, 0);
     pthread_rwlock_init(&m_init_mutex, NULL);
@@ -330,8 +330,102 @@ FAIL:
     return ret;
   }
 
+  int tair_client_impl::mput(int area, const tair_client_kv_map& kvs, int& fail_request/*tair_dataentry_vector& fail_keys*/, bool compress)
+  {
+    fail_request = 0;
+    request_put_map request_puts;
+    int ret = TAIR_RETURN_SUCCESS;
+    if ((ret = init_put_map(area, kvs, request_puts)) < 0)
+    {
+      return ret;
+    }
+
+    //typedef map<uint64_t, map<uint32_t, request_mput*> > request_put_map;
+    wait_object* cwo = this_wait_object_manager->create_wait_object();
+    request_put_map::iterator rq_iter = request_puts.begin();
+    int send_packet_size = 0;
+    while (rq_iter != request_puts.end())
+    {
+      map<uint32_t, request_mput*>::iterator mit = rq_iter->second.begin();
+      while (mit != rq_iter->second.end())
+      {
+        // compress here
+        if (compress)
+        {
+          mit->second->compress();
+        }
+        //server_id, request, wait_id
+        if (send_request(rq_iter->first, mit->second, cwo->get_id()) < 0)
+        {
+          log_error("send request fail: %s", tbsys::CNetUtil::addrToString(rq_iter->first).c_str());
+          delete mit->second;
+          rq_iter->second.erase(mit++);
+          ++fail_request;
+        }
+        else
+        {
+          ++send_packet_size;
+          ++mit;
+        }
+      }
+      //erase
+      if (rq_iter->second.size() == 0)
+      {
+      }
+
+      rq_iter++;
+    }
+
+    vector<response_return*> resps;
+    ret = TAIR_RETURN_SEND_FAILED;
+
+    vector<base_packet*> tpk;
+    if ((ret = get_response(cwo, send_packet_size, tpk)) < 1)
+    {
+      this_wait_object_manager->destroy_wait_object(cwo);
+      TBSYS_LOG(ERROR, "all requests are failed");
+      return ret == 0 ? TAIR_RETURN_FAILED : ret;
+    }
+
+    vector<base_packet*>::iterator bp_iter = tpk.begin();
+    for (; bp_iter != tpk.end(); ++bp_iter)
+    {
+      if ((*bp_iter)->getPCode() == TAIR_RESP_RETURN_PACKET)
+      {
+        response_return* tpacket = dynamic_cast<response_return*>(*bp_iter);
+        if (tpacket != NULL)
+        {
+          ret = tpacket->get_code();
+          if (0 != ret)
+          {
+            if (TAIR_RETURN_SERVER_CAN_NOT_WORK == ret)
+            {
+              new_config_version = tpacket->config_version;
+              send_fail_count = UPDATE_SERVER_TABLE_INTERVAL;
+            }
+            log_error("get response fail: ret: %d", ret);
+            ++fail_request;
+          }
+        }
+      }
+      else
+      {
+        log_error("not get response packet: %d", (*bp_iter)->getPCode());
+        ++fail_request;
+      }
+    }
+
+    ret = TAIR_RETURN_SUCCESS;
+    if (fail_request > 0)
+    {
+      ret = TAIR_RETURN_PARTIAL_SUCCESS;
+    }
+    this_wait_object_manager->destroy_wait_object(cwo);
+    return ret;
+  }
+
   int tair_client_impl::set_count(int area, const data_entry& key, int count,
-      int expire, int version, TAIRCALLBACKFUNC pfunc,void * parg)
+      int expire, int version)
   {
     // This is an ugly trick, 'cause Tair's key/value has two bits flag to indicate
     // type in Java client implementation but count type's flag is added in server,
@@ -354,11 +448,10 @@ FAIL:
 #endif
     // force set count type flag
     value.data_meta.flag = TAIR_ITEM_FLAG_ADDCOUNT;
-    return put(area, key, value, expire, version, true, pfunc, parg);
+    return put(area, key, value, expire, version, true);
   }
 
-  int tair_client_impl::lock(int area, const data_entry &key, LockType type,
-      TAIRCALLBACKFUNC pfunc,void * arg)
+  int tair_client_impl::lock(int area, const data_entry &key, LockType type)
   {
     if( area < 0 || area >= TAIR_MAX_AREA_COUNT){
       return TAIR_RETURN_INVALID_ARGUMENT;
@@ -374,7 +467,7 @@ FAIL:
       return -1;
     }
 
-    wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_LOCK_PACKET,pfunc,arg);
+    wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_LOCK_PACKET);
     request_lock *packet = new request_lock();
     packet->area = area;
     packet->key.data_meta = key.data_meta;
@@ -390,8 +483,6 @@ FAIL:
       delete packet;
       goto FAIL;
     }
-    //if async callback,return it.
-    if(pfunc) return 0;
 
     if( (ret = get_response(cwo,1,tpacket)) < 0){
       goto FAIL;
@@ -593,6 +684,130 @@ FAIL:
         get_error_msg(ret));
 
     return ret;
+  }
+
+  int tair_client_impl::init_put_map(int area, const tair_client_kv_map& kvs, request_put_map& request_puts)
+  {
+    if (area < 0 || area >= TAIR_MAX_AREA_COUNT)
+    {
+      return TAIR_RETURN_INVALID_ARGUMENT;
+    }
+
+    int ret = TAIR_RETURN_SUCCESS;
+    request_puts.clear();
+    request_put_map::iterator rq_iter;
+
+    //typedef std::map<data_entry*, value_entry*, data_entry_hash> tair_client_kv_map;
+    tair_client_kv_map::const_iterator kv_iter = kvs.begin();
+    for ( ; kv_iter != kvs.end(); ++kv_iter)
+    {
+      if (!key_entry_check(*(kv_iter->first)) || !key_entry_check(kv_iter->second->get_d_entry()))
+      {
+        ret = TAIR_RETURN_ITEMSIZE_ERROR;
+        break;
+      }
+
+      //if (kv_iter->second->get_version() < 0 || kv_iter->second->get_expire() < 0)
+      if (kv_iter->second->get_expire() < 0)
+      {
+        ret = TAIR_RETURN_INVALID_ARGUMENT;
+        break;
+      }
+
+      if (kv_iter->first->get_size() + kv_iter->second->get_d_entry().get_size() > (TAIR_MAX_DATA_SIZE + TAIR_MAX_KEY_SIZE))
+      {
+        ret = TAIR_RETURN_ITEMSIZE_ERROR;
+        break;
+      }
+
+      vector<uint64_t> server_list;
+      uint32_t bucket_number = 0;
+      if (!get_send_para(*(kv_iter->first), server_list, bucket_number))
+      {
+        TBSYS_LOG(ERROR, "can not find serverId, return false");
+        ret = -1;
+        break;
+      }
+
+      //typedef map<uint64_t, map<uint32_t, request_mput*> > request_put_map;
+      request_mput* packet = NULL;
+      rq_iter = request_puts.find(server_list[0]);
+      if (rq_iter != request_puts.end())
+      {
+        map<uint32_t, request_mput*>::iterator mit = rq_iter->second.find(bucket_number);
+        if (mit != rq_iter->second.end())
+        {
+          packet = mit->second;
+        }
+        else
+        {
+          packet = new request_mput();
+          rq_iter->second[bucket_number] = packet;
+        }
+      }
+      else
+      {
+        map<uint32_t, request_mput*> bp_map;
+        packet = new request_mput();
+        bp_map[bucket_number] = packet;
+        request_puts[server_list[0]] = bp_map;
+      }
+
+      if (packet->area != 0)
+      {
+        if (packet->area != area)
+        {
+          TBSYS_LOG(ERROR, "mput packet is conflict, packet area: %d, input area: %d", packet->area, area);
+          ret = -1;
+        }
+      }
+      else
+      {
+        packet->area = area;
+      }
+
+      packet->add_put_key_data(*(kv_iter->first), *(kv_iter->second));
+      TBSYS_LOG(DEBUG,"get from server:%s, bucket_number: %u",
+          tbsys::CNetUtil::addrToString(server_list[0]).c_str(), bucket_number);
+    }
+
+    if (ret < 0)
+    {
+      for (rq_iter = request_puts.begin(); rq_iter != request_puts.end(); ++rq_iter)
+      {
+        map<uint32_t, request_mput*>::iterator mit = rq_iter->second.begin();
+        for ( ; mit != rq_iter->second.end(); ++mit)
+        {
+          request_mput* req = mit->second;
+          if (NULL != req)
+          {
+            delete req;
+            req = NULL;
+          }
+        }
+      }
+      request_puts.clear();
+    }
+
+    return ret;
+  }
+
+  bool tair_client_impl::get_send_para(const data_entry &key, vector<uint64_t>& server, uint32_t& bucket_number)
+  {
+    uint32_t hash = util::string_util::mur_mur_hash(key.get_data(), key.get_size());
+    server.clear();
+
+    if (my_server_list.size() > 0U) {
+      hash %= bucket_count;
+      bucket_number = hash;
+      for (uint32_t i=0; i < copy_count && i < my_server_list.size(); ++i) {
+        uint64_t server_id = my_server_list[hash + i * bucket_count];
+        if (server_id != 0) {
+          server.push_back(server_id);
+        }
+      }
+    }
+    return server.size() > 0 ? true : false;
   }
 
   int tair_client_impl::init_request_map(int area, const vector<data_entry *>& keys, request_get_map &request_gets, int server_select)
@@ -1983,50 +2198,6 @@ FAIL:
    *  tair_client_impl::ErrMsg
    *-----------------------------------------------------------------------------*/
 
-
-  const std::map<int,string> tair_client_impl::m_errmsg = tair_client_impl::init_errmsg();
-
-  std::map<int,string> tair_client_impl::init_errmsg()
-  {
-    std::map<int,string> temp;
-    temp[TAIR_RETURN_SUCCESS]                 = "success";
-    temp[TAIR_RETURN_FAILED]          = "general failed";
-    temp[TAIR_RETURN_DATA_NOT_EXIST]  = "data not exists";
-    temp[TAIR_RETURN_VERSION_ERROR]           = "version error";
-    temp[TAIR_RETURN_TYPE_NOT_MATCH]  = "data type not match";
-    temp[TAIR_RETURN_ITEM_EMPTY]              = "item is empty";
-    temp[TAIR_RETURN_SERIALIZE_ERROR] = "serialize failed";
-    temp[TAIR_RETURN_OUT_OF_RANGE]            = "item's index out of range";
-    temp[TAIR_RETURN_ITEMSIZE_ERROR]  = "key or value too large";
-    temp[TAIR_RETURN_SEND_FAILED]             = "send packet error";
-    temp[TAIR_RETURN_TIMEOUT]         = "timeout";
-    temp[TAIR_RETURN_SERVER_CAN_NOT_WORK]   = "server can not work";
-    temp[TAIR_RETURN_WRITE_NOT_ON_MASTER]   = "write not on master";
-    temp[TAIR_RETURN_DUPLICATE_BUSY]          = "duplicate busy";
-    temp[TAIR_RETURN_MIGRATE_BUSY]    = "migrate busy";
-    temp[TAIR_RETURN_PARTIAL_SUCCESS] = "partial success";
-    temp[TAIR_RETURN_DATA_EXPIRED]            = "expired";
-    temp[TAIR_RETURN_PLUGIN_ERROR]            = "plugin error";
-    temp[TAIR_RETURN_PROXYED]                 = "porxied";
-    temp[TAIR_RETURN_INVALID_ARGUMENT]        = "invalid argument";
-    temp[TAIR_RETURN_CANNOT_OVERRIDE] = "cann't override old value.please check and remove it first.";
-    temp[TAIR_RETURN_DEC_BOUNDS] = "can't dec to negative when allow_count_negative=0";
-    temp[TAIR_RETURN_DEC_ZERO] = "can't dec zero number when allow_count_negative=0";
-    temp[TAIR_RETURN_DEC_NOTFOUND] = "dec but not found when allow_count_negative=0";
-    temp[TAIR_RETURN_LOCK_EXIST]                 = "lock exist";
-    temp[TAIR_RETURN_LOCK_NOT_EXIST]                 = "lock not exist";
-    temp[TAIR_RETURN_HIDDEN] = "item is hidden";
-    temp[TAIR_RETURN_SHOULD_PROXY] = "the key should be proxy";
-    //temp[TAIR_RETURN_NO_INVALID_SERVER]       = "invlaid but not found invalid server";
-    return temp;
-  }
-
-  const char *tair_client_impl::get_error_msg(int ret)
-  {
-    std::map<int,string>::const_iterator it = tair_client_impl::m_errmsg.find(ret);
-    return it != tair_client_impl::m_errmsg.end() ? it->second.c_str() : "unknown";
-  }
-
   void tair_client_impl::get_server_with_key(const data_entry& key,std::vector<std::string>& servers)
   {
     if( !key_entry_check(key)){
@@ -2434,6 +2605,116 @@ FAIL:
         + (tm_end.tv_usec - tm_beg.tv_usec));
   }
 
+  int tair_client_impl::retrieve_server_config(bool update_server_table, tbsys::STR_STR_MAP& config_map, uint32_t& version)
+  {
+    if (config_server_list.size() == 0U || group_name.empty()) {
+      TBSYS_LOG(WARN, "config server list is empty, or groupname is NULL, return false");
+      return TAIR_RETURN_FAILED;
+    }
+    wait_object *cwo = 0;
+    int send_success = 0;
+
+    base_packet *tpacket = NULL;
+
+    for (uint32_t i=0; i<config_server_list.size(); i++) {
+      uint64_t server_id = config_server_list[i];
+      request_get_group *packet = new request_get_group();
+      packet->set_group_name(group_name.c_str());
+
+      cwo = this_wait_object_manager->create_wait_object();
+      if (connmgr->sendPacket(server_id, packet, NULL, (void*)((long)cwo->get_id())) == false) {
+        TBSYS_LOG(ERROR, "Send RequestGetGroupPacket to %s failure.",
+                  tbsys::CNetUtil::addrToString(server_id).c_str());
+        this_wait_object_manager->destroy_wait_object(cwo);
+
+        delete packet;
+        continue;
+      }
+      cwo->wait_done(1,timeout);
+      tpacket = cwo->get_packet();
+      if (tpacket == 0 || tpacket->getPCode() != TAIR_RESP_GET_GROUP_PACKET) {
+        TBSYS_LOG(ERROR,"get group packet failed,retry");
+        tpacket = 0;
+
+        this_wait_object_manager->destroy_wait_object(cwo);
+
+        cwo = 0;
+        continue;
+      }else{
+        ++send_success;
+        break;
+      }
+    }
+
+    if (send_success <= 0) {
+      //delete packet;
+      log_error("cann't connect");
+      return TAIR_RETURN_FAILED;
+    }
+
+    int ret = TAIR_RETURN_SUCCESS;
+    response_get_group *rggp = dynamic_cast<response_get_group*>(tpacket);
+
+    if (rggp->config_version <= 0) {
+      log_error("group doesn't exist: %s", group_name.c_str());
+      ret = TAIR_RETURN_FAILED;
+    } else {
+      bucket_count = rggp->bucket_count;
+      copy_count = rggp->copy_count;
+
+      if (bucket_count <= 0 || copy_count <= 0) {
+        log_error("bucket or copy count doesn't correct");
+        ret = TAIR_RETURN_FAILED;
+      } else {
+        if (update_server_table) {           // update server table
+          uint32_t server_list_count = 0;
+          uint64_t* server_list = rggp->get_server_list(bucket_count, copy_count);
+          if (rggp->server_list_count <= 0 || server_list == NULL) {
+            if (!force_service) {
+              log_warn("server table is empty");
+              ret = TAIR_RETURN_FAILED;
+            }
+          } else {
+            server_list_count = (uint32_t)(rggp->server_list_count);
+            assert(server_list_count == bucket_count * copy_count);
+            for (uint32_t i=0; server_list != 0 && i< server_list_count; ++i) {
+              log_debug("server table: [%d] => [%s]", i, tbsys::CNetUtil::addrToString(server_list[i]).c_str());
+              my_server_list.push_back(server_list[i]);
+            }
+          }
+        }
+
+        if (TAIR_RETURN_SUCCESS == ret) {
+          new_config_version = config_version = rggp->config_version;
+          // set return value
+          config_map = rggp->config_map;
+          version = rggp->config_version;
+        }
+      }
+    }
+
+    this_wait_object_manager->destroy_wait_object(cwo);
+
+    return TAIR_RETURN_SUCCESS;
+  }
+
+  void tair_client_impl::get_buckets_by_server(uint64_t server_id, std::set<int32_t>& buckets)
+  {
+    if (server_id <= 0)
+    {
+      return;
+    }
+
+    // only parse the first copy of bucket in bucket server list.
+    for (size_t i = 0; i < bucket_count; i++)
+    {
+      if (my_server_list[i] == server_id)
+      {
+        buckets.insert(i);
+      }
+    }
+  }
+
   bool tair_client_impl::retrieve_server_addr()
   {
     if (config_server_list.size() == 0U || group_name.empty()) {
@@ -2500,14 +2781,13 @@ FAIL:
       goto OUT;
     }
     server_list = rggp->get_server_list(bucket_count,copy_count);
-    if(rggp->server_list_count <= 0 || server_list == 0){
+    if(!force_service && (rggp->server_list_count <= 0 || server_list == 0)){
       TBSYS_LOG(WARN, "server table is empty");
       goto OUT;
     }
 
     server_list_count = (uint32_t)(rggp->server_list_count);
-
-    if (server_list_count != bucket_count * copy_count)
+    if (!force_service && (server_list_count != bucket_count * copy_count))
     {
       TBSYS_LOG(ERROR, "server table is wrong, server_list_count: %u, bucket_count: %u, copy_count: %u",
           server_list_count, bucket_count, copy_count);

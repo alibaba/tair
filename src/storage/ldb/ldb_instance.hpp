@@ -28,6 +28,7 @@
 namespace tair
 {
   class mdb_manager;
+  class mput_record_vec;
   namespace storage
   {
     class storage_manager;
@@ -51,6 +52,7 @@ namespace tair
         int put(int bucket_number, tair::common::data_entry& key,
                 tair::common::data_entry& value,
                 bool version_care, int expire_time);
+        int batch_put(int bucket_number, int area, tair::common::mput_record_vec* record_vec, bool version_care);
         int get(int bucket_number, tair::common::data_entry& key, tair::common::data_entry& value);
         int remove(int bucket_number, tair::common::data_entry& key, bool version_care);
 
@@ -72,6 +74,8 @@ namespace tair
         // stat util
         void stat_add(int32_t bucket_number, int32_t area, int32_t data_size, int32_t use_size, int32_t item_count);
         void stat_sub(int32_t bucket_number, int32_t area, int32_t data_size, int32_t use_size, int32_t item_count);
+
+        void get_buckets(std::vector<int32_t>& buckets);
 
         const char* db_path() { return db_path_; }
         // use inner leveldb/gc_factory when compact
@@ -95,7 +99,7 @@ namespace tair
       private:
         // index of this instance
         int32_t index_;
-        char db_path_[PATH_MAX];
+        char db_path_[TAIR_MAX_PATH_LEN];
         // because version care strategy, we must "get" when "put", it's expensive to get an unexist item,
         // so this flag control whether we really must do it.
         // (statistics data may not be exact, as it is always.)

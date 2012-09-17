@@ -291,7 +291,14 @@ namespace tair {
             log_debug("end remove,prepare to send return packet");
             break;
          }
-
+         case TAIR_REQ_MPUT_PACKET:
+         {
+           request_mput *npacket = (request_mput*)packet;
+           // decompress here
+           npacket->decompress();
+           ret = req_processor->process(npacket, send_return);
+           break;
+         }
          case TAIR_REQ_REMOVE_AREA_PACKET:
          {
             request_remove_area *npacket = (request_remove_area*)packet;

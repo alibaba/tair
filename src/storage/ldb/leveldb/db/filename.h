@@ -24,8 +24,14 @@ enum FileType {
   kDescriptorFile,
   kCurrentFile,
   kTempFile,
-  kInfoLogFile  // Either the current one, or an old one
+  kInfoLogFile,  // Either the current one, or an old one
+  kBucketLogFile
 };
+
+// Return the name of the bucket log file with the specified number
+// in the db named by "dbname".  The result will be prefixed with
+// "dbname".
+extern std::string BucketLogFileName(const std::string& dbname, uint64_t number);
 
 // Return the name of the log file with the specified number
 // in the db named by "dbname".  The result will be prefixed with

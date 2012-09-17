@@ -136,6 +136,13 @@ DBImpl::DBImpl(const Options& options, const std::string& dbname)
       logfile_number_(0),
       log_(NULL),
       tmp_batch_(new WriteBatch),
+      // @@ for multi-bucket update
+      imm_list_count_(0),
+      bu_head_(NULL),
+      bu_tail_(NULL),
+      logger_(NULL),
+      logger_cv_(&mutex_),
+      // @@
       has_limited_delete_obsolete_file_count_(0),
       bg_compaction_scheduled_(false),
       manual_compaction_(NULL) {
@@ -505,17 +512,27 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
   return s;
 }
 
-Status DBImpl::CompactMemTable() {
-  mutex_.Lock();
-  assert(imm_ != NULL);
+Status DBImpl::CompactMemTable(bool compact_mlist) {
+  Status s;
+  if (compact_mlist && !imm_list_.empty()) {
+    s = CompactMemTableList();
+    if (!s.ok()) {
+      return s;
+    }
+  }
 
+  if (NULL == imm_) {
+    return s;
+  }
+
+  mutex_.Lock();
   // Save the contents of the memtable as a new Table
   VersionEdit edit;
   Version* base = versions_->current();
   base->Ref();
   mutex_.Unlock();
   PROFILER_BEGIN("wL0Tab+");
-  Status s = WriteLevel0Table(imm_, &edit, base);
+  s = WriteLevel0Table(imm_, &edit, base);
   PROFILER_END();
   mutex_.Lock();
   base->Unref();
@@ -564,6 +581,29 @@ void DBImpl::CompactRange(const Slice* begin, const Slice* end) {
   for (int level = 0; level < max_level_with_files; level++) {
     TEST_CompactRange(level, begin, end);
   }
+}
+
+Status DBImpl::ForceCompactMemTable() {
+  MutexLock l(&mutex_);
+  // TODO: emit..
+  LoggerId self;
+  AcquireLoggingResponsibility(&self);
+  // switch all memtable to imm memtable list
+  for (BucketMap::iterator it = bucket_map_.begin(); it != bucket_map_.end(); ++it) {
+    delete it->second->log_;
+    delete it->second->logfile_;
+    imm_list_.push_front(it->second);
+    imm_list_count_++;
+  }
+  bu_head_ = bu_tail_ = NULL;
+  bucket_map_.clear();
+
+  // force single memtable compact
+  Status s = MakeRoomForWrite(true /* force compaction */);
+  MaybeScheduleCompaction();
+  ReleaseLoggingResponsibility(&self);
+  // don't wait, just return
+  return s;
 }
 
 void DBImpl::TEST_CompactRange(int level, const Slice* begin,const Slice* end) {
@@ -621,6 +661,247 @@ Status DBImpl::TEST_CompactMemTable() {
 // special compact func to support      //
 // compact range only in one level.     //
 //////////////////////////////////////////
+
+// There is at most one thread that is the current logger.  This call
+// waits until preceding logger(s) have finished and becomes the
+// current logger.
+void DBImpl::AcquireLoggingResponsibility(LoggerId* self) {
+  while (logger_ != NULL) {
+    logger_cv_.Wait();
+  }
+  logger_ = self;
+}
+
+void DBImpl::ReleaseLoggingResponsibility(LoggerId* self) {
+  assert(logger_ == self);
+  logger_ = NULL;
+  logger_cv_.SignalAll();
+}
+
+// each memtable is up to one bucket's update
+Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates, int bucket) {
+  BucketUpdate* bucket_update = NULL;
+  MutexLock l(&mutex_);
+  LoggerId self;
+  AcquireLoggingResponsibility(&self);
+  Status status = MakeRoomForWrite(false, bucket, &bucket_update);
+  uint64_t last_sequence = versions_->LastSequence();
+
+  if (status.ok()) {
+    WriteBatchInternal::SetSequence(updates, last_sequence + 1);
+    last_sequence += WriteBatchInternal::Count(updates);
+
+    // Add to log and apply to memtable.  We can release the lock during
+    // this phase since the "logger_" flag protects against concurrent
+    // loggers and concurrent writes into mem_.
+    {
+      assert(logger_ == &self);
+      mutex_.Unlock();
+      // status = bucket_update->log_->AddRecord(WriteBatchInternal::Contents(updates));
+      // if (status.ok() && options.sync) {
+      //   status = bucket_update->logfile_->Sync();
+      // }
+      // if (status.ok()) {
+        status = WriteBatchInternal::InsertInto(updates, bucket_update->mem_);
+      // }
+      mutex_.Lock();
+      assert(logger_ == &self);
+    }
+
+    versions_->SetLastSequence(last_sequence);
+  }
+  
+  ReleaseLoggingResponsibility(&self);
+  return status;
+}
+
+Status DBImpl::MakeRoomForWrite(bool force, int bucket, BucketUpdate** bucket_update) {
+  static int kMaxMemTableCount = options_.max_mem_usage_for_memtable / options_.write_buffer_size;
+  static int kRetryCount = 3;
+  static int kEvictMemTableCount = 5;
+
+  mutex_.AssertHeld();
+  assert(logger_ != NULL);
+  if (bucket < 0) {
+    return Status::InvalidArgument("bucket is invalid");
+  }
+  if (!bg_error_.ok()) {
+    // Yield previous error
+    return bg_error_;
+  }
+
+  Status s;
+  BucketUpdate* bu = NULL;
+  BucketMap::iterator bm_it = bucket_map_.find(bucket);
+  if (bm_it != bucket_map_.end()) {
+    bu = bm_it->second;
+    // not force and current memtale has remaining space
+    if (!force && bu->mem_->ApproximateMemoryUsage() <= options_.write_buffer_size) {
+      *bucket_update = bu;
+      return s;
+    }
+
+    // this bucketupdate should be compacted
+    bucket_map_.erase(bm_it);
+    EvictBucketUpdate(bu);
+    // sentinel
+    has_imm_.Release_Store(bu->mem_);
+    MaybeScheduleCompaction();
+  }
+
+  // control max memtable count now.
+  int retry = 0;
+  while (bucket_map_.size() + imm_list_count_ >= kMaxMemTableCount && retry++ < kRetryCount) {
+    // too many memtable now. try evict some
+    int evict_count = 0;
+    BucketUpdate* evicted_bu = NULL;
+    while (evict_count++ < kEvictMemTableCount && bu_head_ != NULL) {
+      // bu_head_ ponit to oldest memtale
+      BucketMap::iterator it = bucket_map_.find(bu_head_->bucket_number_);
+      assert(it != bucket_map_.end());
+      bucket_map_.erase(it);
+      evicted_bu = it->second;
+      Log(options_.info_log, "evict mmt [%d %lu]",
+          bu_head_->bucket_number_, evicted_bu->mem_->ApproximateMemoryUsage());
+      EvictBucketUpdate(evicted_bu);
+    }
+
+    if (evicted_bu != NULL) {
+      has_imm_.Release_Store(evicted_bu->mem_);
+    }
+
+    MaybeScheduleCompaction();
+
+    mutex_.Unlock();
+    env_->SleepForMicroseconds(10000);
+    mutex_.Lock();
+    Log(options_.info_log, "wait for less mmt. now %zd + %d", bucket_map_.size(), imm_list_count_);
+  }
+
+  // can't get space for new memtable
+  if (retry > kRetryCount) {
+    return Status::Corruption("too many mmt");
+  }
+
+  // we can switch a new memtable now.
+  assert(versions_->PrevLogNumber() == 0);
+  Log(options_.info_log, "new mem %d", bucket);
+
+  uint64_t new_log_number = versions_->NewFileNumber();
+  WritableFile* lfile = NULL;
+
+  s = env_->NewWritableFile(BucketLogFileName(dbname_, new_log_number), &lfile);
+  if (!s.ok()) {
+    return s;
+  }
+
+  logfile_number_ = new_log_number;
+
+  Log(options_.info_log, "new log %d", new_log_number);
+  bu = new BucketUpdate();
+  bu->bucket_number_ = bucket;
+  bu->log_number_ = new_log_number;
+  bu->logfile_ = lfile;
+  bu->log_ = new log::Writer(lfile);
+  bu->mem_ = new MemTable(internal_comparator_, env_);
+  bu->mem_->Ref();
+  // link to bucket list tail
+  bu->next_ = NULL;
+  bu->prev_ = bu_tail_;
+  if (NULL == bu_head_) {
+    bu_head_ = bu_tail_ = bu;
+  } else {
+    bu_tail_->next_ = bu;
+    bu_tail_ = bu;
+  }
+  // add to bucket map
+  bucket_map_[bucket] = bu;
+
+  *bucket_update = bu;
+  return s;
+}
+
+void DBImpl::EvictBucketUpdate(BucketUpdate* bu) {
+  mutex_.AssertHeld();
+  if (NULL == bu) {
+    return;
+  }
+
+  if (bu == bu_tail_) {
+    bu_tail_ = bu->prev_;
+  }
+  if (bu == bu_head_) {
+    bu_head_ = bu->next_;
+  }
+  if (bu->prev_ != NULL) {
+    bu->prev_->next_ = bu->next_;
+  }
+  if (bu->next_ != NULL) {
+    bu->next_->prev_ = bu->prev_;
+  }
+  delete bu->log_;
+  delete bu->logfile_;
+  // add to imm list
+  imm_list_.push_front(bu);
+  imm_list_count_++;
+}
+
+Status DBImpl::CompactMemTableList() {
+  // Save the contents of the memtable as a new Table
+  VersionEdit edit;
+  const uint64_t imm_start = env_->NowMicros();
+  int last_count = imm_list_count_;
+  Status s;
+  Log(options_.info_log, "memlist : %d", imm_list_count_);
+  mutex_.Lock();
+  for (BucketList::iterator it = imm_list_.begin(); it != imm_list_.end();) {
+    if (imm_ != NULL) {           // we compcat imm_ at highest priority
+      mutex_.Unlock();
+      s = CompactMemTable(false); // MUST only compact imm_
+      mutex_.Lock();
+      if (!s.ok()) {
+        break;
+      }
+    }
+    mutex_.Unlock();
+    s = WriteLevel0Table((*it)->mem_, &edit, NULL);
+    mutex_.Lock();
+    if (!s.ok()) {
+      break;
+    }
+    (*it)->mem_->Unref();
+    // DeleteObsoleteFiles() can't check to delete bucket log file base on current log_file_number_,
+    // so delete bucket log file here.
+    env_->DeleteFile(BucketLogFileName(dbname_, (*it)->log_number_));
+    delete (*it);
+    // @@ lock hold
+    it = imm_list_.erase(it);
+    imm_list_count_--;
+  }
+  Log(options_.info_log, "com imm list,count: %d cost %ld", last_count - imm_list_count_, env_->NowMicros() - imm_start);
+
+  mutex_.Unlock();
+
+  if (s.ok() && shutting_down_.Acquire_Load()) {
+    s = Status::IOError("Deleting DB during memtable compaction");
+  }
+
+  // Replace immutable memtable with the generated Table
+  if (s.ok()) {
+    edit.SetPrevLogNumber(0);
+    edit.SetLogNumber(logfile_number_);  // Earlier logs no longer needed
+    s = versions_->LogAndApply(&edit, &mutex_);
+  }
+
+  if (s.ok() && imm_list_.empty()) {
+    // Commit to the new state
+    has_imm_.Release_Store(NULL);
+    DeleteObsoleteFiles();
+  }
+
+  return s;
+}
+////////////////////////////////////////
 
 // compact file(sstable) whoes filenumber is less than limit_filenumber and range is in [begin, end).
 // Only compacting level 0 files output to level 1, files in level n, output files is in level n too.
@@ -895,6 +1176,11 @@ Status DBImpl::DoCompactionWorkSelfLevel(CompactionState* compact) {
   return status;
 }
 
+//////////////////////////////////////////
+// special write to support multi-bucket update
+//////////////////////////////////////////
+
+
 //////////////////////////////////////////////////
 
 void DBImpl::MaybeScheduleCompaction() {
@@ -905,6 +1191,7 @@ void DBImpl::MaybeScheduleCompaction() {
   } else if (shutting_down_.Acquire_Load()) {
     // DB is being deleted; no more background compactions
   } else if (imm_ == NULL &&
+             imm_list_.empty() && // @@ imm list
              manual_compaction_ == NULL &&
              !versions_->NeedsCompaction()) {
     Log(options_.info_log, "need no com");
@@ -953,7 +1240,7 @@ void DBImpl::BackgroundCall() {
 }
 
 void DBImpl::BackgroundCompaction() {
-  if (imm_ != NULL) {
+  if (imm_ != NULL || !imm_list_.empty()) {
     const uint64_t imm_start = env_->NowMicros();
     Log(options_.info_log, "only com mem");
     PROFILER_BEGIN("com mem+");
@@ -1193,7 +1480,7 @@ Status DBImpl::DoCompactionWork(CompactionState* compact) {
     // Prioritize immutable compaction work
     if (has_imm_.NoBarrier_Load() != NULL) {
       const uint64_t imm_start = env_->NowMicros();
-      if (imm_ != NULL) {
+      if (imm_ != NULL || !imm_list_.empty()) {
         CompactMemTable();
         bg_cv_.SignalAll();  // Wakeup MakeRoomForWrite() if necessary
       }

@@ -26,7 +26,6 @@
 
 namespace tair {
 const int ITEM_HEAD_LENGTH = 2;
-
   typedef struct _migrate_dump_index
   {
     uint32_t hash_index;
@@ -49,6 +48,9 @@ const int ITEM_HEAD_LENGTH = 2;
 
       virtual int put(int bucket_number, data_entry & key, data_entry & value,
                       bool version_care, int expire_time) = 0;
+
+      virtual int batch_put(int bucket_number, int area, tair::common::mput_record_vec* record_vec, bool version_care)
+      { return TAIR_RETURN_NOT_SUPPORTED; }
 
       virtual int get(int bucket_number, data_entry & key,
                       data_entry & value, bool with_stat = true) = 0;

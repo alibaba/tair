@@ -63,6 +63,7 @@
 
 #define TAIR_SLEEP(stop, interval) ({int count=interval*5; while(count-->0 && !stop) usleep(200000);})
 
+#define TAIR_MAX_PATH_LEN            256
 #define TAIR_AREA_ENCODE_SIZE        2
 #define TAIR_MAX_KEY_SIZE            1024
 #define TAIR_MAX_KEY_SIZE_WITH_AREA  (TAIR_MAX_KEY_SIZE+TAIR_AREA_ENCODE_SIZE)
@@ -89,6 +90,7 @@
 #define TAIR_DATA_NEED_MIGRATE          (1)
 //for migrate
 #define MAX_MUPDATE_PACKET_SIZE     (16 * 1024)
+#define MAX_MPUT_PACKET_SIZE     (500 * 1024)
 /////////////////////////////
 //for data duplicate
 #define MISECONDS_BEFOR_SEND_RETRY  (1000000)
@@ -180,6 +182,9 @@
 #define LDB_DATA_DIR                    "data_dir"
 #define LDB_DEFAULT_DATA_DIR            "data/ldb"
 #define LDB_DB_INSTANCE_COUNT           "ldb_db_instance_count"
+#define LDB_BUCKET_INDEX_TO_INSTANCE_STRATEGY "ldb_bucket_index_to_instance_strategy"
+#define LDB_BUCKET_INDEX_FILE_DIR       "ldb_bucket_index_file_dir"
+#define LDB_BUCKET_INDEX_CAN_UPDATE     "ldb_bucket_index_can_update"
 #define LDB_DB_VERSION_CARE             "ldb_db_version_care"
 #define LDB_CACHE_STAT_FILE_SIZE        "ldb_cache_stat_file_size"
 #define LDB_COMPACT_RANGE               "ldb_compact_range"
@@ -193,6 +198,7 @@
 #define LDB_PARANOID_CHECK              "ldb_paranoid_check"
 #define LDB_MAX_OPEN_FILES              "ldb_max_open_files"
 #define LDB_WRITE_BUFFER_SIZE           "ldb_write_buffer_size"
+#define LDB_MAX_MEM_USAGE_FOR_MEMTABLE  "ldb_max_mem_usage_for_memtable"
 #define LDB_TARGET_FILE_SIZE            "ldb_target_file_size"
 #define LDB_BLOCK_SIZE                  "ldb_block_size"
 #define LDB_BLOCK_RESTART_INTERVAL      "ldb_block_restart_interval"
@@ -304,6 +310,7 @@ enum {
    TAIR_DUP_WAIT_RSP = 133,
    TAIR_HAS_MORE_DATA = 150,
 
+   TAIR_RETURN_NOT_INIT = -4002,
    TAIR_RETURN_NOT_SUPPORTED = -4001,
    TAIR_RETURN_PROXYED = -4000,
    TAIR_RETURN_FAILED = -3999,
@@ -411,6 +418,15 @@ typedef enum {
   TAIR_CLUSTER_TYPE_SINGLE_CLUSTER,
   TAIR_CLUSTER_TYPE_MULTI_CLUSTER,
 } TairClusterType;
+
+typedef enum
+{
+  NONE = 0,
+  LOCK_STATUS,
+  LOCK_VALUE,
+  UNLOCK_VALUE,
+  PUT_AND_LOCK_VALUE
+} LockType;
 
 #endif
 /////////////

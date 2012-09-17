@@ -44,7 +44,7 @@ namespace tair
         }
         else if (dir != NULL)
         {
-          char file_name[PATH_MAX];
+          char file_name[TAIR_MAX_PATH_LEN];
           snprintf(file_name, sizeof(file_name), "%s/ldb_cache_stat", dir);
           if (init_file(file_name) != TAIR_RETURN_SUCCESS)
           {
@@ -197,7 +197,7 @@ namespace tair
       {
         if (file_offset_ > max_file_size_)
         {
-          char buf[PATH_MAX + 128];
+          char buf[TAIR_MAX_PATH_LEN + 128];
           int32_t pos = snprintf(buf, sizeof(buf), "%s", file_->get_file_name());
           tbsys::CTimeUtil::timeToStr(time(NULL), buf + pos);
           if (check_init())
