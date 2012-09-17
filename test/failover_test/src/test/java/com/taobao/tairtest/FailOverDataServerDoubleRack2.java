@@ -6,6 +6,7 @@ package com.taobao.tairtest;
 import static org.junit.Assert.*;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FailOverDataServerDoubleRack2 extends FailOverBaseCase {
@@ -375,23 +376,37 @@ public class FailOverDataServerDoubleRack2 extends FailOverBaseCase {
 		log.info("end DataServer test Failover case 27");
 	}
 
+	@BeforeClass
+	public static void subBeforeClass() {
+		log.info("reset copycount while subBeforeClass!");
+		FailOverBaseCase fb = new FailOverBaseCase();
+		if (!fb.batch_modify(csList, tair_bin + groupconf, copycount, "2"))
+			fb.fail("modify configure file failure");
+	}
+
 	@Before
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
-		clean_tool(local);
-		resetCluster(csList, dsList);
-		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
-		if (!batch_modify(csList, tair_bin + groupconf, copycount, "2"))
-			fail("modify configure file failure");
-		if (!batch_modify(dsList, tair_bin + groupconf, copycount, "2"))
-			fail("modify configure file failure");
+		if (before.equals(clean_option)) {
+			clean_tool(local);
+			resetCluster(csList, dsList);
+			if(!batch_uncomment(csList, tair_bin + groupconf, dsList, "#"))
+				fail("batch uncomment ds in group.conf failed!");
+			if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
+				fail("modify configure file failed!");
+		}
 	}
 
 	@After
 	public void subAfter() {
 		log.info("clean tool and cluster while subAfter!");
-		clean_tool(local);
-		resetCluster(csList, dsList);
-		batch_uncomment(csList, tair_bin + groupconf, dsList, "#");
+		if (after.equals(clean_option)) {
+			clean_tool(local);
+			resetCluster(csList, dsList);
+			if(!batch_uncomment(csList, tair_bin + groupconf, dsList, "#"))
+				fail("batch uncomment ds in group.conf failed!");
+			if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
+				fail("modify configure file failed!");
+		}
 	}
 }

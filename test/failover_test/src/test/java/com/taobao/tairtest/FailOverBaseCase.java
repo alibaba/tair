@@ -52,6 +52,8 @@ public class FailOverBaseCase extends BaseTestCase {
 	protected static String toolconf;
 	// distinguish if mdb needs touch
 	protected static int touch_flag;
+	// when clean the enveriment
+	protected static String clean_option;
 	// server operation
 	protected final static String groupconf = "etc/group.conf";
 	protected final static String start = "start";
@@ -70,12 +72,15 @@ public class FailOverBaseCase extends BaseTestCase {
 	protected final static String ds = "ds";
 	// system option
 	protected final static String local = "local";
+	protected final static String before = "before";
+	protected final static String after = "after";
 	// judge measure
 	protected final static float normSucRate = 0.99f;
 	protected final static float migSucRate = 0.92f;
 
 	@BeforeClass
 	public static void baseBeforeClass() {
+		log.info("read config file while baseBeforeClass!");
 		ConfParser parser = new ConfParser("failover.conf");
 
 		// Read public configuration
@@ -120,6 +125,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		dsport = ps.getValue("public", "dsport");
 		toolname = ps.getValue("public", "toolname");
 		toolconf = ps.getValue("public", "toolconf");
+		clean_option = ps.getValue("public", "clean_option");
 	}
 
 	private static void readMdbConf(ConfParser ps) {
@@ -770,16 +776,31 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		return ret;
 	}
+	
+	protected boolean uncomment_line(String machine, String file,
+			List<String> keywords, String comment) {
+		boolean ret = false;
+		String cmd = "";
+		for (Iterator<String> ks = keywords.iterator(); ks.hasNext();) {
+			cmd += "sed -i \'s/" + comment + "*\\(.*" + ks.next()
+			+ ".*$\\)/\\1/\' " + file + " ; ";
+		}
+		STAFResult result = executeShell(stafhandle, machine, cmd);
+		if (result.rc != 0) {
+			log.error(machine + " result.rc not 0! " + result.rc);
+			ret = false;
+		}
+		return ret;
+	}
 
 	protected boolean batch_uncomment(List<String> machines, String confname,
 			List<String> keywords, String comment) {
+		log.info("batch uncomment " + keywords + " on " + machines);
 		boolean ret = true;
 		for (Iterator<String> ms = machines.iterator(); ms.hasNext();) {
 			String cms = ms.next();
-			for (Iterator<String> ks = keywords.iterator(); ks.hasNext();) {
-				if (!uncomment_line(cms, confname, ks.next(), comment))
-					ret = false;
-			}
+			if (!uncomment_line(cms, confname, keywords, comment))
+				ret = false;
 		}
 		return ret;
 	}
@@ -864,7 +885,7 @@ public class FailOverBaseCase extends BaseTestCase {
 		}
 		boolean waitFlag = true;
 		int waitLimit = 0;
-		while (waitFlag && waitLimit < 10) {
+		while (waitFlag && waitLimit < 30) {
 			waitFlag = false;
 			waitto(1);
 			waitLimit++;
@@ -876,6 +897,11 @@ public class FailOverBaseCase extends BaseTestCase {
 			}
 		}
 		exec.shutdown();
+		if(waitLimit >= 30) {
+			String errMsg = "wait batchControlServer time out!";
+			log.error(errMsg);
+			fail(errMsg);
+		}
 
 		for (int k = 0; k < serverList.size(); k++) {
 			Boolean retThread;

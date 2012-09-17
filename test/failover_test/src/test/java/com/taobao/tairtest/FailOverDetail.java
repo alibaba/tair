@@ -3,6 +3,7 @@ package com.taobao.tairtest;
 import static org.junit.Assert.*;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FailOverDetail extends FailOverBaseCase {
@@ -568,30 +569,40 @@ public class FailOverDetail extends FailOverBaseCase {
 
 		log.info("end detail failover test case 07");
 	}
+	
+	@BeforeClass
+	public static void subBeforeClass() {
+		log.info("reset copycount while subBeforeClass!");
+		FailOverBaseCase fb = new FailOverBaseCase();
+		if (!fb.batch_modify(csList, tair_bin + groupconf, copycount, "1"))
+			fb.fail("modify configure file failure");
+	}
 
 	@Before
 	public void subBefore() {
 		log.info("clean tool and cluster while subBefore!");
-		batch_clean_test_data(dsList, test_bin);
-		batch_clean_test_data(dsList, test_bin2);
-		resetCluster(csList, dsList);
-		batch_uncomment(csList, tair_bin + "etc/group.conf",
-				dsList, "#");
-		if (!batch_modify(csList, tair_bin + "etc/group.conf",
-				"_copy_count", "1"))
-			fail("modify configure file failure");
+		if (before.equals(clean_option)) {
+			batch_clean_test_data(dsList, test_bin);
+			batch_clean_test_data(dsList, test_bin2);
+			resetCluster(csList, dsList);
+			batch_uncomment(csList, tair_bin + "etc/group.conf", dsList, "#");
+			if (!modify_config_file(csList.get(0), tair_bin + "etc/group.conf",
+					"_data_move", "0"))
+				fail("reset datamove to 0 failed!");
+		}
 	}
 
 	@After
 	public void subAfter() {
 		log.info("clean tool and cluster while subAfter!");
-		batch_clean_test_data(dsList, test_bin);
-		batch_clean_test_data(dsList, test_bin2);
-		resetCluster(csList, dsList);
-		batch_uncomment(csList, tair_bin + "etc/group.conf",
-				dsList, "#");
-		if (!modify_config_file(csList.get(0), tair_bin
-				+ "etc/group.conf", "_data_move", "0"))
-			fail("reset datamove to 0 failed!");
+		if (after.equals(clean_option)) {
+			batch_clean_test_data(dsList, test_bin);
+			batch_clean_test_data(dsList, test_bin2);
+			resetCluster(csList, dsList);
+			batch_uncomment(csList, tair_bin + "etc/group.conf", dsList, "#");
+			if (!modify_config_file(csList.get(0), tair_bin + "etc/group.conf",
+					"_data_move", "0"))
+				fail("reset datamove to 0 failed!");
+		}
 	}
 }
