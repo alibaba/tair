@@ -168,7 +168,7 @@ namespace tair
         int32_t db_count_;
         BucketIndexer* bucket_indexer_;
         bool use_bloomfilter_;
-        mdb_manager** cache_;
+        mdb_manager* cache_;
         // cache stat
         CacheStat cache_stat_;
         LdbInstance* scan_ldb_;
