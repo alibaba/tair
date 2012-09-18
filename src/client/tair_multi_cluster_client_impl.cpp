@@ -60,7 +60,7 @@ namespace tair
   tair_multi_cluster_client_impl::tair_multi_cluster_client_impl()
   {
     updater_ = new cluster_info_updater();
-    handler_mgr_ = new bucket_shard_cluster_handler_manager(updater_, MAP_SHARDING_TYPE);
+    handler_mgr_ = new bucket_shard_cluster_handler_manager(updater_, MAP_SHARDING_TYPE); // default map sharding
   }
 
   tair_multi_cluster_client_impl::~tair_multi_cluster_client_impl()

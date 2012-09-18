@@ -105,21 +105,6 @@ namespace tair {
           bool fill_cache = true);
 
       /**
-       ** @brief batch put data to tair
-       **
-       ** @param area     namespace
-       ** @param kvs      key && value
-       ** @param fail_request fail_keys
-       **
-       ** @return 0 -- success, otherwise fail,you can use get_error_msg(ret) to get more information.
-       **/
-
-      int mput(int area,
-          const tair_client_kv_map& kvs,
-          int& fail_request,
-          bool compress = true);
-
-      /**
        * @brief get data from tair cluster
        *
        * @param area    namespace
@@ -544,7 +529,26 @@ namespace tair {
 
       int64_t ping(uint64_t server_id);
 
-      // following cmd is useful for multi_cluster_client
+      /*** Following interface is specially useful for multi-cluster (FastDump, etc.). ***/
+      /**
+       ** @brief batch put data to tair
+       ** @ NOTE: This interface is specially for dump data to server
+       **         in some specific condition(FastDump etc.).
+       **         Do NOT use it only when you konw what you're doing.
+       **
+       ** @param area     namespace
+       ** @param kvs      key && value
+       ** @param fail_request fail_keys
+       ** @param compress whether compress data
+       **
+       ** @return 0 -- success, otherwise fail,you can use get_error_msg(ret) to get more information.
+       **/
+
+      int mput(int area,
+          const tair_client_kv_map& kvs,
+          int& fail_request,
+          bool compress = true);
+
       /**
        * @param group: group names of which you wanna know the status
        * @param status: group statuses, in the format of 'group_1: group_status=on'

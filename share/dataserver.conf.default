@@ -122,7 +122,7 @@ ldb_do_seek_compaction=1
 ##         all the time, so data will be reused even if buckets owned by server changed(maybe cluster has changed),
 ##  map  : handle to get better balance among all instances. same bucket may be sharded to different instance based
 ##         on different buckets set(TODO: data will be migrated among instances).
-ldb_bucket_index_to_instance_strategy=map
+ldb_bucket_index_to_instance_strategy=hash
 ## bucket index can be updated. this is useful if the cluster wouldn't change once started
 ## even server down/up accidently.
 ldb_bucket_index_can_update=0

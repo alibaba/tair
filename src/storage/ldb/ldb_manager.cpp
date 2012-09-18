@@ -550,7 +550,7 @@ namespace tair
 
         if (ret != TAIR_RETURN_SUCCESS && new_cache != NULL)
         {
-          destroy_container(new_cache, i);
+          destroy_container(new_cache, i+1);
         }
 
         return ret;
@@ -1041,7 +1041,7 @@ namespace tair
 
         if (ret != TAIR_RETURN_SUCCESS && new_ldb_instance != NULL)
         {
-          destroy_container(new_ldb_instance, i);
+          destroy_container(new_ldb_instance, i+1);
         }
 
         delete[] tmp_buckets;
