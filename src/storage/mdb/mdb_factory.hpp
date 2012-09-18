@@ -20,8 +20,8 @@ namespace tair {
 
   class mdb_factory {
   public:
-      static storage::storage_manager * create_mdb_manager();
-      static storage::storage_manager * create_embedded_mdb();
+      static storage::storage_manager * create_mdb_manager(const char* path = NULL);
+      static storage::storage_manager * create_embedded_mdb(const char* path = NULL);
       static void parse_area_capacity_list(std::vector<const char *>&a_c);
   };
 

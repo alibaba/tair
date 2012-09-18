@@ -83,8 +83,10 @@ ldb_db_version_care=1
 ldb_compact_range = 3-6
 ## backgroud task check compact interval
 ldb_check_compact_interval = 5
-## use cache, cache mdb's config depends on mdb's config item(mdb_type, slab_mem_size, etc)
-ldb_use_cache=1
+## use cache count, 0 means NOT use cache,`ldb_use_cache_count should NOT be larger
+## than `ldb_db_instance_count, and better to be a factor of `ldb_db_instance_count.
+## each cache mdb's config depends on mdb's config item(mdb_type, slab_mem_size, etc)
+ldb_use_cache_count=1
 ## cache stat can't report configserver, record stat locally, stat file size.
 ## file will be rotate when file size is over this.
 ldb_cache_stat_file_size=20971520
@@ -111,6 +113,24 @@ ldb_limit_compact_time_range=6-1
 ldb_limit_delete_obsolete_file_interval=0
 ## whether trigger compaction by seek
 ldb_do_seek_compaction=1
+
+#### following config effects on FastDump ####
+## when ldb_db_instance_count > 1, bucket will be sharded to instance base on config strategy.
+## current supported:
+##  hash : just do integer hash to bucket number then module to instance, instance's balance may be
+##         not perfect in small buckets set. same bucket will be sharded to same instance
+##         all the time, so data will be reused even if buckets owned by server changed(maybe cluster has changed),
+##  map  : handle to get better balance among all instances. same bucket may be sharded to different instance based
+##         on different buckets set(TODO: data will be migrated among instances).
+ldb_bucket_index_to_instance_strategy=map
+## bucket index can be updated. this is useful if the cluster wouldn't change once started
+## even server down/up accidently.
+ldb_bucket_index_can_update=0
+## strategy map will save bucket index statistics into file, this is the file's directory
+ldb_bucket_index_file_dir=./data/bindex
+## memory usage for memtable sharded by bucket when batch-put(especially for FastDump)
+ldb_max_mem_usage_for_memtable=3221225472
+####
 
 #### leveldb config (Waring: you should know what you're doing.)
 ## one leveldb instance max open files(actually table_cache_ capacity, consider as working set)

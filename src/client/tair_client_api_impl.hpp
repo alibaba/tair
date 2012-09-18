@@ -223,7 +223,7 @@ namespace tair {
       int op_cmd_to_cs(ServerCmdType cmd, std::vector<std::string>* params, std::vector<std::string>* ret_values);
       int op_cmd_to_ds(ServerCmdType cmd, std::vector<std::string>* params, const char* dest_server_addr = NULL);
 
-      void set_force_service(bool force) { this->force_service = force_service; }
+      void set_force_service(bool force) { this->force_service = force; }
   
       void force_change_dataserver_status(uint64_t server_id, int cmd);
       void get_migrate_status(uint64_t server_id,vector<pair<uint64_t,uint32_t> >& result);

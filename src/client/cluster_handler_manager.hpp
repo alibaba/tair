@@ -217,13 +217,20 @@ namespace tair
   ////////////////////////////////////////////////////////
   // specified cluster handler manger by bucket sharding
   ////////////////////////////////////////////////////////
+  typedef enum
+  {
+    HASH_SHARDING_TYPE = 0,
+    MAP_SHARDING_TYPE = 1,
+  } sharding_type;
+
   class handlers_node
   {
   public:
     handlers_node();
     explicit handlers_node(CLUSTER_HANDLER_MAP* handler_map,
                            CLUSTER_HANDLER_LIST* handlers,
-                           BUCKET_INDEX_MAP* extra_bucket_map);
+                           BUCKET_INDEX_MAP* extra_bucket_map,
+                           sharding_type type);
     ~handlers_node();
 
     void update(const CLUSTER_INFO_LIST& cluster_infos, const handlers_node& diff_handlers_node);
@@ -270,6 +277,10 @@ namespace tair
         }
       }
     }
+    inline sharding_type get_sharding_type()
+    {
+      return sharding_type_;        
+    }
 
   private:
     void construct_handler_map(const CLUSTER_INFO_LIST& cluster_infos,
@@ -278,6 +289,8 @@ namespace tair
     void construct_extra_bucket_map(CLUSTER_HANDLER_MAP_ITER_LIST& has_down_server_handlers);
     void collect_down_bucket(CLUSTER_HANDLER_MAP_ITER_LIST& has_down_server_handlers,
                              CLUSTER_HANDLER_MAP_ITER_LIST& has_down_bucket_handlers);
+    void map_sharding_bucket(const handlers_node& diff_handlers_node);
+    void get_live_buckets(std::vector<int32_t>& buckets);
     void shard_down_bucket(const CLUSTER_HANDLER_MAP_ITER_LIST& has_down_bucket_handlers);
     void get_handler_index_of_bucket(int32_t bucket, const cluster_info& exclude, std::vector<int32_t>& indexs);
 
@@ -298,6 +311,10 @@ namespace tair
     // multi-cluster must have same bucket count
     int32_t bucket_count_;
 
+    // whether sharding bucket use map strategy(default hash).
+    // maybe some other strategies type, 
+    sharding_type sharding_type_;
+
     // to lookup handler by cluster_info when update
     CLUSTER_HANDLER_MAP* handler_map_;
     // to lookup handler by index of sharding when pick
@@ -311,7 +328,7 @@ namespace tair
   {
   public:
     friend class bucket_shard_cluster_handler_manager_delegate;
-    bucket_shard_cluster_handler_manager(cluster_info_updater* updater);
+    bucket_shard_cluster_handler_manager(cluster_info_updater* updater, sharding_type type = HASH_SHARDING_TYPE);
     virtual ~bucket_shard_cluster_handler_manager();
 
     void* current()

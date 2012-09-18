@@ -189,7 +189,7 @@
 #define LDB_CACHE_STAT_FILE_SIZE        "ldb_cache_stat_file_size"
 #define LDB_COMPACT_RANGE               "ldb_compact_range"
 #define LDB_CHECK_COMPACT_INTERVAL      "ldb_check_compact_interval"
-#define LDB_USE_CACHE                   "ldb_use_cache"
+#define LDB_USE_CACHE_COUNT             "ldb_use_cache_count"
 #define LDB_MIGRATE_BATCH_COUNT         "ldb_migrate_batch_count"
 #define LDB_MIGRATE_BATCH_SIZE          "ldb_migrate_batch_size"
 #define LDB_USE_BLOOMFILTER             "ldb_use_bloomfilter"

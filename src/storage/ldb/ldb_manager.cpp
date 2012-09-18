@@ -34,7 +34,7 @@ namespace tair
       // UsingLdbManager
       ////////////////////////////////
       UsingLdbManager::UsingLdbManager() :
-        ldb_instance_(NULL), db_count_(0), cache_(NULL), cache_file_path_(""), next_(NULL), time_(0)
+        ldb_instance_(NULL), db_count_(0), cache_(NULL), cache_count_(0), base_cache_path_(""), next_(NULL), time_(0)
       {
       }
       UsingLdbManager::~UsingLdbManager()
@@ -51,22 +51,20 @@ namespace tair
         tbsys::CTimeUtil::timeToStr(time_, time_buf);
         log_warn("destroy last ldb manager. time: %s", time_buf);
 
-        if (ldb_instance_ != NULL)
-        {
-          for (int i = 0; i < db_count_; i++)
-          {
-            delete ldb_instance_[i];
-          }
-          delete [] ldb_instance_;
-          ldb_instance_ = NULL;
-        }
+        destroy_container(ldb_instance_, db_count_);
+
         if (cache_ != NULL)
         {
-          delete cache_;
-          if (::shm_unlink(cache_file_path_.c_str()) != 0)
+          for (int32_t i = 0; i < cache_count_; ++i)
           {
-            log_error("unlink cache file fail: %s, error: %s", cache_file_path_.c_str(), strerror(errno));
+            std::string cache_path = append_num(base_cache_path_, i+1);
+            if (::shm_unlink(cache_path.c_str()) != 0)
+            {
+              log_error("unlink cache file fail: %s, error: %s", cache_path.c_str(), strerror(errno));
+            }
           }
+
+          destroy_container(cache_, cache_count_);
         }
       }
 
@@ -463,7 +461,7 @@ namespace tair
       ////////////////////////////////
       extern void get_bloom_stats(cache_stat* ldb_cache_stat);
 
-      LdbManager::LdbManager() : use_bloomfilter_(false), cache_(NULL), scan_ldb_(NULL),
+      LdbManager::LdbManager() : use_bloomfilter_(false), cache_(NULL), cache_count_(0), scan_ldb_(NULL),
                                  migrate_wait_us_(0), using_head_(NULL), using_tail_(NULL), last_release_time_(0)
       {
         init();
@@ -476,18 +474,16 @@ namespace tair
 
       int LdbManager::init()
       {
-        std::string cache_stat_path;
-        bool use_cache = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USE_CACHE, 1) > 0;
+        db_count_ = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_DB_INSTANCE_COUNT, 1);
+        cache_count_ = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USE_CACHE_COUNT, 1);
         use_bloomfilter_ = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USE_BLOOMFILTER, 0) > 0;
-        if (use_cache)
+
+        if (cache_count_ > 0)
         {
-          cache_ = dynamic_cast<tair::mdb_manager*>(mdb_factory::create_embedded_mdb());
-          if (NULL == cache_)
-          {
-            log_error("init ldb memory cache fail.");
-          }
+          init_cache(cache_, cache_count_);
         }
 
+        std::string cache_stat_path;
         if (cache_ != NULL || use_bloomfilter_)
         {
           const char* log_file_path = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_LOG_FILE, "server.log");
@@ -509,43 +505,66 @@ namespace tair
         }
 
         bool db_version_care = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_DB_VERSION_CARE, 1) > 0;
-        db_count_ = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_DB_INSTANCE_COUNT, 1);
         ldb_instance_ = new LdbInstance*[db_count_];
         for (int32_t i = 0; i < db_count_; ++i)
         {
-          ldb_instance_[i] = new LdbInstance(i + 1, db_version_care, cache_);
+          ldb_instance_[i] = new LdbInstance(i + 1, db_version_care, cache_ != NULL ? cache_[i % cache_count_] : NULL);
         }
 
         const char* bucket_index_strategy = TBSYS_CONFIG.getString(TAIRLDB_SECTION, LDB_BUCKET_INDEX_TO_INSTANCE_STRATEGY,
                                                                    BI_STRATEGY_HASH);
         bucket_indexer_ = BucketIndexer::new_bucket_indexer(bucket_index_strategy);
 
-        log_warn("ldb storage engine construct count: %d, db version care: %s, use cache: %s, cache stat path: %s, bucket index strategy: %s",
-                 db_count_, db_version_care ? "yes" : "no", cache_ != NULL ? "yes" : "no", cache_stat_path.c_str(),
+        log_warn("ldb storage engine construct count: %d, db version care: %s, cache count: %d, cache stat path: %s, bucket index strategy: %s",
+                 db_count_, db_version_care ? "yes" : "no", cache_count_, cache_stat_path.c_str(),
                  bucket_index_strategy);
 
         return TAIR_RETURN_SUCCESS;
+      }
+
+      int LdbManager::init_cache(mdb_manager**& new_cache, int32_t count)
+      {
+        int ret = TAIR_RETURN_SUCCESS;
+        std::string base_cache_path = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MDB_SHM_PATH,
+                                                             "/mdb_shm_path");
+        new_cache = new tair::mdb_manager*[count];
+        memset(new_cache, 0, sizeof(new_cache));
+
+        // init each cache
+        int32_t i = 0;
+        for (i = 0; i < count; ++i)
+        {
+          mdb_manager* cache = dynamic_cast<tair::mdb_manager*>(
+            mdb_factory::create_embedded_mdb(append_num(base_cache_path, i+1).c_str()));
+          if (NULL == cache)
+          {
+            log_error("init ldb memory cache fail, index: %d.", i+1);
+            ret = TAIR_RETURN_FAILED;
+            break;
+          }
+          else
+          {
+            new_cache[i] =cache;
+          }
+        }
+
+        if (ret != TAIR_RETURN_SUCCESS && new_cache != NULL)
+        {
+          destroy_container(new_cache, i);
+        }
+
+        return ret;
       }
 
       int LdbManager::destroy()
       {
         LdbInstance** instance = ldb_instance_;
         ldb_instance_ = NULL;
-        if (instance != NULL)
-        {
-          for (int32_t i = 0; i < db_count_; ++i)
-          {
-            delete instance[i];
-          }
-        }
+        destroy_container(instance, db_count_);
 
-        delete[] instance;
-
-        if (cache_ != NULL)
-        {
-          delete cache_;
-          cache_ = NULL;
-        }
+        mdb_manager** cache = cache_;
+        cache_ = NULL;
+        destroy_container(cache, cache_count_);
 
         if (NULL != bucket_indexer_)
         {
@@ -677,7 +696,10 @@ namespace tair
         // clear cache
         if (cache_ != NULL)
         {
-          cache_->clear(area);
+          for (int32_t i = 0; i < cache_count_; ++i)
+          {
+            cache_[i]->clear(area);
+          }
         }
         return ret;
       }
@@ -737,7 +759,10 @@ namespace tair
         // clear mdb cache
         if (cache_ != NULL)
         {
-          cache_->close_buckets(buckets);
+          for (int32_t i = 0; i < cache_count_; ++i)
+          {
+            cache_[i]->close_buckets(buckets);
+          }
         }
       }
 
@@ -793,7 +818,12 @@ namespace tair
         // we consider set area quota to cache
         if (cache_ != NULL)
         {
-          cache_->set_area_quota(area, quota);
+          // round up
+          uint64_t each_quota = (quota + cache_count_ - 1) / cache_count_;
+          for (int32_t i = 0; i < cache_count_; ++i)
+          {
+            cache_[i]->set_area_quota(area, each_quota);
+          }
         }
       }
 
@@ -801,7 +831,19 @@ namespace tair
       {
         if (cache_ != NULL)
         {
-          cache_->set_area_quota(quota_map);
+          // average area quota
+          if (cache_count_ > 1)
+          {
+            for (std::map<int, uint64_t>::iterator it = quota_map.begin(); it != quota_map.end(); ++it)
+            {
+              it->second = (it->second + cache_count_ - 1) / cache_count_;
+            }
+          }
+
+          for (int32_t i = 0; i < cache_count_; ++i)
+          {
+            cache_[i]->set_area_quota(quota_map);
+          }
         }
       }
 
@@ -908,95 +950,130 @@ namespace tair
 
       int LdbManager::do_reset_db()
       {
-        int ret = TAIR_RETURN_SUCCESS;
-        std::string back_cache_path = "";
-        if (cache_ != NULL)
-        {
-          // rotate using cache file
-          static std::string sys_shm_path = std::string("/dev/shm/"); // just hard code
-          std::string cache_file_path = mdb_param::mdb_path;
-          back_cache_path = get_back_path(cache_file_path.c_str());
-          if (::access((sys_shm_path + cache_file_path).c_str(), F_OK) != 0)
-          {
-            // just consider it's ok. maybe ::access fail because other reason.
-            log_warn("resetdb but orignal cache path is not exist: %s, ignore it.", cache_file_path.c_str());
-          }
-          else if (::rename((sys_shm_path + cache_file_path).c_str(), (sys_shm_path + back_cache_path).c_str()) != 0)
-          {
-            log_error("resetdb cache %s to back cache %s fail. error: %s",
-                      cache_file_path.c_str(), back_cache_path.c_str(), strerror(errno));
-            ret = TAIR_RETURN_FAILED;
-          }
-        }
+        // reset ldb cache
+        std::string base_cache_back_path;
+        mdb_manager** new_cache = NULL;
+        LdbInstance** new_ldb_instance = NULL;
+
+        int ret = do_reset_cache(new_cache, base_cache_back_path);
 
         if (TAIR_RETURN_SUCCESS == ret)
         {
-          // init new ldb cache
-          mdb_manager* new_cache = NULL;
-          if (TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USE_CACHE, 1) > 0)
-          {
-            log_info("reinit new cache");
-            new_cache = dynamic_cast<tair::mdb_manager*>(mdb_factory::create_embedded_mdb());
-            if (NULL == new_cache)
-            {
-              log_error("reinit ldb memory cache fail.");
-              ret = TAIR_RETURN_FAILED;
-            }
-          }
-
+          ret = do_reset_db_instance(new_ldb_instance, new_cache);
           if (TAIR_RETURN_SUCCESS == ret)
           {
-            // init new ldb instance
-            // get orignal buckets deployment
-            log_info("reinit ldb instance");
-            std::vector<int32_t>* tmp_buckets = new std::vector<int32_t>[db_count_];
-            for (int32_t i = 0; i < db_count_; ++i)
-            {
-              ldb_instance_[i]->get_buckets(tmp_buckets[i]);
-            }
-
-            bool db_version_care = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_DB_VERSION_CARE, 1) > 0;
-            LdbInstance** new_ldb_instance = new LdbInstance*[db_count_];
-            for (int32_t i = 0; i < db_count_; ++i)
-            {
-              new_ldb_instance[i] = new LdbInstance(i + 1, db_version_care, new_cache);
-              log_debug("reinit instance %d own %d buckets.", i+1, tmp_buckets[i].size());
-              if (!new_ldb_instance[i]->init_buckets(tmp_buckets[i]))
-              {
-                log_error("resetdb reinit db fail. instance: %d", i+1);
-                ret = TAIR_RETURN_FAILED;
-                break;
-              }
-            }
-
-            if (TAIR_RETURN_SUCCESS == ret)
-            {
-              UsingLdbManager* new_using_mgr = new UsingLdbManager;
-              new_using_mgr->ldb_instance_ = ldb_instance_;
-              new_using_mgr->db_count_ = db_count_;
-              new_using_mgr->cache_ = cache_;
-              new_using_mgr->cache_file_path_ = back_cache_path;
-              new_using_mgr->time_ = time(NULL);
-
-              // switch
-              log_warn("ldb resetdb now");
-              cache_ = new_cache;
-              ldb_instance_ = new_ldb_instance;
-
-              if (using_head_ != NULL)
-              {
-                using_tail_->next_ = new_using_mgr;
-                using_tail_ = new_using_mgr;
-              }
-              else
-              {
-                using_head_ = using_tail_ = new_using_mgr;
-              }
-            }
-            delete[] tmp_buckets;
+            ret = do_switch_db(new_ldb_instance, new_cache, base_cache_back_path);
           }
         }
 
+        return ret;
+      }
+
+      int LdbManager::do_reset_cache(mdb_manager**& new_cache, std::string& base_back_path)
+      {
+        if (cache_ == NULL)
+        {
+          return TAIR_RETURN_SUCCESS;
+        }
+
+        int ret = TAIR_RETURN_SUCCESS;
+        // rotate using cache file
+        static std::string sys_shm_path = std::string("/dev/shm/"); // just hard code
+        std::string base_path = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MDB_SHM_PATH,
+                                                       "/mdb_shm_path");
+        base_back_path = get_back_path(base_path.c_str());
+
+        for (int32_t i = 0; i < cache_count_; ++i)
+        {
+          std::string cache_path = append_num(base_path, i+1); 
+          std::string back_cache_path = append_num(base_back_path, i+1);
+          if (::access((sys_shm_path + cache_path).c_str(), F_OK) != 0)
+          {
+            // just consider it's ok. maybe ::access fail because other reason.
+            log_warn("resetdb but orignal cache path is not exist: %s, ignore it.", cache_path.c_str());
+          }
+          else if (::rename((sys_shm_path + cache_path).c_str(), (sys_shm_path + back_cache_path).c_str()) != 0)
+          {
+            log_error("resetdb cache %s to back cache %s fail. error: %s",
+                      cache_path.c_str(), back_cache_path.c_str(), strerror(errno));
+            ret = TAIR_RETURN_FAILED;
+            break;
+          }
+        }
+
+        if (ret == TAIR_RETURN_SUCCESS)
+        {
+          log_info("reinit new cache");
+          ret = init_cache(new_cache, cache_count_);
+        }
+
+        return ret;
+      }
+
+      int LdbManager::do_reset_db_instance(LdbInstance**& new_ldb_instance, mdb_manager** new_cache)
+      {
+        int ret = TAIR_RETURN_SUCCESS;
+        // init new ldb instance
+        // get orignal buckets deployment
+        log_info("reinit ldb instance");
+        std::vector<int32_t>* tmp_buckets = new std::vector<int32_t>[db_count_];
+        for (int32_t i = 0; i < db_count_; ++i)
+        {
+          ldb_instance_[i]->get_buckets(tmp_buckets[i]);
+        }
+
+        bool db_version_care = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_DB_VERSION_CARE, 1) > 0;
+        new_ldb_instance = new LdbInstance*[db_count_];
+
+        int32_t i = 0;
+        for (i = 0; i < db_count_; ++i)
+        {
+          new_ldb_instance[i] = new LdbInstance(i + 1, db_version_care,
+                                                new_cache != NULL ? new_cache[i % cache_count_] : NULL);
+          log_debug("reinit instance %d own %d buckets.", i+1, tmp_buckets[i].size());
+          if (!new_ldb_instance[i]->init_buckets(tmp_buckets[i]))
+          {
+            log_error("resetdb reinit db fail. instance: %d", i+1);
+            ret = TAIR_RETURN_FAILED;
+            break;
+          }
+        }
+
+        if (ret != TAIR_RETURN_SUCCESS && new_ldb_instance != NULL)
+        {
+          destroy_container(new_ldb_instance, i);
+        }
+
+        delete[] tmp_buckets;
+
+        return ret;
+      }
+
+      int LdbManager::do_switch_db(LdbInstance** new_ldb_instance, mdb_manager** new_cache, std::string& base_cache_back_path)
+      {
+        int ret = TAIR_RETURN_SUCCESS;
+        UsingLdbManager* new_using_mgr = new UsingLdbManager;
+        new_using_mgr->ldb_instance_ = ldb_instance_;
+        new_using_mgr->db_count_ = db_count_;
+        new_using_mgr->cache_ = cache_;
+        new_using_mgr->cache_count_ = cache_count_;
+        new_using_mgr->base_cache_path_ = base_cache_back_path;
+        new_using_mgr->time_ = time(NULL);
+
+        // switch
+        log_warn("ldb resetdb now");
+        cache_ = new_cache;
+        ldb_instance_ = new_ldb_instance;
+
+        if (using_head_ != NULL)
+        {
+          using_tail_->next_ = new_using_mgr;
+          using_tail_ = new_using_mgr;
+        }
+        else
+        {
+          using_head_ = using_tail_ = new_using_mgr;
+        }
         return ret;
       }
 
@@ -1060,7 +1137,18 @@ namespace tair
         {
           if (cache_ != NULL)
           {
-            cache_->raw_get_stats(ldb_cache_stat);
+            // get total cache stat
+            for (int32_t i = 0; i < cache_count_; ++i)
+            {
+              if (i == 0)
+              {
+                cache_[i]->raw_get_stats(ldb_cache_stat);
+              }
+              else
+              {
+                cache_[i]->raw_update_stats(ldb_cache_stat);
+              }
+            }
           }
           if (use_bloomfilter_)
           {
@@ -1080,8 +1168,11 @@ namespace tair
           this->bucket_count = bucket_count;
           if (cache_ != NULL)
           {
-            // set cache (mdb_manager) bucket count
-            cache_->set_bucket_count(bucket_count);
+            for (int32_t i = 0; i < cache_count_; ++i)
+            {
+              // set cache (mdb_manager) bucket count
+              cache_[i]->set_bucket_count(bucket_count);
+            }
           }
         }
       }

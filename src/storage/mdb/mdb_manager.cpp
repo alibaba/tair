@@ -257,6 +257,17 @@ namespace tair {
     }
   }
 
+  void mdb_manager::raw_update_stats(mdb_area_stat* stat)
+  {
+    if (stat != NULL)
+    {
+      for (int32_t i = 0; i < TAIR_MAX_AREA_COUNT; ++i)
+      {
+        stat[i].add(area_stat[i], true/*size care*/);
+      }
+    }
+  }
+
   bool mdb_manager::raw_remove_if_exists(const char* key, int32_t key_len)
   {
     PROFILER_BEGIN("hashmap find");

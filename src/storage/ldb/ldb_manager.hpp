@@ -48,8 +48,9 @@ namespace tair
       public:
         LdbInstance** ldb_instance_;
         int32_t db_count_;
-        mdb_manager* cache_;
-        std::string cache_file_path_;
+        mdb_manager** cache_;
+        int32_t cache_count_;
+        std::string base_cache_path_;
         UsingLdbManager* next_;
         uint32_t time_;
       };
@@ -148,18 +149,24 @@ namespace tair
         void set_area_quota(std::map<int, uint64_t>& quota_map);
 
         int op_cmd(ServerCmdType cmd, std::vector<std::string>& params);
-        int do_reset_db();
-        int do_flush_mmt();
-        int do_set_migrate_wait(int32_t cmd_wait_ms);
-        int do_release_mem();
-        void maybe_exec_cmd();
 
         void get_stats(tair_stat* stat);
         void set_bucket_count(uint32_t bucket_count);
 
       private:
         int init();
+        int init_cache(mdb_manager**& new_cache, int32_t count);
         int destroy();
+
+        int do_reset_db();
+        int do_flush_mmt();
+        int do_set_migrate_wait(int32_t cmd_wait_ms);
+        int do_release_mem();
+        void maybe_exec_cmd();
+
+        int do_switch_db(LdbInstance** new_ldb_instance, mdb_manager** new_cache, std::string& base_cache_back_path);
+        int do_reset_db_instance(LdbInstance**& new_ldb_instance, mdb_manager** new_cache);
+        int do_reset_cache(mdb_manager**& new_cache, std::string& base_back_path);
 
         LdbInstance* get_db_instance(int bucket_number);
 
@@ -168,7 +175,8 @@ namespace tair
         int32_t db_count_;
         BucketIndexer* bucket_indexer_;
         bool use_bloomfilter_;
-        mdb_manager* cache_;
+        mdb_manager** cache_;
+        int32_t cache_count_;
         // cache stat
         CacheStat cache_stat_;
         LdbInstance* scan_ldb_;

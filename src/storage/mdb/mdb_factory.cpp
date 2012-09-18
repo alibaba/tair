@@ -18,7 +18,7 @@
 #include "define.hpp"
 #include "tbsys.h"
 namespace tair {
-  storage::storage_manager * mdb_factory::create_mdb_manager()
+  storage::storage_manager * mdb_factory::create_mdb_manager(const char* path)
   {
     bool use_share_mem = true;
     mdb_param::mdb_type = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MDB_TYPE, "mdb_shm");
@@ -36,7 +36,7 @@ namespace tair {
       return NULL;
     }
 
-    mdb_param::mdb_path =
+    mdb_param::mdb_path = path != NULL ? path :
       TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MDB_SHM_PATH,
                              "/mdb_shm_path");
     mdb_param::size =
@@ -107,9 +107,9 @@ namespace tair {
     return 0;
   }
 
-  storage::storage_manager * mdb_factory::create_embedded_mdb()
+  storage::storage_manager * mdb_factory::create_embedded_mdb(const char* path)
   {
-    storage::storage_manager * manager = create_mdb_manager();
+    storage::storage_manager * manager = create_mdb_manager(path);
     if (manager == 0){
             return 0;
     }

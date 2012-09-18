@@ -98,6 +98,12 @@ namespace tair {
     return ret;
   }
 
+  int tair_client_api::mput(int area, const tair_client_kv_map& kvs,
+                            int& fail_request, bool compress)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->mput(area, kvs, fail_request, compress);
+  }
+
   int tair_client_api::get(int area,
       const data_entry &key,
       data_entry*& data)

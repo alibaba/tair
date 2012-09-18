@@ -1888,7 +1888,7 @@ WriteBatch* DBImpl::BuildBatchGroup(Writer** last_writer) {
 // REQUIRES: this thread is currently at the front of the writer queue
 Status DBImpl::MakeRoomForWrite(bool force) {
   mutex_.AssertHeld();
-  assert(!writers_.empty());
+  assert(force || !writers_.empty());
   bool allow_delay = !force;
   Status s;
   while (true) {

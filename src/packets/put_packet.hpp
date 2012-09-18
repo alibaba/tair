@@ -16,9 +16,11 @@
  */
 #ifndef TAIR_PACKET_PUT_PACKET_H
 #define TAIR_PACKET_PUT_PACKET_H
-#include <snappy.h>
 
 #include "base_packet.hpp"
+#ifdef WITH_COMPRESS
+#include "compressor.hpp"
+#endif
 namespace tair {
    class request_put : public base_packet {
    public:
@@ -201,15 +203,14 @@ namespace tair {
       tbnet::DataBuffer output;
       do_encode(&output);
 
-      int raw_len = output.getDataLen();
+      uint32_t raw_len = output.getDataLen();
       // do compress, use snappy now
       ret = tair::common::compressor::do_compress
-        (&packet_data, &packet_data_len,
+        (&packet_data, reinterpret_cast<uint32_t*>(&packet_data_len),
          output.getData(), raw_len, tair::common::data_entry::compress_type) == 0 ? true : false;
       if (ret) {
         compressed = true;
       }
-      //log_error("compress %d=>%d", raw_len, packet_data_len);
 #endif
       return ret;
     }
@@ -229,12 +230,12 @@ namespace tair {
       //       receive malloced buffer
       tbnet::DataBuffer input;
       char* raw_data = NULL;
-      int32_t raw_data_len = 0;
+      uint32_t raw_data_len = 0;
       ret = tair::common::compressor::do_decompress
         (&raw_data, &raw_data_len, packet_data, packet_data_len, tair::common::data_entry::compress_type) == 0 ? true : false;
       if (ret) {
         input.ensureFree(raw_data_len);
-        memcpy(input.free(), raw_data, raw_data_len);
+        memcpy(input.getFree(), raw_data, raw_data_len);
         input.pourData(raw_data_len);
         delete raw_data;
         ret = do_decode(&input);

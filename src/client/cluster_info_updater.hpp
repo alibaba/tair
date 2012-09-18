@@ -22,7 +22,7 @@
 
 namespace tair
 {
-  static const int32_t DEFAULT_CLUSTER_UPDATE_INTERVAL_MS = 60000;  // 1min
+  static const int32_t DEFAULT_CLUSTER_UPDATE_INTERVAL_MS = 30000;  // 30s
   static const int32_t FAIL_UPDATE_CLUSTER_INFO_INTERVAL_MS = 1000; // 1s
   static const int32_t URGENT_UPDATE_CLUSTER_INFO_INTERVAL_MS = 2000; // 2s
 

@@ -51,6 +51,26 @@ namespace tair
 
       extern std::string get_back_path(const char* path);
 
+      template<class T> void destroy_container(T**& container, int32_t count)
+      {
+        if (container != NULL)
+        {
+          for (int32_t i = 0; i < count; ++i)
+          {
+            delete container[i];
+          }
+          delete [] container;
+          container = NULL;
+        }
+      }
+
+      inline std::string append_num(const std::string& base, int32_t num)
+      {
+        char buf[16];
+        snprintf(buf, sizeof(buf), ".%d", num);
+        return base + buf;
+      }
+
       class LdbKey
       {
       public:

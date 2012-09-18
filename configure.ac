@@ -71,6 +71,8 @@ AC_ARG_WITH([compress],
 		],
 		[ with_compress=no ]
 	   )
+AS_IF([test x$with_compress = xyes],
+  [ CXXFLAGS="${CXXFLAGS} -DWITH_COMPRESS" ],)
 AM_CONDITIONAL([WITH_COMPRESS],[test x$with_compress = xyes])
 
 AC_ARG_WITH([kdb],

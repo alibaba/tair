@@ -6,7 +6,7 @@ _data_move=0
 #_min_data_server_count: when data servers left in a group less than this value, config server will stop serve for this group
 #default value is copy count.
 _min_data_server_count=1
-_plugIns_list=libStaticPlugIn.so
+#_plugIns_list=libStaticPlugIn.so
 _build_strategy=1 #1 normal 2 rack 
 _build_diff_ratio=0.6 #how much difference is allowd between different rack 
 # diff_ratio =  |data_sever_count_in_rack1 - data_server_count_in_rack2| / max (data_sever_count_in_rack1, data_server_count_in_rack2)

@@ -59,6 +59,7 @@ namespace tair {
     int raw_get(const char* key, int32_t key_len, std::string& value, bool update);
     int raw_remove(const char* key, int32_t key_len);
     void raw_get_stats(mdb_area_stat* stat);
+    void raw_update_stats(mdb_area_stat* stat);
 
   private:
     bool raw_remove_if_exists(const char* key, int32_t key_len);
