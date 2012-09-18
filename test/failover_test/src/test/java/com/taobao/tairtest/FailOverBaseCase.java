@@ -764,22 +764,20 @@ public class FailOverBaseCase extends BaseTestCase {
 
 	protected boolean uncomment_line(String machine, String file,
 			String keyword, String comment) {
-		boolean ret = false;
+		boolean ret = true;
 		String cmd = "sed -i \'s/" + comment + "*\\(.*" + keyword
 				+ ".*$\\)/\\1/\' " + file;
 		STAFResult result = executeShell(stafhandle, machine, cmd);
-		if (result.rc != 0)
+		if (result.rc != 0) {
+			log.error(machine + " result.rc not 0! " + result.rc);
 			ret = false;
-		else {
-			// String stdout=getShellOutput(result);
-			ret = true;
 		}
 		return ret;
 	}
 	
 	protected boolean uncomment_line(String machine, String file,
 			List<String> keywords, String comment) {
-		boolean ret = false;
+		boolean ret = true;
 		String cmd = "";
 		for (Iterator<String> ks = keywords.iterator(); ks.hasNext();) {
 			cmd += "sed -i \'s/" + comment + "*\\(.*" + ks.next()
