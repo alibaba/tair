@@ -14,6 +14,8 @@ _build_diff_ratio=0.6 #how much difference is allowd between different rack
 _pos_mask=65535  # 65535 is 0xffff  this will be used to gernerate rack info. 64 bit serverId & _pos_mask is the rack info, 
 _copy_count=1    
 _bucket_number=1023
+# accept ds strategy. 1 means accept ds automatically
+_accept_strategy=1
 
 # data center A
 _server_list=192.168.1.1:5191

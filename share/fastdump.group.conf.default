@@ -1,0 +1,53 @@
+## Demo group.conf for multi-cluster(FastDump, etc)
+
+#group name
+[group_master]
+_copy_count=1
+_bucket_number=123
+# all groups
+groups = group_1;group_2;
+
+[group_1]
+_data_move=1
+_min_data_server_count=1
+#_plugIns_list=libStaticPlugIn.so
+_build_strategy=1
+_build_diff_ratio=0.6
+_pos_mask=65535
+_copy_count=1
+_bucket_number=123
+_accept_strategy=1
+# whether care tmp down server
+_pre_load_flag = 1
+tmp_down_server=
+group_status=on
+
+# data center
+_server_list=192.168.1.1:5191
+_server_list=192.168.1.2:5191
+
+#quota info
+_areaCapacity_list=0,10000000;
+
+#group name
+[group_2]
+_data_move=1
+_min_data_server_count=2
+#_plugIns_list=libStaticPlugIn.so
+_build_strategy=1
+_build_diff_ratio=0.6
+_pos_mask=65535
+_copy_count=1
+_bucket_number=123
+_accept_strategy=1
+
+_pre_load_flag = 1
+group_status=on
+tmp_down_server=
+
+# data center
+_server_list=192.168.2.1:5191
+_server_list=192.168.2.2:5191
+
+#quota info
+_areaCapacity_list=0,10000000;
