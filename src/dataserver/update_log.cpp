@@ -148,6 +148,9 @@ namespace tair {
       uint value_size = 0;
       uint header_size = sizeof(item_meta_info);
       int total_size = header_size + key_size + 3 ;
+      // need prefix size here, we don't want to change log format now,
+      // so just use data_meta.prefixsize here
+      key.data_meta.prefixsize = key.get_prefix_size();
       if (operation_type == SN_PUT) {
          value_size = value.get_size();
          if (key.data_meta.valsize == 0){

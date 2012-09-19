@@ -312,6 +312,7 @@ namespace tair {
                key.data_meta = item->header;
                // skip embedded cache when migrating
                key.data_meta.flag = TAIR_CLIENT_PUT_SKIP_CACHE_FLAG;
+               key.server_flag = TAIR_SERVERFLAG_MIGRATE;
                key.has_merged = true;
                if (item->header.magic == MAGIC_ITEM_META_LDB_PREFIX)
                   key.set_prefix_size(item->header.prefixsize); 
@@ -369,7 +370,10 @@ namespace tair {
       while(log_entry != NULL) {
          tag = true;
          data_entry key = log_entry->key;
+         key.server_flag = TAIR_SERVERFLAG_MIGRATE;
          key.data_meta = log_entry->header;
+         // get prefix size here
+         key.set_prefix_size(key.data_meta.prefixsize);
          key.has_merged = true;
          log_debug("logis:%S", key.get_data());
          data_entry value;

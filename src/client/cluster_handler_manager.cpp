@@ -482,6 +482,7 @@ namespace tair
           }
           else
           {
+            // TODO: need check cluster_info actually
             sharding_buckets[it->second].push_back(*bucket_it);
           }
         }

@@ -1184,7 +1184,8 @@ namespace tair
         {
           if (1 == db_count_)
           {
-            ret = ldb_instance_[0];
+            // TODO: add init_ flag to remove exist() check
+            ret = ldb_instance_[0]->exist(bucket_number) ? ldb_instance_[0] : NULL;
           }
           else
           {

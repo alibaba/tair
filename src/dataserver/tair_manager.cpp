@@ -1438,10 +1438,11 @@
     uint32_t tair_manager::get_bucket_number(data_entry &key)
     {
       uint32_t hashcode;
+      int32_t diff_size = key.has_merged ? TAIR_AREA_ENCODE_SIZE : 0;
       if (key.get_prefix_size() == 0) {
-        hashcode = tair::util::string_util::mur_mur_hash(key.get_data(), key.get_size());
+        hashcode = tair::util::string_util::mur_mur_hash(key.get_data() + diff_size, key.get_size() - diff_size);
       } else {
-        hashcode = tair::util::string_util::mur_mur_hash(key.get_data(), key.get_prefix_size());
+        hashcode = tair::util::string_util::mur_mur_hash(key.get_data() + diff_size, key.get_prefix_size());
       }
       log_debug("hashcode: %u, bucket count: %d", hashcode, table_mgr->get_bucket_count());
       return hashcode % (localmode ? 1023 : table_mgr->get_bucket_count());
