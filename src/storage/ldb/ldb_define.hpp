@@ -329,7 +329,7 @@ namespace tair
         }
         inline int32_t value_size()
         {
-          if (data_size_ <= LDB_ITEM_META_SIZE)
+          if (data_size_ <= LDB_ITEM_META_BASE_SIZE)
             return 0;
           if (has_prefix())
             return data_size_ - LDB_ITEM_META_SIZE; 
