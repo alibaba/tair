@@ -2928,10 +2928,11 @@ OUT:
 
     uint32_t hash;
     int prefix_size = key.get_prefix_size();
+    int32_t diff_size = key.has_merged ? TAIR_AREA_ENCODE_SIZE : 0;
     if (prefix_size == 0) {
-      hash = util::string_util::mur_mur_hash(key.get_data(), key.get_size());
+      hash = util::string_util::mur_mur_hash(key.get_data() + diff_size, key.get_size() - diff_size);
     } else {
-      hash = util::string_util::mur_mur_hash(key.get_data(), prefix_size);
+      hash = util::string_util::mur_mur_hash(key.get_data() + diff_size, prefix_size);
     }
     server.clear();
 

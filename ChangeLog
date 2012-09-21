@@ -51,10 +51,18 @@ version 2.3.1.7
 
 2012-08-06
 version 2.3.2.0
-* feuture:
+* feature:
 * 1. C++客户端增加压缩功能(编译时添加--with-compress可以使用)
 * 2. 去掉ds的proxy机制
 * 3. 增加expire接口设置超时时间
 * 4. put时设置expire为负数不改变之前的超时时间
 * fixbug:
 * 1. 修复mget时返回key_count为0时全部失败的bug。
+
+2012-09-21
+version 2.3.2.1
+* feature:
+* 1. 添加fastdump支持（client添加mput接口使用）
+* fixbug:
+* 1. get_bucket_number检查data_entry是否has_merged
+* 2. update_log记录prefix size
