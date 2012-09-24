@@ -322,6 +322,14 @@ namespace tair{
       }
       tmp_packet->server_flag = TAIR_SERVERFLAG_DUPLICATE;
       tmp_packet->packet_id = max_packet_id;
+      // reset the compressed data as server_flag changed
+      if (tmp_packet->compressed != 0) {
+        tmp_packet->compressed = 0;
+        if (tmp_packet->packet_data != NULL) {
+          delete tmp_packet->packet_data;
+        }
+        tmp_packet->compress();
+      }
       //and send it to slave
       log_debug("duplicate packet %d sent: %s",tmp_packet->packet_id,tbsys::CNetUtil::addrToString(des_server_ids[i]).c_str());
       if(conn_mgr->sendPacket(des_server_ids[i], tmp_packet, NULL, NULL, true) == false)

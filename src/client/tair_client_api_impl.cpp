@@ -701,7 +701,7 @@ FAIL:
     tair_client_kv_map::const_iterator kv_iter = kvs.begin();
     for ( ; kv_iter != kvs.end(); ++kv_iter)
     {
-      if (!key_entry_check(*(kv_iter->first)) || !key_entry_check(kv_iter->second->get_d_entry()))
+      if (!key_entry_check(*(kv_iter->first)) || !data_entry_check(kv_iter->second->get_d_entry()))
       {
         ret = TAIR_RETURN_ITEMSIZE_ERROR;
         break;
