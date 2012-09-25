@@ -584,7 +584,7 @@ namespace tair {
     private:
       void invalid_local_cache(int area, const std::vector<data_entry*> &key);
 
-      int32_t timeout_ms_;
+      int32_t timeout_ms;
       i_tair_client_impl *impl;
       typedef data_entry_local_cache cache_type;
       cache_type *cache_impl[TAIR_MAX_AREA_COUNT];

@@ -27,7 +27,7 @@ namespace tair {
    *  tair_client_api
    *-----------------------------------------------------------------------------*/
 
-  tair_client_api::tair_client_api() : impl(NULL)
+  tair_client_api::tair_client_api() : timeout_ms(2000), impl(NULL)
   {
     memset(cache_impl, 0, sizeof(cache_impl));
   }
@@ -63,7 +63,7 @@ namespace tair {
       if (NULL == impl) {
         log_error("init tair client fail.");
       } else {
-        impl->set_timeout(timeout_ms_);
+        impl->set_timeout(timeout_ms);
         ret = impl->startup(master_addr,slave_addr,group_name);
         if (!ret) {
           delete impl;
@@ -82,7 +82,7 @@ namespace tair {
       log_info("tair client inited.");
     } else {
       impl = new tair_client_impl();
-      impl->set_timeout(timeout_ms_);
+      impl->set_timeout(timeout_ms);
       ret = impl->directup(server_addr);
       if (!ret) {
         delete impl;
@@ -464,7 +464,7 @@ namespace tair {
 
   void tair_client_api::set_timeout(int timeout)
   {
-    timeout_ms_ = timeout;
+    timeout_ms = timeout;
     if (impl != NULL)
     {
       impl->set_timeout(timeout);
