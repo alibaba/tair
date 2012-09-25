@@ -278,7 +278,8 @@
       tbnet::Connection *conn=packet->get_connection();
       resp_size = return_packet->size() + 16;
       if (!conn || conn->postPacket(return_packet) == false) {
-        log_warn("send ReturnPacket failure, request pcode: %d", packet->getPCode());
+        log_warn("ReturnPacket fail, req: %d, code: %d, dst: %s", packet->getPCode(), code,
+                 conn != NULL ? tbsys::CNetUtil::addrToString(conn->getServerId()).c_str() : "null");
         delete return_packet;
         resp_size = 0;
       }       
@@ -292,7 +293,8 @@
       return_packet->config_version = version;
       if (!conn || conn->postPacket(return_packet) == false)
       {
-        log_warn("send ReturnPacket failure, request pcode: %d", cmd_id);
+        log_warn("ReturnPacket fail, req: %d, code: %d, dst: %s", cmd_id, code,
+                 conn != NULL ? tbsys::CNetUtil::addrToString(conn->getServerId()).c_str() : "null");
         delete return_packet;
       }
       return EXIT_SUCCESS;

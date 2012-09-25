@@ -10,7 +10,6 @@
 #include "tbsys.h"
 
 #include "db/filename.h"
-#include "db/log_reader.h"
 #include "db/log_writer.h"
 #include "db/memtable.h"
 #include "db/table_cache.h"
@@ -770,6 +769,7 @@ class VersionSet::Builder {
   }
 };
 
+const char* VersionSet::kBackupVersionDir = "backupversions";
 VersionSet::VersionSet(const std::string& dbname,
                        const Options* options,
                        TableCache* table_cache,
@@ -796,7 +796,7 @@ VersionSet::VersionSet(const std::string& dbname,
 
 VersionSet::~VersionSet() {
   current_->Unref();
-  assert(dummy_versions_.next_ == &dummy_versions_);  // List must be empty
+  // assert(dummy_versions_.next_ == &dummy_versions_);  // List must be empty
   delete descriptor_log_;
   delete descriptor_file_;
 }
@@ -911,28 +911,28 @@ Status VersionSet::LogAndApply(VersionEdit* edit, port::Mutex* mu) {
   return s;
 }
 
-Status VersionSet::Recover() {
-  struct LogReporter : public log::Reader::Reporter {
-    Status* status;
-    virtual void Corruption(size_t bytes, const Status& s) {
-      if (this->status->ok()) *this->status = s;
+Status VersionSet::Recover(const char* manifest) {
+  std::string dscname;
+  Status s;
+  if (manifest != NULL) {
+    dscname = std::string(manifest);
+  } else {
+    // Read "CURRENT" file, which contains a pointer to the current manifest file
+    std::string current;
+    s = ReadFileToString(env_, CurrentFileName(dbname_), &current);
+    if (!s.ok()) {
+      return s;
     }
-  };
+    if (current.empty() || current[current.size()-1] != '\n') {
+      return Status::Corruption("CURRENT file does not end with newline");
+    }
+    current.resize(current.size() - 1);
 
-  // Read "CURRENT" file, which contains a pointer to the current manifest file
-  std::string current;
-  Status s = ReadFileToString(env_, CurrentFileName(dbname_), &current);
-  if (!s.ok()) {
-    return s;
+    dscname = dbname_ + "/" + current;
   }
-  if (current.empty() || current[current.size()-1] != '\n') {
-    return Status::Corruption("CURRENT file does not end with newline");
-  }
-  current.resize(current.size() - 1);
-
-  std::string dscname = dbname_ + "/" + current;
   SequentialFile* file;
   s = env_->NewSequentialFile(dscname, &file);
+
   if (!s.ok()) {
     return s;
   }
@@ -1027,8 +1027,109 @@ Status VersionSet::Recover() {
     SetLastSequence(last_sequence);
     log_number_ = log_number;
     prev_log_number_ = prev_log_number;
+    s = LoadBackupVersion();
   }
 
+  return s;
+}
+
+Status VersionSet::LoadBackupVersion() {
+  if (!options_->load_backup_version) {
+    return Status::OK();
+  }
+
+  Status s;
+  std::string bv_dir = dbname_ + "/" + VersionSet::kBackupVersionDir + "/";
+  env_->CreateDir(bv_dir);
+  std::vector<std::string> filenames;
+  env_->GetChildren(bv_dir, &filenames);
+
+  FileType type;
+  uint64_t number = 0;
+  int32_t count = 0;
+
+  for (size_t i = 0; s.ok() && i < filenames.size(); ++i) {
+    if (!(ParseFileName(filenames[i], &number, &type) && type == kDescriptorFile)) {
+      continue;
+    }
+
+    SequentialFile* file = NULL;
+    s = env_->NewSequentialFile(bv_dir + filenames[i], &file);
+    if (s.ok()) {
+      LogReporter reporter;
+      reporter.status = &s;
+      log::Reader reader(file, &reporter, true/*checksum*/, 0/*initial_offset*/);
+      Slice record;
+      std::string scratch;
+      Version* base_version = new Version(this);
+      base_version->Ref();
+
+      Builder builder(this, base_version);
+      // actually, only one record in descriptor file now.
+      while (reader.ReadRecord(&record, &scratch) && s.ok()) {
+        VersionEdit edit;
+        s = edit.DecodeFrom(record);
+        if (s.ok()) {
+          builder.Apply(&edit);
+        }
+      }
+
+      if (s.ok()) {
+        Version* v = new Version(this);
+        builder.SaveTo(v);
+        // no need Finalize()
+        // just append Version to dummy list, not update current_
+        v->Ref();
+        // Append to linked list
+        v->prev_ = dummy_versions_.prev_;
+        v->next_ = &dummy_versions_;
+        v->prev_->next_ = v;
+        v->next_->prev_ = v;
+
+        ++count;
+      }
+
+      base_version->Unref();
+      if (file != NULL) {
+        delete file;
+      }
+    }
+  }
+  Log(options_->info_log, "load backup version over, count: %d", count);
+  return s;
+}
+
+Status VersionSet::BackupCurrentVersion() {
+  std::string bv_dir = dbname_ + "/" + VersionSet::kBackupVersionDir;
+  env_->CreateDir(bv_dir);
+  std::string filename = DescriptorFileName(bv_dir, NewFileNumber());
+  WritableFile* desc_file = NULL;
+  Status s = env_->NewWritableFile(filename, &desc_file);
+
+  if (s.ok()) {
+    log::Writer desc_log(desc_file);
+    s = WriteSnapshot(&desc_log);
+    if (s.ok()) {
+      // add base information
+      VersionEdit edit;
+      edit.SetComparatorName(icmp_.user_comparator()->Name());
+      edit.SetLogNumber(log_number_);
+      edit.SetNextFile(NextFileNumber());
+      edit.SetLastSequence(LastSequence());
+      std::string record;
+      edit.EncodeTo(&record);
+      s = desc_log.AddRecord(record);
+      if (s.ok()) {
+        s = desc_file->Sync();
+        if (s.ok()) {
+          // increase ref count of current version, because we want and do backup it.
+          current_->Ref();
+        }
+      }
+    }
+
+    delete desc_file;
+  }
   return s;
 }
 

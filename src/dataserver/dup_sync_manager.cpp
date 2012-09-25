@@ -126,6 +126,12 @@ namespace tair{
         *ppNode= NULL;
       }
 
+      // at this point, we duplicate successfully and need record this key/value (rsync_manager->add_record(xx))
+      // for remote sync, unfortunately, current duplicate_manager doest't maintain neccessary
+      // context of request, so we can do noting but ignoring now.
+      // Howerver, storage manager who just uses its own binlog can rest easy now, because rsyc_manager->add_record(xx)
+      // is meaningless for it actually.
+      // TODO: reconstruct duplicate_manager thoroughly.
       return ret;
     }
     else
@@ -173,11 +179,12 @@ namespace tair{
   }
 
   dup_sync_sender_manager::dup_sync_sender_manager( tbnet::Transport *transport,
-      tair_packet_streamer *streamer, table_manager* table_mgr)
+      tair_packet_streamer *streamer, tair_manager* tair_mgr)
   {
-    this->table_mgr = table_mgr;
+    this->tair_mgr = tair_mgr;
     conn_mgr = new tbnet::ConnectionManager(transport, streamer, this);
     conn_mgr->setDefaultQueueTimeout(0 , MISECONDS_BEFOR_SEND_RETRY/2000);
+    conn_mgr->setDefaultQueueLimit(0, 5000);
     max_queue_size = 0;
     atomic_set(&packet_id_creater, 0);
     setThreadCount(MAX_DUP_COUNT);

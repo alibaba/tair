@@ -32,10 +32,16 @@ const int ITEM_HEAD_LENGTH = 2;
     uint32_t db_id;
     bool is_migrate;
   } md_info;
+
+  namespace common
+  {
+    class RecordLogger;
+  }
   namespace storage
   {
     using namespace tair::util;
     using namespace tair::common;
+
     class storage_manager  {
     public:
       storage_manager():bucket_count(0)
@@ -79,6 +85,14 @@ const int ITEM_HEAD_LENGTH = 2;
 
       virtual int get_meta(data_entry &key, item_meta_info &meta) {
         return TAIR_RETURN_NOT_SUPPORTED;
+      }
+
+      // Every storage engine can implement own remote synchronization logger to
+      // make use of its specific feature(eg, cache can have less strict data consistency
+      // where memory queue can be afford; permanence storage engine can direct use its
+      // bigLog).
+      virtual tair::common::RecordLogger* get_remote_sync_logger() {
+        return NULL;
       }
 
       virtual void set_area_quota(int area, uint64_t quota) = 0;

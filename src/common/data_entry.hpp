@@ -166,6 +166,14 @@ namespace tair
          //free_data();
        }
 
+       int get_area()
+       {
+         if (has_merged) {
+           this->area = (static_cast<uint32_t>(data[1]&0xFF) << 8) | (data[0]&0xFF);
+         }
+         return this->area;
+       }
+
        void merge_area(int _area)
        {
          if(has_merged) {
@@ -520,6 +528,70 @@ namespace tair
        }
      };
 
+
+ 
+      // we don't reserve dummy meta when record entry in some condition(remote synchronization, eg.),
+      // while need some base info to operate it, here is entry tailer.
+      // prefix_size and mtime matters now.
+      class entry_tailer
+      {
+      public:
+        entry_tailer() {}
+        entry_tailer(const common::data_entry& entry)
+        {
+          set(entry);
+        }
+        entry_tailer(const char* data, int32_t size)
+        {
+          set(data, size);
+        }
+        ~entry_tailer()
+        {
+        }
+
+        inline void set(const common::data_entry& entry)
+        {
+          tailer_.prefix_size_ = entry.get_prefix_size();
+          tailer_.mdate_ = entry.data_meta.mdate > 0 ? entry.data_meta.mdate : time(NULL);
+        }
+        inline void set(const char* data, int32_t size)
+        {
+          UNUSED(size);
+          tailer_ = *(reinterpret_cast<tailer*>(const_cast<char*>(data)));
+        }
+        inline char* data()
+        {
+          // just ignore endian now.
+          // variant encode may be better
+          return reinterpret_cast<char*>(&tailer_);
+        }
+        inline int32_t size()
+        {
+          return sizeof(tailer);
+        }
+
+        inline void consume_tailer(common::data_entry& entry)
+        {
+          entry.set_prefix_size(tailer_.prefix_size_);
+          entry.data_meta.cdate = entry.data_meta.mdate = tailer_.mdate_;
+        }
+
+        static bool need_entry_tailer(const common::data_entry& entry)
+        {
+          // return entry.get_prefix_size() > 0;
+          // now, mtime need record all the time
+          return true;
+        }
+
+      private:
+        typedef struct tailer
+        {
+          tailer() : prefix_size_(0), mdate_(0) {}
+          uint32_t prefix_size_;
+          uint32_t mdate_;
+        } tailer;
+        tailer tailer_;
+      };
 
      //! Be Cautious about the return value of set::insert & hash_map::insert,
      //! which return pair<iterator, bool> type.

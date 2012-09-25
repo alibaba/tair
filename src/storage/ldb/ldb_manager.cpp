@@ -579,6 +579,11 @@ namespace tair
           delete current;
         }
 
+        if (remote_sync_logger_ != NULL)
+        {
+          delete remote_sync_logger_;
+        }
+
         return TAIR_RETURN_SUCCESS;
       }
 
@@ -921,8 +926,6 @@ namespace tair
           }
           default:
           {
-            log_error("op cmd unsupported type: %d", cmd);
-            ret = TAIR_RETURN_NOT_SUPPORTED;
             break;
           }
           }
@@ -1175,6 +1178,16 @@ namespace tair
             }
           }
         }
+      }
+
+      RecordLogger* LdbManager::get_remote_sync_logger()
+      {
+        // init-on-use
+        if (NULL == remote_sync_logger_)
+        {
+          remote_sync_logger_ = new LdbRemoteSyncLogger(this);
+        }
+        return remote_sync_logger_;
       }
 
       LdbInstance* LdbManager::get_db_instance(const int bucket_number)

@@ -77,7 +77,7 @@ AM_CONDITIONAL([WITH_COMPRESS],[test x$with_compress = xyes])
 
 AC_ARG_WITH([kdb],
 		AS_HELP_STRING([--with-kdb],
-			[with kdb (default is NO)]),
+			[with kdb (default is yes)]),
 		[
 		if test "$withval" = "yes"; then
 		with_kdb=yes
@@ -130,17 +130,17 @@ AC_CONFIG_FILES([\
 		 src/storage/mdb/Makefile \
 		 src/storage/kdb/Makefile \
 		 src/storage/kdb/kyotocabinet/Makefile \
-     src/storage/ldb/Makefile \
-     src/storage/ldb/leveldb/Makefile \
+		 src/storage/ldb/Makefile \
+		 src/storage/ldb/leveldb/Makefile \
 		 src/packets/Makefile \
 		 src/statserver/storage/Makefile \
-     src/statserver/Makefile \
-     src/statserver/include/Makefile \
+		 src/statserver/Makefile \
+		 src/statserver/include/Makefile \
 		 src/configserver/Makefile \
 		 src/dataserver/Makefile \
 		 src/client/Makefile \
 		 src/invalserver/Makefile \
-     src/tools/Makefile \
+		 src/tools/Makefile \
 		 test/Makefile \
 		 test/interface_test/Makefile \
 		 test/unit_test/Makefile \

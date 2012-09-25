@@ -96,8 +96,11 @@ namespace tair {
       void do_cmd_set_migrate_wait_ms(VSTRING &param);
       void do_cmd_stat_db(VSTRING &param);
       void do_cmd_release_mem(VSTRING &param);
+      void do_cmd_backup_db(VSTRING& param);
       void do_cmd_pause_gc(VSTRING &param);
       void do_cmd_resume_gc(VSTRING &param);
+      void do_cmd_pause_rsync(VSTRING& param);
+      void do_cmd_resume_rsync(VSTRING& param);
       void do_cmd_set_config(VSTRING& param);
       void do_cmd_op_ds_or_not(VSTRING &param, const char* cmd_str, ServerCmdType cmd_type, int base_param_size = 0);
 

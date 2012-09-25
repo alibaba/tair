@@ -52,7 +52,6 @@ namespace tair {
 
   using namespace std;
   using namespace __gnu_cxx;
-  using namespace tair::json;
   using namespace tair::common;
 
 
@@ -61,7 +60,7 @@ namespace tair {
    *-----------------------------------------------------------------------------*/
 
   tair_client_impl::tair_client_impl():inited(false),is_stop(false),direct(false),data_server(0),packet_factory(0),streamer(0),
-  transport(0),connmgr(0),timeout(2000),config_version(0),
+  transport(0),connmgr(0),timeout(2000),queue_limit(1000),config_version(0),
   new_config_version(0),send_fail_count(0),this_wait_object_manager(0),
   bucket_count(0),copy_count(0),force_service(false),rand_read_flag(false)
   {
@@ -281,10 +280,11 @@ FAIL_1:
     packet->area = area;
     packet->key = key;
     // set fill cache flag
-    packet->key.data_meta.flag = fill_cache ? TAIR_CLIENT_PUT_PUT_CACHE_FLAG : TAIR_CLIENT_PUT_SKIP_CACHE_FLAG;
+    packet->key.data_meta.flag |= fill_cache ? TAIR_CLIENT_PUT_PUT_CACHE_FLAG : TAIR_CLIENT_PUT_SKIP_CACHE_FLAG;
     packet->data = data;
     packet->expired = expired;
     packet->version = version;
+    packet->server_flag = key.server_flag;
     int ret = TAIR_RETURN_SEND_FAILED;
     base_packet *tpacket = 0;
     response_return *resp = 0;
@@ -612,7 +612,7 @@ FAIL:
       request_get *packet = new request_get();
       packet->area = area;
 
-      packet->add_key(key.get_data(), key.get_size(), key.get_prefix_size());
+      packet->add_key(const_cast<data_entry*>(&key), true);
       cwo = this_wait_object_manager->create_wait_object();
 
       if (send_request(server_list[index],packet,cwo->get_id()) < 0) {
@@ -1019,8 +1019,8 @@ FAIL:
     wait_object *cwo = this_wait_object_manager->create_wait_object(TAIR_REQ_REMOVE_PACKET,pfunc,arg);
     request_remove *packet = new request_remove();
     packet->area = area;
-    packet->add_key(key.get_data(), key.get_size(), key.get_prefix_size());
-
+    packet->add_key(const_cast<data_entry*>(&key), true);
+    packet->server_flag = key.server_flag;
     base_packet *tpacket = 0;
     response_return *resp  = 0;
 
@@ -1208,7 +1208,7 @@ FAIL:
     }
 
     request_get_hidden *req = new request_get_hidden();
-    req->add_key(key.get_data(), key.get_size(), key.get_prefix_size());
+    req->add_key(const_cast<data_entry*>(&key), true);
     req->area = area;
     response_get *resp = NULL;
 
@@ -1224,9 +1224,9 @@ FAIL:
     if (resp != NULL) {
       new_config_version = resp->config_version;
       value = resp->data;
-      if (value == NULL) {
-        ret = TAIR_RETURN_PROXYED;
-      }
+      // if (value == NULL) {
+      //   ret = TAIR_RETURN_PROXYED;
+      // }
       resp->data = NULL;
     }
     this_wait_object_manager->destroy_wait_object(cwo);
@@ -2046,6 +2046,7 @@ FAIL:
     return fail_request > 0 ? TAIR_RETURN_PARTIAL_SUCCESS : TAIR_RETURN_SUCCESS;
   }
 
+#if 0
   int tair_client_impl::remove_items(int area,
       const data_entry &key,
       int offset,
@@ -2183,11 +2184,25 @@ FAIL:
         get_error_msg(ret));
     return ret;
   }
-
+#endif
   void tair_client_impl::set_timeout(int this_timeout)
   {
-    assert(timeout >= 0);
-    timeout = this_timeout;
+    if (this_timeout > 0) {
+      timeout = this_timeout;
+      if (connmgr != NULL) {
+        connmgr->setDefaultQueueTimeout(0, timeout);
+      }
+    }
+  }
+
+  void tair_client_impl::set_queue_limit(int limit)
+  {
+    if (limit > 0) {
+      queue_limit = limit;
+      if (connmgr != NULL) {
+        connmgr->setDefaultQueueLimit(0, queue_limit);
+      }
+    }
   }
 
   void tair_client_impl::set_randread(bool rand_flag)
@@ -2884,7 +2899,7 @@ OUT:
   void tair_client_impl::start_tbnet()
   {
     connmgr->setDefaultQueueTimeout(0, timeout);
-    connmgr->setDefaultQueueLimit(0, 1000);
+    connmgr->setDefaultQueueLimit(0, queue_limit);
     transport->start();
   }
 
@@ -2960,7 +2975,7 @@ OUT:
     {
       if (connmgr->sendPacket(server_id, packet, NULL, (void*)((long)waitId)) == false)
       {
-        TBSYS_LOG(ERROR, "Send RequestGetPacket to %s failure.",
+        TBSYS_LOG(ERROR, "Send to %s failure.",
             tbsys::CNetUtil::addrToString(server_id).c_str());
         send_fail_count ++;
         ret = TAIR_RETURN_SEND_FAILED;
@@ -3107,7 +3122,6 @@ OUT:
       default:
         break;
     }
-    delete tpacket;
     return 0;
   }
 

@@ -44,8 +44,8 @@ namespace tair
         return file_name_;
       }
 
-      virtual int pread_file(char* buf, const int32_t nbytes, const int64_t offset);
-      virtual int pwrite_file(const char* buf, const int32_t nbytes, const int64_t offset);
+      virtual int64_t pread_file(char* buf, const int32_t nbytes, const int64_t offset);
+      virtual int64_t pwrite_file(const char* buf, const int32_t nbytes, const int64_t offset);
 
       int write_file(const char* buf, const int32_t nbytes);
 

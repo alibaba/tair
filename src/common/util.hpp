@@ -113,6 +113,28 @@ namespace tair
             return mur_mur_hash2(key, len, 97);
          }
 
+        static void split_str(const char* str, const char* delim, std::vector<std::string>& values)
+        {
+          if (NULL == str)
+          {
+            return;
+          }
+          if (NULL == delim)
+          {
+            values.push_back(str);
+          }
+          else
+          {
+            const char* pos = str + strspn(str, delim);
+            size_t len = 0;
+            while ((len = strcspn(pos, delim)) > 0)
+            {
+              values.push_back(std::string(pos, len));
+              pos += len;
+              pos += strspn(pos, delim);
+            }
+          }
+        }
       };
 
      class time_util {
@@ -172,6 +194,43 @@ namespace tair
       public:
         static int change_conf(const char *group_file_name, const char *section_name, const char *key, const char *value);
       };
+
+     class coding_util {
+     public:
+       static void encode_fixed32(char* buf, uint32_t value)
+       {
+         buf[0] = value & 0xff;
+         buf[1] = (value >> 8) & 0xff;
+         buf[2] = (value >> 16) & 0xff;
+         buf[3] = (value >> 24) & 0xff;
+       }
+
+       static uint32_t decode_fixed32(const char* buf)
+       {
+         return ((static_cast<uint32_t>(static_cast<unsigned char>(buf[0])))
+                 | (static_cast<uint32_t>(static_cast<unsigned char>(buf[1])) << 8)
+                 | (static_cast<uint32_t>(static_cast<unsigned char>(buf[2])) << 16)
+                 | (static_cast<uint32_t>(static_cast<unsigned char>(buf[3])) << 24));
+       }
+
+       static void encode_fixed64(char* buf, uint64_t value)
+       {
+         buf[0] = value & 0xff;
+         buf[1] = (value >> 8) & 0xff;
+         buf[2] = (value >> 16) & 0xff;
+         buf[3] = (value >> 24) & 0xff;
+         buf[4] = (value >> 32) & 0xff;
+         buf[5] = (value >> 40) & 0xff;
+         buf[6] = (value >> 48) & 0xff;
+         buf[7] = (value >> 56) & 0xff;
+       }
+
+       static uint64_t decode_fixed64(const char* buf)
+       {
+         return (static_cast<uint64_t>(decode_fixed32(buf + 4)) << 32) | decode_fixed32(buf);
+       }
+     };
+
    }
 
 }

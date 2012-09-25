@@ -149,6 +149,9 @@ class Repairer {
   void ConvertLogFilesToTables() {
     for (size_t i = 0; i < logs_.size(); i++) {
       std::string logname = LogFileName(dbname_, logs_[i]);
+      if (!env_->FileExists(logname)) {
+        logname = LogFileName(dbname_ + "/logs/", logs_[i]);
+      }
       Status status = ConvertLogToTable(logs_[i]);
       if (!status.ok()) {
         Log(options_.info_log, "Log #%llu: ignoring conversion error: %s",
@@ -175,8 +178,13 @@ class Repairer {
 
     // Open the log file
     std::string logname = LogFileName(dbname_, log);
+    if (!env_->FileExists(logname)) {
+      logname = LogFileName(dbname_ + "/logs/", log);
+    }
+
     SequentialFile* lfile;
     Status status = env_->NewSequentialFile(logname, &lfile);
+
     if (!status.ok()) {
       return status;
     }

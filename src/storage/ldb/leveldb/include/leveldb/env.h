@@ -27,6 +27,7 @@ class RandomAccessFile;
 class SequentialFile;
 class Slice;
 class WritableFile;
+class ReadableAndWritableFile;
 
 class Env {
  public:
@@ -71,6 +72,9 @@ class Env {
   // The returned file will only be accessed by one thread at a time.
   virtual Status NewWritableFile(const std::string& fname,
                                  WritableFile** result) = 0;
+
+  virtual Status NewReadableAndWritableFile(const std::string& fname,
+                                            ReadableAndWritableFile** result) = 0;
 
   // Returns true iff the named file exists.
   virtual bool FileExists(const std::string& fname) = 0;
@@ -222,6 +226,15 @@ class WritableFile {
   void operator=(const WritableFile&);
 };
 
+class ReadableAndWritableFile : public SequentialFile, public WritableFile {
+ public:
+  ReadableAndWritableFile() { }
+  virtual ~ReadableAndWritableFile() { }
+
+  virtual void Ref() {}
+  virtual void Unref() {}
+};
+
 // An interface for writing log messages.
 class Logger {
  public:
@@ -286,6 +299,10 @@ class EnvWrapper : public Env {
   Status NewWritableFile(const std::string& f, WritableFile** r) {
     return target_->NewWritableFile(f, r);
   }
+  Status NewReadableAndWritableFile(const std::string& f, ReadableAndWritableFile** r) {
+    return target_->NewReadableAndWritableFile(f, r);
+  }
+
   bool FileExists(const std::string& f) { return target_->FileExists(f); }
   Status GetChildren(const std::string& dir, std::vector<std::string>* r) {
     return target_->GetChildren(dir, r);

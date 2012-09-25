@@ -113,6 +113,10 @@ namespace tair
 
       bool LdbComparatorImpl::ShouldDrop(const char* key, int64_t sequence, uint32_t will_gc) const
       {
+        if (gc_ == NULL)
+        {
+          return false;
+        }
         // Epired items can't drop only if it is the only key update here,
         // it should be check in ShouldDropMaybe(). eg:
         //  1) insert a => b
@@ -157,7 +161,7 @@ namespace tair
       {
         UNUSED(sequence);
         // check expired time here. see ShouldDrop()
-        uint32_t expired_time = decode_fixed32(key);
+        uint32_t expired_time = tair::util::coding_util::decode_fixed32(key);
         return expired_time > 0 && expired_time < (now > 0 ? now : time(NULL));
       }
 

@@ -1,5 +1,6 @@
 AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 			 -I$(TBLIB_ROOT)/include/tbnet \
+	     -I${top_srcdir}/src/ \
 	     -I${top_srcdir}/src/common \
 	     -I${top_srcdir}/src/packets \
 	     -I${top_srcdir}/src/client\

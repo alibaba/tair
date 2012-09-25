@@ -51,6 +51,10 @@ class DB {
   static Status Open(const Options& options,
                      const std::string& name,
                      DB** dbptr);
+  // Open with specified manifest, resemble read_only mode.
+  // Maybe support open db with read_only_mode.
+  static Status Open(const Options& options, const std::string& dbname,
+                     const std::string& manifest, DB** dbptr);
 
   DB() { }
   virtual ~DB();
@@ -60,13 +64,20 @@ class DB {
   // Note: consider setting options.sync = true.
   virtual Status Put(const WriteOptions& options,
                      const Slice& key,
-                     const Slice& value) = 0;
+                     const Slice& value,
+                     bool synced = false) = 0;
 
   // Remove the database entry (if any) for "key".  Returns OK on
   // success, and a non-OK status on error.  It is not an error if "key"
   // did not exist in the database.
   // Note: consider setting options.sync = true.
-  virtual Status Delete(const WriteOptions& options, const Slice& key) = 0;
+  virtual Status Delete(const WriteOptions& options, const Slice& key, bool synced = false) = 0;
+
+  // Remove the database entry (if any) for "key".  Returns OK on
+  // success, and a non-OK status on error.  It is not an error if "key"
+  // did not exist in the database.
+  // Note: consider setting options.sync = true.
+  virtual Status Delete(const WriteOptions& options, const Slice& key, const Slice& tailer, bool synced = false) = 0;
 
   // Apply the specified updates to the database.
   // Returns OK on success, non-OK on failure.
@@ -122,6 +133,9 @@ class DB {
   //     of the sstables that make up the db contents.
   virtual bool GetProperty(const Slice& property, std::string* value,
                            void (*key_printer)(const Slice&, std::string&) = NULL) = 0;
+
+  // operate some command to db
+  virtual Status OpCmd(int cmd) = 0;
 
   // For each i in [0,n-1], store in "sizes[i]", the approximate
   // file system space used by keys in "[range[i].start .. range[i].limit)".

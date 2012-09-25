@@ -21,6 +21,7 @@
 #include "common/data_entry.hpp"
 #include "common/stat_info.hpp"
 #include "ldb_cache_stat.hpp"
+#include "ldb_remote_sync_logger.hpp"
 
 namespace tair
 {
@@ -125,6 +126,7 @@ namespace tair
       // it works, maybe make it common manager level.
       class LdbManager : public tair::storage::storage_manager
       {
+        friend class LdbRemoteSyncLogger;
       public:
         LdbManager();
         ~LdbManager();
@@ -167,6 +169,7 @@ namespace tair
         int do_switch_db(LdbInstance** new_ldb_instance, mdb_manager** new_cache, std::string& base_cache_back_path);
         int do_reset_db_instance(LdbInstance**& new_ldb_instance, mdb_manager** new_cache);
         int do_reset_cache(mdb_manager**& new_cache, std::string& base_back_path);
+        RecordLogger* get_remote_sync_logger();
 
         LdbInstance* get_db_instance(int bucket_number);
 
@@ -185,6 +188,8 @@ namespace tair
         UsingLdbManager* using_head_;
         UsingLdbManager* using_tail_;
         uint32_t last_release_time_;
+        // remote sync
+        LdbRemoteSyncLogger* remote_sync_logger_;
       };
     }
   }

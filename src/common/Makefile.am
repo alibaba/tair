@@ -31,16 +31,14 @@ base_src=data_dumpper.cpp	\
 	 stat_info.hpp	\
 	 util.hpp	\
 	 wait_object.hpp	 \
-         file_op.hpp \
-         file_op.cpp \
+         file_op.hpp file_op.cpp \
 	 BlockQueueEx.hpp \
 	 blockqueue.hpp \
 	 syncproc.hpp \
 	 scoped_wrlock.hpp \
-   file_list_factory.hpp \
-   $(COMPRESS_CPPFLAGS) \
-	 counter_wrapper.hpp \
-   tair_atomic.hpp
+	 $(COMPRESS_CPPFLAGS) \
+         file_list_factory.hpp \
+	 counter_wrapper.hpp tair_atomic.hpp record_logger.hpp record_logger_util.hpp record_logger_util.cpp
 
 noinst_LIBRARIES=libtair_common.a
 

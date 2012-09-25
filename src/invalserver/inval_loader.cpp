@@ -1,4 +1,5 @@
 
+#include "tair_client_api_impl.hpp"
 #include "inval_loader.hpp"
 
 namespace tair {
@@ -100,7 +101,7 @@ namespace tair {
                             it->first.c_str(),
                             tbsys::CNetUtil::addrToString(spid->id1).c_str(),
                             tbsys::CNetUtil::addrToString(spid->id2).c_str());
-                    tair_client_api client;
+                    tair_client_impl client;
                     if (client.get_group_name_list(spid->id1, spid->id2, spid->group_name_list) == false) {
                         log_error("error when fetch group name from %s.",
                                 tbsys::CNetUtil::addrToString(spid->id1).c_str());

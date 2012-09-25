@@ -49,7 +49,7 @@ namespace tair {
       tair::common::CScopedRwLock __scoped_lock(&m_mutex,false);
       assert (server_table != NULL);
       int index = bucket_number;
-      if (server_flag == TAIR_SERVERFLAG_PROXY)
+      if (server_flag == TAIR_SERVERFLAG_PROXY || server_flag == TAIR_SERVERFLAG_RSYNC_PROXY)
          index += get_hash_table_size();
       return server_table[index] == local_server_ip::ip;
    }

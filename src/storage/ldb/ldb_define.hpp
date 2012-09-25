@@ -44,11 +44,6 @@ namespace tair
       extern int32_t get_level_num(leveldb::DB* db);
       extern bool get_level_range(leveldb::DB* db, int32_t level, std::string* smallest, std::string* largest);
 
-      extern uint32_t decode_fixed32(const char* buf);
-      extern void encode_fixed32(char* buf, uint32_t value);
-      extern uint64_t decode_fixed64(const char* buf);
-      extern void encode_fixed64(char* buf, uint64_t value);
-
       extern std::string get_back_path(const char* path);
 
       template<class T> void destroy_container(T**& container, int32_t count)
@@ -153,7 +148,7 @@ namespace tair
           // but user defined comparator need caculate datalen every time.
 
           // encode expired time
-          encode_fixed32(buf, expired_time);
+          tair::util::coding_util::encode_fixed32(buf, expired_time);
           encode_bucket_number(buf + LDB_EXPIRED_TIME_SIZE, bucket_number);
         }
 

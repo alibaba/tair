@@ -158,6 +158,11 @@ namespace tair {
          req_processor = NULL;
       }
 
+      if (stat_prc != NULL) {
+        delete stat_prc;
+        stat_prc = NULL;
+      }
+
       if (tair_mgr != NULL) {
          log_info("will destroy m_tairManager");
          delete tair_mgr;

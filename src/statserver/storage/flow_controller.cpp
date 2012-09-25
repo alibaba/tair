@@ -83,6 +83,7 @@ FlowControllerImpl::~FlowControllerImpl()
   mutex_->UnLock();
 
   pthread_join(bg_tid, NULL);
+  delete mutex_;
 }
 
 inline

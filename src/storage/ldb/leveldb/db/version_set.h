@@ -19,6 +19,7 @@
 #include <set>
 #include <vector>
 #include "db/dbformat.h"
+#include "db/log_reader.h"
 #include "db/version_edit.h"
 #include "port/port.h"
 
@@ -181,7 +182,14 @@ class VersionSet {
   Status LogAndApply(VersionEdit* edit, port::Mutex* mu);
 
   // Recover the last saved descriptor from persistent storage.
-  Status Recover();
+  Status Recover(const char* manifest = NULL);
+
+  // when recover over, maybe some backupversion should be loaded to db.
+  // backupversion is used to maintain some version(snapshot).
+  Status LoadBackupVersion();
+
+  // backup current version for future use.
+  Status BackupCurrentVersion();
 
   // Return the current version.
   Version* current() const { return current_; }
@@ -284,6 +292,15 @@ class VersionSet {
     char buffer[100];
   };
   const char* LevelSummary(LevelSummaryStorage* scratch) const;
+
+ private:
+  struct LogReporter : public log::Reader::Reporter {
+    Status* status;
+    virtual void Corruption(size_t bytes, const Status& s) {
+      if (this->status->ok()) *this->status = s;
+    }
+  };
+  static const char* kBackupVersionDir;
 
  private:
   class Builder;

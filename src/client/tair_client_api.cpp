@@ -55,22 +55,41 @@ namespace tair {
   bool tair_client_api::startup(const char *master_addr,const char *slave_addr,const char *group_name)
   {
     bool ret = false;
-    impl = new_tair_client(master_addr, slave_addr, group_name);
-    if (NULL == impl)
-    {
-      log_error("init tair client fail.");
-    }
-    else
-    {
-      impl->set_timeout(timeout_ms_);
-      ret = impl->startup(master_addr,slave_addr,group_name);
+    if (impl != NULL) {
+      ret = true;
+      log_info("tair client inited");
+    } else {
+      impl = new_tair_client(master_addr, slave_addr, group_name);
+      if (NULL == impl) {
+        log_error("init tair client fail.");
+      } else {
+        impl->set_timeout(timeout_ms_);
+        ret = impl->startup(master_addr,slave_addr,group_name);
+        if (!ret) {
+          delete impl;
+          impl = NULL;
+        }
+      }
     }
     return ret;
   }
 
   bool tair_client_api::directup(const char *server_addr)
   {
-    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->directup(server_addr);
+    bool ret = false;
+    if (impl != NULL) {
+      ret = true;
+      log_info("tair client inited.");
+    } else {
+      impl = new tair_client_impl();
+      impl->set_timeout(timeout_ms_);
+      ret = impl->directup(server_addr);
+      if (!ret) {
+        delete impl;
+        impl = NULL;
+      }
+    }
+    return ret;
   }
 
   void tair_client_api::close()
@@ -495,10 +514,6 @@ namespace tair {
     }
   }
 
-  bool tair_client_api::get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const
-  {
-    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_group_name_list(id1, id2, groupnames);
-  }
   void tair_client_api::query_from_configserver(uint32_t query_type, const std::string &groupname, std::map<std::string, std::string> &out, uint64_t serverId)
   {
     if (impl != NULL)

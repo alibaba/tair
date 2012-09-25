@@ -521,8 +521,6 @@ namespace tair {
 
       void get_server_with_key(const data_entry& key,std::vector<std::string>& servers) const;
 
-      bool get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) const;
-
       void query_from_configserver(uint32_t query_type, const std::string &groupname, std::map<std::string, std::string> &out, uint64_t serverId);
 
       uint32_t get_config_version() const;

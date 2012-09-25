@@ -95,7 +95,6 @@ namespace tair
     virtual void query_from_configserver(uint32_t query_type, const std::string group_name,
                                  std::map<std::string, std::string>&, uint64_t server_id = 0)
     { return; }
-    virtual bool get_group_name_list(uint64_t id1, uint64_t id2, std::vector<std::string> &groupnames) { return false; }
     virtual void get_server_with_key(const data_entry& key,std::vector<std::string>& servers) { return; }
     virtual int64_t ping(uint64_t server_id) { return TAIR_RETURN_NOT_SUPPORTED; }
     virtual int op_cmd_to_cs(ServerCmdType cmd, std::vector<std::string>* params, std::vector<std::string>* ret_values)

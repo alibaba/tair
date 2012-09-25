@@ -36,6 +36,7 @@ namespace tair {
    heartbeat_thread::~heartbeat_thread()
    {
       transport.stop();
+      transport.wait();
       if (conn_mgr) {
          delete conn_mgr;
          conn_mgr = NULL;

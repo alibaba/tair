@@ -52,24 +52,24 @@ namespace tair
 
         void encode(char* buf) const
         {
-          encode_fixed32(buf, key_);
+          tair::util::coding_util::encode_fixed32(buf, key_);
           buf += sizeof(int32_t);
-          encode_fixed64(buf, sequence_);
+          tair::util::coding_util::encode_fixed64(buf, sequence_);
           buf += sizeof(uint64_t);
-          encode_fixed64(buf, file_number_);
+          tair::util::coding_util::encode_fixed64(buf, file_number_);
           buf += sizeof(uint64_t);
-          encode_fixed32(buf, when_);
+          tair::util::coding_util::encode_fixed32(buf, when_);
         }
 
         void decode(const char* buf)
         {
-          key_ = decode_fixed32(buf);
+          key_ = tair::util::coding_util::decode_fixed32(buf);
           buf += sizeof(int32_t);
-          sequence_ = decode_fixed64(buf);
+          sequence_ = tair::util::coding_util::decode_fixed64(buf);
           buf += sizeof(uint64_t);
-          file_number_ = decode_fixed64(buf);
+          file_number_ = tair::util::coding_util::decode_fixed64(buf);
           buf += sizeof(uint64_t);
-          when_ = decode_fixed32(buf);
+          when_ = tair::util::coding_util::decode_fixed32(buf);
         }
 
         bool operator ==(const GcNode& right) const

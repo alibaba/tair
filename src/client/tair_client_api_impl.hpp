@@ -32,8 +32,6 @@
 #include "packet_factory.hpp"
 #include "packet_streamer.hpp"
 #include "wait_object.hpp"
-#include "item_manager.hpp"
-#include "items_packet.hpp"
 #include "response_return_packet.hpp"
 #include "util.hpp"
 #include "dump_data_info.hpp"
@@ -48,7 +46,7 @@
 #include "prefix_removes_packet.hpp"
 #include "response_mreturn_packet.hpp"
 #include "prefix_hides_packet.hpp"
-#include "flowrate.h"
+#include "statserver/include/flowrate.h"
 #include "op_cmd_packet.hpp"
 
 #include "i_tair_client_impl.hpp"
@@ -58,7 +56,6 @@ namespace tair {
 
   using namespace std;
   using namespace __gnu_cxx;
-  using namespace tair::json;
   using namespace tair::common;
 
   const int UPDATE_SERVER_TABLE_INTERVAL = 50;
@@ -161,6 +158,7 @@ namespace tair {
       int get_flow(uint64_t addr, int ns,
                    tair::stat::Flowrate &rate);
 
+#if 0
       template< typename IT >
         int add_items(int area,
             const data_entry &key,
@@ -193,8 +191,9 @@ namespace tair {
             int type = ELEMENT_TYPE_INVALID);
 
       int get_items_count(int area,const data_entry& key);
-
+#endif
       void set_timeout(int this_timeout);
+      void set_queue_limit(int limit);
       void set_randread(bool rand_flag);
 
       uint32_t get_bucket_count() const { return bucket_count;}
@@ -350,6 +349,7 @@ namespace tair {
       tbnet::ConnectionManager *connmgr;
 
       int timeout; // ms
+      int queue_limit; // connectmanager queue_limit
 
       vector<uint64_t> my_server_list;
       vector<uint64_t> config_server_list;
@@ -374,6 +374,7 @@ namespace tair {
       pthread_rwlock_t m_init_mutex;
   };
 
+#if 0
   template< typename IT >
 
     int tair_client_impl::add_items(int area,
@@ -728,7 +729,7 @@ FAIL:
       }
       return ELEMENT_TYPE_STRING;
     }
-
+#endif
 
 } /* tair */
 #endif //__TAIR_CLIENT_IMPL_H

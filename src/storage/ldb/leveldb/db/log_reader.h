@@ -14,6 +14,7 @@
 namespace leveldb {
 
 class SequentialFile;
+class WritableFile;
 
 namespace log {
 
@@ -50,12 +51,14 @@ class Reader {
   // "*scratch" as temporary storage.  The contents filled in *record
   // will only be valid until the next mutating operation on this
   // reader or the next mutation to *scratch.
-  bool ReadRecord(Slice* record, std::string* scratch);
+  bool ReadRecord(Slice* record, std::string* scratch, uint64_t limit_offset = ~0);
 
   // Returns the physical offset of the last record returned by ReadRecord.
   //
   // Undefined before the first call to ReadRecord.
   uint64_t LastRecordOffset();
+
+  SequentialFile* File() { return file_; }
 
  private:
   SequentialFile* const file_;
@@ -69,6 +72,8 @@ class Reader {
   uint64_t last_record_offset_;
   // Offset of the first location past the end of buffer_.
   uint64_t end_of_buffer_offset_;
+  // Offset of reading block
+  uint32_t offset_in_reading_block_;
 
   // Offset at which to start looking for the first record to return
   uint64_t const initial_offset_;
@@ -90,7 +95,7 @@ class Reader {
   bool SkipToInitialBlock();
 
   // Return type, or one of the preceding special values
-  unsigned int ReadPhysicalRecord(Slice* result);
+  unsigned int ReadPhysicalRecord(Slice* result, uint64_t limit_offset);
 
   // Reports dropped bytes to the reporter.
   // buffer_ must be updated to remove the dropped bytes prior to invocation.

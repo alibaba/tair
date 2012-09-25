@@ -4,6 +4,8 @@
 
 #include "db/log_writer.h"
 
+#include <tbsys.h>
+
 #include <stdint.h>
 #include "leveldb/env.h"
 #include "util/coding.h"
@@ -14,7 +16,7 @@ namespace log {
 
 Writer::Writer(WritableFile* dest)
     : dest_(dest),
-      block_offset_(0) {
+      block_offset_(0), size_(0) {
   for (int i = 0; i <= kMaxRecordType; i++) {
     char t = static_cast<char>(i);
     type_crc_[i] = crc32c::Value(&t, 1);
@@ -33,6 +35,8 @@ Status Writer::AddRecord(const Slice& slice) {
   // zero-length record
   Status s;
   bool begin = true;
+
+  uint64_t total_size = 0;
   do {
     const int leftover = kBlockSize - block_offset_;
     assert(leftover >= 0);
@@ -42,6 +46,7 @@ Status Writer::AddRecord(const Slice& slice) {
         // Fill the trailer (literal below relies on kHeaderSize being 7)
         assert(kHeaderSize == 7);
         dest_->Append(Slice("\x00\x00\x00\x00\x00\x00", leftover));
+        total_size += leftover;
       }
       block_offset_ = 0;
     }
@@ -68,7 +73,11 @@ Status Writer::AddRecord(const Slice& slice) {
     ptr += fragment_length;
     left -= fragment_length;
     begin = false;
+    total_size += fragment_length + kHeaderSize;
   } while (s.ok() && left > 0);
+
+  // size_ is alligned to record once assigned.
+  size_ += total_size;
   return s;
 }
 

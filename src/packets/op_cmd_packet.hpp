@@ -27,7 +27,7 @@ namespace tair
     request_op_cmd()
     {
       setPCode(TAIR_REQ_OP_CMD_PACKET);
-      cmd = TAIR_SERVER_CMD_NONE;
+      cmd = TAIR_SERVER_CMD_MIN_TYPE;
     }
 
     virtual ~request_op_cmd()

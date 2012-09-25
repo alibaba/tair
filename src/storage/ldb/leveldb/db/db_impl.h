@@ -49,8 +49,9 @@ class DBImpl : public DB {
   virtual ~DBImpl();
 
   // Implementations of the DB interface
-  virtual Status Put(const WriteOptions&, const Slice& key, const Slice& value);
-  virtual Status Delete(const WriteOptions&, const Slice& key);
+  virtual Status Put(const WriteOptions&, const Slice& key, const Slice& value, bool synced = false);
+  virtual Status Delete(const WriteOptions&, const Slice& key, bool synced = false);
+  virtual Status Delete(const WriteOptions&, const Slice& key, const Slice& tailer, bool synced = false);
   virtual Status Write(const WriteOptions& options, WriteBatch* updates);
   virtual Status Write(const WriteOptions& options, WriteBatch* updates, int bucket);
   virtual Status Get(const ReadOptions& options,
@@ -61,6 +62,7 @@ class DBImpl : public DB {
   virtual void ReleaseSnapshot(const Snapshot* snapshot);
   virtual bool GetProperty(const Slice& property, std::string* value,
                            void (*key_printer)(const Slice&, std::string&) = NULL);
+  virtual Status OpCmd(int cmd);
   virtual bool GetLevelRange(int level, std::string* smallest, std::string* largest);
   virtual void GetApproximateSizes(const Range* range, int n, uint64_t* sizes);
   virtual void CompactRange(const Slice* begin, const Slice* end);
@@ -84,6 +86,14 @@ class DBImpl : public DB {
   // Return the maximum overlapping data (in bytes) at next level for any
   // file at a level >= 1.
   int64_t TEST_MaxNextLevelOverlappingBytes();
+
+  // util function
+  Env* GetEnv() { return env_; }
+  uint64_t LastSequence();
+  uint64_t LogFileNumber() { return logfile_number_; }
+  log::Writer* LogWriter() { return log_; }
+  ReadableAndWritableFile* LogFile(uint64_t limit_logfile_number);
+  const std::string& DBLogDir() { return dblog_dir_; }
 
  private:
   friend class DB;
@@ -150,6 +160,9 @@ class DBImpl : public DB {
   bool owns_info_log_;
   bool owns_cache_;
   std::string dbname_;
+  const std::string dblog_dir_;
+  // whether binlog should be reserved after dumping memtable(maybe for remote synchronization, etc)
+  bool reserve_log_;
 
   // table_cache_ provides its own synchronization
   TableCache* table_cache_;
@@ -164,7 +177,11 @@ class DBImpl : public DB {
   MemTable* mem_;
   MemTable* imm_;                // Memtable being compacted
   port::AtomicPointer has_imm_;  // So bg thread can detect non-NULL imm_
-  WritableFile* logfile_;
+  // actually WritableFile can read to support remote synchronization need.
+  // remote synchronization need to read log file while writing,
+  // to make sure that reader can read real data(writer may not sync data to disk),
+  // remote sync reader and write will use one logfile.
+  ReadableAndWritableFile* logfile_;
   uint64_t logfile_number_;
   log::Writer* log_;
 

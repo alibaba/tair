@@ -57,7 +57,7 @@ namespace tair
       fd_ = -1;
     }
 
-    int FileOperation::pread_file(char* buf, const int32_t nbytes, const int64_t offset)
+    int64_t FileOperation::pread_file(char* buf, const int32_t nbytes, const int64_t offset)
     {
       int32_t left = nbytes;
       int64_t read_offset = offset;
@@ -106,7 +106,7 @@ namespace tair
       return (p_tmp - buf);
     }
 
-    int FileOperation::pwrite_file(const char* buf, const int32_t nbytes, const int64_t offset)
+    int64_t FileOperation::pwrite_file(const char* buf, const int32_t nbytes, const int64_t offset)
     {
       int32_t left = nbytes;
       int64_t write_offset = offset;

@@ -15,11 +15,12 @@
  *
  */
 #ifdef WITH_KDB
-#include "kdb_manager.h"
+#include "storage/kdb/kdb_manager.h"
 #endif
 #ifdef WITH_LDB
-#include "ldb_manager.hpp"
+#include "storage/ldb/ldb_manager.hpp"
 #endif
+
 #include "tair_manager.hpp"
 #include "migrate_manager.hpp"
 #include "define.hpp"
@@ -28,6 +29,8 @@
 #include "item_manager.hpp"
 #include "duplicate_manager.hpp"
 #include "dup_sync_manager.hpp"
+#include "remote_sync_manager.hpp"
+
 
   namespace tair {
     tair_manager::tair_manager() : migrate_done_set(0)
@@ -41,11 +44,17 @@
       migrate_mgr = NULL;
       migrate_log = NULL;
       dump_mgr = NULL;
+      remote_sync_mgr = NULL;
     }
 
     tair_manager::~tair_manager()
     {
       tbsys::CThreadGuard update_table_guard(&update_server_table_mutex);
+      if (remote_sync_mgr != NULL) {
+        delete remote_sync_mgr;
+        remote_sync_mgr = NULL;
+      }
+
       if (migrate_mgr != NULL) {
         delete migrate_mgr;
         migrate_mgr = NULL;
@@ -110,6 +119,19 @@
         return false;
       }
 
+      bool do_rsync = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_DO_RSYNC, 0) > 0;
+      // remote synchronization init
+      if (do_rsync) {
+        remote_sync_mgr = new RemoteSyncManager(this);
+        int ret = remote_sync_mgr->init();
+        if (ret != TAIR_RETURN_SUCCESS) {
+          log_error("init remote sync manager fail: %d", ret);
+          delete remote_sync_mgr;
+          remote_sync_mgr = NULL;
+          return false;
+        }
+      }
+
       // init the storage manager for stat helper
       TAIR_STAT.set_storage_manager(storage_mgr);
       // is dataserver use localmode
@@ -127,7 +149,7 @@
       else
       {
         log_info("run duplicator with sync mode ");
-        duplicator = new dup_sync_sender_manager(transport, streamer, table_mgr);
+        duplicator = new dup_sync_sender_manager(transport, streamer, this);
       }
 
       migrate_mgr = new migrate_manager(transport, streamer, duplicator, this, storage_mgr);
@@ -569,6 +591,8 @@
           }
         }
 
+        do_remote_sync(TAIR_REMOTE_SYNC_TYPE_PUT, &mkey, &value, rc, op_flag);
+
         if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
           PROFILER_BEGIN("do migrate log");
           migrate_log->log(SN_PUT, mkey, value, bucket_number);
@@ -624,23 +648,6 @@
 
       return rc;
     }
-
-   int tair_manager::do_duplicate(int area, data_entry& key, data_entry& value,int bucket_number,base_packet *request,int heart_vesion)
-   {
-     int rc=0;
-     vector<uint64_t> slaves;
-     get_slaves(key.server_flag, bucket_number, slaves);
-     if (slaves.empty() == false)
-     {
-       PROFILER_BEGIN("do duplicate");
-       if (request)
-       {
-         rc = duplicator->duplicate_data(area, &key, &value,0,bucket_number,slaves,request,heart_vesion);
-       }
-       PROFILER_END();
-     }
-     return rc;
-   }
 
     int tair_manager::add_count(int area, data_entry &key, int count, int init_value, int *result_value, int expire_time,base_packet * request,int heart_version)
     {
@@ -917,6 +924,8 @@
           }
         }
 
+        do_remote_sync(TAIR_REMOTE_SYNC_TYPE_DELETE, &mkey, NULL, rc, op_flag);
+
         if (migrate_log != NULL && need_do_migrate_log(bucket_number)) {
           PROFILER_BEGIN("do migrate log");
           migrate_log->log(SN_REMOVE, mkey, mkey, bucket_number);
@@ -1102,7 +1111,38 @@
       if (status != STATUS_CAN_WORK) {
          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
       }
-      return storage_mgr->op_cmd(cmd, params);
+      if (cmd <= TAIR_SERVER_CMD_MIN_TYPE || cmd >= TAIR_SERVER_CMD_MAX_TYPE) {
+        log_error("unknown cmd type: %d", cmd);
+        return TAIR_RETURN_NOT_SUPPORTED;
+      }
+
+      int ret = TAIR_RETURN_SUCCESS;
+      switch (cmd) {
+      case TAIR_SERVER_CMD_PAUSE_RSYNC:
+        if (remote_sync_mgr != NULL) {
+          ret = remote_sync_mgr->pause(true);
+        }
+        break;
+      case TAIR_SERVER_CMD_RESUME_RSYNC:
+        if (remote_sync_mgr != NULL) {
+          ret = remote_sync_mgr->pause(false);
+        }
+        break;
+      case TAIR_SERVER_CMD_SET_CONFIG:
+        ret = params.size() >= 2 ? TAIR_RETURN_SUCCESS : TAIR_RETURN_FAILED;
+        if (ret == TAIR_RETURN_SUCCESS && params[0] == TAIR_RSYNC_MTIME_CARE && remote_sync_mgr != NULL) {
+          remote_sync_mgr->set_mtime_care(atoi(params[1].c_str()) > 0);
+        }
+        break;
+      default:
+        break;
+      }
+
+      // op cmd to storage manager
+      if (ret == TAIR_RETURN_SUCCESS) {
+        ret = storage_mgr->op_cmd(cmd, params);
+      }
+      return ret;
    }
 
 #ifndef NOT_FIXED_ITEM_FUNC
@@ -1328,6 +1368,41 @@
       return rc;
     }
 
+   int tair_manager::do_duplicate(int area, data_entry& key, data_entry& value,int bucket_number,base_packet *request,int heart_vesion)
+   {
+     int rc=0;
+     vector<uint64_t> slaves;
+     get_slaves(key.server_flag, bucket_number, slaves);
+     if (slaves.empty() == false)
+     {
+       PROFILER_BEGIN("do duplicate");
+       if (request)
+       {
+         rc = duplicator->duplicate_data(area, &key, &value,0,bucket_number,slaves,request,heart_vesion);
+       }
+       PROFILER_END();
+     }
+     return rc;
+   }
+
+    int tair_manager::do_remote_sync(TairRemoteSyncType type, common::data_entry* key, common::data_entry* value,
+                                     int rc, int op_flag)
+    {
+      int ret = TAIR_RETURN_SUCCESS;
+      // We only do remote sync when duplication succeeds,
+      // so asynchronous duplicator will do remote sync logic self.
+      // Here, only check remote sync operation flag and
+      // NO asynchronous duplication(asynchronous duplication success will return TAIR_DUP_WAIT_RSP).
+      if (remote_sync_mgr != NULL && (op_flag & TAIR_OPERATION_RSYNC) && TAIR_RETURN_SUCCESS == rc) {
+        ret = remote_sync_mgr->add_record(type, key, value);
+        // local cluster can ignore remote sync failure.
+        if (ret != TAIR_RETURN_SUCCESS) {
+          log_error("add record for remote sync fail: %d", ret);
+        }
+      }
+      return ret;
+    }
+
     bool tair_manager::is_migrating()
     {
       return migrate_mgr->is_migrating();
@@ -1340,7 +1415,7 @@
     }
     bool tair_manager::should_proxy(data_entry &key, uint64_t &target_server_id)
     {
-      if (key.server_flag == TAIR_SERVERFLAG_PROXY || localmode)
+      if (key.server_flag == TAIR_SERVERFLAG_PROXY || key.server_flag == TAIR_SERVERFLAG_RSYNC_PROXY || localmode)
         return false; // if this is proxy, dont proxy
 
       if(localmode)
@@ -1435,7 +1510,7 @@
     }
 
     // private methods
-    uint32_t tair_manager::get_bucket_number(data_entry &key)
+    uint32_t tair_manager::get_bucket_number(const data_entry &key)
     {
       uint32_t hashcode;
       int32_t diff_size = key.has_merged ? TAIR_AREA_ENCODE_SIZE : 0;
@@ -1468,7 +1543,8 @@
       }
 
       PROFILER_BEGIN("migrate is done?");
-      if ((server_flag == TAIR_SERVERFLAG_CLIENT || server_flag == TAIR_SERVERFLAG_PROXY)
+      if ((server_flag == TAIR_SERVERFLAG_CLIENT || server_flag == TAIR_SERVERFLAG_PROXY ||
+           server_flag == TAIR_SERVERFLAG_RSYNC || server_flag == TAIR_SERVERFLAG_RSYNC_PROXY)
           && migrate_done_set.test(bucket_number)
           && table_mgr->is_master(bucket_number, TAIR_SERVERFLAG_PROXY) == false) {
         rc = TAIR_RETURN_MIGRATE_BUSY;
@@ -1478,7 +1554,8 @@
       PROFILER_END();
 
       log_debug("bucket number: %d, serverFlag: %d, client const: %d", bucket_number, server_flag, TAIR_SERVERFLAG_CLIENT);
-      if ((server_flag == TAIR_SERVERFLAG_CLIENT || server_flag == TAIR_SERVERFLAG_PROXY)
+      if ((server_flag == TAIR_SERVERFLAG_CLIENT || server_flag == TAIR_SERVERFLAG_PROXY ||
+           server_flag == TAIR_SERVERFLAG_RSYNC || server_flag == TAIR_SERVERFLAG_RSYNC_PROXY)
           && table_mgr->is_master(bucket_number, server_flag) == false) {
         log_debug("request rejected...");
         rc = TAIR_RETURN_WRITE_NOT_ON_MASTER;
@@ -1572,7 +1649,7 @@
     void tair_manager::get_slaves(int server_flag, int bucket_number, vector<uint64_t> &slaves) {
       if (localmode || table_mgr->get_copy_count() == 1) return;
 
-      if (server_flag == TAIR_SERVERFLAG_PROXY) {
+      if (server_flag == TAIR_SERVERFLAG_PROXY || server_flag == TAIR_SERVERFLAG_RSYNC_PROXY) {
         table_mgr->get_slaves(bucket_number, true).swap(slaves);
       } else {
         table_mgr->get_slaves(bucket_number, migrate_done_set.test(bucket_number)).swap(slaves);;
@@ -1586,9 +1663,13 @@
           server_flag == TAIR_SERVERFLAG_PROXY) {
         flag |= TAIR_OPERATION_VERSION;
         flag |= TAIR_OPERATION_DUPLICATE;
-        flag |= TAIR_OPERATION_REMOTE;
+        flag |= TAIR_OPERATION_RSYNC;
+      } else if (server_flag == TAIR_SERVERFLAG_RSYNC_PROXY) { // proxied rsync data need no rsync again
+        flag |= TAIR_OPERATION_VERSION;
+        flag |= TAIR_OPERATION_DUPLICATE;
+      } else if (server_flag == TAIR_SERVERFLAG_RSYNC) { // rsynced data need no version care or rsync again
+        flag |= TAIR_OPERATION_DUPLICATE;
       }
-
       return flag;
     }
 

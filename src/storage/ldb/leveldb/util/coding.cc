@@ -191,4 +191,15 @@ bool GetLengthPrefixedSlice(Slice* input, Slice* result) {
   }
 }
 
+bool SkipLengthPrefixedSlice(Slice* input) {
+  uint32_t len;
+  if (GetVarint32(input, &len) &&
+      input->size() >= len) {
+    input->remove_prefix(len);
+    return true;
+  } else {
+    return false;
+  }
+}
+
 }  // namespace leveldb

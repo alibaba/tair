@@ -79,5 +79,10 @@ static void SetLimitCompactTimeRange(int time_start, int time_end);
 // get config from user option.
 static void setConfig(const Options& option);
 };
+
+// db cmd type
+enum {
+  kCmdBackupDB = 1,
+};
 }
 #endif  // STORAGE_LEVELDB_UTIL_CONFIG_H_

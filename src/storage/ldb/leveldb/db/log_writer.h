@@ -25,10 +25,13 @@ class Writer {
   ~Writer();
 
   Status AddRecord(const Slice& slice);
+  // current written size
+  uint64_t Size() { return size_; }
 
  private:
   WritableFile* dest_;
   int block_offset_;       // Current offset in block
+  uint64_t size_;
 
   // crc32c values for all supported record types.  These are
   // pre-computed to reduce the overhead of computing the crc of the

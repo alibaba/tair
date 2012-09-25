@@ -22,10 +22,12 @@
 #include "leveldb/env.h"
 #include "leveldb/slice.h"
 #include "port/port.h"
+#include "util/mutexlock.h"
 #include "util/logging.h"
 #include "util/posix_logger.h"
 #include "util/config.h"
 
+#include <tbsys.h>
 namespace leveldb {
 
 namespace {
@@ -40,8 +42,9 @@ class PosixSequentialFile: public SequentialFile {
   FILE* file_;
 
  public:
+  PosixSequentialFile() {}
   PosixSequentialFile(const std::string& fname, FILE* f)
-      : filename_(fname), file_(f) { }
+    : filename_(fname), file_(f) { }
   virtual ~PosixSequentialFile() { fclose(file_); }
 
   virtual Status Read(size_t n, Slice* result, char* scratch) {
@@ -122,7 +125,7 @@ class PosixMmapReadableFile: public RandomAccessFile {
 // file before reading from it, or for log files, the reading code
 // knows enough to skip zero suffixes.
 class PosixMmapFile : public WritableFile {
- private:
+ protected:
   std::string filename_;
   int fd_;
   size_t page_size_;
@@ -136,6 +139,11 @@ class PosixMmapFile : public WritableFile {
   // Have we done an munmap of unsynced data?
   bool pending_sync_;
 
+  // this mutex_ is just for mmap memory region r/w concurrency,
+  // concurrent write should be protected outside.
+  port::Mutex* mutex_;
+
+ private:
   // Roundup x to a multiple of y
   static size_t Roundup(size_t x, size_t y) {
     return ((x + y - 1) / y) * y;
@@ -189,6 +197,7 @@ class PosixMmapFile : public WritableFile {
   }
 
  public:
+  PosixMmapFile() {}
   PosixMmapFile(const std::string& fname, int fd, size_t page_size)
       : filename_(fname),
         fd_(fd),
@@ -199,10 +208,10 @@ class PosixMmapFile : public WritableFile {
         dst_(NULL),
         last_sync_(NULL),
         file_offset_(0),
-        pending_sync_(false) {
+        pending_sync_(false),
+        mutex_(NULL) {
     assert((page_size & (page_size - 1)) == 0);
   }
-
 
   ~PosixMmapFile() {
     if (fd_ >= 0) {
@@ -218,6 +227,7 @@ class PosixMmapFile : public WritableFile {
       assert(dst_ <= limit_);
       size_t avail = limit_ - dst_;
       if (avail == 0) {
+        MutexLock l(mutex_);
         if (!UnmapCurrentRegion() ||
             !MapNewRegion()) {
           return IOError(filename_, errno);
@@ -234,6 +244,7 @@ class PosixMmapFile : public WritableFile {
   }
 
   virtual Status Close() {
+    MutexLock l(mutex_);
     Status s;
     size_t unused = limit_ - dst_;
     if (!UnmapCurrentRegion()) {
@@ -281,6 +292,108 @@ class PosixMmapFile : public WritableFile {
       if (msync(base_ + p1, p2 - p1 + page_size_, MS_SYNC) < 0) {
         s = IOError(filename_, errno);
       }
+    }
+
+    return s;
+  }
+};
+
+class RefRWPosixMmapFile : public ReadableAndWritableFile, public PosixMmapFile {
+private:
+  port::AtomicCount<uint32_t> ref_;
+  uint64_t reading_offset_;
+
+private:
+  virtual ~RefRWPosixMmapFile() {
+    if (mutex_ != NULL) {
+      delete mutex_;
+      mutex_ = NULL;
+    }
+  }
+
+public:
+  RefRWPosixMmapFile(const std::string& fname, int fd, size_t page_size)
+    : PosixMmapFile::PosixMmapFile(fname, fd, page_size), ref_(0), reading_offset_(0) {
+    // need mutex to protect r/w concurrency
+    PosixMmapFile::mutex_ = new port::Mutex();
+  }
+
+  virtual void Ref() {
+    ref_.Inc();
+  }
+
+  virtual void Unref() {
+    uint32_t ref = ref_.Get() > 0 ? ref_.Dec() : 0;
+    if (ref <= 0) {
+      delete this;
+    }
+  }
+
+  virtual Status Append(const Slice& data) {
+    return PosixMmapFile::Append(data);
+  }
+
+  virtual Status Close() {
+    return PosixMmapFile::Close();
+  }
+
+  virtual Status Flush() {
+    return PosixMmapFile::Flush();
+  }
+
+  virtual Status Sync() {
+    return PosixMmapFile::Sync();
+  }
+
+  virtual Status Skip(uint64_t n) {
+    reading_offset_ += n;
+    return Status::OK();
+  }
+
+  virtual Status Read(size_t n, Slice* result, char* scratch) {
+    Status s;
+    size_t read_file_size = 0, read_mem_size = 0;
+
+    {
+      MutexLock l(mutex_);
+      // dst_ can be increased out of mutex scope
+      char* mem_start = base_;
+      char* mem_offset = dst_;
+      if (NULL == mem_offset) {       // no mmap, just read from file(SequnecialFile)
+        read_file_size = n;
+      } else if (reading_offset_ >= static_cast<uint64_t>(file_offset_ + mem_offset - mem_start)) {
+        *result = Slice();
+        return IOError(PosixMmapFile::filename_, EINVAL);
+      } else if (reading_offset_ + n <= file_offset_) {
+        read_file_size = n;
+      } else if (reading_offset_ >= file_offset_) {
+        mem_start += reading_offset_ - file_offset_;
+        read_mem_size = std::min(static_cast<size_t>(mem_offset - mem_start), n);
+      } else {
+        read_file_size = file_offset_ - reading_offset_;
+        read_mem_size = std::min(static_cast<size_t>(mem_offset - mem_start),
+                                 static_cast<size_t>(n - read_file_size));
+      }
+
+      TBSYS_LOG(DEBUG, "@@ rm: %d, rf: %d", read_mem_size, read_file_size);
+      if (read_mem_size > 0) {
+        memcpy(scratch + read_file_size, mem_start, read_mem_size);
+      }
+    }
+
+    // read file need no lock
+    if (read_file_size > 0) {
+      ssize_t size = pread(fd_, scratch, read_file_size, reading_offset_);
+      if (size < 0) {
+        s = IOError(PosixMmapFile::filename_, errno);
+      } else {
+        read_file_size = size;  // read_file_size == size
+      }
+    }
+
+    if (s.ok()) {
+      *result = Slice(scratch, read_file_size + read_mem_size);
+      reading_offset_ += read_file_size + read_mem_size;
     }
 
     return s;
@@ -378,13 +491,25 @@ class PosixEnv : public Env {
     return s;
   }
 
+  virtual Status NewReadableAndWritableFile(const std::string& fname,
+                                            ReadableAndWritableFile** result) {
+    Status s;
+    const int fd = open(fname.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0644);
+    if (fd < 0) {
+      *result = NULL;
+      s = IOError(fname, errno);
+    } else {
+      *result = new RefRWPosixMmapFile(fname, fd, page_size_);
+    }
+    return s;
+  }
+
   virtual bool FileExists(const std::string& fname) {
     return access(fname.c_str(), F_OK) == 0;
   }
 
   virtual Status GetChildren(const std::string& dir,
                              std::vector<std::string>* result) {
-    result->clear();
     DIR* d = opendir(dir.c_str());
     if (d == NULL) {
       return IOError(dir, errno);

@@ -38,6 +38,7 @@
 namespace tair {
 
 
+  class tair_manager;
   struct CPacket_wait_Nodes
   {
 #define MAX_DUP_COUNT 2
@@ -175,7 +176,7 @@ namespace tair {
     public:
 
       dup_sync_sender_manager( tbnet::Transport *transport,
-          tair_packet_streamer *streamer, table_manager* table_mgr);
+          tair_packet_streamer *streamer, tair_manager* tair_mgr);
       ~dup_sync_sender_manager();
       void do_hash_table_changed();
       void set_max_queue_size(uint32_t max_queue_size) {
@@ -210,7 +211,7 @@ namespace tair {
       tbnet::IPacketHandler::HPRetCode handlePacket(tbnet::Packet *packet, void *args);
 			int rspPacket(const CPacket_wait_Nodes * pNode);
     private:
-      table_manager* table_mgr;
+      tair_manager* tair_mgr;
       tbnet::ConnectionManager* conn_mgr;
 
       CPacket_wait_manager packets_mgr;

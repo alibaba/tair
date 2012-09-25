@@ -50,7 +50,8 @@ Status WriteBatch::Iterate(Handler* handler) const {
   int found = 0;
   while (!input.empty()) {
     found++;
-    char tag = input[0];
+    // sync mask has nothing to with db
+    char tag = OffSyncMask(input[0]);
     input.remove_prefix(1);
     switch (tag) {
       case kTypeValue:
@@ -66,6 +67,14 @@ Status WriteBatch::Iterate(Handler* handler) const {
           handler->Delete(key);
         } else {
           return Status::Corruption("bad WriteBatch Delete");
+        }
+        break;
+      case kTypeDeletionWithTailer:
+        // skip tailer following deleted key 'cause it has nothing to do with db.
+        if (GetLengthPrefixedSlice(&input, &key) && SkipLengthPrefixedSlice(&input)) {
+          handler->Delete(key);
+        } else {
+          return Status::Corruption("bad WriteBatch DeleteWithTailer");
         }
         break;
       default:
@@ -95,17 +104,24 @@ void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
   EncodeFixed64(&b->rep_[0], seq);
 }
 
-void WriteBatch::Put(const Slice& key, const Slice& value) {
+void WriteBatch::Put(const Slice& key, const Slice& value, bool synced) {
   WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  rep_.push_back(static_cast<char>(kTypeValue));
+  rep_.push_back(synced ? OnSyncMask(kTypeValue) : kTypeValue);
   PutLengthPrefixedSlice(&rep_, key);
   PutLengthPrefixedSlice(&rep_, value);
 }
 
-void WriteBatch::Delete(const Slice& key) {
+void WriteBatch::Delete(const Slice& key, bool synced) {
   WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  rep_.push_back(static_cast<char>(kTypeDeletion));
+  rep_.push_back(synced ? OnSyncMask(kTypeDeletion) : kTypeDeletion);
   PutLengthPrefixedSlice(&rep_, key);
+}
+
+void WriteBatch::Delete(const Slice& key, const Slice& tailer, bool synced) {
+  WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
+  rep_.push_back(synced ? OnSyncMask(kTypeDeletionWithTailer) : kTypeDeletionWithTailer);
+  PutLengthPrefixedSlice(&rep_, key);
+  PutLengthPrefixedSlice(&rep_, tailer);
 }
 
 namespace {

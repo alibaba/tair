@@ -72,8 +72,11 @@ namespace tair {
       cmd_map["set_migrate_wait"] = &tair_client::do_cmd_set_migrate_wait_ms;
       cmd_map["stat_db"] = &tair_client::do_cmd_stat_db;
       cmd_map["release_mem"] = &tair_client::do_cmd_release_mem;
+      cmd_map["backup_db"] = &tair_client::do_cmd_backup_db;
       cmd_map["pause_gc"] = &tair_client::do_cmd_pause_gc;
       cmd_map["resume_gc"] = &tair_client::do_cmd_resume_gc;
+      cmd_map["pause_rsync"] = &tair_client::do_cmd_pause_rsync;
+      cmd_map["resume_rsync"] = &tair_client::do_cmd_resume_rsync;
       cmd_map["set_config"] = &tair_client::do_cmd_set_config;
       // cmd_map["additems"] = &tair_client::doCmdAddItems;
    }
@@ -1432,14 +1435,29 @@ namespace tair {
      do_cmd_op_ds_or_not(param, "release_mem", TAIR_SERVER_CMD_RELEASE_MEM);
    }
 
+   void tair_client::do_cmd_backup_db(VSTRING& param)
+   {
+     do_cmd_op_ds_or_not(param, "backup_db", TAIR_SERVER_CMD_BACKUP_DB);
+   }
+
    void tair_client::do_cmd_pause_gc(VSTRING& param)
    {
-     do_cmd_op_ds_or_not(param, "pause_mem", TAIR_SERVER_CMD_PAUSE_GC);
+     do_cmd_op_ds_or_not(param, "pause_gc", TAIR_SERVER_CMD_PAUSE_GC);
    }
 
    void tair_client::do_cmd_resume_gc(VSTRING& param)
    {
-     do_cmd_op_ds_or_not(param, "resume_mem", TAIR_SERVER_CMD_RESUME_GC);
+     do_cmd_op_ds_or_not(param, "resume_gc", TAIR_SERVER_CMD_RESUME_GC);
+   }
+
+   void tair_client::do_cmd_pause_rsync(VSTRING& param)
+   {
+     do_cmd_op_ds_or_not(param, "pause_rsync", TAIR_SERVER_CMD_PAUSE_RSYNC);
+   }
+
+   void tair_client::do_cmd_resume_rsync(VSTRING& param)
+   {
+     do_cmd_op_ds_or_not(param, "resume_rsync", TAIR_SERVER_CMD_RESUME_RSYNC);
    }
 
    void tair_client::do_cmd_set_config(VSTRING& param)
