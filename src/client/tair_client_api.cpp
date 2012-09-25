@@ -27,7 +27,7 @@ namespace tair {
    *  tair_client_api
    *-----------------------------------------------------------------------------*/
 
-  tair_client_api::tair_client_api()
+  tair_client_api::tair_client_api() : impl(NULL)
   {
     memset(cache_impl, 0, sizeof(cache_impl));
   }
