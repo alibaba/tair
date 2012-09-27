@@ -543,7 +543,7 @@ namespace tair
       }
     }
 
-    assert(reshard_buckets.empty());
+    // assert(reshard_buckets->empty());
     // map sharding buckets
     for (std::unordered_map<cluster_info, std::vector<int32_t>, hash_cluster_info>::iterator
            it = sharding_buckets.begin(); it != sharding_buckets.end(); ++it)

@@ -308,7 +308,7 @@ namespace tair
           }
         }
 
-        assert(reshard_buckets.empty());
+        // assert(reshard_buckets->empty());
         BUCKET_INDEX_MAP* new_bucket_map = new BUCKET_INDEX_MAP();
         for (int32_t index = 0; index < total; ++index)
         {
