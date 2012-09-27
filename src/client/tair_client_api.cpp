@@ -118,7 +118,7 @@ namespace tair {
   }
 
   int tair_client_api::mput(int area, const tair_client_kv_map& kvs,
-                            int& fail_request, bool compress)
+      int& fail_request, bool compress)
   {
     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->mput(area, kvs, fail_request, compress);
   }
@@ -149,7 +149,7 @@ namespace tair {
       if (TAIR_RETURN_SUCCESS == ret) {
         cache->put(key, *data);
       } else if (TAIR_RETURN_DATA_EXPIRED == ret ||
-            TAIR_RETURN_DATA_NOT_EXIST == ret) {
+          TAIR_RETURN_DATA_NOT_EXIST == ret) {
         cache->remove(key);
       }
     }
@@ -210,77 +210,77 @@ namespace tair {
     return ret;
   }
 
-   int tair_client_api::invalidate( int area, const data_entry &key, const char *groupname)
-   {
-       return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->invalidate(area, key, groupname);
-   }
+  int tair_client_api::invalidate( int area, const data_entry &key, const char *groupname)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->invalidate(area, key, groupname);
+  }
 
-   int tair_client_api::invalidate(int area, const data_entry &key)
-   {
-       return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->invalidate(area, key);
-   }
+  int tair_client_api::invalidate(int area, const data_entry &key)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->invalidate(area, key);
+  }
 
-   int tair_client_api::hide(int area, const data_entry &key)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hide(area, key);
-   }
+  int tair_client_api::hide(int area, const data_entry &key)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hide(area, key);
+  }
 
-   int tair_client_api::get_hidden(int area, const data_entry &key, data_entry *&value)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_hidden(area, key, value);
-   }
+  int tair_client_api::get_hidden(int area, const data_entry &key, data_entry *&value)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_hidden(area, key, value);
+  }
 
-   int tair_client_api::prefix_get(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_get(area, pkey, skey, value);
-   }
+  int tair_client_api::prefix_get(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_get(area, pkey, skey, value);
+  }
 
-   int tair_client_api::prefix_put(int area, const data_entry &pkey, const data_entry &skey,
-       const data_entry &value, int expire, int version)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_put(area, pkey, skey, value, expire, version);
-   }
+  int tair_client_api::prefix_put(int area, const data_entry &pkey, const data_entry &skey,
+      const data_entry &value, int expire, int version)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_put(area, pkey, skey, value, expire, version);
+  }
 
-   int tair_client_api::prefix_hide(int area, const data_entry &pkey, const data_entry &skey)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hide(area, pkey, skey);
-   }
+  int tair_client_api::prefix_hide(int area, const data_entry &pkey, const data_entry &skey)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hide(area, pkey, skey);
+  }
 
-   int tair_client_api::prefix_hides(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hides(area, pkey, skey_set, key_code_map);
-   }
+  int tair_client_api::prefix_hides(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hides(area, pkey, skey_set, key_code_map);
+  }
 
-   int tair_client_api::prefix_get_hidden(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_get_hidden(area, pkey, skey, value);
-   }
+  int tair_client_api::prefix_get_hidden(int area, const data_entry &pkey, const data_entry &skey, data_entry *&value)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_get_hidden(area, pkey, skey, value);
+  }
 
-   int tair_client_api::prefix_remove(int area, const data_entry &pkey, const data_entry &skey)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_remove(area, pkey, skey);
-   }
+  int tair_client_api::prefix_remove(int area, const data_entry &pkey, const data_entry &skey)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_remove(area, pkey, skey);
+  }
 
-   int tair_client_api::prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_removes(area, pkey, skey_set, key_code_map);
-   }
+  int tair_client_api::prefix_removes(int area, const data_entry &pkey, const tair_dataentry_set &skey_set, key_code_map_t &key_code_map)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_removes(area, pkey, skey_set, key_code_map);
+  }
 
-   int tair_client_api::get_range(int area, const data_entry &pkey, const data_entry &start_key, const data_entry &end_key, 
-                        int offset, int limit, vector<data_entry *> &values, short type)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_range(area, pkey, start_key, end_key, offset, limit, values, type);
-   }
+  int tair_client_api::get_range(int area, const data_entry &pkey, const data_entry &start_key, const data_entry &end_key, 
+      int offset, int limit, vector<data_entry *> &values, short type)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->get_range(area, pkey, start_key, end_key, offset, limit, values, type);
+  }
 
-   int tair_client_api::removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->removes(area, mkey_set, key_code_map);
-   }
+  int tair_client_api::removes(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->removes(area, mkey_set, key_code_map);
+  }
 
-   int tair_client_api::hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
-   {
-     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hides(area, mkey_set, key_code_map);
-   }
+  int tair_client_api::hides(int area, const tair_dataentry_set &mkey_set, key_code_map_t &key_code_map)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hides(area, mkey_set, key_code_map);
+  }
 
   void tair_client_api::invalid_local_cache(int area, const vector<data_entry *> &keys)
   {
@@ -489,7 +489,7 @@ namespace tair {
 
   void tair_client_api::set_compress_threshold(int threshold)
   {
-      tair::common::data_entry::compress_threshold = threshold;
+    tair::common::data_entry::compress_threshold = threshold;
   }
 #endif
 
@@ -527,7 +527,7 @@ namespace tair {
   }
   int64_t tair_client_api::ping(uint64_t server_id)
   {
-      return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->ping(server_id);
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->ping(server_id);
   }
 
   int tair_client_api::get_group_status(vector<string> &group, vector<string> &status)
@@ -578,8 +578,8 @@ namespace tair {
   }
 
   i_tair_client_impl* new_tair_client(const char *master_addr,
-                                      const char *slave_addr,
-                                      const char *group_name)
+      const char *slave_addr,
+      const char *group_name)
   {
     i_tair_client_impl* ret_client_impl = NULL;
 
@@ -602,23 +602,23 @@ namespace tair {
     TairClusterType type = get_cluster_type_by_config(config_map);
     switch (type)
     {
-    case TAIR_CLUSTER_TYPE_SINGLE_CLUSTER:
-    {
-      log_warn("Tair cluster is SINGLE CLUSTER TYPE, init tair_client_impl");
-      ret_client_impl = new tair_client_impl();
-      break;
-    }
-    case TAIR_CLUSTER_TYPE_MULTI_CLUSTER:
-    {
-      log_warn("Tair cluster is MULTI CLUSTER TYPE, init tair_multi_cluster_client_impl");
-      ret_client_impl = new tair_multi_cluster_client_impl();
-      break;
-    }
-    default :
-    {
-      log_error("unsupported cluster type, can NOT init tair client. type: %d", type);
-      break;
-    }
+      case TAIR_CLUSTER_TYPE_SINGLE_CLUSTER:
+        {
+          log_warn("Tair cluster is SINGLE CLUSTER TYPE, init tair_client_impl");
+          ret_client_impl = new tair_client_impl();
+          break;
+        }
+      case TAIR_CLUSTER_TYPE_MULTI_CLUSTER:
+        {
+          log_warn("Tair cluster is MULTI CLUSTER TYPE, init tair_multi_cluster_client_impl");
+          ret_client_impl = new tair_multi_cluster_client_impl();
+          break;
+        }
+      default :
+        {
+          log_error("unsupported cluster type, can NOT init tair client. type: %d", type);
+          break;
+        }
     }
     return ret_client_impl;
   }
@@ -637,6 +637,36 @@ namespace tair {
     {
       return TAIR_CLUSTER_TYPE_SINGLE_CLUSTER;
     }
+  }
+
+  int tair_client_api::prefix_invalidate(int area, const data_entry &key, const char *groupname)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_invalidate(area, key, groupname);
+  }
+
+  int tair_client_api::prefix_invalidate(int area, const data_entry &key)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_invalidate(area, key);
+  }
+
+  int tair_client_api::hide_by_proxy(int area, const data_entry &key, const char *groupname)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hide_by_proxy(area, key, groupname);
+  }
+
+  int tair_client_api::hide_by_proxy(int area, const data_entry &key)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->hide_by_proxy(area, key);
+  }
+
+  int tair_client_api::prefix_hide_by_proxy(int area, const data_entry &key, const char *groupname)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hide_by_proxy(area, key, groupname);
+  }
+
+  int tair_client_api::prefix_hide_by_proxy(int area, const data_entry &key)
+  {
+    return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hide_by_proxy(area, key);
   }
 
 } /* tair */

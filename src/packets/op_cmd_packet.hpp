@@ -101,6 +101,14 @@ namespace tair
       }
       return true;
     }
+    inline int get_code()
+    {
+      return code;
+    }
+    inline void set_code(int this_code)
+    {
+      code = this_code;
+    }
 
     int code;
     std::vector<std::string> infos;

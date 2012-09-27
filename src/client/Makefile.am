@@ -39,7 +39,7 @@ endif
 
 AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB} ${READLINE_LDFLAGS} ${COMPRESS_LDFLAGS}
 
-lib_LTLIBRARIES=libtairclientapi.la libtairclientapi_c.la
+lib_LTLIBRARIES=libtairclientapi.la libtairclientapi_c.la libtairclientapi_impl.la
 sbin_PROGRAMS=tairclient keycleantool
 
 tairclient_SOURCES=tair_client.cpp
@@ -51,6 +51,7 @@ keycleantool_LDADD=libtairclientapi.la ${LDADD}
 keycleantool_LDFLAGS= -static
 
 libtairclientapi_la_SOURCES=${api_source_list}
+libtairclientapi_impl_la_SOURCES=${api_source_list}
 libtairclientapi_c_la_SOURCES=tair_client_capi.cpp
 libtairclientapi_c_la_LIBADD=libtairclientapi.la
 

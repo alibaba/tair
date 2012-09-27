@@ -291,6 +291,10 @@
 #define TAIR_INVAL_SERVER_DEFAULT_PORT  5196
 #define TAIR_IGNORE_ZERO_AREA           "ignore_zero_area"
 #define TAIR_MAX_INVALSVR_CNT           32
+#define TAIR_INVAL_DATA_DIR             "data_dir"
+#define TAIR_INVAL_DEFAULT_DATA_DIR     "data"
+#define TAIR_INVAL_CACHED_PACKET_COUNT   "cached_packet_count"
+#define TAIR_INVAL_DEFAULT_CACHED_PACKET_COUNT (100000)
 enum {
   SYNC_INVALID,
   ASYNC_INVALID,

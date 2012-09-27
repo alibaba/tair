@@ -3,7 +3,7 @@ AM_CPPFLAGS= -I$(TBLIB_ROOT)/include/tbsys \
 	     -I${top_srcdir}/src/ \
 	     -I${top_srcdir}/src/common \
 	     -I${top_srcdir}/src/packets \
-	     -I${top_srcdir}/src/client\
+	     -I${top_srcdir}/src/client \
 	     -I${top_srcdir}/src/storage \
 	     -I${top_srcdir}/src/statserver/include \
 	     -I${top_srcdir}/src/dataserver

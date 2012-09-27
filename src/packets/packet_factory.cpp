@@ -61,6 +61,8 @@
 #include "prefix_hides_by_proxy_packet.hpp"
 #include "prefix_get_hiddens_packet.hpp"
 
+#include "retry_all_packet.hpp"
+#include "inval_stat_packet.hpp"
   namespace tair {
     tbnet::Packet *tair_packet_factory::createPacket(int pcode)
     {
@@ -257,6 +259,15 @@
             break;
          case TAIR_RESP_GET_RANGE_PACKET:
             packet = new response_get_range();
+            break;
+         case TAIR_REQ_RETRY_ALL_PACKET:
+            packet = new request_retry_all();
+            break;
+         case TAIR_REQ_INVAL_STAT_PACKET:
+            packet = new request_inval_stat();
+            break;
+         case TAIR_RESP_INVAL_STAT_PACKET:
+            packet = new response_inval_stat();
             break;
         default:
           log_error("createpacket error: pcode=%d", pcode);

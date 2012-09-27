@@ -144,6 +144,8 @@ AC_CONFIG_FILES([\
 		 test/Makefile \
 		 test/interface_test/Makefile \
 		 test/unit_test/Makefile \
+		 test/statistics_test/Makefile \
+		 test/retry_all_test/Makefile \
 		 scripts/Makefile \
 		 share/Makefile
 		 ])

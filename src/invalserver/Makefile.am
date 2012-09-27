@@ -31,4 +31,12 @@ inval_server_SOURCES=inval_server.cpp inval_server.hpp \
 					 inval_retry_thread.cpp inval_retry_thread.hpp \
 					 inval_async_task_thread.cpp inval_async_task_thread.hpp \
 					 inval_processor.cpp inval_processor.hpp \
-					 server_pair_id.hpp
+					 server_pair_id.hpp \
+					 inval_stat.hpp \
+					 inval_stat_helper.cpp inval_stat_helper.hpp \
+					 inval_request_storage.cpp inval_request_storage.hpp
+
+noinst_PROGRAMS=inval_loader_test_main
+inval_loader_test_main_SOURCES=server_pair_id.hpp inval_loader.cpp inval_loader.hpp \
+												 inval_loader_test.hpp inval_stat.hpp inval_stat_helper.hpp inval_stat_helper.cpp\
+												 inval_loader_test.cpp inval_loader_test_main.cpp

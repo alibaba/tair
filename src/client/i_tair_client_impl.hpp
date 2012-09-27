@@ -29,7 +29,7 @@ namespace tair
   using tair::common::key_code_map_t;
   using tair::common::tair_dataentry_set;
   typedef void (*TAIRCALLBACKFUNC)(int retcode, void* parg);
-
+  struct inval_stat_data_t;
   class i_tair_client_impl
   {
   public:
@@ -107,6 +107,42 @@ namespace tair
       std::map<int,std::string>::const_iterator it = i_tair_client_impl::errmsg_.find(ret);
       return it != i_tair_client_impl::errmsg_.end() ? it->second.c_str() : "unknow";
     }
+
+    virtual int prefix_invalidate(int area, const data_entry &key, const char *groupname)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int prefix_invalidate(int area, const data_entry &key)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int hide_by_proxy(int area, const data_entry &key, const char* groupname)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int hide_by_proxy(int area, const data_entry &key)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int prefix_hide_by_proxy(int area, const data_entry &key, const char *groupname)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int prefix_hide_by_proxy(int area, const data_entry &key)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int debug_support(uint64_t server_id, std::vector<std::string> &infos)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int retry_all()
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int retry_all(uint64_t invalid_server_id)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int retrieve_invalidserver(std::vector<uint64_t> &invalid_server_list)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int query_from_invalidserver(uint64_t invalid_server_id, inval_stat_data_t* &stat)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
+
+    virtual int query_from_invalidserver(std::map<uint64_t, inval_stat_data_t*> &stats)
+    { return TAIR_RETURN_NOT_SUPPORTED; }
 
   public:
     static const std::map<int, std::string> errmsg_;

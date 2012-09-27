@@ -16,7 +16,7 @@
  */
 #ifndef PREFIX_HIDES_BY_PROXY_PACKET_HPP
 #define PREFIX_HIDES_BY_PROXY_PACKET_HPP
-
+#include "hide_by_proxy_packet.hpp"
 namespace tair {
   class request_prefix_hides_by_proxy : public request_hide_by_proxy {
   public:

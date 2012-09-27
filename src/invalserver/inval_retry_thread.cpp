@@ -5,14 +5,17 @@ namespace tair {
     invalid_loader = NULL;
     processor = NULL;
     setThreadCount(RETRY_COUNT);
+    request_storage = NULL;
   }
 
   InvalRetryThread::~InvalRetryThread() {
   }
 
-  void InvalRetryThread::setThreadParameter(InvalLoader *loader, RequestProcessor *processor) {
+  void InvalRetryThread::setThreadParameter(InvalLoader *loader, RequestProcessor *processor,
+      inval_request_storage * requeststorage) {
     this->invalid_loader = loader;
     this->processor = processor;
+    this->request_storage = requeststorage;
   }
 
   void InvalRetryThread::stop() {
@@ -24,7 +27,7 @@ namespace tair {
 
   void InvalRetryThread::run(tbsys::CThread *thread, void *arg) {
     int index = (int)((long)arg);
-    if (index < 0 || index > RETRY_COUNT - 1 || invalid_loader == NULL ) {
+    if (index < 0 || index >= RETRY_COUNT || invalid_loader == NULL ) {
       return ;
     }
     log_warn("RetryThread %d starts.", index);
@@ -60,119 +63,111 @@ namespace tair {
 
       switch (pc) {
         case TAIR_REQ_INVAL_PACKET:
-        {
-          request_invalid *req = (request_invalid*) bp;
-          request_invalid *post_req = NULL;
-          processor->process(req, post_req);
-          if (post_req != NULL) {
-            if (index < RETRY_COUNT - 1) {
-              log_error("add invalid packet to RetryThread %d", index + 1);
-              add_packet(post_req, index + 1);
-            } else {
-              log_error("invalid RetryFailedFinally, keys would be dumped");
-              char msg[256];
-              snprintf(msg, sizeof(msg), "prefix invalid failed, group: %s, area: %d",
-                  post_req->group_name, post_req->area);
-              if (post_req->key != NULL) {
-                processor->dump_key(*post_req->key, msg);
-              } else if (post_req->key_list != NULL) {
-                processor->dump_key(*post_req->key_list, msg);
+          {
+            request_invalid *req = (request_invalid*) bp;
+            request_invalid *post_req = NULL;
+            processor->process(req, post_req);
+            TAIR_INVAL_STAT.statistcs(inval_stat_helper::INVALID, std::string(req->group_name),
+                req->area, inval_area_stat::RETRY_EXEC);
+            if (post_req != NULL) {
+              if (index < RETRY_COUNT - 1) {
+                log_error("add invalid packet to RetryThread %d", index + 1);
+                add_packet(post_req, index + 1);
+              } else {
+                log_error("invalid RetryFailedFinally, add the packet to the request_storage.");
+                //simply write the request packet to request_storage,
+                //and this operation is always successful.
+                request_storage->write_request((base_packet*) post_req);
+                TAIR_INVAL_STAT.statistcs(inval_stat_helper::INVALID, std::string(req->group_name),
+                    req->area, inval_area_stat::FINALLY_EXEC);
+                post_req = NULL;
               }
-              delete post_req;
             }
-          } else {
-            log_error("invalid success in RetryThread %d", index);
+            else {
+              log_error("invalid success in RetryThread %d", index);
+            }
+            delete req;
+            break;
           }
-          delete req;
-          break;
-        }
         case TAIR_REQ_HIDE_BY_PROXY_PACKET:
-        {
-          request_hide_by_proxy *req = (request_hide_by_proxy*) bp;
-          request_hide_by_proxy *post_req = NULL;
-          processor->process(req, post_req);
-          if (post_req != NULL) {
-            if (index < RETRY_COUNT - 1) {
-              log_error("add hide packet to RetryThread %d", index + 1);
-              add_packet(post_req, index + 1);
-            } else {
-              log_error("hide RetryFailedFinally, keys would be dumped");
-              char msg[256];
-              snprintf(msg, sizeof(msg), "prefix hide failed, group: %s, area: %d",
-                  post_req->group_name, post_req->area);
-              if (post_req->key != NULL) {
-                processor->dump_key(*post_req->key, msg);
-              } else if (post_req->key_list != NULL) {
-                processor->dump_key(*post_req->key_list, msg);
+          {
+            request_hide_by_proxy *req = (request_hide_by_proxy*) bp;
+            request_hide_by_proxy *post_req = NULL;
+            processor->process(req, post_req);
+            TAIR_INVAL_STAT.statistcs(inval_stat_helper::HIDE, std::string(req->group_name),
+                req->area, inval_area_stat::RETRY_EXEC);
+            if (post_req != NULL) {
+              if (index < RETRY_COUNT - 1) {
+                log_error("add hide packet to RetryThread %d", index + 1);
+                add_packet(post_req, index + 1);
               }
-              delete post_req;
+              else {
+                log_error("prefix hides RetryFailedFinally, write the request packet to `request_storage");
+                //simply write the request packet to request_storage,
+                //and request_storage will free the packet.
+                request_storage->write_request(post_req);
+                TAIR_INVAL_STAT.statistcs(inval_stat_helper::HIDE, std::string(req->group_name),
+                    req->area, inval_area_stat::FINALLY_EXEC);
+              }
             }
-          } else {
-            log_error("hide success in RetryThread %d", index);
+            else {
+              log_error("hide success in RetryThread %d", index);
+            }
+            delete req;
+            break;
           }
-          delete req;
-          break;
-        }
         case TAIR_REQ_PREFIX_HIDES_BY_PROXY_PACKET:
-        {
-          request_prefix_hides_by_proxy *req = (request_prefix_hides_by_proxy*) bp;
-          request_prefix_hides_by_proxy *post_req = NULL;
-          processor->process(req, post_req);
-          if (post_req != NULL) {
-            if (index < RETRY_COUNT - 1) {
-              log_error("add prefix hides packet to RetryThread %d", index + 1);
-              add_packet(post_req, index + 1);
-            } else {
-              log_error("prefix hides RetryFailedFinally, keys would be dumped");
-              char msg[256];
-              snprintf(msg, sizeof(msg), "prefix hides failed, group: %s, area: %d",
-                  post_req->group_name, post_req->area);
-              if (post_req->key != NULL) {
-                processor->dump_key(*post_req->key, msg);
-              } else if (post_req->key_list != NULL) {
-                processor->dump_key(*post_req->key_list, msg);
+          {
+            request_prefix_hides_by_proxy *req = (request_prefix_hides_by_proxy*) bp;
+            request_prefix_hides_by_proxy *post_req = NULL;
+            processor->process(req, post_req);
+            TAIR_INVAL_STAT.statistcs(inval_stat_helper::PREFIX_HIDE, std::string(req->group_name),
+                req->area, inval_area_stat::RETRY_EXEC);
+            if (post_req != NULL) {
+              if (index < RETRY_COUNT - 1) {
+                log_error("add prefix hides packet to RetryThread %d", index + 1);
+                add_packet(post_req, index + 1);
+              } else {
+                log_error("prefix hides RetryFailedFinally, write the request packet to local storage `request_storage");
+                request_storage->write_request(post_req);
+                TAIR_INVAL_STAT.statistcs(inval_stat_helper::PREFIX_HIDE, std::string(req->group_name),
+                    req->area, inval_area_stat::FINALLY_EXEC);
               }
-              delete post_req;
+            } else {
+              log_error("prefix hides success in RetryThread %d", index);
             }
-          } else {
-            log_error("prefix hides success in RetryThread %d", index);
+            delete req;
+            break;
           }
-          delete req;
-          break;
-        }
         case TAIR_REQ_PREFIX_INVALIDS_PACKET:
-        {
-          request_prefix_invalids *req = (request_prefix_invalids*) bp;
-          request_prefix_invalids *post_req = NULL;
-          processor->process(req, post_req);
-          if (post_req != NULL) {
-            if (index < RETRY_COUNT - 1) {
-              log_error("add prefix invalids packet to RetryThread %d", index + 1);
-              add_packet(post_req, index + 1);
-            } else {
-              log_error("prefix invalids RetryFailedFinally, keys would be dumped");
-              char msg[256];
-              snprintf(msg, sizeof(msg), "prefix invalids failed, group: %s, area: %d",
-                  post_req->group_name, post_req->area);
-              if (post_req->key != NULL) {
-                processor->dump_key(*post_req->key, msg);
-              } else if (post_req->key_list != NULL) {
-                processor->dump_key(*post_req->key_list, msg);
+          {
+            request_prefix_invalids *req = (request_prefix_invalids*) bp;
+            request_prefix_invalids *post_req = NULL;
+            processor->process(req, post_req);
+            TAIR_INVAL_STAT.statistcs(inval_stat_helper::PREFIX_INVALID, std::string(req->group_name),
+                req->area, inval_area_stat::RETRY_EXEC);
+            if (post_req != NULL) {
+              if (index < RETRY_COUNT - 1) {
+                log_error("add prefix invalids packet to RetryThread %d", index + 1);
+                add_packet(post_req, index + 1);
+              } else {
+                log_error("prefix hides RetryFailedFinally, write the request packet to local storage `request_storage");
+                request_storage->write_request(post_req);
+                TAIR_INVAL_STAT.statistcs(inval_stat_helper::PREFIX_INVALID, std::string(req->group_name),
+                    req->area, inval_area_stat::FINALLY_EXEC);
               }
-              delete post_req;
+            } else {
+              log_error("prefix invalids success in RetryThread %d", index);
             }
-          } else {
-            log_error("prefix invalids success in RetryThread %d", index);
+            delete req;
+            break;
           }
-          delete req;
-          break;
-        }
         default:
-        {
-          log_error("unknown packet with code %d", pc);
-          delete bp;
-          break;
-        }
+          {
+            log_error("unknown packet with code %d", pc);
+            delete bp;
+            break;
+          }
       }
     }
     //~ clear the queue when stopped.
@@ -196,10 +191,22 @@ namespace tair {
       delete packet;
       return ;
     }
-    log_info("add packet to RetryThread %d", index);
+    log_error("add packet to RetryThread %d", index);
     packet->request_time = time(NULL);
     retry_queue[index].push(packet);
     queue_cond[index].unlock();
     queue_cond[index].signal();
+  }
+  int InvalRetryThread::retry_queue_size(const int index) {
+    int size = 0;
+    if (index < 0 || index >= RETRY_COUNT || _stop == true) {
+      log_error("failed to retrieve retry_queue_size");
+      return 0;
+    }
+    queue_cond[index].lock();
+    size = retry_queue[index].size();
+    queue_cond[index].unlock();
+
+    return size;
   }
 }

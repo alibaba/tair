@@ -7,7 +7,6 @@ namespace tair {
     if (clients != NULL) {
       //~ 'set' to collect keys that failed
       tair_dataentry_set key_set;
-
       for (size_t i = 0; i < clients->size(); ++i) {
         tair_client_api *client = (*clients)[i];
         //~ single key
@@ -16,14 +15,19 @@ namespace tair {
             if (ret != TAIR_RETURN_DATA_NOT_EXIST && ret != TAIR_RETURN_DATA_EXPIRED) {
               std::vector<std::string> servers;
               client->get_server_with_key(*(req->key), servers);
+              if (servers.size() > 0) {
               log_error("[FATAL ERROR] RemoveFailure: Group %s, DataServer %s.",
                   req->group_name, servers[0].c_str());
-
+              }
               data_entry *key = new data_entry(*req->key);
               if (key_set.insert(key).second == false) {
                 delete key;
               }
             }
+          }
+          //error
+          else{
+            log_info("client[%d], ok, removed.'");
           }
         } else if (req->key_count > 1) {
           //~ multiple keys
@@ -44,7 +48,6 @@ namespace tair {
           }
         } //~ end if
       } //~ end for
-
       if (!key_set.empty()) {
         post_req = new request_invalid();
         post_req->set_group_name(req->group_name);
@@ -249,7 +252,6 @@ namespace tair {
     }
     return ret;
   }
-
   void RequestProcessor::dump_key(const tair_dataentry_set &keyset, const char *msg) {
     if (msg == NULL) {
       msg = "error";
