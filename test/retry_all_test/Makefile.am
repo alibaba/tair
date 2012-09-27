@@ -18,8 +18,8 @@ COMPRESS_LDFLAGS= -lsnappy
 endif
 
 LDADD=$(top_builddir)/src/packets/libtair_packets.a \
-	  $(top_builddir)/src/client/.libs/libtairclientapi_impl.a \
 	  $(top_builddir)/src/client/.libs/libtairclientapi.a \
+	  $(top_builddir)/src/client/.libs/libtairclientapi_impl.a \
 		$(TBLIB_ROOT)/lib/libtbnet.a \
 		$(TBLIB_ROOT)/lib/libtbsys.a \
 		$(top_builddir)/src/common/libtair_common.a \
@@ -31,5 +31,4 @@ LDADD=$(top_builddir)/src/packets/libtair_packets.a \
 
 
 noinst_PROGRAMS=retry_all_test
-retry_all_test_SOURCES=tair_client_proxy.hpp tair_client_proxy.cpp \
-											 retry_all_test.cpp
+retry_all_test_SOURCES=retry_all_test.cpp

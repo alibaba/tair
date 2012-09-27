@@ -669,4 +669,29 @@ namespace tair {
     return impl == NULL ? TAIR_RETURN_NOT_INIT : impl->prefix_hide_by_proxy(area, key);
   }
 
+  int tair_client_api::retry_all()
+  {
+    return impl->retry_all();
+  }
+
+  int tair_client_api::retry_all(uint64_t invalid_server_id)
+  {
+    return impl->retry_all(invalid_server_id);
+  }
+
+  int tair_client_api::retrieve_invalidserver(vector<uint64_t> &invalid_server_list)
+  {
+    return impl->retrieve_invalidserver(invalid_server_list);
+  }
+
+  int tair_client_api::query_from_invalidserver(uint64_t invalid_server_id, inval_stat_data_t* &stat)
+  {
+    return impl->query_from_invalidserver(invalid_server_id, stat);
+  }
+
+  int tair_client_api::query_from_invalidserver(std::map<uint64_t, inval_stat_data_t*> &stats)
+  {
+    return impl->query_from_invalidserver(stats);
+  }
+
 } /* tair */

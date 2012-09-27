@@ -1,9 +1,9 @@
-#include "tair_client_proxy.hpp"
 #include "inval_stat.hpp"
 #include <string>
 #include <map>
 #include <iomanip>
 #include <vector>
+#include"tair_client_api_impl.hpp"
 
 using namespace std;
 
@@ -22,13 +22,13 @@ int main(int argc, char **argv)
   cin >> group_name;
   string config= ip + ":" + port;
   vector<std::string> group_list;
-  tair_client_proxy client;
+  tair::tair_client_impl client;
   client.get_group_name_list(tbsys::CNetUtil::strToAddr(ip.c_str(),50565), 0, group_list);
   cout << "size :" << group_list.size() << endl;
   for (int i = 0; i < group_list.size(); ++i) {
     cout << "group name: " << group_list[i] << endl;
   }
-  tair_client_proxy* pclient = new tair_client_proxy();
+  tair::tair_client_impl* pclient = new tair::tair_client_impl();
   if (!pclient->startup(config.c_str(), NULL, group_name.c_str())) {
     cout << "start up failed" << endl;
     exit(0);
