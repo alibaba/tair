@@ -243,6 +243,7 @@ namespace tair
           return TAIR_RETURN_SUCCESS;
         }
 
+        int32_t average_count = buckets.size() / total, remainder = buckets.size() % total;
         // buckets that need resharding
         std::vector<int32_t>* reshard_buckets = NULL;
 
@@ -258,12 +259,18 @@ namespace tair
             BUCKET_INDEX_MAP::const_iterator it = bucket_map_->find(*bucket_it);
             if (it != bucket_map_->end())
             {
-              if (it->second >= total)
+              if (it->second >= total ||
+                  static_cast<int32_t>(sharding_buckets[it->second].size()) > average_count ||
+                  (remainder <= 0 && static_cast<int32_t>(sharding_buckets[it->second].size()) == average_count))
               {
                 reshard_buckets->push_back(*bucket_it);
               }
               else
               {
+                if (remainder > 0 && static_cast<int32_t>(sharding_buckets[it->second].size()) == average_count)
+                {
+                  --remainder;
+                }
                 sharding_buckets[it->second].push_back(*bucket_it);
               }
             }
@@ -274,56 +281,34 @@ namespace tair
           }
         }
 
-        int32_t average_count = buckets.size() / total, remainder = buckets.size() % total, diff_count = 0;
-
         for (int i = 0; i < total; ++i)
         {
           std::vector<int32_t>* tmp_buckets = &sharding_buckets[i];
           std::vector<int32_t>::iterator bucket_it = tmp_buckets->end();
+          int32_t diff_count = 0;
 
-          if (static_cast<int32_t>(tmp_buckets->size()) > average_count)
-          {
-            diff_count = tmp_buckets->size() - average_count;
-            // we prefer reserving old bucket index
-            if (remainder > 0)
-            {
-              --diff_count;
-              --remainder;
-            }
-            for (int c = 0; c < diff_count; ++c)
-            {
-              --bucket_it;
-              reshard_buckets->push_back(*bucket_it);
-            }
-            tmp_buckets->erase(bucket_it, tmp_buckets->end());
-          }
-          else if (static_cast<int32_t>(tmp_buckets->size()) < average_count)
+          if (static_cast<int32_t>(tmp_buckets->size()) <= average_count)
           {
             diff_count = average_count - tmp_buckets->size();
-            std::vector<int32_t>::iterator reshard_it = reshard_buckets->end();
-            for (int c = 0; c < diff_count; ++c)
+            if (remainder > 0)
             {
-              --reshard_it;
-              tmp_buckets->push_back(*reshard_it);
+              --remainder;
+              ++diff_count;
             }
-            reshard_buckets->erase(reshard_it, reshard_buckets->end());
+            if (diff_count > 0)
+            {
+              std::vector<int32_t>::iterator reshard_it = reshard_buckets->end();
+              for (int c = 0; c < diff_count; ++c)
+              {
+                --reshard_it;
+                tmp_buckets->push_back(*reshard_it);
+              }
+              reshard_buckets->erase(reshard_it, reshard_buckets->end());
+            }
           }
         }
 
-        if (remainder > 0)
-        {
-          std::vector<int32_t>::iterator reshard_it = reshard_buckets->end();
-          for (int i = 0; i < total && remainder > 0; ++i, --remainder)
-          {
-            if (static_cast<int32_t>(sharding_buckets[i].size()) <= average_count)
-            {
-              --reshard_it;
-              sharding_buckets[i].push_back(*reshard_it);
-            }
-          }
-          assert(reshard_buckets->begin() == reshard_it);
-        }
-
+        assert(reshard_buckets.empty());
         BUCKET_INDEX_MAP* new_bucket_map = new BUCKET_INDEX_MAP();
         for (int32_t index = 0; index < total; ++index)
         {

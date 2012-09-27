@@ -449,19 +449,30 @@ namespace tair
       return;
     }
 
-    // last buckets sharding map, we want to do least resharding when update
-    BUCKET_INDEX_MAP* last_bucket_map = diff_handlers_node.extra_bucket_map_;
-    // total cluster count now
-    int32_t total = handlers_->size();
-
     // live buckets, we don't care dead bucket
     std::vector<int32_t> buckets;
-    // buckets sharded to each cluster
-    std::vector<int32_t>* sharding_buckets = new std::vector<int32_t>[total];
+    get_live_buckets(buckets);
+    if (buckets.empty())
+    {
+      return;
+    }
+
+    // last buckets sharding map, we want to do least resharding when update
+    BUCKET_INDEX_MAP* last_bucket_map = diff_handlers_node.extra_bucket_map_;
+    CLUSTER_HANDLER_LIST* last_handlers = diff_handlers_node.handlers_;
+
     // buckets that need resharding
     std::vector<int32_t>* reshard_buckets = NULL;
+    // buckets sharded to each cluster
+    std::unordered_map<cluster_info, std::vector<int32_t>, hash_cluster_info> sharding_buckets;
 
-    get_live_buckets(buckets);
+    // init sharding_buckets
+    for (CLUSTER_HANDLER_LIST::iterator it = handlers_->begin(); it != handlers_->end(); ++it)
+    {
+      sharding_buckets[(*it)->get_cluster_info()] = std::vector<int32_t>();
+    }
+
+    int32_t average_count = buckets.size() / handlers_->size(), remainder = buckets.size() % handlers_->size();
 
     if (last_bucket_map->empty())
     {
@@ -473,86 +484,78 @@ namespace tair
       for (std::vector<int32_t>::const_iterator bucket_it = buckets.begin(); bucket_it != buckets.end(); ++bucket_it)
       {
         BUCKET_INDEX_MAP::const_iterator it = last_bucket_map->find(*bucket_it);
-        if (it != last_bucket_map->end())
+        // new bucket(update first time) or bucket is dead last time
+        if (it == last_bucket_map->end() || it->second < 0)
         {
-          // last sharding is not invalid now
-          if (it->second >= total || it->second < 0)
+          reshard_buckets->push_back(*bucket_it);
+        }
+        else
+        {
+          cluster_info info = (*last_handlers)[it->second]->get_cluster_info();
+          std::unordered_map<cluster_info, std::vector<int32_t>, hash_cluster_info>::iterator
+            sharding_it = sharding_buckets.find(info);
+
+          if (sharding_it == sharding_buckets.end() || // old cluster info
+              static_cast<int32_t>(sharding_it->second.size()) > average_count || // this cluster has sharded fully
+              (remainder <= 0 && static_cast<int32_t>(sharding_it->second.size()) == average_count))
           {
             reshard_buckets->push_back(*bucket_it);
           }
           else
           {
-            // TODO: need check cluster_info actually
-            sharding_buckets[it->second].push_back(*bucket_it);
+            if (remainder > 0 && static_cast<int32_t>(sharding_it->second.size()) == average_count) // can have more
+            {
+              --remainder;
+            }
+            sharding_it->second.push_back(*bucket_it);
           }
         }
-        else
-        {
-          reshard_buckets->push_back(*bucket_it);
-        }
       }
     }
 
-    int32_t average_count = buckets.size() / total, remainder = buckets.size() % total, diff_count = 0;
+    log_debug("need reshard bucket: %d", reshard_buckets->size());
 
-    for (int i = 0; i < total; ++i)
+    for (std::unordered_map<cluster_info, std::vector<int32_t>, hash_cluster_info>::iterator
+           it = sharding_buckets.begin(); it != sharding_buckets.end(); ++it)
     {
-      std::vector<int32_t>* tmp_buckets = &sharding_buckets[i];
-      std::vector<int32_t>::iterator bucket_it = tmp_buckets->end();
+      std::vector<int32_t>* tmp_buckets = &(it->second);
+      int32_t diff_count = 0;
 
-      if (static_cast<int32_t>(tmp_buckets->size()) > average_count)
-      {
-        diff_count = tmp_buckets->size() - average_count;
-        // we prefer reserving old bucket index
-        if (remainder > 0)
-        {
-          --diff_count;
-          --remainder;
-        }
-        for (int c = 0; c < diff_count; ++c)
-        {
-          --bucket_it;
-          reshard_buckets->push_back(*bucket_it);
-        }
-        tmp_buckets->erase(bucket_it, tmp_buckets->end());
-      }
-      else if (static_cast<int32_t>(tmp_buckets->size()) < average_count)
+      // sharding buckets to un-full cluster
+      if (static_cast<int32_t>(tmp_buckets->size()) <= average_count)
       {
         diff_count = average_count - tmp_buckets->size();
-        std::vector<int32_t>::iterator reshard_it = reshard_buckets->end();
-        for (int c = 0; c < diff_count; ++c)
+        if (remainder > 0)
         {
-          --reshard_it;
-          tmp_buckets->push_back(*reshard_it);
+          --remainder;
+          ++diff_count;
         }
-        reshard_buckets->erase(reshard_it, reshard_buckets->end());
-      }
-    }
-
-    if (remainder > 0)
-    {
-      std::vector<int32_t>::iterator reshard_it = reshard_buckets->end();
-      for (int i = 0; i < total && remainder > 0; ++i, --remainder)
-      {
-        if (static_cast<int32_t>(sharding_buckets[i].size()) <= average_count)
+        if (diff_count > 0)
         {
-          --reshard_it;
-          sharding_buckets[i].push_back(*reshard_it);
+          std::vector<int32_t>::iterator reshard_it = reshard_buckets->end();
+          for (int c = 0; c < diff_count; ++c)
+          {
+            --reshard_it;
+            tmp_buckets->push_back(*reshard_it);
+          }
+          reshard_buckets->erase(reshard_it, reshard_buckets->end());
         }
       }
-      assert(reshard_buckets->begin() == reshard_it);
     }
 
-    for (int32_t index = 0; index < total; ++index)
+    assert(reshard_buckets.empty());
+    // map sharding buckets
+    for (std::unordered_map<cluster_info, std::vector<int32_t>, hash_cluster_info>::iterator
+           it = sharding_buckets.begin(); it != sharding_buckets.end(); ++it)
     {
-      for (std::vector<int32_t>::const_iterator it = sharding_buckets[index].begin();
-           it != sharding_buckets[index].end(); ++it)
+      int32_t index = (*handler_map_)[it->first]->get_index();
+      for (std::vector<int32_t>::const_iterator bucket_it = it->second.begin();
+           bucket_it != it->second.end(); ++bucket_it)
       {
-        (*extra_bucket_map_)[*it] = index;
+        (*extra_bucket_map_)[*bucket_it] = index;
       }
     }
 
-    delete [] sharding_buckets;
     delete reshard_buckets;
   }
 
@@ -566,6 +569,8 @@ namespace tair
         buckets.push_back(i);
       }
     }
+    // shuffle buckets
+    std::random_shuffle(buckets.begin(), buckets.end());
   }
 
   void handlers_node::get_handler_index_of_bucket(int32_t bucket, const cluster_info& exclude, std::vector<int32_t>& indexs)
