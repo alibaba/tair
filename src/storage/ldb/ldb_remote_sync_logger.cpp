@@ -39,7 +39,8 @@ namespace tair
       // LdbRemoteSyncLogReader
       //////////////////////////////////
       LdbRemoteSyncLogReader::LdbRemoteSyncLogReader(LdbInstance* instance) :
-        instance_(instance), first_sequence_(0), reader_(NULL), last_logfile_refed_(false)
+        instance_(instance), first_sequence_(0), reading_logfile_number_(0), reader_(NULL), last_logfile_refed_(false),
+        last_sequence_(0)
       {
         last_log_record_ = new leveldb::Slice();
         start_new_reader(0);

@@ -22,7 +22,7 @@
 namespace tair
 {
   RemoteSyncManager::RemoteSyncManager(tair_manager* tair_manager)
-    : tair_manager_(tair_manager), paused_(false),
+    : tair_manager_(tair_manager), paused_(false), max_process_count_(0), processing_count_(0),
       logger_(NULL), retry_logger_(NULL), fail_logger_(NULL),
       mtime_care_(false), cluster_inited_(false)
   {
@@ -115,9 +115,9 @@ namespace tair
         mtime_care_ = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, TAIR_RSYNC_MTIME_CARE, 0) > 0;
         // every reader do each remote synchronization.
         setThreadCount(remote_sync_thread_count() + retry_remote_sync_thread_count());
-        log_warn("remote sync manger start. sync thread count: %d, retry sync thread count: %d, retry: %s, mtime_care: %s",
+        log_warn("remote sync manger start. sync thread count: %d, retry sync thread count: %d, retry: %s, mtime_care: %s, max_process_count: %"PRI64_PREFIX"u",
                  remote_sync_thread_count(), retry_remote_sync_thread_count(),
-                 retry_logger_ != NULL ? "yes" : "no", mtime_care_ ? "yes" : "no");
+                 retry_logger_ != NULL ? "yes" : "no", mtime_care_ ? "yes" : "no", max_process_count_);
         start();
       }
     }
@@ -186,7 +186,9 @@ namespace tair
   int RemoteSyncManager::do_remote_sync(int32_t index, RecordLogger* input_logger, bool retry, FilterKeyFunc key_filter)
   {
     static const int64_t DEFAULT_WAIT_US = 1000000; // 1s
-    static const int64_t REST_WAIT_US = 100000;     // 100ms
+    static const int64_t REST_WAIT_US = 10000;      // 10ms
+    static const int64_t SPEED_CONTROL_WAIT_US = 2000; // 2ms
+
     int ret = TAIR_RETURN_SUCCESS;
     int32_t type = TAIR_REMOTE_SYNC_TYPE_NONE;
     int32_t bucket_num = -1;
@@ -211,6 +213,13 @@ namespace tair
       {
         need_wait_us = DEFAULT_WAIT_US;
         continue;
+      }
+
+      log_debug("@@ process count %"PRI64_PREFIX"u", processing_count_);
+      if (processing_count_ > max_process_count_)
+      {
+        need_wait_us = SPEED_CONTROL_WAIT_US;
+        continue;        
       }
 
       // get one remote sync log record.
@@ -300,6 +309,7 @@ namespace tair
 #define DO_REMOTE_SYNC_OP(type, op_func)                                \
   do {                                                                  \
     fail_records.clear();                                               \
+    int last_ret = ret;                                                 \
     RecordLogger* callback_logger = retry ? retry_logger_ : fail_logger_; \
     if (!cluster_info.empty())                                          \
     {                                                                   \
@@ -309,12 +319,13 @@ namespace tair
         log_debug("@@ one cluster");                                    \
         ClusterHandler* handler = it->second;                           \
         RemoteSyncManager::CallbackArg* arg =                           \
-          new RemoteSyncManager::CallbackArg(callback_logger, type, key_wrapper, handler); \
+          new RemoteSyncManager::CallbackArg(callback_logger, type, key_wrapper, handler, &processing_count_); \
         ret = handler->client()->op_func;                               \
         if (ret != TAIR_RETURN_SUCCESS)                                 \
         {                                                               \
           delete arg;                                                   \
           fail_records.push_back(FailRecord(key, handler->info(), ret)); \
+          last_ret = ret;                                               \
         }                                                               \
       }                                                                 \
       else                                                              \
@@ -329,16 +340,17 @@ namespace tair
       {                                                                 \
         ClusterHandler* handler = it->second;                           \
         RemoteSyncManager::CallbackArg* arg =                           \
-          new RemoteSyncManager::CallbackArg(callback_logger, type, key_wrapper, handler); \
+          new RemoteSyncManager::CallbackArg(callback_logger, type, key_wrapper, handler, &processing_count_); \
         ret = handler->client()->op_func;                               \
         if (ret != TAIR_RETURN_SUCCESS)                                 \
         {                                                               \
           delete arg;                                                   \
           fail_records.push_back(FailRecord(key, handler->info(), ret)); \
+          last_ret = ret;                                               \
         }                                                               \
       }                                                                 \
     }                                                                   \
-    ret = fail_records.empty() ? TAIR_RETURN_SUCCESS : TAIR_RETURN_FAILED; \
+    ret = fail_records.empty() ? TAIR_RETURN_SUCCESS : last_ret;        \
   } while (0)
 
   int RemoteSyncManager::do_process_remote_sync_record(TairRemoteSyncType type, int32_t bucket_num,
@@ -539,6 +551,7 @@ namespace tair
     static const char* REMOTE_CLUSTER_CONF_KEY = "remote";
 
     int ret = TAIR_RETURN_SUCCESS;
+    int32_t min_queue_limit = 0;
     std::string conf_str = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_RSYNC_CONF, "");
     std::vector<std::string> clusters;
     tair::common::string_util::split_str(conf_str.c_str(), "]}", clusters);
@@ -600,6 +613,10 @@ namespace tair
           else
           {
             remote_cluster_handlers_[handler->info()] = handler;
+            if (min_queue_limit <= 0 || handler->get_queue_limit() < min_queue_limit)
+            {
+              min_queue_limit = handler->get_queue_limit();
+            }
           }
         }
         else
@@ -627,6 +644,9 @@ namespace tair
     }
     else
     {
+      // we consider min_queue_limit's 70%(queue_limit includes channel size besides request queue size now)
+      // as max_process_count
+      max_process_count_ = static_cast<uint64_t>(min_queue_limit * 0.70);
       std::string debug_str = std::string(LOCAL_CLUSTER_CONF_KEY);
       debug_str.append(":");
       debug_str.append(local_cluster_handler_.debug_string());

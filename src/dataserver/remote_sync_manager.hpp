@@ -107,6 +107,10 @@ namespace tair
     {
       return info_;
     }
+    inline int32_t get_queue_limit()
+    {
+      return queue_limit_;        
+    }
     inline void encode_info()
     {
       char buf[sizeof(uint64_t)*2];
@@ -272,20 +276,23 @@ namespace tair
     typedef struct CallbackArg
     {
       CallbackArg(RecordLogger* fail_logger, TairRemoteSyncType type,
-                  DataEntryWrapper* key, ClusterHandler* handler)
-        : fail_logger_(fail_logger), type_(type), key_(key), handler_(handler)
+                  DataEntryWrapper* key, ClusterHandler* handler, volatile uint64_t* count)
+        : fail_logger_(fail_logger), type_(type), key_(key), handler_(handler), count_(count)
       {
         key_->ref();
+        tair::common::atomic_inc(count_);
       }
       ~CallbackArg()
       {
         key_->unref();
+        tair::common::atomic_dec(count_);
       }
 
       RecordLogger* fail_logger_;
       TairRemoteSyncType type_;
       DataEntryWrapper* key_;
       ClusterHandler* handler_;
+      volatile uint64_t* count_;
     } CallbackArg;
 
   public:
@@ -340,6 +347,11 @@ namespace tair
 
     // rsync process has paused
     bool paused_;
+
+    // rsync max process count allowed
+    uint64_t max_process_count_;
+    // rsync processing count
+    volatile uint64_t processing_count_;
 
     // logger of records to be remote synchronized,
     // this logger is specific with storage engine.

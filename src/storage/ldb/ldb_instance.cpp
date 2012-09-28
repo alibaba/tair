@@ -268,7 +268,10 @@ namespace tair
                            tair::common::data_entry& value,
                            bool version_care, int expire_time)
       {
-        assert(db_ != NULL);
+        if (db_ == NULL)
+        {
+          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+        }
 
         uint32_t cdate = 0, mdate = 0, edate = 0;
         int stat_data_size = 0, stat_use_size = 0, item_count = 1;
@@ -413,6 +416,11 @@ namespace tair
       // once used when db is running, it may have the risk of data inconsistency.
       int LdbInstance::batch_put(int bucket_number, int area, tair::common::mput_record_vec* record_vec, bool version_care)
       {
+        if (db_ == NULL)
+        {
+          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+        }
+
         if (record_vec->size() <= 0)
         {
           return TAIR_RETURN_FAILED;
@@ -550,7 +558,11 @@ namespace tair
 
       int LdbInstance::get_range(int bucket_number, data_entry& key_start, data_entry& key_end, int offset, int limit, int type, std::vector<data_entry*> &result, bool &has_next)
       {
-        assert(db_ != NULL);
+        if (db_ == NULL)
+        {
+          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+        }
+
         int total_size = 0;
         bool end_break = false;
 
@@ -650,7 +662,10 @@ namespace tair
 
       int LdbInstance::get(int bucket_number, tair::common::data_entry& key, tair::common::data_entry& value)
       {
-        assert(db_ != NULL);
+        if (db_ == NULL)
+        {
+          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+        }
 
         LdbKey ldb_key(key.get_data(), key.get_size(), bucket_number);
         LdbItem ldb_item;
@@ -696,7 +711,10 @@ namespace tair
 
       int LdbInstance::remove(int bucket_number, tair::common::data_entry& key, bool version_care)
       {
-        assert(db_ != NULL);
+        if (db_ == NULL)
+        {
+          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+        }
 
         int rc = TAIR_RETURN_SUCCESS;
 
@@ -755,7 +773,11 @@ namespace tair
 
       int LdbInstance::op_cmd(ServerCmdType cmd, std::vector<std::string>& params)
       {
-        assert(db_ != NULL);
+        if (db_ == NULL)
+        {
+          return TAIR_RETURN_SERVER_CAN_NOT_WORK;
+        }
+
         int ret = TAIR_RETURN_SUCCESS;
         log_warn("op cmd %d, param size: %d", cmd, params.size());
 
