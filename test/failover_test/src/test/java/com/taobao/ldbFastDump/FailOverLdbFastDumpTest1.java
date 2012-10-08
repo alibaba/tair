@@ -22,8 +22,8 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 				if(++waitcnt>30)break;
 			}
 			if(waitcnt>30)fail("wait data tool finish time out!");
-			waitto(5);
-			if(!"successful".equals(control_sh(csList.get(0), FailOverBaseCase.tair_bin, "fastdump.sh", group + " flushmmt "+group)))
+			waitto(30);
+			if(!"successful".equals(control_sh(csList.get(0), FailOverBaseCase.tair_bin, "fastdump.sh", group + " flushmmt")))
 				fail("flushmmt to " + group + " failed!");
             waitto(10);
 			return getVerifySuccessful("local", test_bin, "put.log");
@@ -201,7 +201,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
 	    //console发送group2 on 给cs
 		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_2 setstatus group_2 on")))
 			fail("open group1 failed!");
-		waitto(5);
+		waitto(30);
 		
 	    //12、client得到group[1,2]状态是on, 轮询访问group[1,2]
 		if(!sendSignal("local", "tairtool_get", "10"))
@@ -400,7 +400,7 @@ public class FailOverLdbFastDumpTest1 extends FailOverBaseCase{
             fail("restart " + dsList.get(0) + " failed!");
         waitto(down_time);
 	    //8、group ds1清数据后重启,进程start
-		if(!"successful".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetdb group_1 10.232.4.14:5361")))
+		if(!"resetdb success.".equals(control_sh(csList.get(0), tair_bin, "fastdump.sh", "group_1 resetdb 10.232.4.14:5361")))
 			fail("clear data on ds1 failed!");
 		if(!control_ds(dsList.get(0), start, 0))
 			fail("start " + dsList.get(0) + " failed!");

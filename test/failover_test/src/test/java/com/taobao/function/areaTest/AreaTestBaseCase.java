@@ -8,12 +8,12 @@ import com.taobao.tairtest.BaseTestCase;
 
 public class AreaTestBaseCase extends BaseTestCase {
 	// directory
-	final static String tair_bin = "/home/admin/tair_bin/";
+	final static String tair_bin = "/home/admin/tair_bin_func/";
 	final static String test_bin = "/home/admin/baoni/function/";
-	final static String cs_name = "tair_cfg_svr";
-	final static String ds_name = "tair_server";
-	final static String tool_name = "tair3test";
-	final static String mdb_shm = "mdb_shm_path1";
+	final static String cs_name = "tair_cfg_svr_func";
+	final static String ds_name = "tair_server_func";
+	final static String tool_name = "functest";
+	final static String mdb_shm = "mdb_shm_func";
 	// machine
 	final String csarr[] = new String[] { "10.232.4.20", "10.232.4.21" };
 	final String dsarr[] = new String[] { "10.232.4.20" };

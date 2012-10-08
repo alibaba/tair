@@ -4,6 +4,7 @@
 package com.taobao.tairtest;
 
 import static org.junit.Assert.*;
+import java.util.Random;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -2211,6 +2212,99 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 		// end test
 		log.info("end DataServer test Failover case 19");
 	}
+	
+	@Test
+	public void testFailover_20_restart_ds_many_times() {
+		log.info("start DataServer test Failover case 20");
+		int waitcnt = 0;
+		
+		if (!modify_config_file(csList.get(0), tair_bin + groupconf,
+				"_min_data_server_count", "5"))
+			fail("modify configure file failed!");
+
+		// start cluster
+		controlCluster(csList, dsList, start, 0);
+		log.info("Start Cluster Successful!");
+		log.info("wait system initialize ...");
+		waitto(down_time);
+
+		// change test tool's configuration
+		if (!modify_config_file(local, test_bin + toolconf, actiontype, put))
+			fail("modify configure file failure");
+		if (!modify_config_file(local, test_bin + toolconf, datasize, put_count))
+			fail("modify configure file failure");
+		if (!modify_config_file(local, test_bin + toolconf, filename, kv_name))
+			fail("modify configure file failure");
+
+		execute_data_verify_tool();
+
+		// check verify
+		while (check_process(local, toolname) != 2) {
+			waitto(2);
+			if (++waitcnt > 150)
+				break;
+		}
+		if (waitcnt > 150)
+			fail("put data time out!");
+		waitcnt = 0;
+		int datacnt = getVerifySuccessful();
+		assertTrue("put successful rate small than normSucRate!", datacnt
+				/ put_count_float > normSucRate);
+		log.info("Write data over!");
+
+		int migCount = check_keyword(csList.get(0), start_migrate, tair_bin
+				+ groupconf);
+		for (int i = 0; i < 10; i++) {
+			int dsIndex1 = new Random().nextInt(dsList.size());
+			int dsIndex2 = new Random().nextInt(dsList.size());
+			int dsIndex3 = new Random().nextInt(dsList.size());
+			int dsIndex4 = new Random().nextInt(dsList.size());
+			if (!control_ds(dsList.get(dsIndex1), stop, 1))
+				fail("close ds: " + dsList.get(dsIndex1) + " failure!");
+			log.info("close ds on " + dsList.get(dsIndex1) + " successful!");
+			waitto(2);
+			if (!control_ds(dsList.get(dsIndex2), stop, 1))
+				fail("close ds: " + dsList.get(dsIndex2) + " failure!");
+			log.info("close ds on " + dsList.get(dsIndex2) + " successful!");
+			waitto(2);
+			if (!control_ds(dsList.get(dsIndex3), start, 0))
+				fail("restart ds: " + dsList.get(dsIndex3) + " failure!");
+			log.info("restart ds on " + dsList.get(dsIndex3) + " successful!");
+			waitto(2);
+			if (!control_ds(dsList.get(dsIndex4), start, 0))
+				fail("restart ds: " + dsList.get(dsIndex4) + " failure!");
+			log.info("restart ds on " + dsList.get(dsIndex4) + " successful!");
+		}
+		if(!batch_control_ds(dsList, start, 0))
+			fail("restart all ds failed");
+		waitto(down_time);
+
+		assertEquals(
+				migCount,
+				check_keyword(csList.get(0), start_migrate, tair_bin
+						+ groupconf));
+
+		// read data
+		if (!modify_config_file(local, test_bin + toolconf, actiontype, get))
+			fail("modify configure file failure");
+		execute_data_verify_tool();
+		while (check_process(local, toolname) != 2) {
+			waitto(2);
+			if (++waitcnt > 150)
+				break;
+		}
+		log.info("Read data over!");
+		if (waitcnt > 150)
+			fail("Read data time out!");
+		waitcnt = 0;
+
+		// verify get result
+		assertEquals("get data verify failure!", datacnt, getVerifySuccessful());
+		log.info("Successfully verified data!");
+
+		// end test
+		log.info("end DataServer test Failover case 20");
+	}
 
 	@BeforeClass
 	public static void subBeforeClass() {
@@ -2227,9 +2321,12 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 			clean_tool(local);
 			resetCluster(csList, dsList);
 			// execute_shift_tool(local, "conf5");//for kdb
-			if(!batch_uncomment(csList, tair_bin + groupconf, dsList, "#"))
+			if (!batch_uncomment(csList, tair_bin + groupconf, dsList, "#"))
 				fail("batch uncomment ds in group.conf failed!");
 			if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
+				fail("modify configure file failed!");
+			if (!modify_config_file(csList.get(0), tair_bin + groupconf,
+					"_min_data_server_count", "2"))
 				fail("modify configure file failed!");
 		}
 	}
@@ -2243,6 +2340,9 @@ public class FailOverDataServerTest2 extends FailOverBaseCase {
 			if(!batch_uncomment(csList, tair_bin + groupconf, dsList, "#"))
 				fail("batch uncomment ds in group.conf failed!");
 			if (!modify_config_file(local, test_bin + toolconf, proxyflag, "0"))
+				fail("modify configure file failed!");
+			if (!modify_config_file(csList.get(0), tair_bin + groupconf,
+					"_min_data_server_count", "2"))
 				fail("modify configure file failed!");
 		}
 	}
