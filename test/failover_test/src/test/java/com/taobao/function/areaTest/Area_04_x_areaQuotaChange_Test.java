@@ -7,9 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 
 public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
-	/*
-	 * 512大小数据的实际设置的key和value大小为：448 1024大小的数据实际设置的key和value大小为：960
-	 */
+
 	final static int D512B = 448;
 	final static int D1024B = 960;
 	final static int D1MB = 1000000;
@@ -17,7 +15,7 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 	// 1M
 	final static int SIZE1M512 = 2331;
 
-    @Test
+	@Test
 	public void testQuotaChanged_01_enlarge_quota() {
 		log.error("start area quota changed test case 01");
 
@@ -66,7 +64,7 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 		log.error("end area quota changed test case 01");
 	}
 
-    @Test
+	@Test
 	public void testQuotaChanged_02_reduce_quota_less_then_datasize() {
 		log.error("start area quota changed test case 02");
 
@@ -101,18 +99,22 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 		log.error("sed slab hour range");
 		Calendar c = Calendar.getInstance();
 		int startHour = c.get(Calendar.HOUR_OF_DAY);
-		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", startHour, startHour + 1));
+		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", startHour,
+				startHour + 1));
 		log.error("slab time has been changed successful");
-		
+
 		log.error("stop ds");
-		if(!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))fail("stop ds failed!");
-	
+		if (!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))
+			fail("stop ds failed!");
+
 		waitto(AreaTestBaseCase.down_time);
-		if(!batch_control_ds(dsList, AreaTestBaseCase.start, 0))fail("start ds failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin+"etc/group.conf");
+		if (!batch_control_ds(dsList, AreaTestBaseCase.start, 0))
+			fail("start ds failed!");
+		// touch group.conf
+		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin
+				+ "etc/group.conf");
 		log.error("change group.conf and touch it");
-		waitto(60*AreaTestBaseCase.down_time);
+		waitto(60 * AreaTestBaseCase.down_time);
 
 		log.error("**verify  quota size**");
 		getDate(0, 0, num);
@@ -122,7 +124,7 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 		log.error("end area quota changed test case 02");
 	}
 
-    @Test
+	@Test
 	public void testQuotaChanged_03_reduce_quota_equals_datasize() {
 		log.error("start area quota changed test case 03");
 
@@ -151,24 +153,28 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 		log.error("area0 data is ready");
 
 		log.error("change area quota ");
-		changeAreaQuota(csList.get(0).toString(), 0, 1024*1024);
+		changeAreaQuota(csList.get(0).toString(), 0, 1024 * 1024);
 		log.error("quota has been changed to 512B!");
 
 		log.error("sed slab hour range");
 		Calendar c = Calendar.getInstance();
 		int startHour = c.get(Calendar.HOUR_OF_DAY);
-		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", startHour, startHour + 1));
+		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", startHour,
+				startHour + 1));
 		log.error("slab time has been changed successful");
-		
+
 		log.error("stop ds");
-		if(!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))fail("stop ds failed!");
-	
+		if (!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))
+			fail("stop ds failed!");
+
 		waitto(AreaTestBaseCase.down_time);
-		if(!batch_control_ds(dsList, AreaTestBaseCase.start, 0))fail("start ds failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin+"etc/group.conf");
+		if (!batch_control_ds(dsList, AreaTestBaseCase.start, 0))
+			fail("start ds failed!");
+		// touch group.conf
+		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin
+				+ "etc/group.conf");
 		log.error("change group.conf and touch it");
-		waitto(60*AreaTestBaseCase.down_time);
+		waitto(60 * AreaTestBaseCase.down_time);
 
 		log.error("**verify  quota size**");
 		getDate(0, 0, num);
@@ -178,7 +184,7 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 		log.error("end area quota changed test case 03");
 	}
 
-    @Test
+	@Test
 	public void testQuotaChanged_04_reduce_quota_bigger_than_onedatasize_less_than_twodatasize() {
 		log.error("start area quota changed test case 04");
 
@@ -207,24 +213,28 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 		log.error("area0 data is ready");
 
 		log.error("change area quota ");
-		changeAreaQuota(csList.get(0).toString(), 0, (int)(1.5*1024*1024));
+		changeAreaQuota(csList.get(0).toString(), 0, (int) (1.5 * 1024 * 1024));
 		log.error("quota has been changed to 512B!");
 
 		log.error("sed slab hour range");
 		Calendar c = Calendar.getInstance();
 		int startHour = c.get(Calendar.HOUR_OF_DAY);
-		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", startHour, startHour + 1));
+		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", startHour,
+				startHour + 1));
 		log.error("slab time has been changed successful");
-		
+
 		log.error("stop ds");
-		if(!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))fail("stop ds failed!");
-	
+		if (!batch_control_ds(dsList, AreaTestBaseCase.stop, 0))
+			fail("stop ds failed!");
+
 		waitto(AreaTestBaseCase.down_time);
-		if(!batch_control_ds(dsList, AreaTestBaseCase.start, 0))fail("start ds failed!");
-		//touch group.conf
-		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin+"etc/group.conf");
+		if (!batch_control_ds(dsList, AreaTestBaseCase.start, 0))
+			fail("start ds failed!");
+		// touch group.conf
+		touch_file((String) csList.get(0), AreaTestBaseCase.tair_bin
+				+ "etc/group.conf");
 		log.error("change group.conf and touch it");
-		waitto(60*AreaTestBaseCase.down_time);
+		waitto(60 * AreaTestBaseCase.down_time);
 
 		log.error("**verify  quota size**");
 		getDate(0, 0, num);
@@ -233,23 +243,20 @@ public class Area_04_x_areaQuotaChange_Test extends AreaTestBaseCase {
 
 		log.error("end area quota changed test case 04");
 	}
-	
-    @Before
-    public void setUp() {
+
+	@Before
+	public void setUp() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList, dsList);
-
 	}
 
-    @After
+	@After
 	public void tearDown() {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList, dsList);
 		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", 5, 7));
 		assertTrue(changeHourRange(dsList.get(0).toString(), "expired", 2, 4));
-
 	}
-
 }

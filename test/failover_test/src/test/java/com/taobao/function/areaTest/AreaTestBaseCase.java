@@ -169,17 +169,6 @@ public class AreaTestBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	/**
-	 * @param machine
-	 *            machine which you want to operate
-	 * @param confname
-	 *            file which you want to modify , should include full path
-	 * @param key
-	 *            key which you want to modify
-	 * @param value
-	 *            value which you want to change
-	 * @return
-	 */
 	public boolean modify_config_file(String machine, String confname,
 			String key, String value) {
 		log.debug("change file:" + confname + " on " + machine + " key=" + key
@@ -201,13 +190,6 @@ public class AreaTestBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	/**
-	 * @param machine
-	 * @param opID
-	 * @param type
-	 *            0:normal 1:force
-	 * @return
-	 */
 	public boolean control_cs(String machine, String opID, int type) {
 		log.debug("control cs:" + machine + " " + opID + " type=" + type);
 		boolean ret = false;
@@ -238,13 +220,6 @@ public class AreaTestBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	/**
-	 * @param machine
-	 * @param opID
-	 * @param type
-	 *            0:normal 1:force
-	 * @return
-	 */
 	public boolean control_ds(String machine, String opID, int type) {
 		log.debug("control ds:" + machine + " " + opID + " type=" + type);
 		boolean ret = false;
@@ -286,13 +261,6 @@ public class AreaTestBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	/**
-	 * @param cs_group
-	 * @param opID
-	 * @param type
-	 *            0:normal 1:force
-	 * @return
-	 */
 	public boolean batch_control_cs(List<String> cs_group, String opID, int type) {
 		boolean ret = false;
 		for (Iterator<String> it = cs_group.iterator(); it.hasNext();) {
@@ -305,13 +273,6 @@ public class AreaTestBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	/**
-	 * @param ds_group
-	 * @param opID
-	 * @param type
-	 *            0:normal 1:force
-	 * @return
-	 */
 	public boolean batch_control_ds(List<String> ds_group, String opID, int type) {
 		boolean ret = false;
 		for (Iterator<String> it = ds_group.iterator(); it.hasNext();) {
@@ -324,14 +285,6 @@ public class AreaTestBaseCase extends BaseTestCase {
 		return ret;
 	}
 
-	/**
-	 * @param cs_group
-	 * @param ds_group
-	 * @param opID
-	 * @param type
-	 *            0:normal 1:force
-	 * @return
-	 */
 	public boolean control_cluster(List<String> cs_group,
 			List<String> ds_group, String opID, int type) {
 		boolean ret = false;

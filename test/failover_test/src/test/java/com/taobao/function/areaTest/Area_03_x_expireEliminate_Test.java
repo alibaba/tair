@@ -9,10 +9,7 @@ import org.junit.After;
 import org.junit.Before;
 
 public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
-	/*
-	 * 512��С��ݵ�ʵ�����õ�key��value��СΪ��448
-	 * 1024��С�����ʵ�����õ�key��value��СΪ��960
-	 */
+
 	final static int D512B = 448;
 	final static int D1024B = 960;
 	final static int num = 10000;
@@ -123,7 +120,6 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList, dsList);
-
 	}
 
 	@After
@@ -134,5 +130,4 @@ public class Area_03_x_expireEliminate_Test extends AreaTestBaseCase {
 		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", 5, 7));
 		assertTrue(changeHourRange(dsList.get(0).toString(), "expired", 2, 4));
 	}
-
 }

@@ -1,6 +1,8 @@
 #!/bin/bash
 PORT=5368
 
+export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH:/usr/local/lib:/opt/csr/common/lib:/usr/local/lib64
+
 group=$1
 par2=$2
 shift

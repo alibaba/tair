@@ -6,10 +6,7 @@ import org.junit.After;
 import org.junit.Before;
 
 public class Area_00_x_size_Test extends AreaTestBaseCase {
-	/*
-	 * 512��С��ݵ�ʵ�����õ�key��value��СΪ��448
-	 * 1024��С�����ʵ�����õ�key��value��СΪ��960
-	 */
+
 	final static int D512KB = 448;
 	final static int D1024KB = 960;
 	final static int D1MB = 1000000;
@@ -24,7 +21,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 
 		// int waitcnt=0;
 
-		log.error("**modify conf**��set quota 512kb");
+		log.error("**modify conf**set quota 512kb");
 		// set quota 0:512K 1:512K
 		changeAreaQuota(csList.get(0).toString(), 0, 512 * 1024);
 		log.error("quota has been setted!");
@@ -68,7 +65,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 
 		// int waitcnt=0;
 
-		log.error("**modify conf**��set quota 512kb");
+		log.error("**modify conf**set quota 512kb");
 		// set quota 0:512K 1:512K
 		changeAreaQuota(csList.get(0).toString(), 0, 512 * 1024);
 		log.error("quota has been setted!");
@@ -113,7 +110,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 
 		// int waitcnt=0;
 
-		log.error("**modify conf**��set quota 512kb");
+		log.error("**modify conf**set quota 512kb");
 		// set quota 0:512K 1:512K
 		changeAreaQuota(csList.get(0).toString(), 0, 512 * 1024);
 		log.error("quota has been setted!");
@@ -164,7 +161,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 
 		// int waitcnt=0;
 
-		log.error("**modify conf**��set quota 512kb");
+		log.error("**modify conf**set quota 512kb");
 		// set quota 0:512K 1:512K
 		changeAreaQuota(csList.get(0).toString(), 0, 256 * 1024 * 1024);
 		log.error("quota has been setted!");
@@ -206,7 +203,7 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 
 		// int waitcnt=0;
 
-		log.error("**modify conf**��set quota 512kb");
+		log.error("**modify conf**set quota 512kb");
 		// set quota 0:512K 1:512K
 		changeAreaQuota(csList.get(0).toString(), 0, 1024 * 1024);
 		log.error("quota has been setted!");
@@ -250,7 +247,6 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 		log.error("clean tool and cluster!");
 		clean_tool("local");
 		reset_cluster(csList, dsList);
-
 	}
 
 	@After
@@ -261,5 +257,4 @@ public class Area_00_x_size_Test extends AreaTestBaseCase {
 		assertTrue(changeHourRange(dsList.get(0).toString(), "slab", 5, 7));
 		assertTrue(changeHourRange(dsList.get(0).toString(), "expired", 2, 4));
 	}
-
 }
