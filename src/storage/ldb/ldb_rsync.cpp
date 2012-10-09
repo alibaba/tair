@@ -266,7 +266,7 @@ int do_rsync(const char* db_path, const char* manifest_file, std::vector<int32_t
   leveldb::Options open_options;
   open_options.error_if_exists = false; // exist is ok
   open_options.create_if_missing = true; // create if not exist
-  open_options.comparator = new LdbComparatorImpl(); // self-defined comparator
+  open_options.comparator = LdbComparator(NULL); // self-defined comparator
   open_options.env = leveldb::Env::Instance();
   leveldb::Status s = leveldb::DB::Open(open_options, db_path, manifest_file, &db);
 

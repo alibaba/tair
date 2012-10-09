@@ -1291,7 +1291,7 @@ namespace tair
       {
         options_.error_if_exists = false; // exist is ok
         options_.create_if_missing = true; // create if not exist
-        options_.comparator = new LdbComparatorImpl(&gc_); // self-defined comparator
+        options_.comparator = LdbComparator(&gc_);// self-defined comparator
         // can use one static filterpolicy instance
         options_.filter_policy = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USE_BLOOMFILTER, 0) > 0 ?
           new LdbBloomFilterPolicy(TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_BLOOMFILTER_BITS_PER_KEY, 10)) : NULL;

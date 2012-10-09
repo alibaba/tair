@@ -25,25 +25,25 @@ namespace tair
     namespace ldb
     {
       static const size_t LDB_COMPARE_SKIP_SIZE = LDB_EXPIRED_TIME_SIZE;
-      LdbComparatorImpl::LdbComparatorImpl() : gc_(NULL)
+      BitcmpLdbComparatorImpl::BitcmpLdbComparatorImpl() : gc_(NULL)
       {
       }
 
-      LdbComparatorImpl::LdbComparatorImpl(LdbGcFactory* gc) : gc_(gc)
+      BitcmpLdbComparatorImpl::BitcmpLdbComparatorImpl(LdbGcFactory* gc) : gc_(gc)
       {
       }
 
-      LdbComparatorImpl::~LdbComparatorImpl()
+      BitcmpLdbComparatorImpl::~BitcmpLdbComparatorImpl()
       {
       }
 
-      const char* LdbComparatorImpl::Name() const
+      const char* BitcmpLdbComparatorImpl::Name() const
       {
-        return "ldb.LdbComparator";
+        return "ldb.bitcmpLdbComparator";
       }
 
       // skip expired time
-      int LdbComparatorImpl::Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
+      int BitcmpLdbComparatorImpl::Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
       {
         assert(a.size() > LDB_COMPARE_SKIP_SIZE && b.size() > LDB_COMPARE_SKIP_SIZE);
         const int min_len = (a.size() < b.size()) ? a.size() - LDB_COMPARE_SKIP_SIZE :
@@ -64,7 +64,7 @@ namespace tair
       }
 
       // skip expired time
-      void LdbComparatorImpl::FindShortestSeparator(
+      void BitcmpLdbComparatorImpl::FindShortestSeparator(
         std::string* start,
         const leveldb::Slice& limit) const
       {
@@ -94,7 +94,7 @@ namespace tair
         }
       }
 
-      void LdbComparatorImpl::FindShortSuccessor(std::string* key) const
+      void BitcmpLdbComparatorImpl::FindShortSuccessor(std::string* key) const
       {
         // Find first character that can be incremented
         size_t n = key->size();
@@ -111,7 +111,7 @@ namespace tair
         // *key is a run of 0xffs.  Leave it alone.
       }
 
-      bool LdbComparatorImpl::ShouldDrop(const char* key, int64_t sequence, uint32_t will_gc) const
+      bool BitcmpLdbComparatorImpl::ShouldDrop(const char* key, int64_t sequence, uint32_t will_gc) const
       {
         if (gc_ == NULL)
         {
@@ -157,7 +157,7 @@ namespace tair
         return drop;
       }
 
-      bool LdbComparatorImpl::ShouldDropMaybe(const char* key, int64_t sequence, uint32_t now) const
+      bool BitcmpLdbComparatorImpl::ShouldDropMaybe(const char* key, int64_t sequence, uint32_t now) const
       {
         UNUSED(sequence);
         // check expired time here. see ShouldDrop()
@@ -165,12 +165,27 @@ namespace tair
         return expired_time > 0 && expired_time < (now > 0 ? now : time(NULL));
       }
 
+
       const leveldb::Comparator* LdbComparator(LdbGcFactory* gc)
       {
-        static const LdbComparatorImpl ldb_comparator(gc);
-        return &ldb_comparator;
+        const char *comparator_type = TBSYS_CONFIG.getString(TAIRLDB_SECTION, LDB_COMPARATOR_TYPE, "");
+        if (strcmp(comparator_type, "numeric") == 0)
+        {
+          int meta_len = TBSYS_CONFIG.getInt(TAIRLDB_SECTION, LDB_USERKEY_SKIP_META_SIZE, 0);
+          const char *delimiter = TBSYS_CONFIG.getString(TAIRLDB_SECTION, LDB_USERKEY_NUM_DELIMITER, " ");
+          log_warn("using numerical Comparator. num_start:%c, meta_len:%d",delimiter[0], meta_len);
+          return new NumericalComparatorImpl(gc, delimiter[0], meta_len);
+        }
+        else if (strcmp(comparator_type, "bitcmp") == 0)
+        {
+          return new BitcmpLdbComparatorImpl(gc);
+        }
+        else
+        {
+          log_warn("no such comparator type: %s. use bitcmpLdbComparator by defalut",comparator_type);
+          return new BitcmpLdbComparatorImpl(gc);
+        }
       }
-
     }
   }
 }

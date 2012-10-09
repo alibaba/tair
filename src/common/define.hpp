@@ -200,6 +200,9 @@
 #define LDB_USE_CACHE_COUNT             "ldb_use_cache_count"
 #define LDB_MIGRATE_BATCH_COUNT         "ldb_migrate_batch_count"
 #define LDB_MIGRATE_BATCH_SIZE          "ldb_migrate_batch_size"
+#define LDB_COMPARATOR_TYPE             "ldb_comparator_type"
+#define LDB_USERKEY_SKIP_META_SIZE      "ldb_userkey_skip_meta_size"
+#define LDB_USERKEY_NUM_DELIMITER       "ldb_userkey_num_delimiter"
 #define LDB_USE_BLOOMFILTER             "ldb_use_bloomfilter"
 #define LDB_USE_MMAP_RANDOM_ACCESS      "ldb_use_mmap_random_access"
 

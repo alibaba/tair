@@ -115,6 +115,14 @@ ldb_migrate_batch_size = 3145728
 ## migrate item batch count.
 ## real batch migrate items depends on the smaller size/count
 ldb_migrate_batch_count = 5000
+## comparator_type bitcmp by default
+#ldb_comparator_type=numeric
+## numeric comparator: special compare method for user_key sorting in order to reducing compact
+## parameters for numeric compare. format: [meta][prefix][delimiter][number][suffix] 
+## skip meta size in compare
+#ldb_userkey_skip_meta_size=2
+## delimiter between prefix and number 
+#ldb_userkey_num_delimiter=:
 ## use blommfilter
 ldb_use_bloomfilter=1
 ## use mmap to speed up random acess file(sstable),may cost much memory
