@@ -142,6 +142,7 @@ namespace tair{
     if(read_len<LOG_RECORD_SIZE)
     {
       log_error("read logfile faild. read_len: %d", read_len);
+      delete [] puffer;
       return false;
     }
     int _count=read_len/LOG_RECORD_SIZE;
@@ -163,6 +164,8 @@ namespace tair{
         delete value; value=NULL;
       }
     }
+
+    delete [] puffer;
     return true;
   }
 
