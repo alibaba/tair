@@ -17,7 +17,7 @@ namespace tair {
         snappy::RawCompress(src, src_len, tmp_data, &tmp_len);
         // to check if the tmp_len overflow, check if tmp_len bigger than 1M
         if (0 != (tmp_len >> 20)) {
-          delete tmp_data;
+          delete[] tmp_data;
           ret = -1;
         } else {
           *dest = tmp_data;
@@ -40,12 +40,12 @@ namespace tair {
           assert(tmp_data != NULL);
           if (!snappy::RawUncompress(src, src_len, tmp_data)) {
             log_error("snappy decompress err while RawUncompress");
-            delete tmp_data;
+            delete[] tmp_data;
             ret = -1;
           } else {
             // to check if the tmp_len overflow, check if tmp_len bigger than 1M
             if (0 != (tmp_len >> 20)) {
-              delete tmp_data;
+              delete[] tmp_data;
               ret = -1;
             } else {
               *dest = tmp_data;
