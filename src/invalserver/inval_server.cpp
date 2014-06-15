@@ -459,9 +459,7 @@ namespace tair {
           invalid->area = area;
           char * key = "TEST_KEY";
           invalid->add_key(key, strlen(key));
-          if (invalid != NULL) {
-            request_storage->write_request(invalid);
-          }
+          request_storage->write_request(invalid);
         }
       }
       else {
