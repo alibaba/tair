@@ -1,3 +1,4 @@
+#!/bin/bash
 TAIR_DIR=`dirname $0`
 TAIR_BIN_DIR=./sbin
 TAIR_ETC_DIR=./etc
