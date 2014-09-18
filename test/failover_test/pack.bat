@@ -1,2 +1,0 @@
-call mvn package
-@pause
