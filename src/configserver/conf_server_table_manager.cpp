@@ -193,6 +193,7 @@ namespace tair {
         }
       }
       sync();
+      fclose(fp);
       return true;
 
     }
