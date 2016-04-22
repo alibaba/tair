@@ -8,6 +8,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef WITH_TBUTIL
+namespace tair { namespace storage { namespace ldb { class LdbStatManager; } } }
+#endif
+
 namespace leveldb {
 
 class Cache;
@@ -16,6 +20,7 @@ class Env;
 class FilterPolicy;
 class Logger;
 class Snapshot;
+class Iterator;
 
 // DB contents are stored in a set of blocks, each of which holds a
 // sequence of key,value pairs.  Each block may be compressed before
@@ -27,6 +32,13 @@ enum CompressionType {
   kNoCompression     = 0x0,
   kSnappyCompression = 0x1
 };
+
+enum ManualCompactionType {
+  KCompactSelfRepairRemoveExtraSSTFile,
+  KCompactSelfRepairRemoveGCSSTFile,
+  KCompactSelfRepairRemoveCorruptionSSTFile,
+};
+
 
 // Options to control the behavior of a database (passed to DB::Open)
 struct Options {
@@ -105,6 +117,9 @@ struct Options {
   // total block cache size (byte unit)
   int64_t block_cache_size;
 
+  // Approximate size of table(sstable) cache size.
+  size_t table_cache_size;
+
   // Approximate size of user data packed per block.  Note that the
   // block size specified here corresponds to uncompressed data.  The
   // actual size of the unit read from disk may be smaller if
@@ -142,7 +157,7 @@ struct Options {
   //
   // Default: NULL
   const FilterPolicy* filter_policy;
-  
+
   // whether reserve binlog after dumping memtable(maybe for remote synchronization etc.)
   bool reserve_log;
 
@@ -190,7 +205,7 @@ struct Options {
   // level-2.. : kBaseLevelSize * 10 * (level - 1)
   // Default: 10M
   int kBaseLevelSize;
-  
+
   // whether use mmap() to speed randomly accessing file(sstable)
   // Default: fasle
   bool kUseMmapRandomAccess;
@@ -215,6 +230,25 @@ struct Options {
   // whether do compaction scheduled by seek count over-threshold
   bool kDoSeekCompaction;
 
+  bool kDoBackUpSSTFile;
+
+  int kSpecifyCompactTimeStart;
+  int kSpecifyCompactTimeEnd;
+  int kSpecifyCompactMaxThreshold;
+  int kSpecifyCompactThreshold;
+  int kSpecifyCompactScoreThreshold;
+
+  // whether split mmt when compaction by user-defined logic
+  bool kDoSplitMmtCompaction;
+
+  uint64_t kLogFileKeepInterval;
+
+  // Repair check function
+  bool (*fileRepairCheckFunc)(Iterator* input, leveldb::ManualCompactionType type, Logger* info_log);
+
+#ifdef WITH_TBUTIL
+  tair::storage::ldb::LdbStatManager* stat_;
+#endif
   // Create an Options object with default values for all fields.
   Options();
 };
@@ -238,10 +272,13 @@ struct ReadOptions {
   // Default: NULL
   const Snapshot* snapshot;
 
+  bool hold_for_long;
+
   ReadOptions()
       : verify_checksums(false),
         fill_cache(true),
-        snapshot(NULL){
+        snapshot(NULL),
+        hold_for_long(false) {
   }
 };
 

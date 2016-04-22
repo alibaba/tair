@@ -3,7 +3,6 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "db/log_reader.h"
-#include <tbsys.h>
 
 #include <stdio.h>
 #include "leveldb/env.h"
@@ -18,7 +17,22 @@ Reader::Reporter::~Reporter() {
 
 Reader::Reader(SequentialFile* file, Reporter* reporter, bool checksum,
                uint64_t initial_offset)
-    : file_(file),
+    : sfile_(file),
+      rfile_(NULL),
+      reporter_(reporter),
+      checksum_(checksum),
+      backing_store_(new char[kBlockSize]),
+      buffer_(),
+      eof_(false),
+      last_record_offset_(0),
+      end_of_buffer_offset_(0),
+      offset_in_reading_block_(kBlockSize),
+      initial_offset_(initial_offset) {
+}
+Reader::Reader(RandomAccessFile* file, Reporter* reporter, bool checksum,
+               uint64_t initial_offset)
+    : sfile_(NULL),
+      rfile_(file),
       reporter_(reporter),
       checksum_(checksum),
       backing_store_(new char[kBlockSize]),
@@ -47,8 +61,8 @@ bool Reader::SkipToInitialBlock() {
   end_of_buffer_offset_ = block_start_location;
 
   // Skip to start of first block that can contain the initial record
-  if (block_start_location > 0) {
-    Status skip_status = file_->Skip(block_start_location);
+  if (block_start_location > 0 && sfile_ != NULL) {
+    Status skip_status = sfile_->Skip(block_start_location);
     if (!skip_status.ok()) {
       ReportDrop(block_start_location, skip_status);
       return false;
@@ -66,7 +80,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch, uint64_t limit_offs
   }
 
   // last readed buffer has been parsed over and no other data can be readed from log file
-  if (buffer_.size() < kHeaderSize && end_of_buffer_offset_ >= limit_offset) {
+  if (buffer_.size() < (size_t)kHeaderSize && end_of_buffer_offset_ >= limit_offset) {
     return false;
   }
 
@@ -81,7 +95,6 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch, uint64_t limit_offs
   while (end_of_buffer_offset_ <= limit_offset) {
     uint64_t physical_record_offset = end_of_buffer_offset_ - buffer_.size();
     const unsigned int record_type = ReadPhysicalRecord(&fragment, limit_offset);
-    TBSYS_LOG(DEBUG, "@@ bz: %d, eof: %d %d", buffer_.size(), end_of_buffer_offset_, record_type);
     switch (record_type) {
       case kFullType:
         if (in_fragmented_record) {
@@ -186,7 +199,7 @@ void Reader::ReportDrop(size_t bytes, const Status& reason) {
 
 unsigned int Reader::ReadPhysicalRecord(Slice* result, uint64_t limit_offset) {
   while (true) {
-    if (buffer_.size() < kHeaderSize) {
+    if (buffer_.size() < (size_t)kHeaderSize) {
       if (!eof_) {
         // Last read was a full read, so this is a trailer to skip
         buffer_.clear();
@@ -201,11 +214,11 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, uint64_t limit_offset) {
           offset_in_reading_block_ = 0;
         }
 
-        Status status = file_->Read(read_size, &buffer_, backing_store_);
+        Status status = sfile_ != NULL ?
+          sfile_->Read(read_size, &buffer_, backing_store_) :
+          rfile_->Read(end_of_buffer_offset_, read_size, &buffer_, backing_store_);
         offset_in_reading_block_ += buffer_.size();
         end_of_buffer_offset_ += buffer_.size();
-
-        TBSYS_LOG(DEBUG, "@@ read size: %d = %d =%d", read_size, buffer_.size(), offset_in_reading_block_);
 
         if (!status.ok()) {
           buffer_.clear();
@@ -233,12 +246,11 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, uint64_t limit_offset) {
     const uint32_t b = static_cast<uint32_t>(header[5]) & 0xff;
     const unsigned int type = header[6];
     const uint32_t length = a | (b << 8);
-    TBSYS_LOG(DEBUG, "@@ type: %d %d %d", type, length, buffer_.size());
+
     if (kHeaderSize + length > buffer_.size()) {
       size_t drop_size = buffer_.size();
       buffer_.clear();
       ReportCorruption(drop_size, "bad record length");
-      TBSYS_LOG(DEBUG, "@@ %d len Header + %d < %d", type, length, buffer_.size());
       return kBadRecord;
     }
 
@@ -247,7 +259,6 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, uint64_t limit_offset) {
       // such records are produced by the mmap based writing code in
       // env_posix.cc that preallocates file regions.
       buffer_.clear();
-      TBSYS_LOG(DEBUG, "@@ zeror type");
       return kBadRecord;
     }
 
@@ -263,7 +274,6 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, uint64_t limit_offset) {
         size_t drop_size = buffer_.size();
         buffer_.clear();
         ReportCorruption(drop_size, "checksum mismatch");
-        TBSYS_LOG(DEBUG, "@@ %d cksum fail %d  %d", type, length, buffer_.size());
         return kBadRecord;
       }
     }
@@ -274,7 +284,6 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, uint64_t limit_offset) {
     if (end_of_buffer_offset_ - buffer_.size() - kHeaderSize - length <
         initial_offset_) {
       result->clear();
-      TBSYS_LOG(DEBUG, "@@ init offset ");
       return kBadRecord;
     }
 

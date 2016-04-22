@@ -27,6 +27,11 @@ class SnapshotImpl : public Snapshot {
   SnapshotList* list_;                 // just for sanity checks
 };
 
+class LogSnapshotImpl : public SnapshotImpl {
+ public:
+  uint64_t log_number_;
+};
+
 class SnapshotList {
  public:
   SnapshotList() {
@@ -41,6 +46,19 @@ class SnapshotList {
   const SnapshotImpl* New(SequenceNumber seq) {
     SnapshotImpl* s = new SnapshotImpl;
     s->number_ = seq;
+    s->list_ = this;
+    s->next_ = &list_;
+    s->prev_ = list_.prev_;
+    s->prev_->next_ = s;
+    s->next_->prev_ = s;
+    return s;
+  }
+
+  // new logsnapshot
+  const LogSnapshotImpl* New(SequenceNumber seq, uint64_t log_number) {
+    LogSnapshotImpl* s = new LogSnapshotImpl;
+    s->number_ = seq;
+    s->log_number_ = log_number;
     s->list_ = this;
     s->next_ = &list_;
     s->prev_ = list_.prev_;

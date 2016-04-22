@@ -4,8 +4,6 @@
 
 #include "db/table_cache.h"
 
-#include "tbsys.h"
-
 #include "db/filename.h"
 #include "leveldb/env.h"
 #include "leveldb/table.h"
@@ -33,11 +31,11 @@ static void UnrefEntry(void* arg1, void* arg2) {
 
 TableCache::TableCache(const std::string& dbname,
                        const Options* options,
-                       int entries)
+                       size_t capacity)
     : env_(options->env),
       dbname_(dbname),
       options_(options),
-      cache_(NewLRUCache(entries)) {
+      cache_(NewLRUCache(capacity)) {
 }
 
 TableCache::~TableCache() {
@@ -71,7 +69,7 @@ Status TableCache::FindTable(uint64_t file_number, uint64_t file_size,
       TableAndFile* tf = new TableAndFile;
       tf->file = file;
       tf->table = table;
-      *handle = cache_->Insert(key, tf, 1, &DeleteEntry);
+      *handle = cache_->Insert(key, tf, (key.size() + tf->table->ApproximateMemoryUsage()), 1, &DeleteEntry);
     }
   }
   return s;
@@ -122,6 +120,10 @@ void TableCache::Evict(uint64_t file_number) {
   char buf[sizeof(file_number)];
   EncodeFixed64(buf, file_number);
   cache_->Erase(Slice(buf, sizeof(buf)));
+}
+
+void TableCache::Stats(std::string& result) {
+  return cache_->Stats(result);
 }
 
 }  // namespace leveldb

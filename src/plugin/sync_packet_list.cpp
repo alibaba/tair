@@ -73,12 +73,12 @@ int sync_packet_list::do_batch_load(unsigned int _want_num)
     int _store_stated= atomic_read(&m_disk_stored);
     if(STATE_MEM_STORE==_store_stated && bneed_switch)
     {
-      log_info("load %d from file finished,switch to memory",_vector_node.size());
+      log_info("load %lu from file finished,switch to memory",_vector_node.size());
       m_disklist_file.clear();
     }
   }
 
-  log_info("load %d from file ,want %d",_vector_node.size(),_want_num);
+  log_info("load %lu from file ,want %d",_vector_node.size(),_want_num);
   for(unsigned int i=0;i<_vector_node.size();i++)
   {
     //m_pout_queue dones't care sequece.
@@ -101,7 +101,7 @@ int sync_packet_list::put(data_entry *& value)
     }
     else if(m_use_disk)
     {
-      log_info("queue size exceed %d,switch to disk save", m_in_queue.size());
+      log_info("queue size exceed %lu,switch to disk save", m_in_queue.size());
       atomic_set(&m_disk_stored, STATE_DISK_STORE);
     }
   }

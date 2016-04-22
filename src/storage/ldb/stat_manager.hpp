@@ -1,8 +1,12 @@
 /*
- * stat_manager.h
+ * (C) 2007-2017 Alibaba Group Holding Limited
  *
- *  Created on: 2010-12-1
- *      Author: huzhenxiong.pt
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * See the AUTHORS file for names of contributors.
+ *
  */
 
 #ifndef TAIR_LDB_STAT_MANAGER_H
@@ -21,47 +25,54 @@
 #include "common/stat_info.hpp"        // for tair_pstat
 
 namespace tair {
-  namespace storage {
-    namespace ldb {
-      const static int DBSTATINFO_MAGIC_SIZE = 16;
+namespace storage {
+namespace ldb {
+const static int DBSTATINFO_MAGIC_SIZE = 16;
 
-      struct db_stat_info {
-        char magic[DBSTATINFO_MAGIC_SIZE];
-        uint8_t flag;
-        tair_pstat stat[TAIR_MAX_AREA_COUNT];
-      };
-      const static size_t DBSTATINFO_SIZE = sizeof(db_stat_info);
-      const static char STAT_MAGIC[16] = "TAIR_STAT_200";
+struct db_stat_info {
+    char magic[DBSTATINFO_MAGIC_SIZE];
+    uint8_t flag;
+    tair_pstat stat[TAIR_MAX_AREA_COUNT];
+};
+const static size_t DBSTATINFO_SIZE = sizeof(db_stat_info);
+const static char STAT_MAGIC[16] = "TAIR_STAT_200";
 
-      class stat_manager {
-      public:
-        stat_manager();
-        virtual ~stat_manager();
+class stat_manager {
+public:
+    stat_manager();
 
-        bool start(int bucket_number, const char *file_dir);
-        void stop();
-        void destroy();
+    virtual ~stat_manager();
 
-        void stat_add(int area, int data_size, int use_size, int item_count = 1);
-        void stat_sub(int area, int data_size, int use_size, int item_count = 1);
-        void stat_reset(int area);
+    bool start(const char *file_dir);
 
-        tair_pstat * get_stat() const;
+    void stop();
 
-        bool sync(void);
+    void destroy();
 
-      private:
-        int get_size();
-        bool initial_stat_file();
-        bool ensure_file_size(int size);
+    void stat_add(int area, int data_size, int use_size, int item_count = 1);
 
-      private:
-        int fd;
-        char file_name[TAIR_MAX_PATH_LEN];
-        tbsys::CThreadMutex stat_lock;
-        db_stat_info * stat_info;
-      };
-    }
-  }
+    void stat_sub(int area, int data_size, int use_size, int item_count = 1);
+
+    void stat_reset(int area);
+
+    tair_pstat *get_stat() const;
+
+    bool sync(void);
+
+private:
+    int get_size();
+
+    bool initial_stat_file();
+
+    bool ensure_file_size(int size);
+
+private:
+    int fd;
+    char file_name[TAIR_MAX_PATH_LEN];
+    tbsys::CThreadMutex stat_lock;
+    db_stat_info *stat_info;
+};
+}
+}
 }
 #endif /* TAIR_LDB_STAT_MANAGER_H */

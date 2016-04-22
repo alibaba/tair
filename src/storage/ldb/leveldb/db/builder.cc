@@ -17,12 +17,12 @@ namespace leveldb {
 Status BuildTable(const std::string& dbname,
                   Env* env,
                   const Options& options,
+                  const Comparator* user_comparator,
                   TableCache* table_cache,
                   Iterator* iter,
                   FileMetaData* meta) {
   Status s;
   meta->file_size = 0;
-  iter->SeekToFirst();
 
   std::string fname = TableFileName(dbname, meta->number);
   if (iter->Valid()) {
@@ -34,8 +34,13 @@ Status BuildTable(const std::string& dbname,
 
     TableBuilder* builder = new TableBuilder(options, file);
     meta->smallest.DecodeFrom(iter->key());
+    Slice smallest_user_key = meta->smallest.user_key();
     for (; iter->Valid(); iter->Next()) {
       Slice key = iter->key();
+      if (user_comparator != NULL &&
+          user_comparator->ShouldStopBefore(smallest_user_key, InternalKey::user_key(key))) {
+        break;
+      }
       meta->largest.DecodeFrom(key);
       builder->Add(key, iter->value());
     }

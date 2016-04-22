@@ -1,48 +1,40 @@
+/*
+ * (C) 2007-2017 Alibaba Group Holding Limited
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * See the AUTHORS file for names of contributors.
+ *
+ */
+
 #ifndef RETRY_ALL_PACKET_H
 #define RETRY_ALL_PACKET_H
+
 #include "base_packet.hpp"
+#include "invalid_packet.hpp"
+
 namespace tair {
-  class request_retry_all : public base_packet {
-  public:
-    request_retry_all() : base_packet()
-    {
-      setPCode(TAIR_REQ_RETRY_ALL_PACKET);
-      config_version = 0;
-      value = 0;
+class request_retry_all : public request_invalid {
+public:
+    request_retry_all() {
+        setPCode(TAIR_REQ_RETRY_ALL_PACKET);
+        is_sync = ASYNC_INVALID;
     }
 
-    request_retry_all(request_retry_all& retry_all)
-    {
-      setPCode(TAIR_REQ_RETRY_ALL_PACKET);
-      config_version = retry_all.config_version;
-      value = retry_all.value;
+    request_retry_all(const request_retry_all &retry_all)
+            : request_invalid(retry_all) {
+        setPCode(TAIR_REQ_RETRY_ALL_PACKET);
+        is_sync = ASYNC_INVALID;
     }
 
-    ~request_retry_all()
-    {
+    ~request_retry_all() {
     }
 
-    bool encode(tbnet::DataBuffer *output)
-    {
-      output->writeInt32(config_version);
-      output->writeInt32(value);
-      return true;
+    virtual base_packet::Type get_type() {
+        return base_packet::REQ_SPECIAL;
     }
-
-    bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header)
-    {
-      if (header->_dataLen < 7) {
-        log_warn("data buffer too few");
-        return false;
-      }
-      config_version = input->readInt32();
-      value = input->readInt32();
-      return true;
-    }
-
-  public:
-    uint32_t config_version;
-    int value;
-  };
+};
 }
 #endif

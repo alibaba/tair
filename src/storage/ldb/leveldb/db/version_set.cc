@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <stdio.h>
 
-#include "tbsys.h"
-
 #include "db/filename.h"
 #include "db/log_writer.h"
 #include "db/memtable.h"
@@ -28,6 +26,9 @@ namespace leveldb {
 static const int64_t kExpandedCompactionByteSizeLimit = 25 * config::kTargetFileSize;
 
 static double MaxBytesForLevel(int level) {
+//  if (level == 1) {
+//    return config::kTargetFileSize;
+//  }
   // Note: the result for level zero is not really used since we set
   // the level-0 compaction threshold based on number of files.
   double result = config::kBaseLevelSize * 1.0;  // Result for both level-0 and level-1
@@ -420,6 +421,10 @@ bool Version::UpdateStats(const GetStats& stats) {
   return false;
 }
 
+uint32_t Version::GetRef() {
+  return refs_.Get();
+}
+
 void Version::Ref() {
   refs_.Inc();
 }
@@ -427,10 +432,8 @@ void Version::Ref() {
 void Version::Unref() {
   assert(this != &vset_->dummy_versions_);
   assert((int32_t)refs_.Get() >= 1);
-  if (refs_.Dec() == 0) {
-    Log(vset_->options_->info_log, "del %d %p", refs_.Get(), this);
-    delete this;
-  }
+  // to update dummy_version_ list lock-freely, we delete Version lazily
+  refs_.Dec();
 }
 
 bool Version::Range(int level, std::string* smallest, std::string* largest) {
@@ -592,7 +595,7 @@ void Version::GetAllRange(std::string& str, void (*key_printer)(const Slice&, st
         str.append("] ");
       }
     }
-  }  
+  }
 }
 
 // A helper class so we can efficiently apply a whole sequence
@@ -760,11 +763,15 @@ class VersionSet::Builder {
       std::vector<FileMetaData*>* files = &v->files_[level];
       if (level > 0 && !files->empty()) {
         // Must not overlap
+        if (vset_->icmp_.Compare((*files)[files->size()-1]->largest, f->smallest) >= 0) {
+          Log(vset_->options_->info_log, "ERROR: add file out of order, f->number(%"PRI64_PREFIX"u)", f->number);
+        }
         assert(vset_->icmp_.Compare((*files)[files->size()-1]->largest,
                                     f->smallest) < 0);
       }
       f->refs.Inc();
       files->push_back(f);
+      v->file_sizes_[level] += f->file_size;
     }
   }
 };
@@ -787,23 +794,52 @@ VersionSet::VersionSet(const std::string& dbname,
       has_limited_compact_count_(0),
       first_limited_compact_time_(0),
       current_max_level_(2*config::kNumLevels), // for first Recover()
+      pending_restart_manifest_(false),
       descriptor_file_(NULL),
       descriptor_log_(NULL),
       dummy_versions_(this),
-      current_(NULL) {
+      current_(NULL),
+      long_hold_refs_(0) {
+  may_next_compact_level_ = 0;
+  specify_compact_status_ = 0;
+  last_finish_specify_compact_time_ = time(NULL);
+
   AppendVersion(new Version(this));
+  random_ = new Random(time(NULL));
 }
 
 VersionSet::~VersionSet() {
+  for (std::map<uint64_t, Version*>::iterator it = loaded_versions_.begin();
+       it != loaded_versions_.end();
+       ++it) {
+    it->second->Unref();
+    // not deletefile here
+  }
+  loaded_versions_.clear();
   current_->Unref();
+  CleanupVersion();
   // assert(dummy_versions_.next_ == &dummy_versions_);  // List must be empty
   delete descriptor_log_;
   delete descriptor_file_;
+  delete random_;
+}
+
+uint32_t VersionSet::LongHoldCnt() {
+  return long_hold_refs_.Get();
+}
+
+void VersionSet::AllocLongHold() {
+  long_hold_refs_.Inc();
+}
+
+void VersionSet::RelealseLongHold() {
+  assert((int32_t)long_hold_refs_.Get() >= 1);
+  long_hold_refs_.Dec();
 }
 
 void VersionSet::AppendVersion(Version* v) {
   // Make "v" current
-  assert((int32_t)v->refs_.Get() == 0);
+  assert(v->GetRef() == 0);
   assert(v != current_);
   if (current_ != NULL) {
     current_->Unref();
@@ -816,6 +852,23 @@ void VersionSet::AppendVersion(Version* v) {
   v->next_ = &dummy_versions_;
   v->prev_->next_ = v;
   v->next_->prev_ = v;
+}
+
+void VersionSet::CleanupVersion() {
+  std::vector<Version*> zombies;
+  size_t sum = 0;
+  for (Version* v = dummy_versions_.next_; v != &dummy_versions_; v = v->next_) {
+    // once refs_ got 0, it will not be increased any more.
+    if (v->GetRef() <= 0) {
+      zombies.push_back(v);
+    }
+    sum++;
+  }
+
+  Log(options_->info_log, "clean version %lu@%lu", zombies.size(), sum);
+  for (size_t i = 0; i < zombies.size(); ++i) {
+    delete zombies[i];
+  }
 }
 
 // LogAndApply() have no thread-safe protection
@@ -853,18 +906,22 @@ Status VersionSet::LogAndApply(VersionEdit* edit, port::Mutex* mu) {
   // Initialize new descriptor log file if necessary by creating
   // a temporary file that contains a snapshot of the current version.
   std::string new_manifest_file;
+  WritableFile* new_descriptor_file = NULL;
+  log::Writer* new_descriptor_log = NULL;
+  uint64_t new_manifest_file_number = 0;
   Status s;
-  if (descriptor_log_ == NULL) {
+  if (descriptor_log_ == NULL || pending_restart_manifest_) { // we need restart a new manifest(descriptor)
     // No reason to unlock *mu here since we only hit this path in the
     // first call to LogAndApply (when opening the database).
-    assert(descriptor_file_ == NULL);
-    new_manifest_file = DescriptorFileName(dbname_, manifest_file_number_);
+    new_manifest_file_number = (descriptor_log_ == NULL) ? manifest_file_number_ : NewFileNumber();
+    Log(options_->info_log, "start new manifest, %lu => %lu", manifest_file_number_, new_manifest_file_number);
+    new_manifest_file = DescriptorFileName(dbname_, new_manifest_file_number);
     edit->SetNextFile(NextFileNumber());
-    s = env_->NewWritableFile(new_manifest_file, &descriptor_file_);
+    s = env_->NewWritableFile(new_manifest_file, &new_descriptor_file);
     if (s.ok()) {
       PROFILER_BEGIN("write snapshot+");
-      descriptor_log_ = new log::Writer(descriptor_file_);
-      s = WriteSnapshot(descriptor_log_);
+      new_descriptor_log = new log::Writer(new_descriptor_file);
+      s = WriteSnapshot(new_descriptor_log);
       PROFILER_END();
     }
   }
@@ -875,16 +932,20 @@ Status VersionSet::LogAndApply(VersionEdit* edit, port::Mutex* mu) {
     if (s.ok()) {
       std::string record;
       edit->EncodeTo(&record);
-      s = descriptor_log_->AddRecord(record);
+      s = (new_descriptor_log != NULL) ?
+        new_descriptor_log->AddRecord(record) :
+        descriptor_log_->AddRecord(record);
       if (s.ok()) {
-        s = descriptor_file_->Sync();
+        s = (new_descriptor_file != NULL) ?
+          new_descriptor_file->Sync() :
+          descriptor_file_->Sync();
       }
     }
 
     // If we just created a new descriptor file, install it by writing a
     // new CURRENT file that points to it.
     if (s.ok() && !new_manifest_file.empty()) {
-      s = SetCurrentFile(env_, dbname_, manifest_file_number_);
+      s = SetCurrentFile(env_, dbname_, new_manifest_file_number);
     }
     PROFILER_END();
   }
@@ -896,14 +957,33 @@ Status VersionSet::LogAndApply(VersionEdit* edit, port::Mutex* mu) {
     AppendVersion(v);
     log_number_ = edit->log_number_;
     prev_log_number_ = edit->prev_log_number_;
+    // restart manifest
+    if (!new_manifest_file.empty()) {
+      if (descriptor_log_ != NULL) {
+        delete descriptor_log_;
+      }
+      if (descriptor_file_ != NULL) {
+        delete descriptor_file_;
+      }
+      descriptor_log_ = new_descriptor_log;
+      descriptor_file_ = new_descriptor_file;
+      manifest_file_number_ = new_manifest_file_number;
+      pending_restart_manifest_ = false;
+    }
     mu->Unlock();
+    // cleanup unused Version, Version is only destroyed here.
+    // no need lock, 'cause dummy_version list is only updated here.
+    CleanupVersion();
   } else {
     delete v;
+    // cleanup
     if (!new_manifest_file.empty()) {
-      delete descriptor_log_;
-      delete descriptor_file_;
-      descriptor_log_ = NULL;
-      descriptor_file_ = NULL;
+      if (new_descriptor_log != NULL) {
+        delete new_descriptor_log;
+      }
+      if (new_descriptor_file != NULL) {
+        delete new_descriptor_file;
+      }
       env_->DeleteFile(new_manifest_file);
     }
   }
@@ -1087,6 +1167,8 @@ Status VersionSet::LoadBackupVersion() {
         v->next_->prev_ = v;
 
         ++count;
+        loaded_versions_[number] = v;
+        Log(options_->info_log, "load backup version id: %lu", number);
       }
 
       base_version->Unref();
@@ -1099,10 +1181,12 @@ Status VersionSet::LoadBackupVersion() {
   return s;
 }
 
+// mutex hold
 Status VersionSet::BackupCurrentVersion() {
   std::string bv_dir = dbname_ + "/" + VersionSet::kBackupVersionDir;
   env_->CreateDir(bv_dir);
-  std::string filename = DescriptorFileName(bv_dir, NewFileNumber());
+  uint64_t id = NewFileNumber();
+  std::string filename = DescriptorFileName(bv_dir, id);
   WritableFile* desc_file = NULL;
   Status s = env_->NewWritableFile(filename, &desc_file);
 
@@ -1124,6 +1208,9 @@ Status VersionSet::BackupCurrentVersion() {
         if (s.ok()) {
           // increase ref count of current version, because we want and do backup it.
           current_->Ref();
+          loaded_versions_[id] = current_;
+          AllocLongHold();
+          Log(options_->info_log, "backup version, id: %lu", id);
         }
       }
     }
@@ -1131,6 +1218,38 @@ Status VersionSet::BackupCurrentVersion() {
     delete desc_file;
   }
   return s;
+}
+
+// mutex hold
+Status VersionSet::UnloadBackupedVersion(uint64_t id) {
+  std::string bv_dir = dbname_ + "/" + VersionSet::kBackupVersionDir;
+  if (id == 0) {
+    Log(options_->info_log, "unload all backuped version");
+    for (std::map<uint64_t, Version*>::iterator it = loaded_versions_.begin();
+         it != loaded_versions_.end();
+         ++it) {
+      // CleanupVersion() will destroy it.
+      it->second->Unref();
+      RelealseLongHold();
+      env_->DeleteFile(DescriptorFileName(bv_dir, it->first));
+    }
+    loaded_versions_.clear();
+  } else {
+    std::map<uint64_t, Version*>::iterator it = loaded_versions_.find(id);
+    if (it == loaded_versions_.end()) {
+      char buf[64];
+      snprintf(buf, sizeof(buf), "%lu", id);
+      return Status::InvalidArgument(std::string("invalid version id to unload: ") + buf);
+    }
+
+    Log(options_->info_log, "unload backuped version, id: %lu", id);
+    // CleanupVersion() will destroy it.
+    it->second->Unref();
+    RelealseLongHold();
+    env_->DeleteFile(DescriptorFileName(bv_dir, it->first));
+    loaded_versions_.erase(it);
+  }
+  return Status::OK();
 }
 
 void VersionSet::MarkFileNumberUsed(uint64_t number) {
@@ -1178,7 +1297,7 @@ void VersionSet::Finalize(Version* v) {
     if (score > best_score) {
       if (need_limit_compact && score >= 1) {
         if (ShouldLimitCompact(level)) {
-          Log(options_->info_log, "limit com %lu@%d", has_limited_compact_count_, level);
+          Log(options_->info_log, "limit com %ld@%d", has_limited_compact_count_, level);
           break;                // following level need no check because we will limit it.
         } else if (level > current_max_level_ - config::kLimitCompactLevelCount) { // higher level need no check
           need_limit_compact = false;
@@ -1194,6 +1313,61 @@ void VersionSet::Finalize(Version* v) {
     for (; level < config::kNumLevels-1; level++) {
       if (!v->files_[level].empty()) {
         max_level = level;
+      }
+    }
+  }
+
+  //default SpecifyCompactScoreThreshold is 1, 1 is the compact threshold in leveldb,
+  //if set it to be 1, that mean the specify compact just at leveldb compact free time,
+  //if set it to be >1. that mean the specify compact may take normal compact to do specify compact
+  if (best_score < config::kSpecifyCompactScoreThreshold && max_level > 0) {
+    if (config::kSpecifyCompactThreshold < config::kSpecifyCompactMaxThreshold) {
+      bool is_specify_compact_time = config::IsSpecifyCompactTime();
+      if (is_specify_compact_time == true) {
+        int temp_may_compact_level = -1;
+        int specify_compact_status = 0;
+        while(v->vset_->may_next_compact_level_ < max_level) {
+          if (v->files_[v->vset_->may_next_compact_level_].empty()) {
+            v->vset_->may_next_compact_level_++;
+          } else {
+            temp_may_compact_level = v->vset_->may_next_compact_level_;
+            specify_compact_status = 1;
+            break;
+          }
+        }
+
+        // 0 finish specify compact completely
+        // 1 doing specify compact
+        // 2 finish specify compact for reaching time end
+        // 3 finish specify compact for stoping specify compact by someone
+        if (v->vset_->specify_compact_status_ == 1 && specify_compact_status == 0) {
+          v->vset_->last_finish_specify_compact_time_ = time(NULL);
+        }
+        v->vset_->specify_compact_status_ = specify_compact_status;
+
+        // 0.8 / 0.2
+        if (temp_may_compact_level != -1) {
+          int rnd = random_->Uniform(config::kSpecifyCompactMaxThreshold);
+          if (rnd >= config::kSpecifyCompactThreshold && (0 == LongHoldCnt())) {
+            best_level = temp_may_compact_level;
+            best_score = 1;
+          }
+        }
+      } else {
+        // not in time range
+        v->vset_->may_next_compact_level_ = 0;
+        if (v->vset_->specify_compact_status_ == 1) {
+          // not finish compact all file
+          v->vset_->specify_compact_status_ = 2;
+          v->vset_->last_finish_specify_compact_time_ = time(NULL);
+        }
+      }
+    } else {
+      // shutdown speed-up compact
+      v->vset_->may_next_compact_level_ = 0;
+      if (v->vset_->specify_compact_status_ == 1) {
+        v->vset_->specify_compact_status_ = 3;
+        v->vset_->last_finish_specify_compact_time_ = time(NULL);
       }
     }
   }
@@ -1217,7 +1391,7 @@ bool VersionSet::LimitCompactByInterval() {
   bool limit = (0 == config::kLimitCompactCountInterval || 0 == config::kLimitCompactTimeInterval) || // limit always Or
     (has_limited_compact_count_ < config::kLimitCompactCountInterval) || // limit count not over Or
     (0 == first_limited_compact_time_ ||                                 // has not limited Or
-     env_->NowSecs() - first_limited_compact_time_ < config::kLimitCompactTimeInterval); // limit time not over
+     static_cast<int32_t>(env_->NowSecs() - first_limited_compact_time_) < config::kLimitCompactTimeInterval); // limit time not over
 
   if (limit) {
     ++has_limited_compact_count_;
@@ -1281,6 +1455,14 @@ int VersionSet::NumLevelFiles(int level) const {
   return current_->files_[level].size();
 }
 
+int64_t VersionSet::NumFiles() const {
+  int64_t sum = 0;
+  for (int l = 0; l < config::kNumLevels; ++l) {
+    sum += NumLevelFiles(l);
+  }
+  return sum;
+}
+
 const char* VersionSet::LevelSummary(LevelSummaryStorage* scratch) const {
   // Update code if kNumLevels changes
   assert(config::kNumLevels == 7);
@@ -1328,40 +1510,45 @@ uint64_t VersionSet::ApproximateOffsetOf(Version* v, const InternalKey& ikey) {
   return result;
 }
 
-void VersionSet::AddLiveFiles(std::set<uint64_t>* live, port::Mutex* mu) {
-  // we need lock here to avoid version of dummy_versions_ has been Unref() to destory point
-  // just when iterating.
-  PROFILER_BEGIN("addtmplive");
-  std::vector<Version*> all_versions;
-  {
-    mu->Lock();
-    for (Version* v = dummy_versions_.next_;
-         v != &dummy_versions_;
-         v = v->next_) {
-      assert((int32_t)v->refs_.Get() > 0);
-      v->Ref();
-      all_versions.push_back(v);
-    }
-    mu->Unlock();
-  }
-  PROFILER_END();
-  Log(options_->info_log, "addlivefile %d", all_versions.size());
+int VersionSet::NowSpecifyCompactLevel() const {
+  return may_next_compact_level_;
+}
 
-  for (std::vector<Version*>::iterator it = all_versions.begin(); it != all_versions.end(); ++it) {
+int VersionSet::SpecifyCompactStatus() const {
+  return specify_compact_status_;
+}
+
+time_t VersionSet::LastFinishSpecifyCompactTime() const {
+  return last_finish_specify_compact_time_;
+}
+
+void VersionSet::AddLiveFiles(std::set<uint64_t>* live) {
+  PROFILER_BEGIN("addtmplive");
+  for (Version* v = dummy_versions_.next_;
+       v != &dummy_versions_;
+       v = v->next_) {
     for (int level = 0; level < config::kNumLevels; level++) {
-      const std::vector<FileMetaData*>& files = (*it)->files_[level];
+      const std::vector<FileMetaData*>& files = v->files_[level];
       for (size_t i = 0; i < files.size(); i++) {
         live->insert(files[i]->number);
       }
     }
-    (*it)->Unref();
   }
+  PROFILER_END();
 }
 
 int64_t VersionSet::NumLevelBytes(int level) const {
   assert(level >= 0);
   assert(level < config::kNumLevels);
-  return TotalFileSize(current_->files_[level]);
+  return current_->file_sizes_[level];
+}
+
+int64_t VersionSet::NumBytes() const {
+  int64_t sum = 0;
+  for (int l = 0; l < config::kNumLevels; ++l) {
+    sum += NumLevelBytes(l);
+  }
+  return sum;
 }
 
 int64_t VersionSet::MaxNextLevelOverlappingBytes() {
@@ -1417,6 +1604,16 @@ void VersionSet::GetRange2(const std::vector<FileMetaData*>& inputs1,
   all.insert(all.end(), inputs2.begin(), inputs2.end());
   GetRange(all, smallest, largest);
 }
+
+Iterator* VersionSet::MakeSingleFileInputIterator(const FileMetaData* file) {
+  ReadOptions options;
+  options.verify_checksums = options_->paranoid_checks;
+  options.fill_cache = false;
+
+  return table_cache_->NewIterator(
+      options, file->number, file->file_size);
+}
+
 
 Iterator* VersionSet::MakeInputIterator(Compaction* c) {
   ReadOptions options;
@@ -1616,25 +1813,11 @@ Compaction* VersionSet::CompactRangeOneLevel(
     const InternalKey* begin,
     const InternalKey* end) {
   std::vector<FileMetaData*> inputs;
-  current_->GetOverlappingInputsOneLevel(level, limit_filenumber, begin, end, &inputs);
+  const uint64_t limit_filesize = MaxFileSizeForLevel(level) * 4;
+  current_->GetOverlappingInputsOneLevel(level, limit_filenumber, limit_filesize, begin, end, &inputs);
   if (inputs.empty()) {
     return NULL;
   }
-
-  size_t orig_size = inputs.size();
-  // Avoid compacting too much in one shot in case the range is large.
-  const uint64_t limit = MaxFileSizeForLevel(level);
-  uint64_t total = 0;
-  for (size_t i = 0; i < inputs.size(); i++) {
-    uint64_t s = inputs[i]->file_size;
-    total += s;
-    if (total >= limit) {
-      inputs.resize(i + 1);
-      break;
-    }
-  }
-
-  Log(options_->info_log, "one level resize %zd => %zd", orig_size, inputs.size());
 
   Compaction* c = new Compaction(level);
   c->input_version_ = current_;
@@ -1644,9 +1827,27 @@ Compaction* VersionSet::CompactRangeOneLevel(
   return c;
 }
 
+Compaction* VersionSet::CompactSingleSSTFile(uint64_t file) {
+  std::vector<FileMetaData*> inputs;
+  uint32_t level = 0;
+  current_->GetInputsByFileNumber(file, &inputs, level);
+  if (inputs.empty()) {
+    return NULL;
+  }
+
+  Compaction* c = new Compaction(level);
+  c->input_version_ = current_;
+  c->input_version_->Ref();
+  c->inputs_[0] = inputs;
+  return c;
+
+}
+
+
 void Version::GetOverlappingInputsOneLevel(
   int level,
   uint64_t limit_filenumber,
+  uint64_t limit_filesize,
   const InternalKey* begin,
   const InternalKey* end,
   std::vector<FileMetaData*>* inputs) {
@@ -1658,6 +1859,8 @@ void Version::GetOverlappingInputsOneLevel(
   if (end != NULL) {
     user_end = end->user_key();
   }
+
+  uint64_t total_filesize = 0;
   const Comparator* user_cmp = vset_->icmp_.user_comparator();
   for (size_t i = 0; i < files_[level].size(); i++) {
     FileMetaData* f = files_[level][i];
@@ -1670,6 +1873,28 @@ void Version::GetOverlappingInputsOneLevel(
         // "f" is completely after specified range; skip it
       } else {
         inputs->push_back(f);
+        total_filesize += f->file_size;
+        if (total_filesize > limit_filesize) {
+          break;
+        }
+      }
+    } else {
+      if (inputs->empty()) continue;
+      else break;
+    }
+  }
+}
+
+//get one file's level and inputs by one file number
+void Version::GetInputsByFileNumber(uint64_t file, std::vector<FileMetaData*>* inputs, uint32_t& file_level) {
+  inputs->clear();
+  for (int level = 0; level < config::kNumLevels; level++) {
+    for (size_t i = 0; i < files_[level].size(); i++) {
+      if (files_[level][i]->number == file) {
+        FileMetaData* f = files_[level][i];
+        inputs->push_back(f);
+        file_level = level;
+        return;
       }
     }
   }

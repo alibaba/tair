@@ -1,0 +1,6 @@
+package easy;
+
+message EchoPacket {
+  required int64 id = 1;
+  required string str = 2;
+}

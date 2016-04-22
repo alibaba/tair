@@ -1,28 +1,27 @@
-AM_CPPFLAGS= -fPIC -I${top_srcdir}/src \
-	    -I$(TBLIB_ROOT)/include/tbsys \
-	    -I$(TBLIB_ROOT)/include/tbnet \
-	    -I${top_srcdir}/src/storage/fdb \
-	    -I${top_srcdir}/src/storage/mdb \
-            -I${top_srcdir}/src/common \
-	    -I${top_srcdir}/src/storage/ \
-            -I${top_srcdir}/src/packets \
-            -I${top_srcdir}/src/client \
-            -I${top_srcdir}/src/dataserver \
-	    -I${top_srcdir}/src/plugin \
-	    ${BOOST_CPPFLAGS}
+AM_CPPFLAGS= -I${top_srcdir}/src \
+						 -I${top_srcdir}/deps/libeasy-install/include/easy \
+						 -I${top_srcdir}/deps/tbsys-install/include \
+						 -I${top_srcdir}/src/common \
+						 -I${top_srcdir}/src/packets \
+						 -I${top_srcdir}/src/client \
+						 -I${top_srcdir}/src/dataserver \
+						 -I${top_srcdir}/src/plugin
+
+AM_CXXFLAGS= -Werror -fPIC
 
 if WITH_COMPRESS
 COMPRESS_LDFLAGS= -lsnappy
 endif
 
 LDADD=$(top_srcdir)/src/client/.libs/libtairclientapi.a \
-		$(top_srcdir)/src/common/libtair_common.a \
-	  $(TBLIB_ROOT)/lib/libtbnet.a \
-	  $(TBLIB_ROOT)/lib/libtbsys.a \
-	  $(COMPRESS_LDFLAGS) \
-		-lz
+			$(top_srcdir)/src/common/libtair_common.a \
+			$(top_builddir)/src/common/libsnappy.a \
+			${top_srcdir}/deps/tbsys-install/lib/libtbsys.a \
+			${top_srcdir}/deps/libeasy-install/lib64/libeasy.a \
+			$(COMPRESS_LDFLAGS) \
+			-lz -lrt
 
-AM_LDFLAGS=-lpthread -lz -lrt ${BOOST_LDFLAGS} @BOOST_THREAD_LIB@  ${GCOV_LIB}
+AM_LDFLAGS=-lpthread -lcurl -lssl -lz -lrt ${GCOV_LIB} -lcrypto
 
 sbin_PROGRAMS=dump_transfer
 

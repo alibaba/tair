@@ -1,3 +1,14 @@
+/*
+ * (C) 2007-2017 Alibaba Group Holding Limited
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * See the AUTHORS file for names of contributors.
+ *
+ */
+
 #ifndef TAIR_FLOW_VIEW_H_
 #define TAIR_FLOW_VIEW_H_
 
@@ -6,98 +17,98 @@
 
 namespace tair {
 
-class flow_view_request : public base_packet 
-{
- public:
-  flow_view_request()
-  {
-    setPCode(TAIR_REQ_FLOW_VIEW);
-  }
- 
-  size_t size() 
-  {
-    return 4 + 16; // 16bytes tbnet packet header
-  }
+class flow_view_request : public base_packet {
+public:
+    flow_view_request() {
+        setPCode(TAIR_REQ_FLOW_VIEW);
+    }
 
-  bool encode(tbnet::DataBuffer *output)
-  {
-    output->writeInt32(ns);
-    return true;
-  }
+    virtual size_t size() const {
+        return 4 + 16; // 16bytes packet header
+    }
 
-  bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
-  {
-    if (header->_dataLen < 4)
-      return false;
-    ns = input->readInt32();
-    return true;
-  }
+    virtual base_packet::Type get_type() {
+        return base_packet::REQ_SPECIAL;
+    }
 
-  void setNamespace(int ns)
-  {
-    this->ns = ns;
-  }
+    bool encode(DataBuffer *output) {
+        output->writeInt32(ns);
+        return true;
+    }
 
-  uint32_t getNamespace()
-  {
-    return ns;
-  }
+    bool decode(DataBuffer *input, PacketHeader *header) {
+        if (header->_dataLen < 4)
+            return false;
+        ns = input->readInt32();
+        return true;
+    }
 
- private:
-  uint32_t ns;
+    void setNamespace(int ns) {
+        this->ns = ns;
+    }
+
+    uint32_t getNamespace() {
+        return ns;
+    }
+
+private:
+    flow_view_request(const flow_view_request &);
+
+private:
+    uint32_t ns;
 };
 
-class flow_view_response : public base_packet
-{
- public:
-  flow_view_response()
-  {
-    setPCode(TAIR_RESP_FLOW_VIEW);
-  }
- 
-  size_t size() 
-  {
-    return 28 + 16; // 16bytes tbnet packet header
-  }
+class flow_view_response : public base_packet {
+public:
+    flow_view_response() {
+        setPCode(TAIR_RESP_FLOW_VIEW);
+    }
 
-  bool encode(tbnet::DataBuffer *output)
-  {
-    output->writeInt32(rate.in);
-    output->writeInt32(rate.in_status);
-    output->writeInt32(rate.out);
-    output->writeInt32(rate.out_status);
-    output->writeInt32(rate.ops);
-    output->writeInt32(rate.ops_status);
-    output->writeInt32(rate.status);
-    return true;
-  }
+    virtual size_t size() const {
+        return 28 + 16; // 16bytes packet header
+    }
 
-  bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
-  {
-    if (header->_dataLen < 28)
-      return false;
-    rate.in = input->readInt32();
-    rate.in_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
-    rate.out = input->readInt32();
-    rate.out_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
-    rate.ops = input->readInt32();
-    rate.ops_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
-    rate.status = static_cast<tair::stat::FlowStatus>(input->readInt32());
-    return true;
-  }
+    virtual base_packet::Type get_type() {
+        return base_packet::RESP_COMMON;
+    }
 
-  void setFlowrate(const tair::stat::Flowrate &rate)
-  {
-    this->rate = rate;
-  }
+    bool encode(DataBuffer *output) {
+        output->writeInt32(rate.in);
+        output->writeInt32(rate.in_status);
+        output->writeInt32(rate.out);
+        output->writeInt32(rate.out_status);
+        output->writeInt32(rate.ops);
+        output->writeInt32(rate.ops_status);
+        output->writeInt32(rate.status);
+        return true;
+    }
 
-  tair::stat::Flowrate getFlowrate() 
-  {
-    return this->rate;
-  }
+    bool decode(DataBuffer *input, PacketHeader *header) {
+        if (header->_dataLen < 28)
+            return false;
+        rate.in = input->readInt32();
+        rate.in_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+        rate.out = input->readInt32();
+        rate.out_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+        rate.ops = input->readInt32();
+        rate.ops_status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+        rate.status = static_cast<tair::stat::FlowStatus>(input->readInt32());
+        return true;
+    }
 
- private:
-  tair::stat::Flowrate rate;
+    void setFlowrate(const tair::stat::Flowrate &rate) {
+        this->rate = rate;
+    }
+
+    tair::stat::Flowrate getFlowrate() {
+        return this->rate;
+    }
+
+private:
+    flow_view_response(const flow_view_response &);
+
+private:
+    tair::stat::Flowrate rate;
 };
 
 }
