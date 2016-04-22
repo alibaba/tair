@@ -1,0 +1,89 @@
+#!/bin/bash
+# chkconfig: 2345 99 90
+# pidfile: /var/run/http_status.pid
+# description: starting and stopping http_status health check server
+
+export PATH=/usr/bin:/sbin:/bin:/usr/sbin
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+if [ -f /etc/sysconfig/http_status ]; then
+  . /etc/sysconfig/http_status
+fi
+
+# don't raise an error if the config file is incomplete
+# set defaults instead:
+HTTP_STATUS_PORT=${HTTP_STATUS_PORT:-8001}
+HTTP_STATUS_IP=${HTTP_STATUS_IP:-"0.0.0.0"}
+
+RETVAL=0
+
+probe() {
+        # Check that networking is up.
+        [ ${NETWORKING} = "no" ] && exit 1
+
+        [ `id -u` -ne 0 ] && exit 4
+}
+
+start() {
+        probe
+        echo -n $"Starting http_status on $HTTP_STATUS_IP:$HTTP_STATUS_PORT "
+        daemon --pidfile /var/run/http_status.pid /usr/bin/http_status -d --port=$HTTP_STATUS_PORT --ip=$HTTP_STATUS_IP
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && echo_success
+        [ $RETVAL -ne 0 ] && echo_failure
+        echo
+        [ $RETVAL -ne 0 ] && return $RETVAL
+}
+
+stop() {
+        echo -n $"Stoping http_status "
+        killproc -p /var/run/http_status.pid http_status
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && echo_success
+        [ $RETVAL -ne 0 ] && echo_failure
+        echo
+        [ $RETVAL -ne 0 ] && return $RETVAL
+}
+
+restart() {
+        stop
+        start
+}
+
+rhstatus() {
+        status -p /var/run/http_status.pid http_status
+}
+
+
+case "$1" in
+start)
+        start
+        ;;
+
+stop)
+        stop
+        ;;
+
+restart)
+        restart
+        ;;
+
+status)
+        rhstatus
+        ;;
+
+probe)
+        probe
+        ;;
+
+*)
+        echo $"Usage: $0 {start|stop|status|restart|probe}"
+        exit 2
+esac
+
+exit $?

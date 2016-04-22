@@ -24,14 +24,15 @@
   #include <endian.h>
 #endif
 #include <pthread.h>
+#include <errno.h>
+#include <sys/time.h>
 #ifdef SNAPPY
 #include <snappy.h>
 #endif
 #include <stdint.h>
 #include <string>
 #include "port/atomic_pointer.h"
-// Tair include file
-#include "common/tair_atomic.hpp"
+#include "port/atomic_count.h"
 
 #ifdef LITTLE_ENDIAN
 #define IS_LITTLE_ENDIAN true
@@ -83,6 +84,7 @@ class CondVar {
   explicit CondVar(Mutex* mu);
   ~CondVar();
   void Wait();
+  void TimedWait(int64_t timeout_us);
   void Signal();
   void SignalAll();
  private:
@@ -90,8 +92,8 @@ class CondVar {
   Mutex* mu_;
 };
 
-// only support x86_64 here
-#ifdef __x86_64__
+// only support i386 / x86_64 here
+#if defined(__i386__) || defined(__x86_64__)
 template<typename T> class AtomicCount {
 public:
   explicit AtomicCount(T t) { t_ = t; }
@@ -101,16 +103,16 @@ public:
     return t_;
   }
   inline void Set(T t) {
-    tair::common::atomic_exchange(&t_, t);
+    atomic_exchange(&t_, t);
   }
   inline T Inc() {
-    return tair::common::atomic_inc(&t_);
+    return atomic_inc(&t_);
   }
   inline T Dec() {
-    return tair::common::atomic_dec(&t_);
+    return atomic_dec(&t_);
   }
   inline T GetAndInc() {
-    return tair::common::atomic_add(&t_, 1);
+    return atomic_add(&t_, 1);
   }
 
 private:

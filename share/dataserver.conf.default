@@ -1,5 +1,5 @@
 #
-#  tair 2.3 --- tairserver config 
+#  tair 2.3 --- tairserver config
 #
 
 [public]
@@ -10,8 +10,7 @@ config_server=192.168.1.2:5198
 #
 #storage_engine:
 #
-# mdb 
-# kdb
+# mdb
 # ldb
 #
 storage_engine=mdb
@@ -23,24 +22,43 @@ local_mode=0
 #
 mdb_type=mdb_shm
 
-#
-# if you just run 1 tairserver on a computer, you may ignore this option.
-# if you want to run more than 1 tairserver on a computer, each tairserver must have their own "mdb_shm_path"
-#
-#
-mdb_shm_path=/mdb_shm_path01
+# shm file prefix, located in /dev/shm/, the leading '/' is must
+mdb_shm_path=/mdb_shm_inst
+# (1<<mdb_inst_shift) would be the instance count
+mdb_inst_shift=3
+# (1<<mdb_hash_bucket_shift) would be the overall bucket count of hashtable
+# (1<<mdb_hash_bucket_shift) * 8 bytes memory would be allocated as hashtable
+mdb_hash_bucket_shift=24
+# milliseconds, time of one round of the checking in mdb lasts before having a break
+mdb_check_granularity=15
+# increase this factor when the check thread of mdb incurs heavy load
+# cpu load would be around 1/(1+mdb_check_granularity_factor)
+mdb_check_granularity_factor=10
 
 #tairserver listen port
 port=5191
-heartbeat_port=6191
 
-process_thread_num=16
+supported_admin=0
+process_thread_num=12
+io_thread_num=12
+dup_io_thread_num=1
 #
 #mdb size in MB
 #
-slab_mem_size=1024
+slab_mem_size=4096
 log_file=logs/server.log
 pid_file=logs/server.pid
+
+is_namespace_load=1
+is_flowcontrol_load=1
+tair_admin_file = etc/admin.conf
+
+put_remove_expired=0
+# set same number means to disable the memory merge, like 5-5
+mem_merge_hour_range=5-5
+# 1ms copy 300 items
+mem_merge_move_count=300
+
 log_level=warn
 dev_name=eth0
 ulog_dir=data/ulog
@@ -49,12 +67,24 @@ ulog_file_size=64
 check_expired_hour_range=2-4
 check_slab_hour_range=5-7
 dup_sync=1
+dup_timeout=500
 
 do_rsync=0
+
+rsync_io_thread_num=1
+rsync_task_thread_num=4
+
+rsync_listen=1
+# 0 mean old version
+# 1 mean new version
+rsync_version=0
+rsync_config_service=http://localhost:8080/hangzhou/group_1
+rsync_config_update_interval=60
+
 # much resemble json format
 # one local cluster config and one or multi remote cluster config.
 # {local:[master_cs_addr,slave_cs_addr,group_name,timeout_ms,queue_limit],remote:[...],remote:[...]}
-rsync_conf={local:[10.0.0.1:5198,10.0.0.2:5198,group_local,2000,1000],remote:[10.0.1.1:5198,10.0.1.2:5198,group_remote,2000,3000]}
+# rsync_conf={local:[10.0.0.1:5198,10.0.0.2:5198,group_local,2000,1000],remote:[10.0.1.1:5198,10.0.1.2:5198,group_remote,2000,800]}
 # if same data can be updated in local and remote cluster, then we need care modify time to
 # reserve latest update when do rsync to each other.
 rsync_mtime_care=0
@@ -62,26 +92,23 @@ rsync_mtime_care=0
 rsync_data_dir=./data/remote
 # max log file size to record failed rsync data, rotate to a new file when over the limit
 rsync_fail_log_size=30000000
-# whether do retry when rsync failed at first time
-rsync_do_retry=0
 # when doing retry,  size limit of retry log's memory use
 rsync_retry_log_mem_size=100000000
 
-[fdb]
-# in MB
-index_mmap_size=30
-cache_size=256
-bucket_size=10223
-free_block_pool_size=8
-data_dir=data/fdb
-fdb_name=tair_fdb
+# depot duplicate update when one server down
+do_dup_depot=0
+dup_depot_dir=./data/dupdepot
 
-[kdb]
-# in byte
-map_size=10485760      # the size of the internal memory-mapped region
-bucket_size=1048583    # the number of buckets of the hash table
-record_align=128       # the power of the alignment of record size
-data_dir=data/kdb      # the directory of kdb's data
+[flow_control]
+# default flow control setting
+default_net_upper = 30000000
+default_net_lower = 15000000
+default_ops_upper = 30000
+default_ops_lower = 20000
+default_total_net_upper = 75000000
+default_total_net_lower = 65000000
+default_total_ops_upper = 50000
+default_total_ops_lower = 40000
 
 [ldb]
 #### ldb manager config
@@ -89,7 +116,7 @@ data_dir=data/kdb      # the directory of kdb's data
 ## so if ldb_db_instance_count = 2, then leveldb will init in
 ## /data/ldb1/ldb/, /data/ldb2/ldb/. We can mount each disk to
 ## data/ldb1, data/ldb2, so we can init each instance on each disk.
-data_dir=/data/ldb
+data_dir=data/ldb
 ## leveldb instance count, buckets will be well-distributed to instances
 ldb_db_instance_count=1
 ## whether load backup version when startup.
@@ -99,10 +126,10 @@ ldb_load_backup_version=0
 ## if yes, put will do get operation to update existed items's meta info(version .etc),
 ## get unexist item is expensive for leveldb. set 0 to disable if nobody even care version stuff.
 ldb_db_version_care=1
-## compact time range, 1-1 means do no compaction at all
-ldb_compact_range = 3-6
-## backgroud task check compact interval
-ldb_check_compact_interval = 5
+## time range to compact for gc, 1-1 means do no compaction at all
+ldb_compact_gc_range = 3-6
+## backgroud task check compact interval (s)
+ldb_check_compact_interval = 120
 ## use cache count, 0 means NOT use cache,`ldb_use_cache_count should NOT be larger
 ## than `ldb_db_instance_count, and better to be a factor of `ldb_db_instance_count.
 ## each cache mdb's config depends on mdb's config item(mdb_type, slab_mem_size, etc)
@@ -116,13 +143,14 @@ ldb_migrate_batch_size = 3145728
 ## real batch migrate items depends on the smaller size/count
 ldb_migrate_batch_count = 5000
 ## comparator_type bitcmp by default
-#ldb_comparator_type=numeric
+# ldb_comparator_type=numeric
 ## numeric comparator: special compare method for user_key sorting in order to reducing compact
-## parameters for numeric compare. format: [meta][prefix][delimiter][number][suffix] 
+## parameters for numeric compare. format: [meta][prefix][delimiter][number][suffix]
 ## skip meta size in compare
-#ldb_userkey_skip_meta_size=2
-## delimiter between prefix and number 
-#ldb_userkey_num_delimiter=:
+# ldb_userkey_skip_meta_size=2
+## delimiter between prefix and number
+# ldb_userkey_num_delimiter=:
+####
 ## use blommfilter
 ldb_use_bloomfilter=1
 ## use mmap to speed up random acess file(sstable),may cost much memory
@@ -138,9 +166,18 @@ ldb_limit_compact_time_interval=0
 ## limit compaction time range, start == end means doing limit the whole day.
 ldb_limit_compact_time_range=6-1
 ## limit delete obsolete files when finishing one compaction
-ldb_limit_delete_obsolete_file_interval=0
+ldb_limit_delete_obsolete_file_interval=5
 ## whether trigger compaction by seek
-ldb_do_seek_compaction=1
+ldb_do_seek_compaction=0
+## whether split mmt when compaction with user-define logic(bucket range, eg)
+ldb_do_split_mmt_compaction=0
+
+## do specify compact
+## time range 24 hours
+ldb_specify_compact_time_range=0-6
+ldb_specify_compact_max_threshold=10000
+## score threshold default = 1
+ldb_specify_compact_score_threshold=1
 
 #### following config effects on FastDump ####
 ## when ldb_db_instance_count > 1, bucket will be sharded to instance base on config strategy.
@@ -149,31 +186,33 @@ ldb_do_seek_compaction=1
 ##         not perfect in small buckets set. same bucket will be sharded to same instance
 ##         all the time, so data will be reused even if buckets owned by server changed(maybe cluster has changed),
 ##  map  : handle to get better balance among all instances. same bucket may be sharded to different instance based
-##         on different buckets set(TODO: data will be migrated among instances).
-ldb_bucket_index_to_instance_strategy=hash
+##         on different buckets set(data will be migrated among instances).
+ldb_bucket_index_to_instance_strategy=map
 ## bucket index can be updated. this is useful if the cluster wouldn't change once started
 ## even server down/up accidently.
-ldb_bucket_index_can_update=0
+ldb_bucket_index_can_update=1
 ## strategy map will save bucket index statistics into file, this is the file's directory
 ldb_bucket_index_file_dir=./data/bindex
 ## memory usage for memtable sharded by bucket when batch-put(especially for FastDump)
 ldb_max_mem_usage_for_memtable=3221225472
 ####
 
-#### leveldb config (Waring: you should know what you're doing.)
-## one leveldb instance max open files(actually table_cache_ capacity, consider as working set)
+#### leveldb config (Warning: you should know what you're doing.)
+## one leveldb instance max open files(actually table_cache_ capacity, consider as working set, see `ldb_table_cache_size)
 ldb_max_open_files=65535
 ## whether return fail when occure fail when init/load db, and
 ## if true, read data when compactiong will verify checksum
 ldb_paranoid_check=0
 ## memtable size
-ldb_write_buffer_size=33554432
+ldb_write_buffer_size=67108864
 ## sstable size
 ldb_target_file_size=8388608
 ## max file size in each level. level-n (n > 0): (n - 1) * 10 * ldb_base_level_size
 ldb_base_level_size=134217728
 ## sstable's block size
 # ldb_block_size=4096
+## sstable cache size (override `ldb_max_open_files)
+ldb_table_cache_size=1073741824
 ##block cache size
 ldb_block_cache_size=16777216
 ## arena used by memtable, arena block size
@@ -184,13 +223,16 @@ ldb_block_cache_size=16777216
 ## specifid compression method (snappy only now)
 # ldb_compression=1
 ## compact when sstables count in level-0 is over this trigger
-ldb_l0_compaction_trigger=2
+ldb_l0_compaction_trigger=1
+## whether limit write with l0's filecount, if false
+ldb_l0_limit_write_with_count=0
 ## write will slow down when sstables count in level-0 is over this trigger
+## or sstables' filesize in level-0 is over trigger * ldb_write_buffer_size if ldb_l0_limit_write_with_count=0
 ldb_l0_slowdown_write_trigger=32
 ## write will stop(wait until trigger down)
 ldb_l0_stop_write_trigger=64
-## when write memtable, max level to up maybe
-# ldb_max_memcompact_level=2
+## when write memtable, max level to below maybe
+ldb_max_memcompact_level=3
 ## read verify checksum
 ldb_read_verify_checksums=0
 ## write sync log. (one write will sync log once, expensive)
@@ -199,3 +241,31 @@ ldb_write_sync=0
 #ldb_bloomfilter_bits_per_key=10
 ## filter data base logarithm. filterbasesize=1<<ldb_filter_base_logarithm
 #ldb_filter_base_logarithm=12
+
+[extras]
+######## RT-related ########
+#rt_oplist=1,2
+# Threashold of latency beyond which would let the request be dumped out.
+rt_threshold=8000
+# Enable RT Module at startup
+rt_auto_enable=0
+# How many requests would be subject to RT Module
+rt_percent=100
+# Interval to reset the latency statistics, by seconds
+rt_reset_interval=10
+
+######## HotKey-related ########
+hotk_oplist=2
+# Sample count
+hotk_sample_max=50000
+# Reap count
+hotk_reap_max=32
+# Whether to send client feedback response
+hotk_need_feedback=0
+# Whether to dump out packets, caches or hot keys
+hotk_need_dump=0
+# Whether to just Do Hot one round
+hotk_one_shot=0
+# Whether having hot key depends on: sigma >= (average * hotk_hot_factor)
+hotk_hot_factor=0.8
+

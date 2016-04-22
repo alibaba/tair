@@ -1,19 +1,14 @@
 /*
- * (C) 2007-2010 Alibaba Group Holding Limited
+ * (C) 2007-2017 Alibaba Group Holding Limited
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * leveldb bloom filter. just modify leveldb/util/bloom.cc, we skip ldb specified
- * bytes when do hash and add stat
- *
- * Version: $Id$
- *
- * Authors:
- *   nayan <nayan@taobao.com>
+ * See the AUTHORS file for names of contributors.
  *
  */
+
 #include <atomic.h>
 
 #include "leveldb/filter_policy.h"
@@ -22,6 +17,7 @@
 
 #include "ldb_define.hpp"
 #include "ldb_cache_stat.hpp"
+#include "ldb_stat_manager.hpp"
 #include "common/log.hpp"
 
 namespace tair
@@ -64,14 +60,14 @@ namespace tair
       private:
         size_t bits_per_key_;
         size_t k_;
-
+        LdbStatManager* stat_;
       public:
         // use static global stat
-        static LdbBloomStat stat_[TAIR_MAX_AREA_COUNT];
+        static LdbBloomStat old_stat_[TAIR_MAX_AREA_COUNT];
 
       public:
-        explicit LdbBloomFilterPolicy(int bits_per_key)
-          : bits_per_key_(bits_per_key) {
+        explicit LdbBloomFilterPolicy(int bits_per_key, LdbStatManager* stat)
+          : bits_per_key_(bits_per_key), stat_(stat) {
           // We intentionally round down to reduce probing cost a little bit
           k_ = static_cast<size_t>(bits_per_key * 0.69);  // 0.69 =~ ln(2)
           if (k_ < 1) k_ = 1;
@@ -112,12 +108,13 @@ namespace tair
 
         virtual bool KeyMayMatch(const leveldb::Slice& key, const leveldb::Slice& bloom_filter) const {
           PROFILER_BEGIN("bloom");
-          int area = LdbKey::decode_area(key.data() + LDB_KEY_META_SIZE);
-          stat_[area].add_get_count();
+          int area = LdbKey::decode_area_with_key(key.data());
+          old_stat_[area].add_get_count();
           const size_t len = bloom_filter.size();
           if (len < 2) {
-            stat_[area].add_miss_count();
+            old_stat_[area].add_miss_count();
             PROFILER_END();
+            stat_->update_bf_get(area, TAIR_RETURN_FAILED);
             return false;
           }
 
@@ -131,6 +128,7 @@ namespace tair
             // Reserved for potentially new encodings for short bloom filters.
             // Consider it a match.
             PROFILER_END();
+            stat_->update_bf_get(area, TAIR_RETURN_SUCCESS);
             return true;
           }
 
@@ -139,31 +137,29 @@ namespace tair
           for (size_t j = 0; j < k; j++) {
             const uint32_t bitpos = h % bits;
             if ((array[bitpos/8] & (1 << (bitpos % 8))) == 0) {
-              stat_[area].add_miss_count();
+              old_stat_[area].add_miss_count();
               PROFILER_END();
+              stat_->update_bf_get(area, TAIR_RETURN_FAILED);
               return false;
             }
             h += delta;
           }
           PROFILER_END();
+          stat_->update_bf_get(area, TAIR_RETURN_SUCCESS);
           return true;
         }
       };
 
-      LdbBloomStat LdbBloomFilterPolicy::stat_[TAIR_MAX_AREA_COUNT];
-
-      leveldb::FilterPolicy* NewLdbBloomFilterPolicy(int bits_per_key) {
-        return new LdbBloomFilterPolicy(bits_per_key);
-      }
+      LdbBloomStat LdbBloomFilterPolicy::old_stat_[TAIR_MAX_AREA_COUNT];
 
       void get_bloom_stats(cache_stat* ldb_cache_stat) {
         for (size_t i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
           // NOTE: use current cache stat temporarily. ugly..
           // TODO: ..
-          if (LdbBloomFilterPolicy::stat_[i].get_count() > 0) {
-            SET_LDB_STAT_BLOOM_GET_COUNT(&ldb_cache_stat[i], LdbBloomFilterPolicy::stat_[i].get_count());
-            SET_LDB_STAT_BLOOM_MISS_COUNT(&ldb_cache_stat[i], LdbBloomFilterPolicy::stat_[i].miss_count());
-            LdbBloomFilterPolicy::stat_[i].reset();
+          if (LdbBloomFilterPolicy::old_stat_[i].get_count() > 0) {
+            SET_LDB_STAT_BLOOM_GET_COUNT(&ldb_cache_stat[i], LdbBloomFilterPolicy::old_stat_[i].get_count());
+            SET_LDB_STAT_BLOOM_MISS_COUNT(&ldb_cache_stat[i], LdbBloomFilterPolicy::old_stat_[i].miss_count());
+            LdbBloomFilterPolicy::old_stat_[i].reset();
           }
         }
       }

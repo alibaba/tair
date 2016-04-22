@@ -1,3 +1,14 @@
+/*
+ * (C) 2007-2017 Alibaba Group Holding Limited
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * See the AUTHORS file for names of contributors.
+ *
+ */
+
 #ifndef __CONFIG_LOADER__
 #define __CONFIG_LOADER__
 
@@ -9,43 +20,56 @@
 class ConfigLoader {
 public:
     ConfigLoader();
+
     ~ConfigLoader();
-    const char* getMsConfigServ();
-    const char* getSlConfigServ();
-    const char* getGroupName();
+
+    const char *getMsConfigServ();
+
+    const char *getSlConfigServ();
+
+    const char *getGroupName();
+
     const int getNameSpace();
-    const char* getKeyFile();
+
+    const char *getKeyFile();
+
     const int getWorkerNum();
+
     const int getDelJobSize();
+
     const int getKeyFormat();
-    int loadInfo(const char* filename); 
+
+    int loadInfo(const char *filename);
+
 private:
-    char* match(char* src, const char* matcher);
-    int isNote(const char* notes);
+    char *match(char *src, const char *matcher);
+
+    int isNote(const char *notes);
+
 private:
 #define CONFIG_SERVER_1 "CONFIG_SERVER_1"
-//CONFIG_SERVER_1=10.232.4.19:5198
-    char* _master_config_server;
+
+    char *_master_config_server;
 #define CONFIG_SERVER_2 "CONFIG_SERVER_2"
-//CONFIG_SERVER_2=10.232.4.22:5198
-    char* _slave_config_server;
+
+    char *_slave_config_server;
 #define GROUP_NAME "GROUP_NAME"
-//GROUP_NAME=group_1
-    char* _group_name;
+
+    char *_group_name;
 #define NAMESPACE "NAMESPACE"
-//NAMESPACE=0
+
     int _namespace;
 #define KEYS_FILE "KEYS_FILE"
-//KEYS_FILE=file.keys
-    char* _keys_file;
+
+    char *_keys_file;
 #define WORKER_NUM "WORKER_NUM"
-//WORKER_NUM=10
+
     int _worker_num;
 #define DEL_JOB_SIZE "DEL_JOB_SIZE"
-//DEL_JOB_SIZE=10
+
     int _del_job_size;
 #define KEY_FORMAT "KEY_FORMAT"
-//KEY_FORMAT=0
+
     int _key_format;
 };
 
@@ -75,15 +99,15 @@ ConfigLoader::~ConfigLoader() {
     }
 }
 
-const char* ConfigLoader::getMsConfigServ() {
+const char *ConfigLoader::getMsConfigServ() {
     return _master_config_server;
 }
 
-const char* ConfigLoader::getSlConfigServ() {
+const char *ConfigLoader::getSlConfigServ() {
     return _slave_config_server;
 }
 
-const char* ConfigLoader::getGroupName() {
+const char *ConfigLoader::getGroupName() {
     return _group_name;
 }
 
@@ -91,7 +115,7 @@ const int ConfigLoader::getNameSpace() {
     return _namespace;
 }
 
-const char* ConfigLoader::getKeyFile() {
+const char *ConfigLoader::getKeyFile() {
     return _keys_file;
 }
 
@@ -107,39 +131,37 @@ const int ConfigLoader::getKeyFormat() {
     return _key_format;
 }
 
-int ConfigLoader::loadInfo(const char* tool_file) {
-    FILE* fp = fopen(tool_file, "r");
+int ConfigLoader::loadInfo(const char *tool_file) {
+    FILE *fp = fopen(tool_file, "r");
     if (fp == NULL) {
-       fprintf(stderr, "can't open file\n");
-       return 0;
+        fprintf(stderr, "can't open file\n");
+        return 0;
     }
 
-    const char* value = NULL;
+    const char *value = NULL;
     char buffer[CONFIG_BUFFER_SIZE];
-    while(fgets(buffer, 4095, fp) != NULL) {
+    while (fgets(buffer, 4095, fp) != NULL) {
         if (isNote(buffer)) {
             continue;
         }
-        
+
         value = match(buffer, CONFIG_SERVER_1);
         if (value != NULL) {
             int len = strlen(value);
-            _master_config_server = (char*)malloc(sizeof(char) * (len + 1));
+            _master_config_server = (char *) malloc(sizeof(char) * (len + 1));
             if (_master_config_server == NULL) {
-                fprintf(stderr, "file %s, line %d: malloc failed\n",
-                        __FILE__, __LINE__);
+                fprintf(stderr, "file %s, line %d: malloc failed\n", __FILE__, __LINE__);
             }
             strcpy(_master_config_server, value);
             continue;
         }
-        
+
         value = match(buffer, CONFIG_SERVER_2);
         if (value != NULL) {
             int len = strlen(value);
-            _slave_config_server = (char*)malloc(sizeof(char) * (len + 1));
+            _slave_config_server = (char *) malloc(sizeof(char) * (len + 1));
             if (_slave_config_server == NULL) {
-                fprintf(stderr, "file %s, line %d: malloc failed\n",
-                        __FILE__, __LINE__);
+                fprintf(stderr, "file %s, line %d: malloc failed\n", __FILE__, __LINE__);
             }
             strcpy(_slave_config_server, value);
             continue;
@@ -148,10 +170,9 @@ int ConfigLoader::loadInfo(const char* tool_file) {
         value = match(buffer, GROUP_NAME);
         if (value != NULL) {
             int len = strlen(value);
-            _group_name = (char*)malloc(sizeof(char) * (len + 1));
+            _group_name = (char *) malloc(sizeof(char) * (len + 1));
             if (_group_name == NULL) {
-                fprintf(stderr, "file %s, line %d: malloc failed\n",
-                        __FILE__, __LINE__);
+                fprintf(stderr, "file %s, line %d: malloc failed\n", __FILE__, __LINE__);
             }
             strcpy(_group_name, value);
             continue;
@@ -166,10 +187,9 @@ int ConfigLoader::loadInfo(const char* tool_file) {
         value = match(buffer, KEYS_FILE);
         if (value != NULL) {
             int len = strlen(value);
-            _keys_file = (char*)malloc(sizeof(char) * (len + 1));
+            _keys_file = (char *) malloc(sizeof(char) * (len + 1));
             if (_keys_file == NULL) {
-                fprintf(stderr, "file %s, line %d: malloc failed\n",
-                        __FILE__, __LINE__);
+                fprintf(stderr, "file %s, line %d: malloc failed\n", __FILE__, __LINE__);
             }
             strcpy(_keys_file, value);
             continue;
@@ -186,13 +206,13 @@ int ConfigLoader::loadInfo(const char* tool_file) {
             sscanf(value, "%d", &_del_job_size);
             continue;
         }
-        
+
         value = match(buffer, KEY_FORMAT);
         if (value != NULL) {
             sscanf(value, "%d", &_key_format);
             continue;
         }
-    } 
+    }
 
     if (fp != NULL) {
         fclose(fp);
@@ -201,14 +221,14 @@ int ConfigLoader::loadInfo(const char* tool_file) {
     return 1;
 }
 
-char* ConfigLoader::match(char* src, const char* matcher) {
+char *ConfigLoader::match(char *src, const char *matcher) {
     if (src == NULL || matcher == NULL) {
         return 0;
     }
     int len_src = strlen(src);
     int len_matcher = strlen(matcher);
-    
-    while(len_src > 0) {
+
+    while (len_src > 0) {
         if (src[len_src - 1] == ' ' || src[len_src - 1] == '\n') {
             src[len_src - 1] = '\0';
             len_src--;
@@ -216,9 +236,9 @@ char* ConfigLoader::match(char* src, const char* matcher) {
         }
         break;
     }
-    
+
     int index = 0;
-    for(;index < len_src; index++) {
+    for (; index < len_src; index++) {
         if (src[index] == ' ' || src[index] == '\n') {
             continue;
         }
@@ -229,7 +249,7 @@ char* ConfigLoader::match(char* src, const char* matcher) {
     }
 
     int i;
-    for(i = index; i < len_src && i < len_matcher; i++) {
+    for (i = index; i < len_src && i < len_matcher; i++) {
         if (src[i] != matcher[i]) {
             break;
         }
@@ -237,9 +257,9 @@ char* ConfigLoader::match(char* src, const char* matcher) {
     if (i != len_matcher) {
         return 0;
     }
-    
+
     index = i;
-    for(;index < len_src; index++) {
+    for (; index < len_src; index++) {
         if (src[index] == ' ' || src[index] == '\n') {
             continue;
         }
@@ -253,7 +273,7 @@ char* ConfigLoader::match(char* src, const char* matcher) {
         return NULL;
     }
 
-    for(;index < len_src; index++) {
+    for (; index < len_src; index++) {
         if (src[index] == ' ' || src[index] == 0) {
             continue;
         }
@@ -266,10 +286,10 @@ char* ConfigLoader::match(char* src, const char* matcher) {
     return src + index;
 }
 
-int ConfigLoader::isNote(const char* note) {
+int ConfigLoader::isNote(const char *note) {
     int len = strlen(note);
     int i;
-    for(i = 0; i < len; i++) {
+    for (i = 0; i < len; i++) {
         if (note[i] == ' ' || note[i] == '\n') {
             break;
         }

@@ -15,6 +15,15 @@
 #ifndef STORAGE_LEVELDB_DB_VERSION_SET_H_
 #define STORAGE_LEVELDB_DB_VERSION_SET_H_
 
+#include <stdint.h>
+#ifndef PRI64_PREFIX
+# if __WORDSIZE == 64
+#define PRI64_PREFIX "l"
+# else
+#define PRI64_PREFIX "ll"
+# endif
+#endif
+
 #include <map>
 #include <set>
 #include <vector>
@@ -22,11 +31,13 @@
 #include "db/log_reader.h"
 #include "db/version_edit.h"
 #include "port/port.h"
+#include "util/random.h"
 
 namespace leveldb {
 
 namespace log { class Writer; }
 
+class Random;
 class Compaction;
 class Iterator;
 class MemTable;
@@ -80,6 +91,7 @@ class Version {
 
   // Reference count management (so Versions do not disappear out from
   // under live iterators)
+  uint32_t GetRef();
   void Ref();
   void Unref();
 
@@ -92,9 +104,13 @@ class Version {
   void GetOverlappingInputsOneLevel(
     int level,
     uint64_t limit_filenumber,
+    uint64_t limit_filesize,
     const InternalKey* begin,
     const InternalKey* end,
     std::vector<FileMetaData*>* inputs);
+
+  //get one file's level and inputs by one file number
+  void GetInputsByFileNumber(uint64_t file, std::vector<FileMetaData*>* inputs, uint32_t& file_level);
 
   // Returns true iff some file in the specified level overlaps
   // some part of [*smallest_user_key,*largest_user_key].
@@ -110,6 +126,8 @@ class Version {
                                  const Slice& largest_user_key);
 
   int NumFiles(int level) const { return files_[level].size(); }
+
+  std::vector<FileMetaData*>* FileMetas() { return files_; }
 
   // return smallest and largest key in level
   bool Range(int level, std::string* smallest, std::string* largest);
@@ -130,16 +148,13 @@ class Version {
   VersionSet* vset_;            // VersionSet to which this Version belongs
   Version* next_;               // Next version in linked list
   Version* prev_;               // Previous version in linked list
-  // refs_ is port::AtomicCount but we still need mutex protect refs_/dummy_versions
-  // to avoid that version has been Unref() to destroy point when iteratoring
-  // dummy_versions_(addLiveFiles()).
-  // We can modify refs_ when doing compaction freely because addLiveFiles() is just in
-  // this process.
   // int refs_;                    // Number of live refs to this version
   port::AtomicCount<uint32_t> refs_; // Number of live refs to this version
 
   // List of files per level
   std::vector<FileMetaData*> files_[config::kNumLevels];
+  // bytesize per level
+  int64_t file_sizes_[config::kNumLevels];
 
   // Next file to compact based on seek stats.
   FileMetaData* file_to_compact_;
@@ -157,6 +172,7 @@ class Version {
         file_to_compact_level_(-1),
         compaction_score_(-1),
         compaction_level_(-1) {
+    memset(file_sizes_, 0, sizeof(file_sizes_));
   }
 
   ~Version();
@@ -174,6 +190,10 @@ class VersionSet {
              const InternalKeyComparator*);
   ~VersionSet();
 
+  uint32_t LongHoldCnt();
+  void AllocLongHold();
+  void RelealseLongHold();
+
   // Apply *edit to the current version to form a new descriptor that
   // is both saved to persistent state and installed as the new
   // current version.  Will release *mu while actually writing to the file.
@@ -184,12 +204,16 @@ class VersionSet {
   // Recover the last saved descriptor from persistent storage.
   Status Recover(const char* manifest = NULL);
 
+  // Restart manifest
+  Status Restart() { pending_restart_manifest_ = true; return Status::OK(); }
+
   // when recover over, maybe some backupversion should be loaded to db.
   // backupversion is used to maintain some version(snapshot).
   Status LoadBackupVersion();
-
   // backup current version for future use.
   Status BackupCurrentVersion();
+  // unload backuped version, `id is MANIFEST filenumber
+  Status UnloadBackupedVersion(uint64_t id);
 
   // Return the current version.
   Version* current() const { return current_; }
@@ -214,8 +238,14 @@ class VersionSet {
   // Return the number of Table files at the specified level.
   int NumLevelFiles(int level) const;
 
+  // Return the number to Table files of all level
+  int64_t NumFiles() const;
+
   // Return the combined file size of all files at the specified level.
   int64_t NumLevelBytes(int level) const;
+
+  // Return the combined file size of all files
+  int64_t NumBytes() const;
 
   // Return the last sequence number.
   // uint64_t LastSequence() const { return last_sequence_; }
@@ -253,6 +283,9 @@ class VersionSet {
       const InternalKey* begin,
       const InternalKey* end);
 
+  // Return a compaction object for one file
+  Compaction* CompactSingleSSTFile(uint64_t file);
+
   // Return a compaction object for compacting the range [begin,end] and
   // whose filenumber is less than limit_filenumber in
   // the specified level.  Returns NULL if there is nothing in that
@@ -272,6 +305,8 @@ class VersionSet {
   // The caller should delete the iterator when no longer needed.
   Iterator* MakeInputIterator(Compaction* c);
 
+  Iterator* MakeSingleFileInputIterator(const FileMetaData* file);
+
   // Returns true iff some level needs a compaction.
   bool NeedsCompaction() const {
     Version* v = current_;
@@ -280,11 +315,18 @@ class VersionSet {
 
   // Add all files listed in any live version to *live.
   // May also mutate some internal state.
-  void AddLiveFiles(std::set<uint64_t>* live, port::Mutex* mu);
+  void AddLiveFiles(std::set<uint64_t>* live);
 
   // Return the approximate offset in the database of the data for
   // "key" as of version "v".
   uint64_t ApproximateOffsetOf(Version* v, const InternalKey& key);
+
+  // now specify compact level, if not specify compacting, return 0
+  int NowSpecifyCompactLevel() const;
+  // specify cimpact status
+  int SpecifyCompactStatus() const;
+  // last time finishing specify compact
+  time_t LastFinishSpecifyCompactTime() const;
 
   // Return a human-readable short (single-line) summary of the number
   // of files per level.  Uses *scratch as backing store.
@@ -329,6 +371,7 @@ class VersionSet {
   Status WriteSnapshot(log::Writer* log);
 
   void AppendVersion(Version* v);
+  void CleanupVersion();
 
   Env* const env_;
   const std::string dbname_;
@@ -336,24 +379,38 @@ class VersionSet {
   TableCache* const table_cache_;
   const InternalKeyComparator icmp_;
   port::AtomicCount<uint64_t> next_file_number_;
+
+  Random* random_;
+  // second per level, just use for specify time get best level, it is not accurate
+  int may_next_compact_level_;
+  // finish compact time last time
+  time_t last_finish_specify_compact_time_;
+  // specify compact status
+  int specify_compact_status_;
   // uint64_t next_file_number_;
   uint64_t manifest_file_number_;
   port::AtomicCount<uint64_t> last_sequence_;
   // uint64_t last_sequence_;
   uint64_t log_number_;
   uint64_t prev_log_number_;  // 0 or backing store for memtable being compacted
-  uint64_t has_limited_compact_count_;
+  int64_t has_limited_compact_count_;
   // compaction(especially seek-compaction by Db::Get()) may be triggered very frequently,
   // so only limiting compaction count may make us got this situation soon(maybe
   // just next MaybeScheduleCompaction()), so we need limit compaction for a specified time.
   uint64_t first_limited_compact_time_;
   int32_t current_max_level_;
 
+  // pending restart manifest
+  bool pending_restart_manifest_;
+
   // Opened lazily
   WritableFile* descriptor_file_;
   log::Writer* descriptor_log_;
   Version dummy_versions_;  // Head of circular doubly-linked list of versions.
+  // loaded versions, id => Version*, id is version's MANIFEST filenumber
+  std::map<uint64_t, Version*> loaded_versions_;
   Version* current_;        // == dummy_versions_.prev_
+  port::AtomicCount<uint32_t> long_hold_refs_; // the num of long-hold-version
 
   // Per-level key at which the next compaction at that level should start.
   // Either an empty string, or a valid InternalKey.
@@ -405,6 +462,23 @@ class Compaction {
   // Release the input version for the compaction, once the compaction
   // is successful.
   void ReleaseInputs();
+
+  std::string DebugString() const {
+    std::string str;
+    for (int input = 0; input < 2; input++) {
+      char buf[64];
+      memset(buf, 0, sizeof(buf));
+      sprintf(buf, "inputs[%d]: ", input);
+      str.append(buf, strlen(buf));
+      for (size_t i = 0; i < inputs_[input].size(); i++) {
+        FileMetaData * f = inputs_[input].at(i);
+        memset(buf, 0, sizeof(buf));
+        sprintf(buf, "%" PRI64_PREFIX "u ", f->number);
+        str.append(buf, strlen(buf));
+      }
+    }
+    return str;
+  }
 
  private:
   friend class Version;

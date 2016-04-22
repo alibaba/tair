@@ -52,6 +52,7 @@ Status WriteBatch::Iterate(Handler* handler) const {
     found++;
     // sync mask has nothing to with db
     char tag = OffSyncMask(input[0]);
+    tag = OffUnitMask(tag);
     input.remove_prefix(1);
     switch (tag) {
       case kTypeValue:
@@ -104,22 +105,31 @@ void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
   EncodeFixed64(&b->rep_[0], seq);
 }
 
-void WriteBatch::Put(const Slice& key, const Slice& value, bool synced) {
+void WriteBatch::Put(const Slice& key, const Slice& value,
+    bool synced, bool from_other_unit) {
   WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  rep_.push_back(synced ? OnSyncMask(kTypeValue) : kTypeValue);
+  char type = synced ? OnSyncMask(kTypeValue) : kTypeValue;
+  type = from_other_unit ? OnUnitMask(type) : type;
+  rep_.push_back(type);
   PutLengthPrefixedSlice(&rep_, key);
   PutLengthPrefixedSlice(&rep_, value);
 }
 
-void WriteBatch::Delete(const Slice& key, bool synced) {
+void WriteBatch::Delete(const Slice& key,
+    bool synced, bool from_other_unit) {
   WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  rep_.push_back(synced ? OnSyncMask(kTypeDeletion) : kTypeDeletion);
+  char type = synced ? OnSyncMask(kTypeDeletion) : kTypeDeletion;
+  type = from_other_unit ? OnUnitMask(type) : type;
+  rep_.push_back(type);
   PutLengthPrefixedSlice(&rep_, key);
 }
 
-void WriteBatch::Delete(const Slice& key, const Slice& tailer, bool synced) {
+void WriteBatch::Delete(const Slice& key, const Slice& tailer,
+    bool synced, bool from_other_unit) {
   WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  rep_.push_back(synced ? OnSyncMask(kTypeDeletionWithTailer) : kTypeDeletionWithTailer);
+  char type = synced ? OnSyncMask(kTypeDeletionWithTailer) : kTypeDeletionWithTailer;
+  type = from_other_unit ? OnUnitMask(type) : type;
+  rep_.push_back(type);
   PutLengthPrefixedSlice(&rep_, key);
   PutLengthPrefixedSlice(&rep_, tailer);
 }

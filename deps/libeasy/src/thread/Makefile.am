@@ -1,0 +1,3 @@
+noinst_LTLIBRARIES=libeasy_thread.la
+include_HEADERS=easy_uthread.h
+libeasy_thread_la_SOURCES=easy_uthread.c

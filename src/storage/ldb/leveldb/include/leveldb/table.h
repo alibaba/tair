@@ -55,6 +55,8 @@ class Table {
   // be close to the file length.
   uint64_t ApproximateOffsetOf(const Slice& key) const;
 
+  size_t ApproximateMemoryUsage() const;
+
  private:
   struct Rep;
   Rep* rep_;

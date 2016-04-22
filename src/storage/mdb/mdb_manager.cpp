@@ -1,17 +1,14 @@
 /*
- * (C) 2007-2010 Alibaba Group Holding Limited
+ * (C) 2007-2017 Alibaba Group Holding Limited
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- *
- * Version: $Id$
- *
- * Authors:
- *   MaoQi <maoqi@taobao.com>
+ * See the AUTHORS file for names of contributors.
  *
  */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -20,1049 +17,542 @@
 #include <errno.h>
 #include <iostream>
 #include <list>
-#include <boost/cast.hpp>
+#include <map>
 
 #include "mem_pool.hpp"
 #include "mem_cache.hpp"
 #include "cache_hashmap.hpp"
 #include "mdb_manager.hpp"
 #include "mdb_define.hpp"
+#include "mdb_stat_manager.hpp"
 #include "util.hpp"
-
-#include <map>
-
-using namespace tair;
-using namespace std;
-using namespace boost;
-
+#include "data_entry.hpp"
 
 namespace tair {
 
-  bool mdb_manager::initialize(bool use_share_mem /*=true*/ )
-  {
-    char *pool = 0;
-    if(use_share_mem)
-    {
-      pool = open_shared_mem(mdb_param::mdb_path, mdb_param::size);
+using namespace common;
+using namespace std;
+
+bool mdb_manager::initialize(bool use_share_mem /*=true*/ ) {
+    char area_stat_path[128];
+    snprintf(area_stat_path, sizeof(area_stat_path), "%s.stat", mdb_param::mdb_path);
+    area_stat = init_area_stat(area_stat_path, use_share_mem);
+    if (area_stat == NULL) {
+        log_error("init area stat shm failed: %m");
+        return false;
     }
-    else
-    {
-      pool = static_cast<char *>(malloc(mdb_param::size));
-      assert(pool != 0);
-      //attention: if size is too large,memset will be a very time-consuming operation.
-      memset(pool, 0, mdb_param::size);
-    }
-    if(pool == 0) {
-      return false;
-    }
-
-
-    int meta_len = (1 << 20) + mem_cache::MEMCACHE_META_LEN;        //cachehashmap will alloc space by itself
-
-    this_mem_pool =
-      new mem_pool(pool, mdb_param::page_size,
-                   mdb_param::size / mdb_param::page_size, meta_len);
-    assert(this_mem_pool != 0);
-
-    hashmap = new cache_hash_map(this_mem_pool, mdb_param::hash_shift);
-    assert(hashmap != 0);
-
-    if (0 == mdb_param::slab_base_size)
-    {
-      mdb_param::slab_base_size = sizeof(mdb_item) + 16;
+    scan_index = 0;
+    instance_list.reserve(1 << mdb_param::inst_shift);
+    for (int32_t i = 0; i < (1 << mdb_param::inst_shift); ++i) {
+        mdb_instance *instance = new mdb_instance(i);
+        if (!instance->initialize(area_stat, this->bucket_count, use_share_mem)) {
+            log_error("mdb instance: %d init fail", i);
+            delete instance;
+            for (size_t j = 0; j < instance_list.size(); ++j) {
+                delete instance_list[j];
+            }
+            return false;
+        }
+        instance_list.push_back(instance);
     }
 
-    cache =
-      new mem_cache(this_mem_pool, this, TAIR_SLAB_LARGEST, mdb_param::slab_base_size, mdb_param::factor);
-    assert(cache != 0);
+    //when here instance_list is no empty
+    schema_.merge(*instance_list[0]->get_stat_manager()->get_schema());
+    sampling_stat_ = new StatManager <StatUnit<StatStore>, StatStore>(new MemStatStore(&schema_));
 
-    for(int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
-      area_stat[i] =
-        reinterpret_cast<mdb_area_stat * >(this_mem_pool->get_pool_addr() +
-                          mem_pool::MDB_STATINFO_START +
-                          i * sizeof(mdb_area_stat));
+    if (mdb_param::use_check_thread) {
+        maintenance_thread.start(this, NULL);
     }
-
-    map<uint32_t, uint64_t>::const_iterator it = mdb_param::default_area_capacity.begin();
-    for(; it != mdb_param::default_area_capacity.end(); ++it) {
-      area_stat[it->first]->quota = it->second;
-    }
-
-    //mdb's version
-    mdb_version =
-      reinterpret_cast<uint32_t *> (this_mem_pool->get_pool_addr() + mem_pool::MDB_VERSION_INFO_START);
-    *mdb_version = 1;
-
-    chkexprd_thread.start(this, NULL);
-    chkslab_thread.start(this, NULL);
     return true;
-  }
+}
 
-  mdb_manager::~mdb_manager() {
+mdb_area_stat *mdb_manager::init_area_stat(const char *path, bool use_share_mem) {
+    this->use_share_mem = use_share_mem;
+    char *addr = NULL;
+    size_t size = TAIR_MAX_AREA_COUNT * sizeof(mdb_area_stat);
+    if (use_share_mem) {
+        addr = open_shared_mem(path, size);
+    } else {
+        addr = static_cast<char *>(malloc(size));
+        memset(addr, 0, size);
+    }
+    if (addr == NULL) {
+        return NULL;
+    }
+    mdb_area_stat *stat = reinterpret_cast<mdb_area_stat *> (addr);
+    map<uint32_t, uint64_t>::const_iterator it = mdb_param::default_area_capacity.begin();
+    for (; it != mdb_param::default_area_capacity.end(); ++it) {
+        stat[it->first].set_quota(it->second);
+    }
+    return stat;
+}
+
+mdb_manager::~mdb_manager() {
     stopped = true;
-    chkexprd_thread.join();
-    chkslab_thread.join();
-    delete hashmap;
-    delete cache;
-    delete this_mem_pool;
-  }
+    if (mdb_param::use_check_thread) {
+        maintenance_thread.join();
+    }
+    for (size_t i = 0; i < instance_list.size(); ++i) {
+        delete instance_list[i];
+    }
+    char *addr = reinterpret_cast<char *>(area_stat);
+    if (use_share_mem) {
+        munmap(addr, TAIR_MAX_AREA_COUNT * sizeof(mdb_area_stat));
+    } else {
+        free(addr);
+    }
+    if (sampling_stat_ != NULL)
+        delete sampling_stat_;
+}
 
-  int mdb_manager::put(int bucket_num, data_entry & key, data_entry & value,
-                       bool version_care, int expire_time)
-  {
-    boost::mutex::scoped_lock guard(mem_locker);
-    return do_put(key, value, version_care, expire_time);
-  }
+int mdb_manager::put(int bucket_num, data_entry &key, data_entry &value,
+                     bool version_care, int expire_time) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->put(bucket_num, key, hv, value, version_care, expire_time);
+}
 
-  int mdb_manager::get(int bucket_num, data_entry & key, data_entry & value, bool with_stat)
-  {
-    boost::mutex::scoped_lock guard(mem_locker);
-    return do_get(key, value, with_stat);
-  }
+int mdb_manager::get(int bucket_num, data_entry &key, data_entry &value, bool with_stat) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->get(bucket_num, key, hv, value, with_stat);
+}
 
-  int mdb_manager::remove(int bucket_num, data_entry & key, bool version_care)
-  {
-    boost::mutex::scoped_lock guard(mem_locker);
-    return do_remove(key, version_care);
-  }
+int mdb_manager::remove(int bucket_num, data_entry &key, bool version_care) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->remove(bucket_num, key, hv, version_care);
+}
 
-  int mdb_manager::raw_put(const char* key, int32_t key_len, const char* value, int32_t value_len, int flag, uint32_t expired)
-  {
-    int total_size = key_len + value_len + sizeof(mdb_item);
-    log_debug("start put: key:%u,area:%d,value:%u,flag:%d,exp:%u", key_len, KEY_AREA(key), value_len, flag, expired);
+int mdb_manager::raw_put(const char *key, int32_t key_len, const char *value,
+                         int32_t value_len, int flag, uint32_t expired, int32_t prefix_len, bool is_mc) {
+    unsigned int hv = hash(key, key_len);
+    return get_mdb_instance(hv)->raw_put(key, key_len, hv, value, value_len, flag, expired, prefix_len, is_mc);
+}
 
-    uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
-    PROFILER_BEGIN("mdb lock");
-    boost::mutex::scoped_lock guard(mem_locker);
-    PROFILER_END();
-    PROFILER_BEGIN("hashmap find");
-    mdb_item *it = hashmap->find(key, key_len);
-    PROFILER_END();
+int mdb_manager::raw_get(const char *key, int32_t key_len, std::string &value, bool update) {
+    unsigned int hv = hash(key, key_len);
+    return get_mdb_instance(hv)->raw_get(key, key_len, hv, value, update);
+}
 
-    uint8_t old_flag = 0;
-    if(it != 0)                 //exists
-    {
-      if(IS_DELETED(it->item_id)) // in migrate
-      {
-        old_flag = TAIR_ITEM_FLAG_DELETED;
-      }
-      log_debug("already exists,remove it");
-      PROFILER_BEGIN("__remove");
-      __remove(it);
-      PROFILER_END();
-      it = 0;
+int mdb_manager::raw_remove(const char *key, int32_t key_len) {
+    unsigned int hv = hash(key, key_len);
+    return get_mdb_instance(hv)->raw_remove(key, key_len, hv);
+}
+
+void mdb_manager::raw_get_stats(mdb_area_stat *stat) {
+    if (stat != NULL) {
+        memset(stat, 0, sizeof(mdb_area_stat) * TAIR_MAX_AREA_COUNT);
+        for (int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
+            stat[i].add(&area_stat[i], true);
+        }
+    }
+}
+
+void mdb_manager::raw_update_stats(mdb_area_stat *stat) {
+    if (stat != NULL) {
+        for (int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
+            stat[i].add(&area_stat[i], true);
+        }
+    }
+}
+
+int mdb_manager::add_count(int bucket_num, data_entry &key, int count, int init_value,
+                           int low_bound, int upper_bound, int expire_time, int &result_value) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->add_count(bucket_num, key, hv, count, init_value,
+                                           low_bound, upper_bound, expire_time, result_value);
+}
+
+bool mdb_manager::lookup(int bucket_num, data_entry &key) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->lookup(bucket_num, key, hv);
+}
+
+int mdb_manager::mc_set(int bucket_num, data_entry &key, data_entry &value,
+                        bool version_care, int expire) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->mc_set(bucket_num, key, hv, value, version_care, expire);
+}
+
+int mdb_manager::add(int bucket_num, data_entry &key, data_entry &value,
+                     bool version_care, int expire) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->add(bucket_num, key, hv, value, version_care, expire);
+}
+
+int mdb_manager::replace(int bucket_num, data_entry &key, data_entry &value,
+                         bool version_care, int expire) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->replace(bucket_num, key, hv, value, version_care, expire);
+}
+
+int mdb_manager::append(int bucket_num, data_entry &key, data_entry &value,
+                        bool version_care, data_entry *new_value) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->append(bucket_num, key, hv, value, version_care, new_value);
+}
+
+int mdb_manager::prepend(int bucket_num, data_entry &key, data_entry &value,
+                         bool version_care, data_entry *new_value) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->prepend(bucket_num, key, hv, value, version_care, new_value);
+}
+
+int mdb_manager::incr_decr(int bucket, data_entry &key, uint64_t delta, uint64_t init,
+                           bool is_incr, int expire, uint64_t &result, data_entry *new_value) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->incr_decr(bucket, key, hv, delta, init, is_incr, expire, result, new_value);
+}
+
+void mdb_manager::set_area_quota(int area, uint64_t quota) {
+    area_stat[area].set_quota(quota);
+    // new stat
+    uint64_t instance_quota = quota / instance_list.size();
+    if (quota % instance_list.size() != 0)
+        ++instance_quota;
+    for (vector<mdb_instance *>::const_iterator it = instance_list.begin(); it != instance_list.end(); ++it)
+        (*it)->set_area_quota(area, instance_quota);
+}
+
+void mdb_manager::set_area_quota(map<int, uint64_t> &quota_map) {
+    map<int, uint64_t>::iterator it = quota_map.begin();
+    while (it != quota_map.end()) {
+        area_stat[it->first].set_quota(it->second);
+        ++it;
+        //new stat
+        uint64_t instance_quota = it->second / instance_list.size();
+        if (it->second % instance_list.size() != 0)
+            ++instance_quota;
+        for (vector<mdb_instance *>::const_iterator ins = instance_list.begin(); ins != instance_list.end(); ++ins)
+            (*ins)->set_area_quota(it->first, instance_quota);
+    }
+}
+
+uint64_t mdb_manager::get_area_quota(int area) {
+    // return area_stat[area].get_quota();
+    //when here, instance_list never be empty()
+    return instance_list.size() * instance_list[0]->get_area_quota(area);
+}
+
+int mdb_manager::get_area_quota(std::map<int, uint64_t> &quota_map) {
+    for (int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
+        quota_map[i] = instance_list.size() * instance_list[0]->get_area_quota(i);
+    }
+    return TAIR_MAX_AREA_COUNT;
+}
+
+bool mdb_manager::is_quota_exceed(int area) {
+    for (vector<mdb_instance *>::const_iterator it = instance_list.begin(); it != instance_list.end(); ++it)
+        if ((*it)->is_quota_exceed(area) == false)
+            return false;
+    return true;
+}
+
+void mdb_manager::reload_config() {
+    mdb_param::check_granularity = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, "mdb_check_granularity", 15);
+    log_warn("mdb_param::check_granularity = %d", mdb_param::check_granularity);
+    mdb_param::check_granularity_factor = TBSYS_CONFIG.getInt(TAIRSERVER_SECTION, "mdb_check_granularity_factor", 10);
+    log_warn("mdb_param::check_granularity_factor = %d", mdb_param::check_granularity_factor);
+
+    const char *hour_range = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_CHECK_EXPIRED_HOUR_RANGE, "2-4");
+    log_warn("check expired hour range: %s", hour_range);
+    assert(hour_range != 0);
+    if (sscanf(hour_range, "%d-%d", &mdb_param::chkexprd_time_low, &mdb_param::chkexprd_time_high) != 2) {
+        mdb_param::chkexprd_time_low = 2;
+        mdb_param::chkexprd_time_high = 4;
     }
 
-    int type = KEY_AREA(key);
-    PROFILER_BEGIN("alloc item");
-    it = cache->alloc_item(total_size, type);        /* will be successful */
-    PROFILER_END();
-    assert(it != 0);
-    if (type == ALLOC_EXPIRED || type == ALLOC_EVICT_SELF || type == ALLOC_EVICT_ANY)
-    {        /* is evict */
-      area_stat[ITEM_AREA(it)]->data_size -= (it->key_len + it->data_len);
-      area_stat[ITEM_AREA(it)]->space_usage -= SLAB_SIZE(it->item_id);
-      --(area_stat[ITEM_AREA(it)]->item_count);
-      if (type == ALLOC_EVICT_ANY || type == ALLOC_EVICT_SELF)
-      {
-        ++(area_stat[ITEM_AREA(it)]->evict_count);
-        TAIR_STAT.stat_evict(ITEM_AREA(it));
-      }
-      PROFILER_BEGIN("hashmap remove");
-      hashmap->remove(it);
-      PROFILER_END();
+    hour_range = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_CHECK_SLAB_HOUR_RANGE, "5-7");
+    log_warn("check slab hour range: %s", hour_range);
+    assert(hour_range != 0);
+    if (sscanf(hour_range, "%d-%d", &mdb_param::chkslab_time_low, &mdb_param::chkslab_time_high) != 2) {
+        mdb_param::chkslab_time_low = 5;
+        mdb_param::chkslab_time_high = 7;
     }
-    /*write data into mdb_item */
-    it->key_len = key_len;
-    it->data_len = value_len;
-    it->update_time = crrnt_time;
-    it->version = 0;            // just ignore..
-    it->exptime = expired > 0 ? ((expired > crrnt_time) ? expired : crrnt_time + expired) : 0;
 
-    SET_ITEM_FLAGS(it->item_id, flag | old_flag);
-    log_debug("ITEM_FLAGS(it->item_id):%u", ITEM_FLAGS(it->item_id));
-    memcpy(ITEM_KEY(it), key, it->key_len);
-    memcpy(ITEM_DATA(it), value, it->data_len);
+    hour_range = TBSYS_CONFIG.getString(TAIRSERVER_SECTION, TAIR_MEM_MERGE_HOUR_RANGE, "7-7");
+    log_warn("memory merge hour range: %s", hour_range);
+    assert(hour_range != 0);
+    if (sscanf(hour_range, "%d-%d", &mdb_param::mem_merge_time_low, &mdb_param::mem_merge_time_high) != 2) {
+        mdb_param::mem_merge_time_low = 7;
+        mdb_param::mem_merge_time_high = 7;
+    }
+}
 
-    PROFILER_BEGIN("hashmap insert");
-    /*insert mdb_item into hashtable */
-    hashmap->insert(it);
-    PROFILER_END();
+int mdb_manager::clear(int area) {
+    log_warn("mdb::clear area %d", area);
+    for (size_t i = 0; i < instance_list.size(); ++i) {
+        instance_list[i]->clear(area);
+    }
+    return 0;
+}
 
-    /*update stat */
-    area_stat[ITEM_AREA(it)]->data_size += (it->data_len + it->key_len);
-    area_stat[ITEM_AREA(it)]->space_usage += SLAB_SIZE(it->item_id);
-    ++(area_stat[ITEM_AREA(it)]->item_count);
-    ++(area_stat[ITEM_AREA(it)]->put_count);
+void mdb_manager::begin_scan(md_info &info) {
+    info.hash_index = 0;
+    scan_index = 0;
+}
+
+#if 1
+
+bool mdb_manager::get_next_items(md_info &info,
+                                 vector<item_data_info *> &list) {
+    bool has_next = instance_list[scan_index]->get_next_items(info, list, bucket_count);
+    if (!has_next) {
+        if (scan_index < instance_list.size() - 1) {
+            info.hash_index = 0;
+            has_next = true;
+            ++scan_index;
+        } else {
+            scan_index = 0;
+        }
+    }
+    return has_next;
+}
+
+#endif
+
+void mdb_manager::get_stats(tair_stat *stat) {
+    if (stat == NULL) {
+        return;
+    }
+    for (int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
+        stat[i].data_size_value += area_stat[i].get_data_size();
+        stat[i].use_size_value += area_stat[i].get_space_usage();
+        stat[i].item_count_value += area_stat[i].get_item_count();
+    }
+}
+
+void mdb_manager::get_stat(int area, mdb_area_stat *stat) {
+    stat->add(&area_stat[area], true);
+}
+
+const StatSchema *mdb_manager::get_stat_schema() {
+    return &schema_;
+}
+
+void mdb_manager::set_opstat(OpStat *global_op_stat) {
+    for (size_t i = 0; i < instance_list.size(); ++i)
+        instance_list[i]->get_stat_manager()->set_opstat(global_op_stat);
+
+    // because it is also invoke by ldb_manager::set_opstat many times.
+    static bool already_add = false;
+    if (false == already_add && !instance_list.empty()) {
+        global_op_stat->add(*instance_list[0]->get_stat_manager()->get_op_schema());
+        already_add = true;
+    }
+}
+
+void mdb_manager::get_stats(char *&buf, int32_t &size, bool &alloc) {
+    // this routie should be invode by only one thread at anytime
+    // this lock doesn't not do harm to all performace
+    tbsys::CThreadGuard guard(&lock_samping_stat_);
+    sampling_stat_->reset(0);
+    for (vector<mdb_instance *>::const_iterator it = instance_list.begin(); it != instance_list.end(); ++it)
+        (*it)->get_stat_manager()->sampling(*sampling_stat_);
+    sampling_stat_->serialize(buf, size, alloc);
+}
+
+void mdb_manager::sampling_for_upper_storage(StatManager <StatUnit<StatStore>, StatStore> &upper_storage_sampling_stat,
+                                             int32_t offset) {
+    for (vector<mdb_instance *>::const_iterator it = instance_list.begin(); it != instance_list.end(); ++it)
+        (*it)->get_stat_manager()->sampling(upper_storage_sampling_stat, offset);
+}
+
+int mdb_manager::get_meta(data_entry &key, item_meta_info &meta) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->get_meta(key, hv, meta);
+}
+
+int mdb_manager::touch(int bucket_num, data_entry &key, int expire) {
+    unsigned int hv = hash(key);
+    return get_mdb_instance(hv)->touch(bucket_num, key, hv, expire);
+}
+
+bool mdb_manager::init_buckets(const vector<int> &buckets) {
+    bool success = true;
+    for (size_t i = 0; i < instance_list.size(); ++i) {
+        success = success && instance_list[i]->init_buckets(buckets);
+    }
+    return success;
+}
+
+void mdb_manager::close_buckets(const vector<int> &buckets) {
+    for (size_t i = 0; i < instance_list.size(); ++i) {
+        instance_list[i]->close_buckets(buckets, bucket_count);
+    }
+}
+
+int mdb_manager::op_cmd(ServerCmdType cmd, std::vector<std::string> &params, std::vector<std::string> &infos) {
+    if (cmd == TAIR_SERVER_CMD_MODIFY_CHKEXPIR_HOUR_RANGE) {
+        char const *const hour_range = params[0].c_str();
+        int time_low = 2, time_high = 4;
+        if (sscanf(hour_range, "%d-%d", &time_low, &time_high) != 2) {
+            infos.push_back("check expired hour range error!");
+        } else {
+            if (time_low < 0 || time_low > 23 || time_high < 0 || time_high > 23 || time_low > time_high) {
+                infos.push_back("check expired hour range error!");
+            } else {
+                char result[50];
+                snprintf(result, 49, "successful! %d-%d -> %d-%d",
+                         mdb_param::chkexprd_time_low, mdb_param::chkexprd_time_high, time_low, time_high);
+                infos.push_back(result);
+                mdb_param::chkexprd_time_low = time_low;
+                mdb_param::chkexprd_time_high = time_high;
+                for (size_t i = 0; i < instance_list.size(); ++i) {
+                    instance_list[i]->set_last_expd_time(0);
+                }
+                log_warn("check expired hour range change to: %d-%d",
+                         mdb_param::chkexprd_time_low, mdb_param::chkexprd_time_high);
+            }
+        }
+    } else if (cmd == TAIR_SERVER_CMD_MODIFY_MDB_CHECK_GRANULARITY) {
+        int check_granularity = -1;
+        if (sscanf(params[0].c_str(), "%d", &check_granularity) != 1) {
+            infos.push_back("mdb_check_granularity value error!");
+        } else {
+            if (check_granularity < 0) {
+                infos.push_back("mdb_check_granularity value error!");
+            } else {
+                char result[50];
+                snprintf(result, 49, "successful! %d -> %d", mdb_param::check_granularity, check_granularity);
+                infos.push_back(result);
+                mdb_param::check_granularity = check_granularity;
+                log_warn("mdb::check_granularity change to %d", mdb_param::check_granularity);
+            }
+        }
+    } else if (cmd == TAIR_SERVER_CMD_MODIFY_SLAB_MERGE_HOUR_RANGE) {
+        char const *const hour_range = params[0].c_str();
+        int time_low = 2, time_high = 4;
+        if (sscanf(hour_range, "%d-%d", &time_low, &time_high) != 2) {
+            infos.push_back("slab merge hour range error!");
+        } else {
+            if (time_low < 0 || time_low > 23 || time_high < 0 || time_high > 23 || time_low > time_high) {
+                infos.push_back("slab merge hour range error!");
+            } else {
+                char result[50];
+                snprintf(result, 49, "successful! %d-%d -> %d-%d",
+                         mdb_param::mem_merge_time_low, mdb_param::mem_merge_time_high, time_low, time_high);
+                infos.push_back(result);
+                mdb_param::mem_merge_time_low = time_low;
+                mdb_param::mem_merge_time_high = time_high;
+                log_warn("check slab memory merge hour range change to: %d-%d",
+                         mdb_param::mem_merge_time_low, mdb_param::mem_merge_time_high);
+            }
+        }
+    } else if (cmd == TAIR_SERVER_CMD_MODIFY_PUT_REMOVE_EXPIRED) {
+        int put_remove_expired = -1;
+        if (sscanf(params[0].c_str(), "%d", &put_remove_expired) != 1) {
+            infos.push_back("enable_put_remove_expired value error!");
+        } else {
+            if (put_remove_expired != 0 && put_remove_expired != 1) {
+                infos.push_back("enable_put_remove_expired value error!");
+            } else {
+                char result[50];
+                snprintf(result, 49, "successful! %d -> %d", (int) mdb_param::enable_put_remove_expired,
+                         put_remove_expired);
+                infos.push_back(result);
+                mdb_param::enable_put_remove_expired = (put_remove_expired == 1) ? true : false;
+                log_warn("enable_put_remove_expired change to %d", mdb_param::enable_put_remove_expired);
+            }
+        }
+
+    }
 
     return TAIR_RETURN_SUCCESS;
-  }
+}
 
-  int mdb_manager::raw_get(const char* key, int32_t key_len, std::string& value, bool update)
-  {
-    TBSYS_LOG(DEBUG, "start get: area:%d,key size:%d", KEY_AREA(key), key_len);
-
-    PROFILER_BEGIN("mdb lock");
-    boost::mutex::scoped_lock guard(mem_locker);
-    PROFILER_END();
-    mdb_item *it = 0;
-    int ret = TAIR_RETURN_DATA_NOT_EXIST;
-    bool expired = false;
-    int area = KEY_AREA(key);
-
-    if(!(expired = raw_remove_if_expired(key, key_len, it)) && it != 0)
-    {
-      value.assign(ITEM_DATA(it), it->data_len); // just get value.
-
-      PROFILER_BEGIN("cache update");
-      cache->update_item(it);
-      PROFILER_END();
-      //++m_stat.hitCount;
-      if (update)
-      {
-        ++area_stat[area]->hit_count;
-      }
-      ret = TAIR_RETURN_SUCCESS;
-    }
-    else if(expired)
-    {
-      ret = TAIR_RETURN_DATA_EXPIRED;
-    }
-
-    if (update)
-    {
-      ++area_stat[area]->get_count;
-    }
-    return ret;
-  }
-
-  int mdb_manager::raw_remove(const char* key, int32_t key_len)
-  {
-    TBSYS_LOG(DEBUG, "start remove: key size :%d", key_len);
-    PROFILER_BEGIN("mdb lock");
-    boost::mutex::scoped_lock guard(mem_locker);
-    PROFILER_END();
-    bool ret = raw_remove_if_exists(key, key_len);
-    //++m_stat.removeCount;
-    ++area_stat[KEY_AREA(key)]->remove_count;
-    return ret ? TAIR_RETURN_SUCCESS : TAIR_RETURN_DATA_NOT_EXIST;
-  }
-
-  void mdb_manager::raw_get_stats(mdb_area_stat* stat)
-  {
-    if (stat != NULL)
-    {
-      memcpy(stat, this_mem_pool->get_pool_addr() + mem_pool::MDB_STATINFO_START,
-             sizeof(mdb_area_stat) * TAIR_MAX_AREA_COUNT);
-    }
-  }
-
-  void mdb_manager::raw_update_stats(mdb_area_stat* stat)
-  {
-    if (stat != NULL)
-    {
-      for (int32_t i = 0; i < TAIR_MAX_AREA_COUNT; ++i)
-      {
-        stat[i].add(area_stat[i], true/*size care*/);
-      }
-    }
-  }
-
-  bool mdb_manager::raw_remove_if_exists(const char* key, int32_t key_len)
-  {
-    PROFILER_BEGIN("hashmap find");
-    mdb_item *it = hashmap->find(key, key_len);
-    PROFILER_END();
-    bool ret = false;
-    if (it != 0)                 // found
-    {
-      PROFILER_BEGIN("__remove");
-      __remove(it);
-      PROFILER_END();
-      ret = true;
-    }
-    return ret;
-  }
-
-  bool mdb_manager::raw_remove_if_expired(const char* key, int32_t key_len, mdb_item*& item)
-  {
-    PROFILER_BEGIN("hashmap find");
-    mdb_item *it = hashmap->find(key, key_len);
-    PROFILER_END();
-    bool ret = false;
-    if(it != 0)
-    {
-      if(is_item_expired(it, static_cast<uint32_t> (time(NULL))))
-      {
-        log_debug("this item is expired");
-        PROFILER_BEGIN("__remove");
-        __remove(it);
-        PROFILER_END();
-        ret = true;
-      }
-      else
-      {
-        item = it;
-      }
-    }
-    else
-    {
-      log_debug("item not found");
-    }
-    return ret;
-  }
-
-  int mdb_manager::add_count(int bucket_num,data_entry &key, int count, int init_value,
-            bool allow_negative,int expire_time,int &result_value)
-  {
-    boost::mutex::scoped_lock guard(mem_locker);
-    return do_add_count(key, count,init_value,allow_negative,expire_time,result_value);
-  }
-
-  bool mdb_manager::lookup(int bucket_num, data_entry &key)
-  {
-    boost::mutex::scoped_lock guard(mem_locker);
-    return do_lookup(key);
-  }
-
-  void mdb_manager::set_area_quota(int area, uint64_t quota)
-  {
-    assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
-    area_stat[area]->quota = quota;
-  }
-
-  void mdb_manager::set_area_quota(map<int, uint64_t> &quota_map)
-  {
-    for(map<int, uint64_t>::iterator it = quota_map.begin();
-        it != quota_map.end(); ++it) {
-      assert(it->first < TAIR_MAX_AREA_COUNT);
-      area_stat[it->first]->quota = it->second;
-    }
-  }
-  uint64_t mdb_manager::get_area_quota(int area)
-  {
-    assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
-    return area_stat[area]->quota;
-  }
-  int mdb_manager::get_area_quota(std::map<int, uint64_t> &quota_map)
-  {
-    int i;
-    for(i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
-      quota_map.insert(make_pair(i, area_stat[i]->quota));
-    }
-    return i;
-  }
-
-  bool mdb_manager::is_quota_exceed(int area)
-  {
-    assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
-    return area_stat[area]->quota <= area_stat[area]->data_size;
-  }
-
-  void mdb_manager::run(tbsys::CThread * thread, void *arg)
-  {
-    if(thread == &chkexprd_thread) {
-      run_chkexprd_deleted();
-    }
-    else if(thread == &chkslab_thread) {
-      run_chkslab();
-    }
-  }
-
-  int mdb_manager::clear(int area)
-  {
-    TBSYS_LOG(INFO, "start clear : %d",area);
-    if (area == -1){
-      //clear expired item
-      remove_exprd_item();
-    }else if (area == -2){
-      balance_slab();
-      cache->balance_slab_done();
-    }else if (area == -3){ //clear all area
-      for(int i=0; i < TAIR_MAX_AREA_COUNT; ++i){
-        clear(i);
-      }
-    }else{
-      assert(area >= 0 && area < TAIR_MAX_AREA_COUNT);
-      boost::mutex::scoped_lock guard(mem_locker);
-      TBSYS_LOG(DEBUG,"clear all the items in the area =%u",area);
-      cache->set_area_timestamp(area, static_cast<uint32_t> (time(NULL)));
-    }
-    TBSYS_LOG(INFO, "end clear");
-    return 0;
-  }
-  void mdb_manager::begin_scan(md_info & info)
-  {
-    info.hash_index = 0;
-  }
-#if 1
-  bool mdb_manager::get_next_items(md_info & info,
-                                   vector<item_data_info *> &list)
-  {
-    bool ret = true;
-
-    boost::mutex::scoped_lock guard(mem_locker);
-    uint64_t item_head = 0;
-    while(true) {
-      if(info.hash_index < 0
-         || info.hash_index >= static_cast<uint32_t >(hashmap->get_bucket_size())) {
-        return false;
-      }
-      uint64_t *hash_head = hashmap->get_hashmap() + info.hash_index;
-      item_head = *hash_head;
-
-      if(item_head != 0) {
-        break;
-      }
-      ++info.hash_index;
-    }
-
-    uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
-
-    while(item_head != 0) {
-      mdb_item *it = id_to_item(item_head);
-
-      //delete the mdb_item that have already migrated
-      //if (ITEM_FLAGS(it->item_id) & TAIR_ITEM_FLAG_DELETED){
-      //     item_head = it->h_next;
-      //     __remove(it);
-      //     continue;
-      //}
-      if(is_item_expired(it, crrnt_time)) {
-        item_head = it->h_next;
-        __remove(it);
-        continue;
-      }
-
-      uint32_t server_hash =
-        util::string_util::mur_mur_hash(ITEM_KEY(it) + 2, it->key_len - 2);
-      server_hash %= bucket_count;
-
-      if(server_hash != info.db_id) {
-        item_head = it->h_next;
-        continue;
-      }
-      int size = it->key_len + it->data_len + sizeof(item_data_info);
-      item_data_info *ait = (item_data_info *) malloc(size);        //meta + data
-      memcpy(ait->m_data, it->data, it->key_len + it->data_len);        //copy data
-      ait->header.keysize = it->key_len;
-      ait->header.valsize = it->data_len;
-      ait->header.version = it->version;
-      ait->header.flag = ITEM_FLAGS(it->item_id);        //TODO
-      ait->header.mdate = it->update_time;
-      ait->header.edate = it->exptime;
-
-      list.push_back(ait);
-      item_head = it->h_next;
-
-      //set deleted flag, we will remove it next turn.
-      //if (remove)
-      //     SET_ITEM_FLAGS(it->item_id,ITEM_FLAGS(it->item_id)|TAIR_ITEM_FLAG_DELETED);
-    }
-    if(++info.hash_index >= static_cast<uint32_t> (hashmap->get_bucket_size())) {
-      ret = false;
-      //if (remove)
-      //     last_traversal_time = static_cast<uint32_t>(time(NULL));
-    }
-    return ret;
-  }
-#endif
-
-  int mdb_manager::do_put(data_entry & key, data_entry & data,
-                          bool version_care, int expired)
-  {
-    int total_size = key.get_size() + data.get_size() + sizeof(mdb_item), old_expired = -1;
-
-    TBSYS_LOG(DEBUG, "start put: key:%u,area:%d,value:%u,flag:%d\n", key.get_size(),key.area,data.get_size(), data.data_meta.flag);
-    if (key.area != KEY_AREA(key.get_data()))
-    {
-      TBSYS_LOG(INFO,"key.area[%d] != KEY_AREA(key.get_data())[%d]",key.area,KEY_AREA(key.get_data()));
-      key.area =KEY_AREA( key.get_data());
-    }
-
-    uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
-    mdb_item *it = hashmap->find(key.get_data(), key.get_size());
-
-    uint16_t version = key.get_version();
-    uint8_t old_flag = 0;
-    if(it != 0) {                //exists
-      // test lock.
-      if ((data.server_flag & TAIR_OPERATION_UNLOCK) == 0 &&
-          test_flag(ITEM_FLAGS(it->item_id), TAIR_ITEM_FLAG_LOCKED)) {
-        return TAIR_RETURN_LOCK_EXIST;
-      }
-
-      //if(test_flag(it->item_id, TAIR_ITEM_FLAG_DELETED)) {        // in migrate
-        //old_flag = TAIR_ITEM_FLAG_DELETED;
-      //}
-      if(is_item_expired(it, crrnt_time)) {
-        __remove(it);
-        version = 0;
-        it = 0;
-      }
-      else if(version_care && version != 0
-              && it->version != numeric_cast<uint32_t> (version)) {
-        TBSYS_LOG(WARN, "it->version(%hu) != version(%hu)", it->version,
-                  key.get_version());
-        return TAIR_RETURN_VERSION_ERROR;
-      }
-      else {
-        if(version_care) {
-          version = it->version;
-        }
-        if (test_flag(ITEM_FLAGS(it->item_id), TAIR_ITEM_FLAG_DELETED)) {
-          version = 0;
-        }
-        TBSYS_LOG(DEBUG, "%s:already exists,remove it", __FUNCTION__);
-        old_expired = it->exptime;
-        __remove(it);
-        it = 0;
-      }
-    }
-    else {                        // doesn't exists
-      version = 0;
-    }
-    int type = key.area;
-    it = cache->alloc_item(total_size, type);        /* will be successful */
-    assert(it != 0);
-    if(type == ALLOC_EXPIRED || type == ALLOC_EVICT_SELF || type == ALLOC_EVICT_ANY) {        /* is evict */
-      area_stat[ITEM_AREA(it)]->data_size -= (it->key_len + it->data_len);
-      area_stat[ITEM_AREA(it)]->space_usage -= SLAB_SIZE(it->item_id);
-      --(area_stat[ITEM_AREA(it)]->item_count);
-      if(type == ALLOC_EVICT_ANY || type == ALLOC_EVICT_SELF) {
-        ++(area_stat[ITEM_AREA(it)]->evict_count);
-        TAIR_STAT.stat_evict(ITEM_AREA(it));
-      }
-      hashmap->remove(it);
-    }
-    /*write data into mdb_item */
-    it->key_len = key.get_size();
-    it->data_len = data.get_size();
-    it->update_time = crrnt_time;
-    it->version = version_care ? version + 1 : key.get_version();
-    TBSYS_LOG(DEBUG, "actually put,version:%d,key.getVersion():%d\n",
-              it->version, key.get_version());
-    if(expired > 0) {
-      it->exptime =
-        static_cast<uint32_t> (expired) >
-        crrnt_time ? expired : crrnt_time + expired;
-    } else if (expired < 0) {
-        it->exptime = old_expired < 0 ? 0 : old_expired;
-    }
-
-    set_flag(old_flag, data.data_meta.flag);
-    SET_ITEM_FLAGS(it->item_id, old_flag);
-    TBSYS_LOG(DEBUG, "ITEM_FLAGS(it->item_id):%u", ITEM_FLAGS(it->item_id));
-    memcpy(ITEM_KEY(it), key.get_data(), it->key_len);
-    memcpy(ITEM_DATA(it), data.get_data(), it->data_len);
-
-    //set back
-    key.set_version(it->version);
-    key.data_meta.edate = it->exptime;
-    key.data_meta.keysize = it->key_len;
-    key.data_meta.valsize = it->data_len;
-    key.data_meta.flag = ITEM_FLAGS(it->item_id);
-
-
-    /*insert mdb_item into hashtable */
-    hashmap->insert(it);
-
-    /*update stat */
-    area_stat[ITEM_AREA(it)]->data_size += (it->data_len + it->key_len);
-    area_stat[ITEM_AREA(it)]->space_usage += SLAB_SIZE(it->item_id);
-    ++(area_stat[ITEM_AREA(it)]->item_count);
-    ++(area_stat[ITEM_AREA(it)]->put_count);
-    return 0;
-  }
-
-  int mdb_manager::do_get(data_entry & key, data_entry & data, bool with_stat)
-  {
-
-    TBSYS_LOG(DEBUG, "start get: area:%d,key size:%u", key.area,
-              key.get_size());
-
-    mdb_item *it = 0;
-    int ret = TAIR_RETURN_DATA_NOT_EXIST;
-    bool expired = false;
-    if(!(expired = remove_if_expired(key, it)) && it != 0) {        //got it
-      if (key.area != ITEM_AREA(it))
-      {
-        TBSYS_LOG(ERROR,"key.area != ITEM_AREA(it),why?");
-        assert(0);
-      }
-      data.set_data(ITEM_DATA(it), it->data_len);
-      data.set_version(it->version);
-      data.data_meta.edate = it->exptime;
-      key.set_version(it->version);
-      key.data_meta.edate = it->exptime;
-      key.data_meta.mdate = it->update_time;
-      key.data_meta.flag = ITEM_FLAGS(it->item_id);
-
-      key.data_meta.keysize = it->key_len;
-      key.data_meta.valsize = it->data_len;
-      data.data_meta.keysize = it->key_len;
-      data.data_meta.valsize = it->data_len;
-      key.data_meta.mdate = it->update_time;
-      data.data_meta.flag = ITEM_FLAGS(it->item_id);
-
-      cache->update_item(it);
-
-      //++m_stat.hitCount;
-      if (with_stat)
-        ++area_stat[key.area]->hit_count;
-      ret = 0;
-    }
-    else if(expired) {
-      ret = TAIR_RETURN_DATA_EXPIRED;
-    }
-    //++m_stat.getCount;
-    if (with_stat)
-      ++area_stat[key.area]->get_count;
-    return ret;
-  }
-
-  int mdb_manager::do_remove(data_entry & key, bool version_care)
-  {
-    TBSYS_LOG(DEBUG, "start remove: key size :%u", key.get_size());
-    key.data_meta.keysize = key.get_size();        //FIXME:just set back
-    bool ret = remove_if_exists(key);
-    //++m_stat.removeCount;
-    ++area_stat[key.area]->remove_count;
-    return ret ? 0 : TAIR_RETURN_DATA_NOT_EXIST;
-  }
-
-  int mdb_manager::do_add_count(data_entry &key, int count, int init_value,
-            bool not_negative,int expired ,int &result_value)
-  {
-    data_entry old_value;
-
-    //todo:: get and just replace it.it should be done with new mdb version.
-    int rc = do_get(key,old_value);
-    if (rc == TAIR_RETURN_SUCCESS) {
-      if (test_flag(key.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT)) {
-        if (!test_flag(key.data_meta.flag, TAIR_ITEM_FLAG_DELETED)) { //! exists && iscounter && not hidden
-          // old value exist
-          int32_t *v = (int32_t *)(old_value.get_data() + ITEM_HEAD_LENGTH);
-          log_debug("old count: %d, new count: %d, init value: %d", (*v), count, init_value);
-          if(not_negative)
-          {
-            if(0>=(*v) && count<0)
-            {
-              return  TAIR_RETURN_DEC_ZERO;
-            }
-            if(0>((*v)+count))
-            {
-              result_value = *v;
-              return  TAIR_RETURN_DEC_BOUNDS;
-            }
-          }
-          *v += count;
-          result_value = *v;
-        } else { //! exists && iscounter && is hidden, overwrite it
-          if(not_negative)
-          {
-            if(0>count && 0>=init_value )
-            {
-              //not allowed to add a negative number to new a key.
-              return TAIR_RETURN_DEC_NOTFOUND;
-            }
-            if(0>(init_value + count)) return  TAIR_RETURN_DEC_BOUNDS;
-          }
-          // overwrite old value
-          result_value = init_value + count;
-          //~ clear hidden flag
-          clear_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_DELETED);
-        }
-      } else {
-        //exist,but is not add_count,return error;
-        log_debug("cann't override old value");
-        return TAIR_RETURN_CANNOT_OVERRIDE;
-      }
-    } else { //~ not exist
-      if(not_negative)
-      {
-        if(0>count && 0>=init_value )
-        {
-          //not allowed to add a negative number to new a key.
-          return TAIR_RETURN_DEC_NOTFOUND;
-        }
-        if(0>(init_value + count)) return  TAIR_RETURN_DEC_BOUNDS;
-      }
-      result_value = init_value + count;
-    }
-
-    char fv[INCR_DATA_SIZE]; // 2 + sizeof(int)
-    SET_INCR_DATA_COUNT(fv,result_value);
-    old_value.set_data(fv, INCR_DATA_SIZE);
-    set_flag(old_value.data_meta.flag, TAIR_ITEM_FLAG_ADDCOUNT);
-    rc= do_put(key, old_value, true, expired);
-
-    return rc;
-  }
-
-  bool mdb_manager::do_lookup(data_entry &key)
-  {
-    if (key.area != KEY_AREA(key.get_data())) {
-      TBSYS_LOG(ERROR, "key.area[%d] != KEY_AREA(key.get_data())[%d]",key.area,KEY_AREA(key.get_data()));
-      return false;
-    }
-    mdb_item *it = hashmap->find(key.get_data(), key.get_size());
-    if (it == NULL) {
-      return false;
-    }
-    if(is_item_expired(it, static_cast<uint32_t> (time(NULL)))) {
-      __remove(it);
-      return false;
-    }
-    return true;
-  }
-
-  void mdb_manager::get_stats(tair_stat * stat)
-  {
-    if(stat == 0) {
-      return;
-    }
-    for(int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
-      stat[i].data_size_value = area_stat[i]->data_size;
-      stat[i].use_size_value = area_stat[i]->space_usage;
-      stat[i].item_count_value = area_stat[i]->item_count;
-    }
-  }
-
-  void mdb_manager::get_stat(int area, mdb_area_stat *stat)
-  {
-    if (stat == NULL && area < 0 && area >= TAIR_MAX_AREA_COUNT) {
-      return ;
-    }
-    memcpy(stat, area_stat[area], sizeof(mdb_area_stat));
-  }
-
-  int mdb_manager::get_meta(data_entry &key, item_meta_info &meta)
-  {
-    boost::mutex::scoped_lock guard(mem_locker);
-    int ret = TAIR_RETURN_DATA_NOT_EXIST;
-    mdb_item *it = NULL;
-    bool expired = false;
-    if (!(expired = remove_if_expired(key, it)) && it != NULL) {
-      meta.keysize = it->key_len;
-      meta.valsize = it->data_len;
-      meta.version = it->version;
-      meta.edate = it->exptime;
-      meta.mdate = it->update_time;
-      meta.flag = ITEM_FLAGS(it->item_id);
-      ret = TAIR_RETURN_SUCCESS;
-    } else if (expired) {
-      ret = TAIR_RETURN_DATA_EXPIRED;
-    }
-
-    return ret;
-  }
-
-  bool mdb_manager::init_buckets(const vector<int> &buckets)
-  {
-    return true;
-  }
-  void mdb_manager::close_buckets(const vector<int> &buckets)
-  {
-    log_warn("start close_buckets");
-    set<int>__buckets(buckets.begin(), buckets.end());
-
-    for(int hash_index = 0; hash_index < hashmap->get_bucket_size();
-        ++hash_index) {
-
-      boost::mutex::scoped_lock guard(mem_locker);
-      {
-        uint64_t *hash_head = hashmap->get_hashmap() + hash_index;
-        uint64_t item_head = *hash_head;
-
-        if(item_head == 0) {
-          continue;
-        }
-        uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
-        while(item_head != 0) {
-          mdb_item *it = id_to_item(item_head);
-          item_head = it->h_next;
-          if(is_item_expired(it, crrnt_time)) {
-            __remove(it);
-            continue;
-          }
-          uint32_t server_hash =
-            util::string_util::mur_mur_hash(ITEM_KEY(it) + 2,
-                it->key_len - 2);
-          server_hash %= bucket_count;
-          if(__buckets.find(server_hash) != __buckets.end()) {
-            __remove(it);
-          }
-        }
-      }
-    }
-    TBSYS_LOG(INFO,"end close_buckets");
-    return;
-  }
-
-  bool mdb_manager::remove_if_exists(data_entry & key)
-  {
-    mdb_item *it = hashmap->find(key.get_data(), key.get_size());
-    bool ret = false;
-    if(it != 0) {                //found
-      __remove(it);
-      it = 0;
-      ret = true;
-    }
-    return ret;
-  }
-
-  /**
-   * @brief remove expired mdb_item,get lock before invoke this func
-   *
-   * @param area
-   * @param key
-   * @param mdb_item [OUT]
-   *
-   * @return  true -- removed ,false -- otherwise
-   */
-  bool mdb_manager::remove_if_expired(data_entry & key, mdb_item * &item)
-  {
-    mdb_item *it = hashmap->find(key.get_data(), key.get_size());
-    bool ret = false;
-    if(it != 0) {                //found
-      if(is_item_expired(it, static_cast<uint32_t> (time(NULL)))) {
-        TBSYS_LOG(DEBUG, "this item is expired");
-        __remove(it);
-        ret = true;
-        it = 0;
-      }
-      else {
-        item = it;
-      }
-    }
-    else {
-      TBSYS_LOG(DEBUG, "item not found");
-    }
-    return ret;
-
-  }
-
-  void mdb_manager::__remove(mdb_item * it)
-  {
-    //      m_stat.dataSize -= (it->key_len + it->data_len);
-    //
-    /*update stat */
-    area_stat[ITEM_AREA(it)]->data_size -= (it->key_len + it->data_len);
-    area_stat[ITEM_AREA(it)]->space_usage -= SLAB_SIZE(it->item_id);
-    if(UNLIKELY(area_stat[ITEM_AREA(it)]->data_size < 0)) {
-      area_stat[ITEM_AREA(it)]->data_size = 0;
-      area_stat[ITEM_AREA(it)]->space_usage = 0;
-    }
-    --area_stat[ITEM_AREA(it)]->item_count;
-    PROFILER_BEGIN("hashmap remove");
-    hashmap->remove(it);
-    PROFILER_END();
-    CLEAR_FLAGS(it->item_id);        //clear all flag
-    PROFILER_BEGIN("cache free");
-    cache->free_item(it);
-    PROFILER_END();
-    //clear
-    it->exptime = 0;
-    it->data_len = 0;
-    it->key_len = 0;
-    it->version = 0;
-    it->update_time = 0;
-    TBSYS_LOG(DEBUG,"after free item [%p],id [%lu],h_next [%lu] next [%lu],prev[%lu],key_len[%d],data_len[%lu], version[%d]",it,it->item_id,it->h_next,it->next,it->prev,it->key_len,it->data_len,it->version);
-  }
-
-
-  char *mdb_manager::open_shared_mem(const char *path, int64_t size)
-  {
-    void *ptr = MAP_FAILED;
-    int fd = -1;
-    if((fd = shm_open(path, O_RDWR | O_CREAT, 0644)) < 0) {
-      return 0;
-    }
-    ftruncate(fd, size);
-    ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    close(fd);
-    return (MAP_FAILED == ptr) ? 0 : static_cast<char *>(ptr);
-  }
-
-  void mdb_manager::remove_deleted_item()
-  {
-    for(int i = 0; i < hashmap->get_bucket_size(); ++i) {
-      {
-        boost::mutex::scoped_lock guard(mem_locker);
-        uint64_t *hash_head = hashmap->get_hashmap() + i;
-        uint64_t item_head = *hash_head;
-
-        while(item_head != 0) {
-          mdb_item *it = id_to_item(item_head);
-          item_head = it->h_next;
-          if(ITEM_FLAGS(it->item_id) & TAIR_ITEM_FLAG_DELETED) {
-            __remove(it);
-          }
-        }
-      }
-    }
-  }
-
-  void mdb_manager::remove_exprd_item()
-  {
-    TBSYS_LOG(WARN, "start remove expired mdb_item ...");
-    int64_t del_count = 0;
-    int64_t release_space = 0;
-    for(int i = 0; i < hashmap->get_bucket_size(); ++i) {
-      {
-        boost::mutex::scoped_lock guard(mem_locker);
-        uint64_t *hash_head = hashmap->get_hashmap() + i;
-        uint64_t item_head = *hash_head;
-        uint32_t crrnt_time = static_cast<uint32_t> (time(NULL));
-
-        while(item_head != 0) {
-          mdb_item *it = id_to_item(item_head);
-          item_head = it->h_next;
-          if(is_item_expired(it, crrnt_time)) {
-            ++del_count;
-            release_space += SLAB_SIZE(it->item_id);
-            __remove(it);
-          }
-        }
-      }
-    }
-    TBSYS_LOG(WARN,"end remove expired item [%ld] [%ld]",del_count,release_space);
-    last_expd_time = static_cast<uint32_t> (time(NULL));
-  }
-
-
-  void mdb_manager::balance_slab()
-  {
-    // 1. get slab info
-    // 2. release page
-    // 3. TODO allocate ?
-
-    map<int, int> slab_info;
-    cache->calc_slab_balance_info(slab_info);
-
-    TBSYS_LOG(INFO, "slabinfo.size():%d", slab_info.size());
-
-    for(map<int, int>::iterator it = slab_info.begin();
-        it != slab_info.end(); ++it) {
-      if(it->second < 0) {
-        TBSYS_LOG(INFO, "from [%d] free  [%d] page(s)", it->first,
-            it->second);
-        for(int i = 0; i < -it->second; ++i) {
-          {
-            boost::mutex::scoped_lock guard(mem_locker);
-            if(cache->free_page(it->first) != 0) {
-              TBSYS_LOG(WARN, "free page failed");
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    last_balance_time = static_cast<uint32_t> (time(NULL));
-  }
-
-
-  bool mdb_manager::is_chkexprd_time()
-  {
-    return hour_range(mdb_param::chkexprd_time_low,
-        mdb_param::chkexprd_time_high);
-  }
-
-  bool mdb_manager::is_chkslab_time()
-  {
-    return hour_range(mdb_param::chkslab_time_low,
-        mdb_param::chkslab_time_high);
-  }
-
-  void mdb_manager::run_chkexprd_deleted()
-  {
+void mdb_manager::run(tbsys::CThread *, void *) {
     while (!stopped) {
-      TAIR_SLEEP(stopped, 5);
-      if (stopped)
-        break;
-      if (!is_chkexprd_time()) {
-        continue;
-      }
-      //avoid to check too often
-      if (last_expd_time != 0
-          && time(NULL) - last_expd_time < (60 * 60 * 6)) {
-        TBSYS_LOG(DEBUG, "don't exprd too often, last_expd_time: %u", last_expd_time);
-        continue;
-      }
-      //if (m_last_traversal_time != 0 && (time(NULL) - m_last_traversal_time > 60)){
-      //     m_last_traversal_time = 0;
-      //     remove_deleted_item();
-      //}
-      remove_exprd_item();
-    }
-  }
+        TAIR_SLEEP(stopped, 5);
+        if (stopped) break;
 
-  void mdb_manager::run_chkslab()
-  {
-    TBSYS_LOG(WARN, "run_chkslab ....");
-    while(!stopped) {
-      TAIR_SLEEP(stopped, 10);
-      if(stopped)
-        break;
-      if(!is_chkslab_time()) {
-        continue;
-      }
+        if (hour_range(mdb_param::chkexprd_time_low, mdb_param::chkexprd_time_high)) {
+            map<int, uint64_t> exceeded_area_map;
+            for (int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
+                if (area_stat[i].get_data_size() > area_stat[i].get_quota()) {
+                    if (area_stat[i].get_quota() == 0) {
+                        this->clear(i);
+                        continue;
+                    }
+                    exceeded_area_map[i] =
+                            (area_stat[i].get_data_size() - area_stat[i].get_quota()) / instance_list.size();
+                }
+            }
 
-      if(last_balance_time != 0
-          && time(NULL) - last_balance_time < (60 * 60 * 6)) {
-        TBSYS_LOG(DEBUG, "don't check too often,%u", last_balance_time);
-        continue;                //avoid to check too often
-      }
-      balance_slab();
-      cache->balance_slab_done();
-      check_quota();
-    }
-
-  }
-
-  void mdb_manager::check_quota()
-  {
-    std::map<int, int> exceed_map;
-    for(int i = 0; i < TAIR_MAX_AREA_COUNT; ++i) {
-      if(area_stat[i]->data_size == 0) {
-        continue;                //this area is null
-      }
-
-      if(area_stat[i]->data_size > area_stat[i]->quota) {        //exceed
-        {
-
-          boost::mutex::scoped_lock guard(mem_locker);
-          if(area_stat[i]->data_size > area_stat[i]->quota) {
-            cache->keep_area_quota(i,
-                area_stat[i]->data_size -
-                area_stat[i]->quota);
-          }
+            if (!exceeded_area_map.empty()) {
+                for (size_t i = 0; i < instance_list.size(); ++i) {
+                    instance_list[i]->keep_area_quota(stopped, exceeded_area_map);
+                    if (stopped) break;
+                }
+            }
         }
-      }
+
+        if (stopped) break;
+        for (size_t i = 0; i < instance_list.size(); ++i) {
+            instance_list[i]->run_checking();
+        }
+
+        if (stopped) break;
+
+        for (size_t i = 0; i < instance_list.size(); ++i) {
+            instance_list[i]->run_mem_merge(stopped);
+        }
+
+        if (stopped) break;
     }
-    return;
-  }
+}
+
 #ifdef TAIR_DEBUG
-  map<int, int> mdb_manager::get_slab_size()
-  {
-    return cache->get_slab_size();
-  }
+map<int, int> mdb_manager::get_slab_size()
+{
+    //TODO
+    return map<int,int>();
+}
 
-  vector<int> mdb_manager::get_area_size()
-  {
-    return cache->get_area_size();
-  }
+vector<int> mdb_manager::get_area_size()
+{
+    //TODO
+    return vector<int>();
+}
 
-  vector<int> mdb_manager::get_areas()
-  {
-    vector<int> areaS;
-    for(int i = 0; i < TAIR_MAX_AREA_COUNT; i++) {
-      areaS.push_back(area_stat[i]->data_size);
-    }
-    return areaS;
-  }
+vector<int> mdb_manager::get_areas()
+{
+    //TODO
+    return vector<int>();
+}
 #endif
+
+unsigned int mdb_manager::hash(data_entry &key) {
+    return hash(key.get_data(), key.get_size());
+}
+
+unsigned int mdb_manager::hash(const char *key, int len) {
+    const unsigned int m = 0x5bd1e995;
+    const int r = 24;
+    const int seed = 97;
+    unsigned int h = seed ^len;
+    const unsigned char *data = (const unsigned char *) key;
+    while (len >= 4) {
+        unsigned int k = *(unsigned int *) data;
+        k *= m;
+        k ^= k >> r;
+        k *= m;
+        h *= m;
+        h ^= k;
+        data += 4;
+        len -= 4;
+    }
+    switch (len) {
+        case 3:
+            h ^= data[2] << 16;
+        case 2:
+            h ^= data[1] << 8;
+        case 1:
+            h ^= data[0];
+            h *= m;
+    };
+    h ^= h >> 13;
+    h *= m;
+    h ^= h >> 15;
+    return h;
+}
 
 }                                /* tair */

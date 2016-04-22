@@ -49,7 +49,8 @@ class Cache {
   //
   // When the inserted entry is no longer needed, the key and
   // value will be passed to "deleter".
-  virtual Handle* Insert(const Slice& key, void* value, size_t charge,
+  // We want more statistics of cache except `charge, so here is `stat_charge.
+  virtual Handle* Insert(const Slice& key, void* value, size_t charge, size_t stat_charge,
                          void (*deleter)(const Slice& key, void* value)) = 0;
 
   // If the cache has no mapping for "key", returns NULL.
@@ -80,6 +81,10 @@ class Cache {
   // client will allocate a new id at startup and prepend the id to
   // its cache keys.
   virtual uint64_t NewId() = 0;
+
+  // Return statistics of cache(memory usage etc.), stat information
+  // is stored in `result.
+  virtual void Stats(std::string& result) = 0;
 
  private:
   void LRU_Remove(Handle* e);

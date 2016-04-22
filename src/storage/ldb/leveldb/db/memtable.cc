@@ -8,9 +8,11 @@
 #include "leveldb/env.h"
 #include "leveldb/iterator.h"
 #include "util/coding.h"
+#include "../../rt_profiler.hpp"
 
 namespace leveldb {
 
+using namespace tair::storage;
 static Slice GetLengthPrefixedSlice(const char* data) {
   uint32_t len;
   const char* p = data;
@@ -102,14 +104,18 @@ void MemTable::Add(SequenceNumber s, ValueType type,
   p += 8;
   p = EncodeVarint32(p, val_size);
   memcpy(p, value.data(), val_size);
-  assert((p + val_size) - buf == encoded_len);
+  assert((size_t)((p + val_size) - buf) == encoded_len);
   table_.Insert(buf);
 }
 
 bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
+  RTProbe probe(PSN_MMT_GET);
   Slice memkey = key.memtable_key();
   Table::Iterator iter(&table_);
-  iter.Seek(memkey.data());
+  {
+    RTProbe probe(PSN_MMT_ITER_SEEK);
+    iter.Seek(memkey.data());
+  }
   if (iter.Valid()) {
     // entry format is:
     //    klength  varint32
@@ -143,6 +149,10 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
         case kTypeDeletion:
           *s = Status::NotFound(Slice());
           return true;
+	case kTypeDeletionWithTailer:
+	  // nothing to do just fix warning
+	  // about "enumeration value ‘kTypeDeletionWithTailer’ not handled in switch"
+	  break;
       }
     }
   }

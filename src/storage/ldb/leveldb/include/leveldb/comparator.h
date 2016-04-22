@@ -57,6 +57,8 @@ class Comparator {
   virtual bool ShouldDrop(const char* key, int64_t sequence, uint32_t now = 0) const { return false;}
   // should drop this key based on some condition. (user defined)
   virtual bool ShouldDropMaybe(const char* key, int64_t sequence, uint32_t now = 0) const { return false;}
+  // should stop build sst before `key based on `start_key
+  virtual bool ShouldStopBefore(const Slice& start_key, const Slice& key) const { return false;}
 };
 
 // Return a builtin comparator that uses lexicographic byte-wise

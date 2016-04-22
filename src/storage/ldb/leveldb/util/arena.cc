@@ -21,7 +21,7 @@ Arena::~Arena() {
 }
 
 char* Arena::AllocateFallback(size_t bytes) {
-  if (bytes > config::kArenaBlockSize / 4) {
+  if (bytes > static_cast<size_t>(config::kArenaBlockSize / 4)) {
     // Object is more than a quarter of our block size.  Allocate it separately
     // to avoid wasting too much space in leftover bytes.
     char* result = AllocateNewBlock(bytes);

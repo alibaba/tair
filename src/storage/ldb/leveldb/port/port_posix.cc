@@ -13,7 +13,7 @@ namespace leveldb {
 namespace port {
 
 static void PthreadCall(const char* label, int result) {
-  if (result != 0) {
+  if (result != 0 && result != ETIMEDOUT) { // pthread_cond_timedwait() may return ETIMEDOUT
     fprintf(stderr, "pthread %s: %s\n", label, strerror(result));
     abort();
   }
@@ -36,6 +36,15 @@ CondVar::~CondVar() { PthreadCall("destroy cv", pthread_cond_destroy(&cv_)); }
 
 void CondVar::Wait() {
   PthreadCall("wait", pthread_cond_wait(&cv_, &mu_->mu_));
+}
+
+void CondVar::TimedWait(int64_t timeout_us) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  timespec ts;
+  ts.tv_sec += timeout_us / 1000000;
+  ts.tv_nsec = (tv.tv_usec + timeout_us % 1000000) * 1000;
+  PthreadCall("timedwait", pthread_cond_timedwait(&cv_, &mu_->mu_, &ts));
 }
 
 void CondVar::Signal() {

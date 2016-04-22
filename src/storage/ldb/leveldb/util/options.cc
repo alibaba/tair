@@ -21,6 +21,7 @@ Options::Options()
       max_open_files(1000),
       block_cache(NULL),
       block_cache_size(8<<20),
+      table_cache_size((5UL)<<30),
       block_size(4096),
       block_restart_interval(16),
       compression(kSnappyCompression),
@@ -43,7 +44,14 @@ Options::Options()
       kLimitCompactTimeStart(0),
       kLimitCompactTimeEnd(0),
       kLimitDeleteObsoleteFileInterval(0),
-      kDoSeekCompaction(true) {
+      kDoSeekCompaction(true),
+      kSpecifyCompactTimeStart(0),
+      kSpecifyCompactTimeEnd(0),
+      kSpecifyCompactMaxThreshold(10000),
+      kSpecifyCompactThreshold(0),
+      kSpecifyCompactScoreThreshold(1),
+      kDoSplitMmtCompaction(false),
+      kLogFileKeepInterval(0) {
 }
 
 

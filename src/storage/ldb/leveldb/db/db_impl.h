@@ -23,9 +23,11 @@ class TableCache;
 class Version;
 class VersionEdit;
 class VersionSet;
+class FileMetaData;
 
 struct LoggerId;
 
+// multi-memtable update sharding by bucket
 struct BucketUpdate
 {
   int bucket_number_;
@@ -35,9 +37,6 @@ struct BucketUpdate
   MemTable* mem_;
   BucketUpdate* prev_;
   BucketUpdate* next_;
-  // TODO: fine-grained lock
-  LoggerId* logger_;            // NULL, or the id of the current logging thread
-  port::CondVar* logger_cv_;     // For threads waiting to log
 };
 
 typedef std::map<int, BucketUpdate*> BucketMap;
@@ -49,9 +48,9 @@ class DBImpl : public DB {
   virtual ~DBImpl();
 
   // Implementations of the DB interface
-  virtual Status Put(const WriteOptions&, const Slice& key, const Slice& value, bool synced = false);
-  virtual Status Delete(const WriteOptions&, const Slice& key, bool synced = false);
-  virtual Status Delete(const WriteOptions&, const Slice& key, const Slice& tailer, bool synced = false);
+  virtual Status Put(const WriteOptions&, const Slice& key, const Slice& value, bool synced, bool from_other_unit);
+  virtual Status Delete(const WriteOptions&, const Slice& key, bool synced, bool from_other_unit);
+  virtual Status Delete(const WriteOptions&, const Slice& key, const Slice& tailer, bool synced, bool from_other_unit);
   virtual Status Write(const WriteOptions& options, WriteBatch* updates);
   virtual Status Write(const WriteOptions& options, WriteBatch* updates, int bucket);
   virtual Status Get(const ReadOptions& options,
@@ -60,14 +59,18 @@ class DBImpl : public DB {
   virtual Iterator* NewIterator(const ReadOptions&);
   virtual const Snapshot* GetSnapshot();
   virtual void ReleaseSnapshot(const Snapshot* snapshot);
+  virtual const Snapshot* GetLogSnapshot();
+  virtual void ReleaseLogSnapshot(const Snapshot* snapshot);
   virtual bool GetProperty(const Slice& property, std::string* value,
                            void (*key_printer)(const Slice&, std::string&) = NULL);
-  virtual Status OpCmd(int cmd);
+  virtual Status OpCmd(int cmd, const std::vector<std::string>* params = NULL, std::vector<std::string>* result = NULL);
   virtual bool GetLevelRange(int level, std::string* smallest, std::string* largest);
   virtual void GetApproximateSizes(const Range* range, int n, uint64_t* sizes);
   virtual void CompactRange(const Slice* begin, const Slice* end);
   virtual Status CompactRangeSelfLevel(uint64_t limit_filenumber, const Slice* begin, const Slice* end);
+  virtual Status CompactRepairSST(ManualCompactionType type, std::vector<uint64_t>& files, bool check = false);
   virtual Status ForceCompactMemTable();
+  virtual Status ForceFlush();
   virtual void ResetDbName(const std::string& dbname) { dbname_ = dbname; }
 
   // Compact any files in the named level that overlap [begin,end]
@@ -94,6 +97,16 @@ class DBImpl : public DB {
   log::Writer* LogWriter() { return log_; }
   ReadableAndWritableFile* LogFile(uint64_t limit_logfile_number);
   const std::string& DBLogDir() { return dblog_dir_; }
+  // delete log file whoes number is not larger than min_number.
+  // options_.reserve_log/log_snapshots_
+  void DeleteLogFile(uint64_t min_number);
+  Iterator* NewRawIterator(const ReadOptions&);
+
+  static const char* GetBackupDir() { return kBackupTableFileDir; }
+
+  int NowSpecifyCompactLevel() const;
+  int SpecifyCompactStatus() const;
+  time_t LastFinishSpecifyCompactTime() const;
 
  private:
   friend class DB;
@@ -150,7 +163,15 @@ class DBImpl : public DB {
 
   // specified selflevel compaction
   void BackgroundCompactionSelfLevel();
+  void BackgroundCompactionRepairSST();
+  Status DoCompactionWorkRepairSST(CompactionState* compact, FileMetaData* file_meta);
   Status DoCompactionWorkSelfLevel(CompactionState* compact);
+
+  // rotate stuff
+  Status MaybeRotate();
+
+  // should slowdown/stop write
+  bool ShouldLimitWrite(int32_t trigger);
 
   // Constant after construction
   Env* const env_;
@@ -190,6 +211,10 @@ class DBImpl : public DB {
   WriteBatch* tmp_batch_;
 
   SnapshotList snapshots_;
+  SnapshotList log_snapshots_;
+  // actully min_snapshot_log_number_ = log_snapshots_.oldest(),
+  // we reserve this for convenient use
+  uint64_t min_snapshot_log_number_;
 
   // for multi-bucket update
   BucketMap bucket_map_;
@@ -206,7 +231,7 @@ class DBImpl : public DB {
   std::set<uint64_t> pending_outputs_;
 
   // how many times to delete obsolete files continuously
-  uint64_t has_limited_delete_obsolete_file_count_;
+  int64_t has_limited_delete_obsolete_file_count_;
 
   // Has a background compaction been scheduled or is running?
   bool bg_compaction_scheduled_;
@@ -223,7 +248,10 @@ class DBImpl : public DB {
     BgCompactionFunc bg_compaction_func; // specified compaction function
     bool reschedule;            // whether re-schecheled other compaction when this compaction is completed
     Status compaction_status;
-    ManualCompaction() : bg_compaction_func(NULL), reschedule(true) {}
+    ManualCompactionType type;
+    std::vector<uint64_t> files;
+    bool check_sstfile;
+    ManualCompaction() : bg_compaction_func(NULL), reschedule(true), check_sstfile(true) {}
   };
   ManualCompaction* manual_compaction_;
 
@@ -231,6 +259,15 @@ class DBImpl : public DB {
 
   // Have we encountered a background error in paranoid mode?
   Status bg_error_;
+
+  // rotate stuff
+  // today_start_s
+  uint32_t today_start_;
+
+
+  // backup sst dir
+  static const char* kBackupTableFileDir;
+
 
   // Per level compaction stats.  stats_[level] stores the stats for
   // compactions that produced data for the specified "level".
@@ -264,7 +301,6 @@ extern Options SanitizeOptions(const std::string& db,
                                const InternalKeyComparator* icmp,
                                const InternalFilterPolicy* ipolicy,
                                const Options& src);
-
 }  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_DB_DB_IMPL_H_

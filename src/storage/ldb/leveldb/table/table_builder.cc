@@ -14,6 +14,7 @@
 #include "table/format.h"
 #include "util/coding.h"
 #include "util/crc32c.h"
+#include "util/logging.h"
 
 namespace leveldb {
 
@@ -94,6 +95,10 @@ void TableBuilder::Add(const Slice& key, const Slice& value) {
   assert(!r->closed);
   if (!ok()) return;
   if (r->num_entries > 0) {
+    if (r->options.comparator->Compare(key, Slice(r->last_key)) <= 0) {
+      Log(r->options.info_log, "ERROR: Build SST file out-of-order, cur_key: (%s) last_key: (%s)",
+                             EscapeString(key).c_str() , EscapeString(r->last_key).c_str());
+    }
     assert(r->options.comparator->Compare(key, Slice(r->last_key)) > 0);
   }
 

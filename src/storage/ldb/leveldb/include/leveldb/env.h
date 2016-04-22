@@ -19,6 +19,20 @@
 #include <stdint.h>
 #include "leveldb/status.h"
 
+// TaoBao utility
+#ifdef WITH_TBUTIL
+  #include <tbsys.h>
+  #include "ldb/ldb_stat_manager.hpp"
+  #define DEC_STAT(key, kv_size) do { options_.stat_->drop(key, kv_size); } while (0)
+#else
+  #define PROFILER_START(s)
+  #define PROFILER_BEGIN(s)
+  #define PROFILER_END()
+  #define PROFILER_DUMP()
+  #define PROFILER_STOP()
+  #define DEC_STAT(key, kv_size)
+#endif
+
 namespace leveldb {
 
 class FileLock;
@@ -78,6 +92,8 @@ class Env {
 
   // Returns true iff the named file exists.
   virtual bool FileExists(const std::string& fname) = 0;
+
+  virtual Status GetFileMTime(const std::string& fname, uint64_t* mtime) = 0;
 
   // Store in *result the names of the children of the specified directory.
   // The names are relative to "dir".
@@ -153,6 +169,9 @@ class Env {
   // useful for computing deltas of time.
   virtual uint32_t NowSecs() = 0;
 
+  // Return today start seconds since some fixed point in time.
+  virtual uint32_t TodayStart() = 0;
+
   // Sleep/delay the thread for the perscribed number of micro-seconds.
   virtual void SleepForMicroseconds(int micros) = 0;
 
@@ -226,7 +245,7 @@ class WritableFile {
   void operator=(const WritableFile&);
 };
 
-class ReadableAndWritableFile : public SequentialFile, public WritableFile {
+class ReadableAndWritableFile : public SequentialFile, public RandomAccessFile, public WritableFile {
  public:
   ReadableAndWritableFile() { }
   virtual ~ReadableAndWritableFile() { }
@@ -243,6 +262,10 @@ class Logger {
 
   // Write an entry to the log file with the specified format.
   virtual void Logv(const char* format, va_list ap) = 0;
+
+  // Rotate log. We may check current logfile's mtime to determine whether
+  // it should be rotated. If force is true, then this log MUST be rotated.
+  virtual Status Rotate(bool force = false) = 0;
 
  private:
   // No copying allowed

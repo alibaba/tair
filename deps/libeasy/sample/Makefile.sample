@@ -1,0 +1,11 @@
+apps=easy_kfc_load echo_client echo_client_simple echo_client_tbnet echo_client_uthread echo_server_async echo_server echo_server_tbnet http_client http_server kfc_test uthread_test easy_kfc_tool
+
+all:
+	@for app in $(apps); \
+	do \
+	    echo "making $$app"; \
+	    (g++ -I../ -I./ -o $$app $$app.c* -leasy) || exit 1; \
+	done
+
+clean:
+	rm -f $(apps)

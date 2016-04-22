@@ -4,8 +4,6 @@
 
 #include "leveldb/table.h"
 
-#include "tbsys.h"
-
 #include "leveldb/cache.h"
 #include "leveldb/comparator.h"
 #include "leveldb/env.h"
@@ -183,7 +181,7 @@ Iterator* Table::BlockReader(void* arg,
           block = new Block(contents);
           if (contents.cachable && options.fill_cache) {
             cache_handle = block_cache->Insert(
-                key, block, block->size(), &DeleteCachedBlock);
+                key, block, (key.size() + block->size()), 1, &DeleteCachedBlock);
           }
         }
       }
@@ -232,7 +230,6 @@ Status Table::InternalGet(const ReadOptions& options, const Slice& k,
         !filter->KeyMayMatch(handle.offset(), k)) {
       // Not found
     } else {
-      Slice handle = iiter->value();
       PROFILER_BEGIN("sst read block");
       Iterator* block_iter = BlockReader(this, options, iiter->value());
       PROFILER_END();
@@ -279,6 +276,19 @@ uint64_t Table::ApproximateOffsetOf(const Slice& key) const {
   }
   delete index_iter;
   return result;
+}
+
+size_t Table::ApproximateMemoryUsage() const {
+  size_t ret = sizeof(Rep);
+  // index block data size
+  if (rep_->index_block != NULL) {
+    ret += rep_->index_block->size();
+  }
+  // filter block data size
+  if (rep_->filter != NULL) {
+    ret += rep_->filter->size();
+  }
+  return ret;
 }
 
 }  // namespace leveldb

@@ -20,7 +20,7 @@ class Env;
 
 class TableCache {
  public:
-  TableCache(const std::string& dbname, const Options* options, int entries);
+  TableCache(const std::string& dbname, const Options* options, size_t capacity);
   ~TableCache();
 
   // Return an iterator for the specified file number (the corresponding
@@ -47,6 +47,7 @@ class TableCache {
   // Evict any entry for the specified file number
   void Evict(uint64_t file_number);
 
+  void Stats(std::string& result);
  private:
   Env* const env_;
   const std::string dbname_;

@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <vector>
 #include "leveldb/iterator.h"
 #include "leveldb/options.h"
 
@@ -64,20 +65,45 @@ class DB {
   // Note: consider setting options.sync = true.
   virtual Status Put(const WriteOptions& options,
                      const Slice& key,
+                     const Slice& value) {
+    return Put(options, key, value, false, false);
+  }
+
+  // Set the database entry for "key" to "value".  Returns OK on success,
+  // and a non-OK status on error.
+  // Note: consider setting options.sync = true.
+  virtual Status Put(const WriteOptions& options,
+                     const Slice& key,
                      const Slice& value,
-                     bool synced = false) = 0;
+                     bool synced,
+                     bool from_other_unit) = 0;
 
   // Remove the database entry (if any) for "key".  Returns OK on
   // success, and a non-OK status on error.  It is not an error if "key"
   // did not exist in the database.
   // Note: consider setting options.sync = true.
-  virtual Status Delete(const WriteOptions& options, const Slice& key, bool synced = false) = 0;
+  virtual Status Delete(const WriteOptions& options, const Slice& key) {
+    return Delete(options, key, false, false);
+  }
 
   // Remove the database entry (if any) for "key".  Returns OK on
   // success, and a non-OK status on error.  It is not an error if "key"
   // did not exist in the database.
   // Note: consider setting options.sync = true.
-  virtual Status Delete(const WriteOptions& options, const Slice& key, const Slice& tailer, bool synced = false) = 0;
+  virtual Status Delete(const WriteOptions& options,
+                        const Slice& key,
+                        bool synced,
+                        bool from_other_unit) = 0;
+
+  // Remove the database entry (if any) for "key".  Returns OK on
+  // success, and a non-OK status on error.  It is not an error if "key"
+  // did not exist in the database.
+  // Note: consider setting options.sync = true.
+  virtual Status Delete(const WriteOptions& options,
+                        const Slice& key,
+                        const Slice& tailer,
+                        bool synced,
+                        bool from_other_unit) = 0;
 
   // Apply the specified updates to the database.
   // Returns OK on success, non-OK on failure.
@@ -112,10 +138,12 @@ class DB {
   // state.  The caller must call ReleaseSnapshot(result) when the
   // snapshot is no longer needed.
   virtual const Snapshot* GetSnapshot() = 0;
+  virtual const Snapshot* GetLogSnapshot() = 0;
 
   // Release a previously acquired snapshot.  The caller must not
   // use "snapshot" after this call.
   virtual void ReleaseSnapshot(const Snapshot* snapshot) = 0;
+  virtual void ReleaseLogSnapshot(const Snapshot* snapshot) = 0;
 
   // DB implementations can export properties about their state
   // via this method.  If "property" is a valid property understood by this
@@ -135,7 +163,7 @@ class DB {
                            void (*key_printer)(const Slice&, std::string&) = NULL) = 0;
 
   // operate some command to db
-  virtual Status OpCmd(int cmd) = 0;
+  virtual Status OpCmd(int cmd, const std::vector<std::string>* params = NULL, std::vector<std::string>* result = NULL) = 0;
 
   // For each i in [0,n-1], store in "sizes[i]", the approximate
   // file system space used by keys in "[range[i].start .. range[i].limit)".
@@ -165,9 +193,13 @@ class DB {
 
   // Compact a range of keys only in one level and files whoes filenumer is less than limit_filenumber
   virtual Status CompactRangeSelfLevel(uint64_t limit_filenumber, const Slice* begin, const Slice* end) = 0;
+  virtual Status CompactRepairSST(ManualCompactionType type, std::vector<uint64_t>& files, bool check = false) = 0;
 
   // force Compact memtable
   virtual Status ForceCompactMemTable() = 0;
+
+  // force Flush memtable
+  virtual Status ForceFlush() = 0;
 
   // reset db name
   virtual void ResetDbName(const std::string& dbname) = 0;

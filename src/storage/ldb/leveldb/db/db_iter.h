@@ -21,6 +21,13 @@ extern Iterator* NewDBIterator(
     Iterator* internal_iter,
     const SequenceNumber& sequence);
 
+extern Iterator* NewRawDBIterator(
+  const std::string* dbname,
+  Env* env,
+  const Comparator* user_key_comparator,
+  Iterator* internal_iter,
+  const SequenceNumber& sequence);
+
 }  // namespace leveldb
 
 #endif  // STORAGE_LEVELDB_DB_DB_ITER_H_

@@ -34,13 +34,13 @@ class WriteBatch {
   ~WriteBatch();
 
   // Store the mapping "key->value" in the database.
-  void Put(const Slice& key, const Slice& value, bool synced = false);
+  void Put(const Slice& key, const Slice& value, bool synced = false, bool from_other_unit = false);
 
   // If the database contains a mapping for "key", erase it.  Else do nothing.
-  void Delete(const Slice& key, bool synced = false);
+  void Delete(const Slice& key, bool synced = false, bool from_other_unit = false);
 
   // If the database contains a mapping for "key", erase it.  Else do nothing.
-  void Delete(const Slice& key, const Slice& tailer, bool synced = false);
+  void Delete(const Slice& key, const Slice& tailer, bool synced = false, bool from_other_unit = false);
 
   // Clear all updates buffered in this batch.
   void Clear();
