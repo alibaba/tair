@@ -4,8 +4,6 @@
 
 #include "db/log_writer.h"
 
-#include <tbsys.h>
-
 #include <stdint.h>
 #include "leveldb/env.h"
 #include "util/coding.h"
@@ -45,7 +43,9 @@ Status Writer::AddRecord(const Slice& slice) {
       if (leftover > 0) {
         // Fill the trailer (literal below relies on kHeaderSize being 7)
         assert(kHeaderSize == 7);
+      	PROFILER_BEGIN("log dest append");
         dest_->Append(Slice("\x00\x00\x00\x00\x00\x00", leftover));
+	PROFILER_END();
         total_size += leftover;
       }
       block_offset_ = 0;
@@ -69,7 +69,9 @@ Status Writer::AddRecord(const Slice& slice) {
       type = kMiddleType;
     }
 
+    PROFILER_BEGIN("log emitphysical+");
     s = EmitPhysicalRecord(type, ptr, fragment_length);
+    PROFILER_END();
     ptr += fragment_length;
     left -= fragment_length;
     begin = false;
@@ -83,7 +85,7 @@ Status Writer::AddRecord(const Slice& slice) {
 
 Status Writer::EmitPhysicalRecord(RecordType t, const char* ptr, size_t n) {
   assert(n <= 0xffff);  // Must fit in two bytes
-  assert(block_offset_ + kHeaderSize + n <= kBlockSize);
+  assert(block_offset_ + kHeaderSize + n <= (size_t)kBlockSize);
 
   // Format the header
   char buf[kHeaderSize];
@@ -96,14 +98,22 @@ Status Writer::EmitPhysicalRecord(RecordType t, const char* ptr, size_t n) {
   crc = crc32c::Mask(crc);                 // Adjust for storage
   EncodeFixed32(buf, crc);
 
+  PROFILER_BEGIN("emit dest append");
   // Write the header and the payload
   Status s = dest_->Append(Slice(buf, kHeaderSize));
+  PROFILER_END();
+  
+  PROFILER_BEGIN("emit dest append2");
   if (s.ok()) {
+    PROFILER_BEGIN("emit dest append in");
     s = dest_->Append(Slice(ptr, n));
+    PROFILER_END();
     if (s.ok()) {
       s = dest_->Flush();
     }
   }
+  PROFILER_END();
+
   block_offset_ += kHeaderSize + n;
   return s;
 }

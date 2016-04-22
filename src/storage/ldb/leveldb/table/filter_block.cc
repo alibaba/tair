@@ -106,4 +106,11 @@ bool FilterBlockReader::KeyMayMatch(uint64_t block_offset, const Slice& key) {
   return true;  // Errors are treated as potential matches
 }
 
+size_t FilterBlockReader::size() {
+  // offset_ = data_ + last_word;
+  // num_ = (n - 5 - last_word) / 4;
+  // n = ...
+  return num_ * 4 + 5 + (offset_ - data_);
+}
+
 }

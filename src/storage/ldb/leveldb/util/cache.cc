@@ -29,6 +29,7 @@ struct LRUHandle {
   LRUHandle* next;
   LRUHandle* prev;
   size_t charge;      // TODO(opt): Only allow uint32_t?
+  size_t stat_charge; // statistics charge
   size_t key_length;
   uint32_t refs;
   uint32_t hash;      // Hash of key(); used for fast sharding and comparisons
@@ -116,7 +117,6 @@ class HandleTable {
       LRUHandle* h = list_[i];
       while (h != NULL) {
         LRUHandle* next = h->next_hash;
-        Slice key = h->key();
         uint32_t hash = h->hash;
         LRUHandle** ptr = &new_list[hash & (new_length - 1)];
         h->next_hash = *ptr;
@@ -143,11 +143,12 @@ class LRUCache {
 
   // Like Cache methods, but with an extra "hash" parameter.
   Cache::Handle* Insert(const Slice& key, uint32_t hash,
-                        void* value, size_t charge,
+                        void* value, size_t charge, size_t stat_charge,
                         void (*deleter)(const Slice& key, void* value));
   Cache::Handle* Lookup(const Slice& key, uint32_t hash);
   void Release(Cache::Handle* handle);
   void Erase(const Slice& key, uint32_t hash);
+  void Stats(size_t& usage, size_t& extra_usage);
 
  private:
   void LRU_Remove(LRUHandle* e);
@@ -162,6 +163,9 @@ class LRUCache {
   size_t usage_;
   uint64_t last_id_;
 
+  // extra usage statictics
+  size_t extra_usage_;
+
   // Dummy head of LRU list.
   // lru.prev is newest entry, lru.next is oldest entry.
   LRUHandle lru_;
@@ -171,7 +175,8 @@ class LRUCache {
 
 LRUCache::LRUCache()
     : usage_(0),
-      last_id_(0) {
+      last_id_(0),
+      extra_usage_(0) {
   // Make empty circular linked list
   lru_.next = &lru_;
   lru_.prev = &lru_;
@@ -191,6 +196,7 @@ void LRUCache::Unref(LRUHandle* e) {
   e->refs--;
   if (e->refs <= 0) {
     usage_ -= e->charge;
+    extra_usage_ -= e->stat_charge;
     (*e->deleter)(e->key(), e->value);
     free(e);
   }
@@ -226,7 +232,7 @@ void LRUCache::Release(Cache::Handle* handle) {
 }
 
 Cache::Handle* LRUCache::Insert(
-    const Slice& key, uint32_t hash, void* value, size_t charge,
+    const Slice& key, uint32_t hash, void* value, size_t charge, size_t stat_charge,
     void (*deleter)(const Slice& key, void* value)) {
   MutexLock l(&mutex_);
 
@@ -235,12 +241,15 @@ Cache::Handle* LRUCache::Insert(
   e->value = value;
   e->deleter = deleter;
   e->charge = charge;
+  e->stat_charge = stat_charge;
   e->key_length = key.size();
   e->hash = hash;
   e->refs = 2;  // One from LRUCache, one for the returned handle
   memcpy(e->key_data, key.data(), key.size());
   LRU_Append(e);
   usage_ += charge;
+
+  extra_usage_ += stat_charge;
 
   LRUHandle* old = table_.Insert(e);
   if (old != NULL) {
@@ -265,6 +274,11 @@ void LRUCache::Erase(const Slice& key, uint32_t hash) {
     LRU_Remove(e);
     Unref(e);
   }
+}
+
+void LRUCache::Stats(size_t& usage, size_t& extra_usage) {
+  usage = usage_;
+  extra_usage = extra_usage_;
 }
 
 static const int kNumShardBits = 4;
@@ -293,10 +307,10 @@ class ShardedLRUCache : public Cache {
     }
   }
   virtual ~ShardedLRUCache() { }
-  virtual Handle* Insert(const Slice& key, void* value, size_t charge,
+  virtual Handle* Insert(const Slice& key, void* value, size_t charge, size_t stat_charge,
                          void (*deleter)(const Slice& key, void* value)) {
     const uint32_t hash = HashSlice(key);
-    return shard_[Shard(hash)].Insert(key, hash, value, charge, deleter);
+    return shard_[Shard(hash)].Insert(key, hash, value, charge, stat_charge, deleter);
   }
   virtual Handle* Lookup(const Slice& key) {
     const uint32_t hash = HashSlice(key);
@@ -316,6 +330,18 @@ class ShardedLRUCache : public Cache {
   virtual uint64_t NewId() {
     MutexLock l(&id_mutex_);
     return ++(last_id_);
+  }
+  virtual void Stats(std::string& result) {
+    size_t usage = 0, extra_usage = 0,
+      total_usage = 0, total_extra_usage = 0;
+    for (int s = 0; s < kNumShards; s++) {
+      shard_[s].Stats(usage, extra_usage);
+      total_usage += usage;
+      total_extra_usage += extra_usage;
+    }
+    char buf[128];
+    snprintf(buf, sizeof(buf), "charge usage: %lu, usage: %lu\n", total_usage, total_extra_usage);
+    result.append(buf);
   }
 };
 

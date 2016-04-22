@@ -46,6 +46,8 @@ class DBIter: public Iterator {
     kReverse
   };
 
+  friend class RawDBIter;
+
   DBIter(const std::string* dbname, Env* env,
          const Comparator* cmp, Iterator* iter, SequenceNumber s)
       : dbname_(dbname),
@@ -54,7 +56,11 @@ class DBIter: public Iterator {
         iter_(iter),
         sequence_(s),
         direction_(kForward),
-        valid_(false) {
+        valid_(false),
+        brake_key_(NULL),
+        brake_limit_(0),
+        stat_enable_(false),
+        scan_times_(0) {
   }
   virtual ~DBIter() {
     delete iter_;
@@ -75,6 +81,22 @@ class DBIter: public Iterator {
       return status_;
     }
   }
+
+#ifdef WITH_TBUTIL
+  virtual void SetBrake(const Slice *brake_key = 0, int brake_limit = 0) {
+    brake_key_ = brake_key;
+    brake_limit_ = brake_limit;
+  }
+
+  virtual void EnableStat() {
+    stat_enable_ = true;
+    scan_times_ = 0;
+  }
+
+  virtual int ScanTimes() const {
+    return stat_enable_ ? scan_times_ : 0;
+  }
+#endif
 
   virtual void Next();
   virtual void Prev();
@@ -111,6 +133,10 @@ class DBIter: public Iterator {
   std::string saved_value_;   // == current raw value when direction_==kReverse
   Direction direction_;
   bool valid_;
+  const Slice *brake_key_;
+  int brake_limit_;
+  bool stat_enable_; // whether to record scan times
+  int scan_times_;
 
   // No copying allowed
   DBIter(const DBIter&);
@@ -138,6 +164,9 @@ void DBIter::Next() {
       iter_->SeekToFirst();
     } else {
       iter_->Next();
+      if (stat_enable_) {
+        ++scan_times_;
+      }
     }
     if (!iter_->Valid()) {
       valid_ = false;
@@ -156,9 +185,15 @@ void DBIter::FindNextUserEntry(bool skipping, std::string* skip) {
   // Loop until we hit an acceptable entry to yield
   assert(iter_->Valid());
   assert(direction_ == kForward);
+  int iter_times = 0;
   do {
     ParsedInternalKey ikey;
     if (ParseKey(&ikey) && ikey.sequence <= sequence_) {
+      if (brake_key_ != NULL && user_comparator_->Compare(ikey.user_key, *brake_key_) > 0) {
+        valid_ = false;
+        saved_key_.clear();
+        return ;
+      }
       switch (ikey.type) {
         case kTypeDeletion:
           // Arrange to skip all upcoming entries for this key since
@@ -181,9 +216,22 @@ void DBIter::FindNextUserEntry(bool skipping, std::string* skip) {
             return;
           }
           break;
+	      case kTypeDeletionWithTailer:
+	        // nothing to do just fix warning
+	        // about "warning: enumeration value ‘kTypeDeletionWithTailer’ not handled in switch"
+	        break;
       }
     }
     iter_->Next();
+    if (stat_enable_) {
+      ++scan_times_;
+    }
+    ++iter_times;
+    if (brake_limit_ != 0 && iter_times > brake_limit_) {
+      status_ = Status::InvalidArgument("iterate too much");
+      log_warn("iterate too many times[%d] to find next effective record", iter_times);
+      break;
+    }
   } while (iter_->Valid());
   saved_key_.clear();
   valid_ = false;
@@ -290,6 +338,60 @@ void DBIter::SeekToLast() {
   FindPrevUserEntry();
 }
 
+#ifdef WITH_TBUTIL
+// Raw DB Iterator, just return all kv.
+class RawDBIter: public DBIter {
+public:
+  RawDBIter(const std::string* dbname, Env* env,
+            const Comparator* cmp, Iterator* iter, SequenceNumber s)
+    : DBIter::DBIter(dbname, env, cmp, iter, s)
+  {}
+  virtual ~RawDBIter()
+  {}
+
+  // rewrite Next()
+  virtual void SeekToFirst();
+  virtual void Next();
+  virtual void SeekToLast() { valid_ = false; }
+  virtual void Prev() { valid_ = false; }
+  int64_t sequence() { return seq_; }
+  char type() { return type_; }
+
+private:
+  int64_t seq_;
+  char type_;
+};
+
+void RawDBIter::SeekToFirst() {
+  iter_->SeekToFirst();
+  valid_ = iter_->Valid();
+  if (valid_) {
+    ParsedInternalKey ikey;
+    if (ParseInternalKey(iter_->key(), &ikey)) {
+      seq_ = ikey.sequence;
+      type_ = ikey.type;
+    } else {
+      valid_ = false;
+    }
+  }
+}
+
+void RawDBIter::Next() {
+  assert(valid_);
+  // just next
+  iter_->Next();
+  valid_ = iter_->Valid();
+  if (valid_) {
+    ParsedInternalKey ikey;
+    if (ParseInternalKey(iter_->key(), &ikey)) {
+      seq_ = ikey.sequence;
+      type_ = ikey.type;
+    } else {
+      valid_ = false;
+    }
+  }
+}
+#endif
 }  // anonymous namespace
 
 Iterator* NewDBIterator(
@@ -300,5 +402,16 @@ Iterator* NewDBIterator(
     const SequenceNumber& sequence) {
   return new DBIter(dbname, env, user_key_comparator, internal_iter, sequence);
 }
+
+#ifdef WITH_TBUTIL
+Iterator* NewRawDBIterator(
+    const std::string* dbname,
+    Env* env,
+    const Comparator* user_key_comparator,
+    Iterator* internal_iter,
+    const SequenceNumber& sequence) {
+  return new RawDBIter(dbname, env, user_key_comparator, internal_iter, sequence);
+}
+#endif
 
 }  // namespace leveldb

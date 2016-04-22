@@ -1,3 +1,14 @@
+/*
+ * (C) 2007-2017 Alibaba Group Holding Limited
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * See the AUTHORS file for names of contributors.
+ *
+ */
+
 #ifndef TAIR_FLOW_CONTROL_PACKET_HPP
 #define TAIR_FLOW_CONTROL_PACKET_HPP
 
@@ -6,183 +17,202 @@
 
 namespace tair {
 
-class flow_control_set: public base_packet
-{
- public:
-  flow_control_set() : type(tair::stat::IN), 
-                       lower(-1), 
-                       upper(-1), 
-                       ns(-1), 
-                       success(false)
-  {
-    setPCode(TAIR_FLOW_CONTROL_SET);
-  }
+class flow_control_set : public base_packet {
+public:
+    flow_control_set() : type(tair::stat::IN),
+                         lower_mb(-1),
+                         upper_mb(-1),
+                         ns(-1),
+                         success(false) {
+        setPCode(TAIR_FLOW_CONTROL_SET);
+    }
 
-  flow_control_set & operator=(const flow_control_set& rhs) 
-  {
-    this->type  = rhs.type;
-    this->lower = rhs.lower;
-    this->upper = rhs.upper;
-    this->ns    = rhs.ns;
-    this->success = rhs.success;
-    return *this;
-  }
+    flow_control_set &operator=(const flow_control_set &rhs) {
+        base_packet::operator=(rhs);
+        this->type = rhs.type;
+        this->lower_mb = rhs.lower_mb;
+        this->upper_mb = rhs.upper_mb;
+        this->ns = rhs.ns;
+        this->success = rhs.success;
+        return *this;
+    }
 
-  size_t size()
-  {
-    return 20 + 16;
-  }
+    virtual size_t size() const {
+        return 20 + 16;
+    }
 
-  bool encode(tbnet::DataBuffer *output)
-  {
-    output->writeInt32(type);
-    output->writeInt32(lower);
-    output->writeInt32(upper);
-    output->writeInt32(ns);
-    output->writeInt32(success);
-    return true;
-  }
+    virtual base_packet::Type get_type() {
+        return base_packet::REQ_SPECIAL;
+    }
 
-  bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader* header)
-  {
-    if (header->_dataLen < 20)
-      return false;
+    bool encode(DataBuffer *output) {
+        output->writeInt32(type);
+        output->writeInt32(lower_mb);
+        output->writeInt32(upper_mb);
+        output->writeInt32(ns);
+        output->writeInt32(success);
+        return true;
+    }
 
-    type = static_cast<tair::stat::FlowType>(
-        input->readInt32());
-    lower = input->readInt32();
-    upper = input->readInt32();
-    ns = input->readInt32();
-    success = input->readInt32();
-    return true;
-  }
+    bool decode(DataBuffer *input, PacketHeader *header) {
+        if (header->_dataLen < 20)
+            return false;
 
-  tair::stat::FlowType getType() { return type; }
-  int32_t getLower() { return lower; }
-  int32_t getUpper() { return upper; }
-  int32_t getNamespace() { return ns; }
+        type = static_cast<tair::stat::FlowType>(
+                input->readInt32());
+        lower_mb = input->readInt32();
+        upper_mb = input->readInt32();
+        ns = input->readInt32();
+        success = input->readInt32();
+        return true;
+    }
 
-  void setType(tair::stat::FlowType type)
-  {
-    this->type = type;
-  }
+    tair::stat::FlowType getType() { return type; }
 
-  void setLimit(int lower, int upper)
-  {
-    this->lower = lower;
-    this->upper = upper;
-  }
+    int32_t getLowerMB() { return lower_mb; }
 
-  void setNamespace(int ns)
-  {
-    this->ns = ns;
-  }
+    int32_t getUpperMB() { return upper_mb; }
 
-  void setSuccess(bool f) 
-  {
-    this->success = f;
-  }
+    int32_t getNamespace() { return ns; }
 
-  bool isSuccess() 
-  { 
-    return this->success;
-  }
+    void setType(tair::stat::FlowType type) {
+        this->type = type;
+    }
 
- private:
-  tair::stat::FlowType type;
-  int32_t lower;
-  int32_t upper;
-  int32_t ns;
-  bool    success;
+    void setLimit(int lower_mb, int upper_mb) {
+        this->lower_mb = lower_mb;
+        this->upper_mb = upper_mb;
+    }
+
+    void setNamespace(int ns) {
+        this->ns = ns;
+    }
+
+    void setSuccess(bool f) {
+        this->success = f;
+    }
+
+    bool isSuccess() {
+        return this->success;
+    }
+
+private:
+    flow_control_set(const flow_control_set &);
+
+private:
+    tair::stat::FlowType type;
+    int32_t lower_mb;
+    int32_t upper_mb;
+    int32_t ns;
+    bool success;
 };
 
-class flow_check : public base_packet
-{
- public:
-  flow_check()
-  {
-    setPCode(TAIR_FLOW_CHECK);
-  }
+class flow_check : public base_packet {
+public:
+    flow_check() {
+        setPCode(TAIR_FLOW_CHECK);
+    }
 
-  size_t size()
-  {
-    return 4 + 16;
-  }
+    virtual size_t size() const {
+        return 4 + 16;
+    }
 
-  bool encode(tbnet::DataBuffer *output)
-  {
-    output->writeInt32(ns);
-    return true;
-  }
+    virtual base_packet::Type get_type() {
+        return base_packet::REQ_SPECIAL;
+    }
 
-  bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
-  {
-    if (header->_dataLen < 4)
-      return false;
-    ns = input->readInt32();
-    return true;
-  }
+    bool encode(DataBuffer *output) {
+        output->writeInt32(ns);
+        return true;
+    }
 
-  int32_t getNamespace() 
-  {
-    return ns;
-  }
- private:
-  int32_t ns;
+    bool decode(DataBuffer *input, PacketHeader *header) {
+        if (header->_dataLen < 4)
+            return false;
+        ns = input->readInt32();
+        return true;
+    }
+
+    void setNamespace(int32_t ns) {
+        this->ns = ns;
+    }
+
+    int32_t getNamespace() {
+        return ns;
+    }
+
+private:
+    flow_check(const flow_check &);
+
+private:
+    int32_t ns;
 };
 
-class flow_control : public base_packet 
-{
- public:
-  flow_control()
-  {
-    setPCode(TAIR_FLOW_CONTROL);
-  }
- 
-  size_t size() 
-  {
-    return 8 + 16; // 16bytes tbnet packet header
-  }
+class flow_control : public base_packet {
+public:
+    flow_control() : user_data(NULL) {
+        setPCode(TAIR_FLOW_CONTROL);
+    }
 
-  bool encode(tbnet::DataBuffer *output)
-  {
-    output->writeInt32(status);
-    output->writeInt32(ns);
-    return true;
-  }
+    virtual size_t size() const {
+        return 8 + 16; // 16bytes tbnet packet header
+    }
 
-  bool decode(tbnet::DataBuffer *input, tbnet::PacketHeader *header) 
-  {
-    if (header->_dataLen < 8)
-      return false;
-    status = input->readInt32();
-    ns = input->readInt32();
-    return true;
-  }
+    virtual base_packet::Type get_type() {
+        return base_packet::REQ_SPECIAL;
+    }
 
-  void set_status(int s)
-  {
-    this->status = s;
-  }
+    bool encode(DataBuffer *output) {
+        output->writeInt32(status);
+        output->writeInt32(ns);
+        return true;
+    }
 
-  void set_ns(int ns)
-  {
-    this->ns = ns;
-  }
+    bool decode(DataBuffer *input, PacketHeader *header) {
+        if (header->_dataLen < 8)
+            return false;
+        status = input->readInt32();
+        ns = input->readInt32();
+        return true;
+    }
 
-  int get_ns()
-  { 
-    return ns;
-  }
+    void set_status(int s) {
+        this->status = s;
+    }
 
-  int get_status()
-  {
-    return status;
-  }
+    void set_ns(int ns) {
+        this->ns = ns;
+    }
 
- private:
-  int ns;
-  int status;
+    int get_ns() {
+        return ns;
+    }
+
+    int get_status() {
+        return status;
+    }
+
+    void set_user_data(void *user_data) {
+        this->user_data = user_data;
+    }
+
+    void *get_user_data() {
+        return user_data;
+    }
+
+    void set_addr(const easy_addr_t &addr) { this->addr = addr; }
+
+    const easy_addr_t &get_addr() { return addr; }
+
+private:
+    flow_control(const flow_control &);
+
+private:
+    int ns;
+    int status;
+
+    void *user_data;
+    easy_addr_t addr;
 };
 
 }

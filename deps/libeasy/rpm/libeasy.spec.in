@@ -1,0 +1,70 @@
+%define name      t_libeasy 
+%define summary   high performance server framework 
+%define license   Commercial
+%define group     Libraries
+%define source    %{name}-%{version}.tar.gz 
+%define vendor    Taobao, Alibaba
+%define packager  duolong 
+%define _prefix   /usr 
+
+Name:      %{name}
+Version:   EASY_VERSION
+Release:   EASY_RELEASE
+Packager:  %{packager}
+Vendor:    %{vendor}
+License:   %{license}
+Summary:   %{summary}
+Group:     %{group}
+URL:       http://svn.taobao-develop.com/repos/ttsc/trunk/easy/Revision_SVN_REVISION
+Source0:   %{source}
+Prefix:    %{_prefix}
+Buildroot: %{_tmppath}/%{name}-%{version}-root 
+BuildRequires: openssl-devel
+Provides: kernel-unsupported = %{name}-%{version}
+
+%description
+high performance server framework
+
+%package devel
+Summary: development package for libeasy 
+Group: Libraries 
+Requires: %{name} = %{version}-%{release}
+Provides: t_libeasy-devel = %{version}
+
+%description devel
+development package for libeasy
+
+%prep
+%setup -q
+
+%build
+export CFLAGS="-O3 -g"
+export CXXFLAGS="-O3 -g"
+%configure
+make %{?_smp_mflags}
+
+%install
+rm -rf $RPM_BUILD_ROOT
+%makeinstall
+rm -f $RPM_BUILD_ROOT/%{_libdir}/libeasy.la
+mkdir -p $RPM_BUILD_ROOT/usr/include/easy/sample
+mv -f $RPM_BUILD_ROOT/usr/include/*.h $RPM_BUILD_ROOT/usr/include/easy/ 
+cp sample/*.h sample/*.c sample/*.cpp $RPM_BUILD_ROOT/usr/include/easy/sample/
+cp sample/Makefile.sample $RPM_BUILD_ROOT/usr/include/easy/sample/Makefile
+export STRIP="/bin/echo"
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root)
+%{_libdir}/libeasy.so.EASY_SOVER*
+
+%files devel
+%defattr(-,root,root)
+/usr/include/easy/*
+%{_libdir}/libeasy.a
+%{_libdir}/libeasy.so
+
+%changelog
+

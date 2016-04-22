@@ -232,7 +232,8 @@ class Repairer {
     FileMetaData meta;
     meta.number = next_file_number_++;
     Iterator* iter = mem->NewIterator();
-    status = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
+    iter->SeekToFirst();
+    status = BuildTable(dbname_, env_, options_, NULL, table_cache_, iter, &meta);
     delete iter;
     mem->Unref();
     mem = NULL;

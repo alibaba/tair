@@ -24,15 +24,32 @@ class InternalKey;
 // need no remote synchronization, eg.)
 // Note, kMaskSync ONLY exist in log file.
 const char kMaskSync = 0x80;
+
 static inline char OffSyncMask(char type) {
   return type & ~kMaskSync;
 }
 static inline char OnSyncMask(char type) {
-  return type | kMaskSync;    
+  return type | kMaskSync;
 }
 static inline bool TestSyncMask(char type) {
   return type & kMaskSync;
 }
+
+// kMaskSync means this value is sync from remote
+const char kMaskUnit = 0x40;
+
+static inline char OffUnitMask(char type) {
+  return type & ~kMaskUnit;
+}
+
+static inline char OnUnitMask(char type) {
+  return type | kMaskUnit;
+}
+
+static inline bool TestUnitMask(char type) {
+  return type & kMaskUnit;
+}
+
 // Value types encoded as the last component of internal keys.
 // DO NOT CHANGE THESE ENUM VALUES: they are embedded in the on-disk
 // data structures.
@@ -156,6 +173,9 @@ class InternalKey {
   }
 
   Slice user_key() const { return ExtractUserKey(rep_); }
+
+  // Slice-s has InternalKey data
+  static Slice user_key(Slice& s) { return ExtractUserKey(s); }
 
   void SetFrom(const ParsedInternalKey& p) {
     rep_.clear();

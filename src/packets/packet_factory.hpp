@@ -1,38 +1,44 @@
 /*
- * (C) 2007-2010 Alibaba Group Holding Limited
+ * (C) 2007-2017 Alibaba Group Holding Limited
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * packet factory creates packet according to packet code
- *
- * Version: $Id$
- *
- * Authors:
- *   ruohai <ruohai@taobao.com>
- *     - initial release
+ * See the AUTHORS file for names of contributors.
  *
  */
+
 #ifndef TAIR_PACKET_FACTORY_H
 #define TAIR_PACKET_FACTORY_H
+
 #include "base_packet.hpp"
+#include <easy_io.h>
+#include <easy_io_struct.h>
+#include <easy_string.h>
+#include <databuffer.hpp>
+
 namespace tair {
-   class tair_packet_factory : public tbnet::IPacketFactory {
-   public:
-       tair_packet_factory() {}
-      ~tair_packet_factory();
+class packet_factory {
+public:
+    packet_factory() {}
 
-      tbnet::Packet *createPacket(int pcode);
+    ~packet_factory() {}
 
-      static int set_return_packet(base_packet *packet, int code,const char *msg, uint32_t version)
-      {
-        uint32_t size = 0;
-        return set_return_packet(packet, code, msg, version, size);
-      }
+public:
+    static void *decode_cb(easy_message_t *m);
 
-      static int set_return_packet(base_packet *packet, int code,const char *msg, uint32_t version, uint32_t &resp_size);
-      static int set_return_packet(tbnet::Connection *conn,uint32_t chid,int cmd_id,int code,const char *msg,uint32_t version);
-   };
+    static int encode_cb(easy_request_t *r, void *packet);
+
+    static uint64_t get_packet_id_cb(easy_connection_t *c, void *packet);
+
+    static base_packet *create_packet(int pcode);
+
+    static base_packet *create_dup_packet(base_packet *ipacket);
+
+    static base_packet *create_response(const base_packet *p);
+
+    static easy_atomic32_t chid;
+};
 }
 #endif

@@ -17,6 +17,7 @@
 
 #include "leveldb/slice.h"
 #include "leveldb/status.h"
+#include <stdint.h>
 
 namespace leveldb {
 
@@ -74,6 +75,17 @@ class Iterator {
   // not abstract and therefore clients should not override it.
   typedef void (*CleanupFunction)(void* arg1, void* arg2);
   void RegisterCleanup(CleanupFunction function, void* arg1, void* arg2);
+
+#ifdef WITH_TBUTIL
+  //~ Set brake key & limit
+  virtual void SetBrake(const Slice *brake_key = NULL, int brake_limit = 0) {}
+  virtual int64_t sequence() { return 0; }
+  virtual char type() { return 0; }
+  //~ Set if record iter scan times
+  virtual void EnableStat() {}
+  //! Return scan items if should_stat is set true
+  virtual int ScanTimes() const { return 0; }
+#endif
 
  private:
   struct Cleanup {

@@ -16,6 +16,7 @@ _copy_count=1
 _bucket_number=1023
 # accept ds strategy. 1 means accept ds automatically
 _accept_strategy=1
+_allow_failover_server=0
 
 # data center A
 _server_list=192.168.1.1:5191

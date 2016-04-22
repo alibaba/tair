@@ -27,7 +27,6 @@
 #include "util/posix_logger.h"
 #include "util/config.h"
 
-#include <tbsys.h>
 namespace leveldb {
 
 namespace {
@@ -351,6 +350,14 @@ public:
   }
 
   virtual Status Read(size_t n, Slice* result, char* scratch) {
+    Status s = Read(reading_offset_, n, result, scratch);
+    if (s.ok()) {
+      reading_offset_ += result->size();
+    }
+    return s;
+  }
+
+  virtual Status Read(uint64_t offset, size_t n, Slice* result, char* scratch) const {
     Status s;
     size_t read_file_size = 0, read_mem_size = 0;
 
@@ -361,21 +368,20 @@ public:
       char* mem_offset = dst_;
       if (NULL == mem_offset) {       // no mmap, just read from file(SequnecialFile)
         read_file_size = n;
-      } else if (reading_offset_ >= static_cast<uint64_t>(file_offset_ + mem_offset - mem_start)) {
+      } else if (offset >= static_cast<uint64_t>(file_offset_ + mem_offset - mem_start)) {
         *result = Slice();
         return IOError(PosixMmapFile::filename_, EINVAL);
-      } else if (reading_offset_ + n <= file_offset_) {
+      } else if (offset + n <= file_offset_) {
         read_file_size = n;
-      } else if (reading_offset_ >= file_offset_) {
-        mem_start += reading_offset_ - file_offset_;
+      } else if (offset >= file_offset_) {
+        mem_start += offset - file_offset_;
         read_mem_size = std::min(static_cast<size_t>(mem_offset - mem_start), n);
       } else {
-        read_file_size = file_offset_ - reading_offset_;
+        read_file_size = file_offset_ - offset;
         read_mem_size = std::min(static_cast<size_t>(mem_offset - mem_start),
                                  static_cast<size_t>(n - read_file_size));
       }
 
-      TBSYS_LOG(DEBUG, "@@ rm: %d, rf: %d", read_mem_size, read_file_size);
       if (read_mem_size > 0) {
         memcpy(scratch + read_file_size, mem_start, read_mem_size);
       }
@@ -383,7 +389,7 @@ public:
 
     // read file need no lock
     if (read_file_size > 0) {
-      ssize_t size = pread(fd_, scratch, read_file_size, reading_offset_);
+      ssize_t size = pread(fd_, scratch, read_file_size, offset);
       if (size < 0) {
         s = IOError(PosixMmapFile::filename_, errno);
       } else {
@@ -393,7 +399,6 @@ public:
 
     if (s.ok()) {
       *result = Slice(scratch, read_file_size + read_mem_size);
-      reading_offset_ += read_file_size + read_mem_size;
     }
 
     return s;
@@ -508,6 +513,16 @@ class PosixEnv : public Env {
     return access(fname.c_str(), F_OK) == 0;
   }
 
+  virtual Status GetFileMTime(const std::string& fname, uint64_t* mtime) {
+    Status result;
+    struct stat st;
+    if (stat(fname.c_str(), &st) != 0) {
+      result = IOError(fname, errno);
+    }
+    *mtime = st.st_mtime;
+    return result;
+  }
+
   virtual Status GetChildren(const std::string& dir,
                              std::vector<std::string>* result) {
     DIR* d = opendir(dir.c_str());
@@ -620,12 +635,12 @@ class PosixEnv : public Env {
   }
 
   virtual Status NewLogger(const std::string& fname, Logger** result) {
-    FILE* f = fopen(fname.c_str(), "w");
+    FILE* f = fopen(fname.c_str(), "a");
     if (f == NULL) {
       *result = NULL;
       return IOError(fname, errno);
     } else {
-      *result = new PosixLogger(f, &PosixEnv::gettid);
+      *result = new PosixLogger(f, &PosixEnv::gettid, fname.c_str());
       return Status::OK();
     }
   }
@@ -640,6 +655,12 @@ class PosixEnv : public Env {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return static_cast<uint32_t>(tv.tv_sec);
+  }
+
+  virtual uint32_t TodayStart() {
+    uint32_t now = this->NowSecs();
+    tzset();
+    return (now - (now - timezone) % 86400);
   }
 
   virtual void SleepForMicroseconds(int micros) {

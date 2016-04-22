@@ -6,6 +6,9 @@
 #define STORAGE_LEVELDB_UTIL_CONFIG_H_
 #include <stdint.h>
 
+#include <vector>
+#include <string>
+
 namespace leveldb {
 class Options;
 struct config {
@@ -39,7 +42,7 @@ static int64_t kMaxGrandParentOverlapBytes;
 // arena block size
 static int kArenaBlockSize;
 
-// filter base 
+// filter base
 static int kFilterBaseLg;
 // filter base size 1 << kFilterBaseLg
 static int kFilterBase;
@@ -52,6 +55,20 @@ static int kBaseLevelSize;
 // whether use mmap() to speed random read file(sstable)
 static bool kUseMmapRandomAccess;
 
+static uint64_t kLogFileKeepInterval;
+
+// specify compaction time reverse mode (4-3, eg.)
+static bool kSpecifyCompactTimeReverse;
+// start time to compact in high level first mode
+static int kSpecifyCompactTimeStart;
+// end time to compact in high level first mode
+static int kSpecifyCompactTimeEnd;
+// 0 - kSpecifyCompactMaxThreshold, if the rand number large than threshold will lead to specify compact
+static int kSpecifyCompactThreshold;
+// max specifycompact threshold
+static int kSpecifyCompactMaxThreshold;
+// 1 is default value
+static int kSpecifyCompactScoreThreshold;
 
 // how many highest levels to limit compaction
 static int kLimitCompactLevelCount;
@@ -65,6 +82,8 @@ static int kLimitCompactTimeStart;
 static int kLimitCompactTimeEnd;
 // limit compaction time reverse mode (4-3, eg.)
 static bool kLimitCompactTimeReverse;
+//limit compact repair
+static bool kLimitCompactRepair;
 // Db will delete obsolete files when finishing one compaction.
 // DeleteObsoleteFiles() cost too much and does NOT need been done
 // each compaction actually, so wen can do this action each 'delete_obsolete_file_interval
@@ -72,17 +91,32 @@ static bool kLimitCompactTimeReverse;
 static int kLimitDeleteObsoleteFileInterval;
 // whether do compaction scheduled by seek count over-threshold
 static bool kDoSeekCompaction;
+// whether split mmt when compaction by user-defined logic
+static bool kDoSplitMmtCompaction;
+// max count of keys `get_range' could retrieve in one shot
+static int kLimitGetRange;
+// max count of keys `get_range` cound scan in one shot
+static int kLimitRangeScanTimes;
+
+// whether save delete sst file
+static bool kDoBackUpSSTFile;
 
 static bool IsLimitCompactTime();
 static void SetLimitCompactTimeRange(int time_start, int time_end);
 
+static bool IsSpecifyCompactTime();
+static void SetSpecifyCompactTimeRange(int time_start, int time_end);
+
 // get config from user option.
 static void setConfig(const Options& option);
+static void getConfig(std::vector<std::string>& infos);
+
 };
 
 // db cmd type
 enum {
   kCmdBackupDB = 1,
+  kCmdUnloadBackupedDB,
 };
 }
 #endif  // STORAGE_LEVELDB_UTIL_CONFIG_H_

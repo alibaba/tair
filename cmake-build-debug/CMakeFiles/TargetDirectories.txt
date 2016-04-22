@@ -1,0 +1,3 @@
+/Users/qianyi.lh/Work/Codes/tair-github/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/qianyi.lh/Work/Codes/tair-github/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/qianyi.lh/Work/Codes/tair-github/cmake-build-debug/CMakeFiles/tair_github.dir

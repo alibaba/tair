@@ -16,6 +16,7 @@ class Env;
 class Iterator;
 class TableCache;
 class VersionEdit;
+class Comparator;
 
 // Build a Table file from the contents of *iter.  The generated file
 // will be named according to meta->number.  On success, the rest of
@@ -25,6 +26,7 @@ class VersionEdit;
 extern Status BuildTable(const std::string& dbname,
                          Env* env,
                          const Options& options,
+                         const Comparator* user_comparator,
                          TableCache* table_cache,
                          Iterator* iter,
                          FileMetaData* meta);

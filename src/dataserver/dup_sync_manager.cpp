@@ -1,528 +1,458 @@
 /*
- * (C) 2007-2011 Alibaba Group Holding Limited
+ * (C) 2007-2017 Alibaba Group Holding Limited
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * duplicate_manager.cpp is to performe the duplicate func when copy_count > 1
- *
- * Version: $Id: dup_sync_manager.cpp 28 2011-09-19 05:18:09Z xinshu.wzx@taobao.com $
- *
- * Authors:
- *   xinshu <xinshu.wzx@taobao.com>
+ * See the AUTHORS file for names of contributors.
  *
  */
+
 #include "dup_sync_manager.hpp"
 #include "syncproc.hpp"
 #include "packet_factory.hpp"
-#include "packet_streamer.hpp"
 #include "inc_dec_packet.hpp"
 #include "storage_manager.hpp"
-namespace tair{
+#include "response_return_packet.hpp"
+#include "put_packet.hpp"
+#include "prefix_incdec_packet.hpp"
+#include "duplicate_packet.hpp"
+#include "prefix_puts_packet.hpp"
+#include "prefix_removes_packet.hpp"
+#include "prefix_hides_packet.hpp"
+#include "response_mreturn_packet.hpp"
+#include "tair_server.hpp"
 
-  CPacket_wait_manager::CPacket_wait_manager()
-  {
-    m_slots_locks = new CSlotLocks(MAP_BUCKET_SLOT);
-    for (int i = 0; i < TAIR_MAX_BUCKET_NUMBER; i++)
-    {
-      m_bucket_count[i] = 0;
-    }
-  }
-
-  CPacket_wait_manager::~CPacket_wait_manager()
-  {
-    if (m_slots_locks)
-    {
-      delete m_slots_locks;
-      m_slots_locks = NULL;
-    }
-  }
-
-  bool CPacket_wait_manager::isBucketFree(int bucket_number)
-  {
-    assert(bucket_number >= 0 && bucket_number < TAIR_MAX_BUCKET_NUMBER);
-    CScopedRwLock __scoped_lock(m_slots_locks->getlock(0), false);
-    return m_bucket_count[bucket_number] < MAX_BUCKET_FREE_COUNT;
-  }
-
-  int CPacket_wait_manager::changeBucketCount(int bucket_number, int number)
-  {
-    //dont't lock it. should lock outside
-    assert(bucket_number >= 0 && bucket_number < TAIR_MAX_BUCKET_NUMBER);
-    m_bucket_count[bucket_number] += number; //-1,or +1
-    if (m_bucket_count[bucket_number] < 0) m_bucket_count[bucket_number] = 0;
-    return 0;
-  }
-
-  int CPacket_wait_manager::get_map_index(uint32_t max_packet_id)
-  {
-    return 0; //must be zero,bucause of number indictor.
-    //int index=max_packet_id%MAP_BUCKET_SLOT;
-    //assert(index>= 0 && index<MAP_BUCKET_SLOT);
-    //return index;
-  }
-
-  //the index must 0-2,already checked.
-  bool CPacket_wait_manager::put_timeout_hint(int index, CPacket_Timeout_hint *phint)
-  {
-    return dup_wait_queue[index].put(phint);
-  }
-
-  CPacket_Timeout_hint *CPacket_wait_manager::get_timeout_hint(int index, int msec)
-  {
-    return dup_wait_queue[index].get(msec);
-  }
-
-  int CPacket_wait_manager::addWaitNode(int area, const data_entry*, const data_entry* value, int bucket_number,
-      const vector<uint64_t>& des_server_ids, base_packet* request, uint32_t max_packet_id, int &version)
-  {
-    //check map_size first
-    int index = get_map_index(max_packet_id);
-    {
-      //CRwLock m_lock(m_mutex,RLOCK);
-      CScopedRwLock __scoped_lock(m_slots_locks->getlock(index), false);
-      if(m_PkgWaitMap[index].size() > TAIR_MAX_DUP_MAP_SIZE) return TAIR_RETURN_DUPLICATE_BUSY;
-    }
-
-    //CRwLock m_lock(m_mutex,WLOCK);
-    CScopedRwLock __scoped_lock(m_slots_locks->getlock(index), true);
-    CDuplicatPkgMapIter itr = m_PkgWaitMap[index].find(max_packet_id);
-    if (itr == m_PkgWaitMap[index].end())
-    {
-      //not found in map .inert it and inster to a queue.
-      CPacket_wait_Nodes *pdelaysign = new CPacket_wait_Nodes(bucket_number, request, des_server_ids, version, value);
-      changeBucketCount(bucket_number, 1);
-      m_PkgWaitMap[index][max_packet_id] = pdelaysign;
-      return TAIR_RETURN_SUCCESS;
-    }
-    else
-    {
-      //should never happen,but if crash and restared, nay mixed.
-      log_error("packet sequnce id is dup");
-      return TAIR_RETURN_DUPLICATE_IDMIXED;
-    }
-  }
-
-  int CPacket_wait_manager::doResponse(int bucket_number, uint64_t des_server_id, uint32_t max_packet_id,
-      struct CPacket_wait_Nodes **ppNode)
-  {
-    //CRwLock m_lock(m_mutex,WLOCK);
-    int index = get_map_index(max_packet_id);
-    CScopedRwLock __scoped_lock(m_slots_locks->getlock(index), true);
-
-    CDuplicatPkgMapIter itr = m_PkgWaitMap[index].find(max_packet_id);
-    if (itr != m_PkgWaitMap[index].end())
-    {
-      int ret=itr->second->do_response(bucket_number,des_server_id);
-      if (0 == ret)
-      {
-        changeBucketCount(bucket_number, -1);
-        *ppNode= itr->second;
-        m_PkgWaitMap[index].erase(itr);
-      }
-      else
-      {
-        *ppNode= NULL;
-      }
-
-      // at this point, we duplicate successfully and need record this key/value (rsync_manager->add_record(xx))
-      // for remote sync, unfortunately, current duplicate_manager doest't maintain neccessary
-      // context of request, so we can do noting but ignoring now.
-      // Howerver, storage manager who just uses its own binlog can rest easy now, because rsyc_manager->add_record(xx)
-      // is meaningless for it actually.
-      // TODO: reconstruct duplicate_manager thoroughly.
-      return ret;
-    }
-    else
-    {
-      //already timeout.
-      log_warn("resonse packet %u, but not found", max_packet_id);
-	    *ppNode= NULL;
-      return TAIR_RETURN_DUPLICATE_DELAY;
-    }
-  }
-
-  int CPacket_wait_manager::doTimeout( uint32_t max_packet_id)
-  {
-    //CRwLock m_lock(m_mutex,WLOCK);
-    int index = get_map_index(max_packet_id);
-    {
-      CScopedRwLock __scoped_lock(m_slots_locks->getlock(index), false);
-      CDuplicatPkgMapIter itr = m_PkgWaitMap[index].find(max_packet_id);
-      if (itr == m_PkgWaitMap[index].end()) return 0;
-    }
-    //now we should clear it.
-    clear_waitnode(max_packet_id);
-    return TAIR_RETURN_DUPLICATE_ACK_TIMEOUT;
-  }
-
-  int CPacket_wait_manager::clear_waitnode( uint32_t max_packet_id)
-  {
-    int index=get_map_index(max_packet_id);
-    CScopedRwLock __scoped_lock(m_slots_locks->getlock(index), true);
-
-    CDuplicatPkgMapIter itr = m_PkgWaitMap[index].find(max_packet_id);
-    if (itr != m_PkgWaitMap[index].end())
-    {
-      CPacket_wait_Nodes* pNode = itr->second;
-      changeBucketCount(pNode->bucket_number, -1);
-      m_PkgWaitMap[index].erase(itr);
-      delete pNode; pNode = NULL;
-      return 0;
-    }
-    else
-    {
-	    log_error("clear_waitnode node but not found,packet=%d",max_packet_id);
-    }
-    return 0;
-  }
-
-  dup_sync_sender_manager::dup_sync_sender_manager( tbnet::Transport *transport,
-      tair_packet_streamer *streamer, tair_manager* tair_mgr)
-  {
-    this->tair_mgr = tair_mgr;
-    conn_mgr = new tbnet::ConnectionManager(transport, streamer, this);
-    conn_mgr->setDefaultQueueTimeout(0 , MISECONDS_BEFOR_SEND_RETRY/2000);
-    conn_mgr->setDefaultQueueLimit(0, 5000);
-    max_queue_size = 0;
+extern tair::tair_server *tair_server;
+namespace tair {
+dup_sync_sender_manager::dup_sync_sender_manager(tair::stat::FlowController *flow_ctrl, RTCollector *rtc,
+                                                 uint32_t ioth_count) {
+    easy_helper::init_handler(&handler, this);
+    handler.process = packet_handler_cb;
+    memset(&eio, 0, sizeof(eio));
+    io_thread_count = ioth_count;
+    easy_io_create(&eio, io_thread_count);
+    eio.do_signal = 0;
+    eio.no_redispatch = 1;
+    eio.tcp_nodelay = 1;
+    eio.tcp_cork = 0;
+    easy_io_start(&eio);
+    easy_eio_set_uthread_start(&eio, easy_helper::easy_set_thread_name < dup_sync_sender_manager > ,
+                               const_cast<char *>("dup_io"));
     atomic_set(&packet_id_creater, 0);
-    setThreadCount(MAX_DUP_COUNT);
-    //this->start();
-  }
+    this->flow_ctrl = flow_ctrl;
+    this->rtc = rtc;
+}
 
-  dup_sync_sender_manager::~dup_sync_sender_manager()
-  {
+dup_sync_sender_manager::~dup_sync_sender_manager() {
     this->stop();
     this->wait();
-    delete conn_mgr;
-  }
+    easy_io_stop(&eio);
+    easy_io_wait(&eio);
+    easy_io_destroy(&eio);
+}
 
-  void dup_sync_sender_manager::do_hash_table_changed()
-  {
-    return ;
-  }
+void dup_sync_sender_manager::do_hash_table_changed() {
+    return;
+}
 
-  bool dup_sync_sender_manager::is_bucket_available(uint32_t bucket_number)
-  {
+bool dup_sync_sender_manager::is_bucket_available(uint32_t bucket_number) {
     return true;
-  }
+}
 
-  //xinshu. add new function for directy duplicate.
-  int dup_sync_sender_manager::duplicate_data(int area, const data_entry* key, const data_entry* value, int expire_time,
-      int bucket_number, const vector<uint64_t>& des_server_ids, base_packet *request, int version)
-  {
-    if (des_server_ids.empty()) return 0;
-
-    if (!request) return 0;
-    //first keep it in queue. until timeout it.
-    unsigned int _copy_count = des_server_ids.size();
-    uint32_t max_packet_id = atomic_add_return(_copy_count, &packet_id_creater);
-
-    //and keep it in map . until response arrive.
-    log_debug("wait bucket %d, packet %d, timeout=%d", bucket_number, max_packet_id, expire_time);
-    int ret = packets_mgr.addWaitNode(area, key, value, bucket_number, des_server_ids, request, max_packet_id, version);
-    if (ret!=0)
-    {
-      log_error("addWaitNode error, ret=%d\n",ret);
-      return ret;
+int dup_sync_sender_manager::duplicate_data(int32_t bucket,
+                                            const std::vector<common::Record *> *records,
+                                            const std::vector<uint64_t> &des_server_ids,
+                                            easy_request_t *r) {
+    if (des_server_ids.empty() || r == NULL || r->ipacket == NULL) {
+        return TAIR_RETURN_SUCCESS;
     }
-    ret = direct_send(area, key, value, 0, bucket_number, des_server_ids, max_packet_id);
-    if (TAIR_RETURN_SUCCESS != ret)
-    {
-      //clear waitnode.
-      packets_mgr.clear_waitnode(max_packet_id);
-      //return failed,the caller will delete the packet.
-      return ret;
+
+    unsigned int _copy_count = des_server_ids.size();
+    uint32_t max_packet_id = get_chid();
+
+    if (_copy_count > 1) {
+        log_error("`dup_sync` mode only works with `copy_count=2`, but now is %d", _copy_count + 1);
+        return TAIR_RETURN_DUPLICATE_BUSY;
+    }
+
+    int ret = direct_send(r, bucket, records, des_server_ids, max_packet_id);
+    if (TAIR_RETURN_SUCCESS != ret) {
+        log_error("direct send fialed, ret = %d", ret);
+        return ret;
     }
 
     return TAIR_DUP_WAIT_RSP;
-  }
+}
 
-  int dup_sync_sender_manager::direct_send(int area, const data_entry* key, const data_entry* value, int expire_time,
-      int bucket_number, const vector<uint64_t>& des_server_ids, uint32_t max_packet_id)
-  {
-    unsigned _copy_count = des_server_ids.size();
-    //? what if `max_packet_id` is rounded up to 0, up there in `duplicate_data`
-    if (0 == max_packet_id)
-      max_packet_id = atomic_add_return(_copy_count, &packet_id_creater);
+//xinshu. add new function for directy duplicate.
+int dup_sync_sender_manager::duplicate_data(int area,
+                                            const data_entry *key,
+                                            const data_entry *value,
+                                            int bucket_number,
+                                            const vector<uint64_t> &des_server_ids,
+                                            easy_request_t *r) {
+    if (des_server_ids.empty() || r == NULL || r->ipacket == NULL) {
+        return 0;
+    }
+    unsigned int _copy_count = des_server_ids.size();
+    uint32_t max_packet_id = get_chid();
 
-    for(unsigned int i = 0; i < _copy_count; i++)
-    {
-      //new a dup packet
-      request_duplicate* tmp_packet = new request_duplicate();
-      tmp_packet->packet_id = max_packet_id;
-      tmp_packet->area = area;
-      tmp_packet->key = *key;
-      tmp_packet->key.server_flag = TAIR_SERVERFLAG_DUPLICATE;
-      if (tmp_packet->key.is_alloc() == false) {
-        tmp_packet->key.set_data(key->get_data(), key->get_size(), true);
-      }
-      if (value) {
-        tmp_packet->data = *value;
-        if (tmp_packet->data.is_alloc() == false) {
-          tmp_packet->data.set_data(value->get_data(), value->get_size(), true);
-        }
-      } else { //remove
-        tmp_packet->data.data_meta.flag = TAIR_ITEM_FLAG_DELETED;
-      }
-      tmp_packet->bucket_number = bucket_number;
+    if (_copy_count > 1) {
+        log_error("`dup_sync' mode only works with `copy_count=2', but now is %d", _copy_count + 1);
+        return TAIR_RETURN_DUPLICATE_BUSY;
+    }
 
-      //and send it to slave
-      log_debug("duplicate packet %d sent: %s", tmp_packet->packet_id,tbsys::CNetUtil::addrToString(des_server_ids[i]).c_str());
-      if (conn_mgr->sendPacket(des_server_ids[i], tmp_packet, NULL, (void*)((long)max_packet_id), true) == false)
-      {
-        //duplicate sendpacket error.
-        log_error("duplicate packet %d faile send: %s",
-            tmp_packet->packet_id,tbsys::CNetUtil::addrToString(des_server_ids[i]).c_str());
+    int ret = direct_send(r, area, key, value, bucket_number, des_server_ids, max_packet_id);
+    if (TAIR_RETURN_SUCCESS != ret) {
+        log_error("direct_send failed, ret=%d", ret);
+        return ret;
+    }
+
+    return TAIR_DUP_WAIT_RSP;
+}
+
+int dup_sync_sender_manager::duplicate_data(int32_t bucket_number,
+                                            easy_request_t *r,
+                                            vector<uint64_t> &des_server_ids) {
+    if (des_server_ids.empty() || r == NULL || r->ipacket == NULL) {
+        return 0;
+    }
+    unsigned int _copy_count = des_server_ids.size();
+
+    if (_copy_count > 1) {
+        //NOTE we have to maintain a `duplicate_count' to tell whether all slaves respond.
+        //     for the present, simply only support `copy_count=2'
+        log_error("`dup_sync' mode only works with `copy_count=2', but now is %d", _copy_count + 1);
+        return TAIR_RETURN_DUPLICATE_BUSY;
+    }
+    uint32_t ioth_index = get_ioth_index((base_packet *) r->ipacket);
+    base_packet *tmp_packet = packet_factory::create_dup_packet((base_packet *) r->ipacket);
+    if (tmp_packet == NULL) {
+        return TAIR_RETURN_DUPLICATE_BUSY;
+    }
+
+    if (easy_helper::easy_async_send(&eio,
+                                     easy_helper::convert_addr(des_server_ids[0], ioth_index),
+                                     tmp_packet,
+                                     r, &handler, dup_timeout) != EASY_OK) {
         delete tmp_packet;
         return TAIR_RETURN_DUPLICATE_BUSY;
-      }
-    }
-    return TAIR_RETURN_SUCCESS;
-  }
-
-  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_puts *request, vector<uint64_t> &slaves, int version)
-  {
-    return do_duplicate_data(bucket_number, request, slaves, version);
-  }
-
-  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_removes *request, vector<uint64_t> &slaves, int version)
-  {
-    return do_duplicate_data(bucket_number, request, slaves, version);
-  }
-
-  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_hides *request, vector<uint64_t> &slaves, int version)
-  {
-    return do_duplicate_data(bucket_number, request, slaves, version);
-  }
-
-  int dup_sync_sender_manager::duplicate_data(int32_t bucket_number, request_prefix_incdec *request, vector<uint64_t> &slaves, int version)
-  {
-    return do_duplicate_data(bucket_number, request, slaves, version);
-  }
-
-  int dup_sync_sender_manager::duplicate_batch_data(int bucket_number, const mput_record_vec* record_vec,
-                                                    const std::vector<uint64_t>& des_server_ids, base_packet *request,
-                                                    int version)
-  {
-    unsigned _copy_count=des_server_ids.size();
-    uint32_t max_packet_id = atomic_add_return(_copy_count,&packet_id_creater);
-
-    if(0==max_packet_id)
-      max_packet_id = atomic_add_return(_copy_count,&packet_id_creater);
-
-    int ret=packets_mgr.addWaitNode(0,NULL,NULL,bucket_number,des_server_ids,request,max_packet_id,version);
-    if(ret != TAIR_RETURN_SUCCESS)
-    {
-      return ret;
-    }
-
-    for(unsigned int  i=0;i < _copy_count; i++)
-    {
-      request_mput* tmp_packet = new request_mput();
-      // just reuse original request's data, if necessray
-      if (_copy_count < 2) {
-        tmp_packet->swap(*(dynamic_cast<request_mput*>(request)));
-      } else {
-        tmp_packet->clone(*(dynamic_cast<request_mput*>(request)), true);
-      }
-      tmp_packet->server_flag = TAIR_SERVERFLAG_DUPLICATE;
-      tmp_packet->packet_id = max_packet_id;
-      // reset the compressed data as server_flag changed
-      if (tmp_packet->compressed != 0) {
-        tmp_packet->compressed = 0;
-        if (tmp_packet->packet_data != NULL) {
-          delete tmp_packet->packet_data;
-        }
-        tmp_packet->compress();
-      }
-      //and send it to slave
-      log_debug("duplicate packet %d sent: %s",tmp_packet->packet_id,tbsys::CNetUtil::addrToString(des_server_ids[i]).c_str());
-      if(conn_mgr->sendPacket(des_server_ids[i], tmp_packet, NULL, NULL, true) == false)
-      {
-        //duplicate sendpacket error.
-        log_error("duplicate packet %d faile send: %s",tmp_packet->packet_id,tbsys::CNetUtil::addrToString(des_server_ids[i]).c_str());
-        delete tmp_packet;
-        ret = TAIR_RETURN_DUPLICATE_BUSY;
-        break;
-      }
-    }
-
-    if (TAIR_RETURN_SUCCESS != ret)
-    {
-      //clear waitnode.
-      packets_mgr.clear_waitnode(max_packet_id);
-      //return failed,the caller will delete the packet.
-      return ret;
-    }
-
-    //all data is send,wait response or timeout it.
-    CPacket_Timeout_hint  *phint=new CPacket_Timeout_hint(max_packet_id);
-    if(!packets_mgr.put_timeout_hint(max_packet_id%MAX_DUP_COUNT,phint))
-    {
-      //put to queue error,should remove the map node.
-      delete phint;
-      packets_mgr.clear_waitnode(max_packet_id);
-	    log_warn("timeout wait packet full ,ignore packet=%d",max_packet_id);
-      return TAIR_RETURN_DUPLICATE_BUSY;
     }
     return TAIR_DUP_WAIT_RSP;
-  }
+}
 
-  bool dup_sync_sender_manager::has_bucket_duplicate_done(int bucketNumber)
-  {
-    /**
-      while(packages_mgr_mutex.rdlock()) {
-      usleep(10);
-      }
-      map<uint32_t, bucket_waiting_queue>::iterator it = packets_mgr.find(bucketNumber);
-      bool res = (it == packets_mgr.end() || it->second.size() == 0 ) ;
-      packages_mgr_mutex.unlock();
-      return res;
-     **/
-    return packets_mgr.isBucketFree(bucketNumber);
-  }
+int dup_sync_sender_manager::direct_send(easy_request_t *r,
+                                         int32_t bucket,
+                                         const std::vector<common::Record *> *records,
+                                         const std::vector<uint64_t> &des_server_ids,
+                                         uint32_t max_packet_id) {
+    request_batch_duplicate *packet = new request_batch_duplicate();
+    packet->packet_id = max_packet_id;
+    packet->bucket = bucket;
 
-  int dup_sync_sender_manager::do_duplicate_response(uint32_t bucket_number, uint64_t d_serverId, uint32_t packet_id)
-  {
-	   CPacket_wait_Nodes *pNode=NULL;
-    int ret = packets_mgr.doResponse(bucket_number, d_serverId, packet_id,  &pNode);
-    //if all rsp arrive ,resp to client. or get a TAIR_RETURN_DUPLICATE_ACK_WAIT.
-    if (0 == ret && pNode)
-    {
-      ret = rspPacket(pNode);
-	    delete (pNode);(pNode)=NULL;
+    std::vector<common::Record *> *rhs = new std::vector<common::Record *>();
+    std::vector<common::Record *>::const_iterator iter;
+    for (iter = records->begin(); iter != records->end(); iter++) {
+        common::Record *record = (*iter)->clone();
+        // rewrite server_flag to be duplicate
+        record->key_->server_flag = TAIR_SERVERFLAG_DUPLICATE;
+        rhs->push_back(record);
     }
-    return ret;
-  }
+    packet->records = rhs;
 
-  int dup_sync_sender_manager::rspPacket(const CPacket_wait_Nodes * pNode)
-  {
-    int rv = 0;
-    switch  (pNode->pcode)
-    {
-      case TAIR_REQ_PUT_PACKET:
-      case TAIR_REQ_REMOVE_PACKET:
-      case TAIR_REQ_LOCK_PACKET:
-        rv = tair_packet_factory::set_return_packet(pNode->conn,pNode->chid,pNode->pcode,0,"",pNode->conf_version);
-        break;
-      case TAIR_REQ_INCDEC_PACKET:
-        {
-          response_inc_dec *resp = new response_inc_dec();
-          resp->value = pNode->inc_value_result ;
-          resp->config_version = pNode->conf_version;
-          resp->setChannelId(pNode->chid);
-          if (pNode->conn->postPacket(resp) == false)
-          {
-            delete resp;
-            rv = TAIR_RETURN_DUPLICATE_SEND_ERROR;
-          }
-        }
-        break;
-      default:
-        log_warn("unknow handle error! get pcode =%d!", pNode->pcode);
-        //rv=tair_packet_factory::set_return_packet(request, 0, "", conf_version);
-        break;
-    };
-    return rv;
-  }
-
-  void dup_sync_sender_manager::run(tbsys::CThread *thread, void *arg)
-  {
-    UNUSED(thread);
-    UNUSED(arg);
-    return;
-    while (!_stop)
-    {
-      try
-      {
-        //int index = (long)arg;//if need more thread,shoudld hash it.
-      }
-      catch(...)
-      {
-        log_warn("unknow error! get timeoutqueue error!");
-      }
+    if (easy_helper::easy_async_send(&eio, des_server_ids[0], packet,
+                                     r, &handler, dup_timeout) != EASY_OK) {
+        log_error("batch duplicate packet failed, packet_id: %u, slave: %s",
+                  packet->packet_id, tbsys::CNetUtil::addrToString(des_server_ids[0]).c_str());
+        delete packet;
+        return TAIR_RETURN_DUPLICATE_BUSY;
     }
-  }
 
-  void dup_sync_sender_manager::handleTimeOutPacket(uint32_t packet_id)
-  {
-    //not exist or timeout.
-    packets_mgr.doTimeout(packet_id);
-    //todo:if timeout,should response to client or rollback?
+    return TAIR_RETURN_SUCCESS;
+}
 
-    //now i should free the request,not need convert to child class.
-  }
+int dup_sync_sender_manager::direct_send(easy_request_t *r,
+                                         int area,
+                                         const data_entry *key,
+                                         const data_entry *value,
+                                         int bucket_number,
+                                         const vector<uint64_t> &des_server_ids,
+                                         uint32_t max_packet_id) {
+    max_packet_id = get_chid();
 
-  tbnet::IPacketHandler::HPRetCode dup_sync_sender_manager::handlePacket(tbnet::Packet *packet, void *args)
-  {
-	  int packet_id = reinterpret_cast<long>(args);
-    if (!packet->isRegularPacket()) {
-      tbnet::ControlPacket *cp = (tbnet::ControlPacket*)packet;
-			log_error("cmd:%d,packetid:%d,timeout.", cp->getCommand(),packet_id);
-		  handleTimeOutPacket(packet_id);
-      return tbnet::IPacketHandler::FREE_CHANNEL;
-    }
-    int pcode = packet->getPCode();
-    log_debug("================= get duplicate response, pcode: %d", pcode);
-    if (TAIR_RESP_DUPLICATE_PACKET == pcode) {
-      response_duplicate* resp = (response_duplicate*)packet;
-      log_debug("response packet %d ,bucket =%d, server=%s",resp->packet_id,resp->bucket_id, \
-          tbsys::CNetUtil::addrToString(resp->server_id).c_str());
-      int ret = do_duplicate_response(resp->bucket_id, resp->server_id, resp->packet_id);
-      if (0 != ret && TAIR_RETURN_DUPLICATE_ACK_WAIT != ret)
-      {
-        log_error("response packet %d failed,bucket =%d, server=%s, code=%d", resp->packet_id, resp->bucket_id, \
-            tbsys::CNetUtil::addrToString(resp->server_id).c_str(), ret);
-      }
+    request_duplicate *tmp_packet = new request_duplicate();
+    tmp_packet->packet_id = max_packet_id;
+    tmp_packet->area = area;
+    tmp_packet->key.clone(*key);
+    tmp_packet->key.server_flag = TAIR_SERVERFLAG_DUPLICATE;
 
-      resp->free();
-    } else if ( pcode == TAIR_RESP_MRETURN_DUP_PACKET) {
-      response_mreturn_dup *resp_dup = dynamic_cast<response_mreturn_dup*>(packet);
-      if (resp_dup == NULL) {
-        log_error("bad packet %d", pcode);
-      } else {
-        log_debug("duplicate response packet %u, bucket = %d, server = %s", resp_dup->packet_id, resp_dup->bucket_id, tbsys::CNetUtil::addrToString(resp_dup->server_id).c_str());
-        CPacket_wait_Nodes *pnode = NULL;
-        int ret = packets_mgr.doResponse(resp_dup->bucket_id, resp_dup->server_id, resp_dup->packet_id, &pnode);
-        response_mreturn *resp = new response_mreturn();
-        resp->swap(*resp_dup);
-        if (ret == TAIR_RETURN_SUCCESS && pnode != NULL) {
-          resp->setChannelId(pnode->chid);
-          resp->config_version = pnode->conf_version;
-          if (pnode->conn->postPacket(resp) == false) {
-            delete resp;
-            ret = TAIR_RETURN_DUPLICATE_SEND_ERROR;
-          }
-        } else {
-          delete resp;
+    if (value != NULL) {
+        tmp_packet->data = *value;
+        if (tmp_packet->data.is_alloc() == false) {
+            tmp_packet->data.set_data(value->get_data(), value->get_size(), true);
         }
-      }
-    } else if (pcode == TAIR_RESP_PREFIX_INCDEC_PACKET) {
-      response_prefix_incdec *resp = dynamic_cast<response_prefix_incdec*>(packet);
-      if (resp == NULL) {
-        log_error("bad packet %d", pcode);
-      } else {
-        log_debug("duplicate response packet %u, bucket = %d, server = %s",
-            resp->packet_id, resp->bucket_id, tbsys::CNetUtil::addrToString(resp->server_id).c_str());
-        CPacket_wait_Nodes *pnode = NULL;
-        int ret = packets_mgr.doResponse(resp->bucket_id, resp->server_id, resp->packet_id, &pnode);
-        if (ret == TAIR_RETURN_SUCCESS && pnode != NULL) {
-          resp->server_flag = TAIR_SERVERFLAG_CLIENT;
-          resp->setChannelId(pnode->chid);
-          resp->config_version = pnode->conf_version;
-          if (!pnode->conn->postPacket(resp)) {
-            delete resp;
-            ret = TAIR_RETURN_DUPLICATE_SEND_ERROR;
-          }
+        uint32_t pcode = ((base_packet *) r->ipacket)->getPCode();
+        if (TAIR_REQ_INCDEC_PACKET == pcode || TAIR_REQ_INCDEC_BOUNDED_PACKET == pcode) {
+            int32_t *v = (int32_t *) (value->get_data() + ITEM_HEAD_LENGTH); //for inc_dec
+            request_inc_dec *request = (request_inc_dec *) r->ipacket;
+            request->result_value = *v; //keep for inc_dec .because the inc_dec dup response doesn't have it.
         }
-      }
     } else {
-      log_warn("unknow packet! pcode: %d", pcode);
-      packet->free();
+        tmp_packet->data.data_meta.flag = TAIR_ITEM_FLAG_DELETED;
+    }
+    tmp_packet->bucket_number = bucket_number;
+
+    uint32_t ioth_index = get_ioth_index(key);
+    if (easy_helper::easy_async_send(&eio,
+                                     easy_helper::convert_addr(des_server_ids[0], ioth_index),
+                                     tmp_packet,
+                                     r, &handler, dup_timeout) != EASY_OK) {
+        log_error("duplicate packet failed, packet_id: %d, slave: %s",
+                  tmp_packet->packet_id, tbsys::CNetUtil::addrToString(des_server_ids[0]).c_str());
+        delete tmp_packet;
+        return TAIR_RETURN_DUPLICATE_BUSY;
+    }
+    return TAIR_RETURN_SUCCESS;
+}
+
+int dup_sync_sender_manager::duplicate_batch_data(int bucket_number,
+                                                  const mput_record_vec *record_vec,
+                                                  const std::vector<uint64_t> &des_server_ids,
+                                                  base_packet *request) {
+    unsigned _copy_count = des_server_ids.size();
+    uint32_t max_packet_id = get_chid();
+
+    if (_copy_count > 1) {
+        log_error("`dup_sync' mode only works with `copy_count=2', but now is %d", _copy_count + 1);
+        return TAIR_RETURN_DUPLICATE_BUSY;
     }
 
-    return tbnet::IPacketHandler::KEEP_CHANNEL;
-  }
+    request_mput *tmp_packet = new request_mput();
+    tmp_packet->swap(*(dynamic_cast<request_mput *>(request)));
+    tmp_packet->server_flag = TAIR_SERVERFLAG_DUPLICATE;
+    //tmp_packet->bucket_number = bucket_number;
+    tmp_packet->packet_id = max_packet_id;
+    if (tmp_packet->compressed != 0) {
+        tmp_packet->compressed = 0;
+        if (tmp_packet->packet_data != NULL) {
+            delete tmp_packet->packet_data;
+        }
+        tmp_packet->compress();
+    }
+    //and send it to slave
+    log_debug("duplicate packet %d sent: %s", tmp_packet->packet_id,
+              tbsys::CNetUtil::addrToString(des_server_ids[0]).c_str());
+    if (easy_helper::easy_async_send(&eio, des_server_ids[0], tmp_packet, request->r, &handler, dup_timeout) !=
+        EASY_OK) {
+        log_error("duplicate packet failed, packet_id: %d, slave: %s",
+                  tmp_packet->packet_id, tbsys::CNetUtil::addrToString(des_server_ids[0]).c_str());
+        delete tmp_packet;
+        return TAIR_RETURN_DUPLICATE_BUSY;
+    }
+
+    return TAIR_DUP_WAIT_RSP;
+}
+
+base_packet *dup_sync_sender_manager::create_return_packet(base_packet *bp, int heartbeat_version) {
+    int pcode = bp->getPCode();
+    uint32_t chid = bp->getChannelId();
+    const char *result_msg = "";
+
+    base_packet *packet = NULL;
+    switch (pcode) {
+        case TAIR_REQ_PUT_PACKET:
+        case TAIR_REQ_REMOVE_PACKET:
+        case TAIR_REQ_LOCK_PACKET:
+        case TAIR_REQ_EXPIRE_PACKET:
+        case TAIR_REQ_HIDE_PACKET:
+        case TAIR_REQ_SYNC_PACKET: {
+            packet = new response_return(chid, 0, result_msg, heartbeat_version);
+            break;
+        }
+        case TAIR_REQ_INCDEC_PACKET:
+        case TAIR_REQ_INCDEC_BOUNDED_PACKET: {
+            response_inc_dec *resp = NULL;
+            if (pcode == TAIR_REQ_INCDEC_PACKET) {
+                resp = new response_inc_dec();
+            } else {
+                resp = new response_inc_dec_bounded();
+            }
+            resp->value = ((request_inc_dec *) bp)->result_value;
+            resp->config_version = heartbeat_version;
+            resp->setChannelId(chid);
+            packet = resp;
+            break;
+        }
+        case TAIR_REQ_MC_OPS_PACKET: {
+            response_mc_ops *resp = new response_mc_ops;
+            request_mc_ops *req = (request_mc_ops *) bp;
+            resp->mc_opcode = req->mc_opcode;
+            resp->config_version = heartbeat_version;
+            resp->setChannelId(chid);
+            resp->code = TAIR_RETURN_SUCCESS;
+            /*
+             * The following judgement is bound to the logic in tair_manager::mc_ops.
+             * Be Careful with the `padding' field!
+             */
+            resp->version = *(uint16_t *) (req->padding + 8);
+            if (resp->mc_opcode == 0x05 /* INCR */
+                || resp->mc_opcode == 0x06 /* DECR */) {
+                resp->value.set_alloced_data(req->padding,
+                                             sizeof(uint64_t));// first 8 bytes is value, last 2 bytes is version
+                req->padding = NULL;
+            }
+
+            packet = resp;
+            break;
+        }
+        default: {
+            log_warn("unknow pcode =%d!", pcode);
+            packet = new response_return(chid, TAIR_RETURN_FAILED, result_msg, heartbeat_version);
+            break;
+        }
+    }
+    return packet;
+}
+
+bool dup_sync_sender_manager::has_bucket_duplicate_done(int bucketNumber) {
+    return true;
+}
+
+int dup_sync_sender_manager::do_response(easy_request_t *cr, /* request from client */
+                                         easy_request_t *sr, /* request from slave ds */
+                                         int heartbeat_version) {
+    base_packet *dresp = (base_packet *) sr->ipacket;
+
+    if (!dresp) return TAIR_RETURN_DUPLICATE_BUSY; //should never happen.
+
+    uint32_t chid = ((base_packet *) cr->ipacket)->getChannelId();
+    switch (dresp->getPCode()) {
+        case TAIR_RESP_DUPLICATE_PACKET: {
+            base_packet *bp = create_return_packet((base_packet *) cr->ipacket,
+                                                   heartbeat_version);
+            cr->opacket = bp;
+            break;
+        }
+        case TAIR_RESP_RETURN_PACKET: {
+            response_return *resp = new response_return();
+            resp->code = static_cast<response_return *>(dresp)->code;
+            resp->setChannelId(chid);
+            resp->config_version = heartbeat_version;
+            cr->opacket = resp;
+            break;
+        }
+        case TAIR_RESP_MRETURN_DUP_PACKET: {
+            response_mreturn *resp = new response_mreturn;
+            resp->swap(*(dynamic_cast<response_mreturn_dup *>(dresp)));
+            resp->setChannelId(chid);
+            resp->config_version = heartbeat_version;
+            cr->opacket = resp;
+            break;
+        }
+        case TAIR_RESP_PREFIX_INCDEC_PACKET:
+        case TAIR_RESP_PREFIX_INCDEC_BOUNDED_PACKET: {
+            response_prefix_incdec *resp = NULL;
+            if (dresp->getPCode() == TAIR_RESP_PREFIX_INCDEC_PACKET) {
+                resp = dynamic_cast<response_prefix_incdec *>(dresp);
+            } else {
+                resp = dynamic_cast<response_prefix_incdec_bounded *>(dresp);
+            }
+            if (resp == NULL) {
+                log_error("invalid duplicate response received while dealing with pcode %d", dresp->getPCode());
+                cr->opacket = NULL;
+            } else {
+                resp->server_flag = TAIR_SERVERFLAG_CLIENT;
+                resp->setChannelId(chid);
+                resp->config_version = heartbeat_version;
+
+                sr->ipacket = NULL;
+                cr->opacket = resp;
+            }
+            break;
+        }
+        default: {
+            cr->opacket = NULL;
+            log_warn("unknown duplicate rsponse pcode : %d", dresp->getPCode());
+        }
+    }
+
+    uint16_t ns = (uint16_t) ((base_packet *) cr->ipacket)->ns();
+    // add flow control here
+    if (flow_ctrl != NULL && flow_ctrl->ShouldFlowControl(ns)) {
+        flow_control *ctrl_packet = new flow_control();
+        ctrl_packet->set_status(flow_ctrl->IsOverflow(ns));
+        ctrl_packet->set_ns(ns);
+        ctrl_packet->setChannelId(-1);
+        ctrl_packet->_next = (Packet *) cr->opacket;
+        cr->opacket = ctrl_packet;
+        log_warn("flow control happened, ns: %d", ns);
+    }
+
+    cr->retcode = EASY_OK;
+    return TAIR_RETURN_SUCCESS;
+}
+
+void dup_sync_sender_manager::run(tbsys::CThread *thread, void *arg) {
+}
+
+int dup_sync_sender_manager::packet_handler(easy_request_t *r) {
+    int rc = r->ipacket != NULL ? EASY_OK : EASY_ERROR;
+    easy_request_t *cr = (easy_request_t *) r->args; //the request from client.
+    if (rc == EASY_ERROR) {
+        int pcode = -1, ns = -1;
+        if (NULL != cr && NULL != cr->ipacket) {
+            pcode = ((base_packet *) cr->ipacket)->getPCode();
+            ns = ((base_packet *) cr->ipacket)->ns();
+        }
+        log_error("duplicate to %s timeout, pcode : %d, ns : %d", easy_helper::easy_connection_to_str(r->ms->c).c_str(),
+                  pcode, ns);
+    } else {
+        if (cr != NULL) {
+            do_response(cr, r, ::tair_server->get_heartbeat_version());
+        }
+    }
+    if (cr != NULL) {
+        rtc->rt_end(cr);
+        easy_request_wakeup(cr);
+    }
+    easy_session_destroy(r->ms);
+    return EASY_OK;
+}
+
+uint32_t dup_sync_sender_manager::get_ioth_index(const data_entry *key) {
+    uint32_t hv = key == NULL ? 0 : key->get_hashcode();
+    return hv % io_thread_count;
+}
+
+uint32_t dup_sync_sender_manager::get_ioth_index(const base_packet *p) {
+    uint32_t index = 0;
+    switch (p->getPCode()) {
+        case TAIR_REQ_PREFIX_PUTS_PACKET: {
+            request_prefix_puts *req = (request_prefix_puts *) p;
+            index = get_ioth_index(req->kvmap->begin()->first);
+            break;
+        }
+        case TAIR_REQ_PREFIX_INCDEC_PACKET: {
+            request_prefix_incdec *req = (request_prefix_incdec *) p;
+            index = get_ioth_index(req->key_counter_map->begin()->first);
+            break;
+        }
+        case TAIR_REQ_PREFIX_REMOVES_PACKET: {
+            request_prefix_removes *req = (request_prefix_removes *) p;
+            data_entry *key = req->key;
+            if (req->key_list != NULL) {
+                key = *req->key_list->begin();
+            }
+            index = get_ioth_index(key);
+            break;
+        }
+        default:
+            break;
+    }
+
+    return index;
+}
+
 }
