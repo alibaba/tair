@@ -131,11 +131,11 @@ private:
 
 class HttpWebRequest {
 public:
-    typedef struct {
+    struct Method {
         const static std::string POST;
         const static std::string GET;
         const static std::string DELETE;
-    } Method;
+    };
 public:
     inline static HttpWebRequest *Create(std::string &uri) {
         return new HttpWebRequest(uri);
