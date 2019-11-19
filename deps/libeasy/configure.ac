@@ -20,7 +20,7 @@ includedir=${prefix}/include/easy
 PRESET_CFLAGS="$CFLAGS"
 PRESET_CPPFLAGS="$CPPFLAGS"
 PRESET_LDFLAGS="$LDFLAGS"
-CFLAGS="-g $PRESET_CFLAGS -Wall -Werror -fPIC -fno-strict-aliasing"
+CFLAGS="-g $PRESET_CFLAGS -Wall -fPIC -fno-strict-aliasing"
 CPPFLAGS="$PRESET_CPPFLAGS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS"
 
 # Checks for header files.
