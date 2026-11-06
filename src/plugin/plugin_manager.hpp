@@ -64,7 +64,7 @@ public:
 
     bool chang_plugins_to(const std::set<std::string> &dll_names);
 
-    // if a minus return value occured when we excute the request plugins, no response plugins will be performed.
+    // if a minus return value occurred when we excute the request plugins, no response plugins will be performed.
     int do_request_plugins(int plugin_type, int call_type, int area, const data_entry *key, const data_entry *value,
                            plugins_root *&root);
 
